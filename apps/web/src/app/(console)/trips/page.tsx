@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 
@@ -76,8 +77,10 @@ export default function TripsPage() {
             </thead>
             <tbody>
               {trips.map((t) => (
-                <tr key={t.id} className="table-row">
-                  <td className="py-2">{t.id}</td>
+                <tr key={t.id} className="table-row hover:bg-white/5 cursor-pointer">
+                  <td className="py-2">
+                    <Link href={`/trips/${t.id}`} className="text-brand hover:underline">#{t.id}</Link>
+                  </td>
                   <td className="py-2">{t.status ?? t.status_id?.status_code ?? '—'}</td>
                   <td className="py-2">{t.pickup_address ?? '—'}</td>
                   <td className="py-2">{t.destination_address ?? '—'}</td>
