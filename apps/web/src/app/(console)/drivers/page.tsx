@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 
@@ -73,8 +74,10 @@ export default function DriversPage() {
                 const lockedUntil = d.fatigue_lockout_until ? new Date(d.fatigue_lockout_until) : null;
                 const locked = lockedUntil && lockedUntil > new Date();
                 return (
-                  <tr key={d.id} className="table-row">
-                    <td className="py-2">{d.id}</td>
+                  <tr key={d.id} className="table-row hover:bg-white/5">
+                    <td className="py-2">
+                      <Link href={`/drivers/${d.id}`} className="text-brand hover:underline">#{d.id}</Link>
+                    </td>
                     <td className="py-2">{u?.phone_number ?? '—'}</td>
                     <td className="py-2">{u?.full_name ?? '—'}</td>
                     <td className="py-2">
