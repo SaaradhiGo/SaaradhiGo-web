@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 
@@ -71,8 +72,10 @@ export default function SupportPage() {
             </thead>
             <tbody>
               {tickets.map((t) => (
-                <tr key={t.id} className="table-row">
-                  <td className="py-2">{t.id}</td>
+                <tr key={t.id} className="table-row hover:bg-white/5">
+                  <td className="py-2">
+                    <Link href={`/support/${t.id}`} className="text-brand hover:underline">#{t.id}</Link>
+                  </td>
                   <td className="py-2">{t.issue_type}</td>
                   <td className="py-2">
                     <span className="tag border-white/20">{t.status}</span>
