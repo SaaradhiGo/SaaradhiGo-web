@@ -7,8 +7,12 @@ import { clearTokens, readToken } from '@/lib/api';
 
 const NAV = [
   { href: '/dashboard', label: 'Dashboard' },
+  // SOS sits directly under the dashboard: it is the only screen with a
+  // zero error budget, and on-call should never have to hunt for it.
+  { href: '/sos', label: 'SOS' },
   { href: '/trips', label: 'Trips' },
   { href: '/drivers', label: 'Drivers' },
+  { href: '/withdrawals', label: 'Withdrawals' },
   { href: '/support', label: 'Support' },
   { href: '/zones', label: 'Zones' },
 ];
