@@ -1,6 +1,6 @@
 # SaaradhiGo Web & Platform Monorepo
 
-Umbrella repository for the SaaradhiGo / VahanGo client applications. It hosts the web client and per-platform native scaffolding, and documents the shared branching and release workflow used across all SaaradhiGo repos.
+Umbrella repository for the SaaradhiGo client applications. It hosts the web client and per-platform native scaffolding, and documents the shared branching and release workflow used across all SaaradhiGo repos.
 
 > Status: scaffolding only. Each `apps/*` directory currently contains a placeholder README; production code has not been added yet. The active rider mobile codebase lives in the separate [SaaradhiGo-mobile](../SaaradhiGo-mobile) repository.
 
@@ -54,5 +54,5 @@ These should be wired up via GitHub Actions as each app gains real code.
 
 ## Related repositories
 
-- [SaaradhiGo-mobile](../SaaradhiGo-mobile) — Flutter rider app (VahanGo)
+- [SaaradhiGo-mobile](../SaaradhiGo-mobile) — Flutter rider app
 - [SaaradhiGo-backend](../SaaradhiGo-backend) — API, WebSocket gateway, and database

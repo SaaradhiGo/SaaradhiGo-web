@@ -2,7 +2,7 @@
   "name": "saaradhigo-ops-console",
   "version": "0.1.0",
   "private": true,
-  "description": "SaaradhiGo / VahanGo internal operations console. Multi-page Next.js app served at console.saaradhigo.in (or local). Targets the same backend the mobile apps use.",
+  "description": "SaaradhiGo internal operations console. Multi-page Next.js app served at console.saaradhigo.in (or local). Targets the same backend the mobile apps use.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
