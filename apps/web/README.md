@@ -1,6 +1,6 @@
 # SaaradhiGo Ops Console
 
-Internal operations console for SaaradhiGo / VahanGo. A Next.js 14 (App Router) app written in TypeScript + Tailwind, run by ops + support staff against the shared backend.
+Internal operations console for SaaradhiGo. A Next.js 14 (App Router) app written in TypeScript + Tailwind, run by ops + support staff against the shared backend.
 
 > Phase-0 MVP. Surface kept intentionally small: dashboard, trips, drivers, support tickets, pricing zones. Approve-driver and view rate cards work end-to-end; driver detail / SOS / withdrawal-management screens are TODO.
 
