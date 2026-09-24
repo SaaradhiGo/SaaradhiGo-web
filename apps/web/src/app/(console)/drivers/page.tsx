@@ -23,7 +23,15 @@ export default function DriversPage() {
     setLoading(true);
     setError(null);
     try {
-      const r = await api.get<any>('/driver/admin/list/');
+      // '/driver/admin/', not '/driver/admin/list/'. The list/ variant does not
+      // exist and returns 404 on the deployed backend, so this page -- the one an
+      // operator uses to see and approve drivers -- showed 'Could not load
+      // drivers' and nothing else. Verified against QA: /driver/admin/ answers
+      // 401 (exists, protected) while /driver/admin/list/ answers 404.
+      //
+      // Note: this reads page 1 only, and the backend paginates at 10. Fine for a
+      // pilot cohort, not for a real fleet.
+      const r = await api.get<any>('/driver/admin/');
       const list = (r?.results ?? r?.data ?? r) as Driver[];
       setDrivers(Array.isArray(list) ? list : []);
     } catch (err) {

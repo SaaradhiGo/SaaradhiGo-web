@@ -1,0 +1,63 @@
+# Lint, type-check and build the operations console.
+#
+# This repository had no CI at all. The cost of that was concrete: the Drivers
+# page -- the screen an operator uses to see and approve drivers -- called
+# `/driver/admin/list/`, which does not exist and answers 404 on the deployed
+# backend. The page showed "Could not load drivers" and nothing else. A build is
+# not enough to catch that one, but a repository with no CI is a repository where
+# nobody finds out, and there were no tests either.
+#
+# Three gates, all verified to pass locally before this workflow was added:
+#   lint        eslint . --ext .ts,.tsx --max-warnings 0
+#   type-check  tsc --noEmit
+#   build       next build
+#
+# `next lint` is deliberately NOT used. It is deprecated in Next 15 and, with no
+# ESLint config present, it PROMPTS for one -- which hangs a runner rather than
+# failing it. The ESLint CLI is non-interactive.
+#
+# No secrets are needed. NEXT_PUBLIC_API_BASE_URL has a localhost default in
+# lib/api.ts, and nothing here talks to a real backend.
+name: ops-console
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # A newer push supersedes an in-flight run on the same ref.
+  group: ops-console-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Next 15.5 supports 18.18+; 20 is the current LTS.
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      # `npm ci` rather than `npm install`, so the lockfile is authoritative and a
+      # CI run cannot silently resolve different versions than a developer has.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Build
+        run: npm run build
