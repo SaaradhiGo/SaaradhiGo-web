@@ -33,7 +33,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
   return (
     <div className="min-h-screen grid grid-cols-[220px_1fr]">
       <aside className="bg-ink-800 border-r border-white/5 p-4 flex flex-col">
-        <div className="text-brand font-bold text-lg tracking-wider">VahanGo</div>
+        <div className="text-brand font-bold text-lg tracking-wider">SaaradhiGo</div>
         <div className="text-white/40 text-xs uppercase tracking-widest mb-6">Ops</div>
         <nav className="flex-1 space-y-1">
           {NAV.map((item) => {
