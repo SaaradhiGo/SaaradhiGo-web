@@ -128,7 +128,7 @@ export default function TripDetailPage() {
   }
 
   async function refundCredit() {
-    if (!confirm('Refund to rider as VahanGo Credits? Instant; subject to balance cap.')) return;
+    if (!confirm('Refund to rider as SaaradhiGo Credits? Instant; subject to balance cap.')) return;
     setActionMsg(null); setActionErr(null);
     try {
       await api.post('/payments/refund/', { trip_id: Number(id), mode: 'credit' });
