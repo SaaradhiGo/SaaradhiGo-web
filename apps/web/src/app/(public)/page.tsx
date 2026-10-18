@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import ServiceAreas from '@/components/ServiceAreas';
 
 /**
  * The homepage.
@@ -22,12 +23,12 @@ export default function HomePage() {
     <>
       <section className="py-6 sm:py-10">
         <h1 className="text-4xl sm:text-5xl font-bold leading-[1.1] max-w-3xl">
-          Rides across India, with the fare agreed before you get in.
+          The fare is agreed before you get in.
         </h1>
         <p className="mt-5 text-lg text-white/70 max-w-2xl">
-          SaaradhiGo is a ride-hailing service built for Indian cities. You see
-          what a trip costs before you book it, pay in cash or online, and get a
-          receipt for every ride.
+          SaaradhiGo is a ride-hailing service. You see what a trip costs
+          before you book it, pay the way that suits you, and get a receipt for
+          every ride — in each city&apos;s own currency.
         </p>
         <div className="mt-8 flex flex-col sm:flex-row gap-3">
           <Link href="/sign-up" className="btn-primary sm:w-auto">
@@ -127,6 +128,10 @@ export default function HomePage() {
             What you need to start
           </Link>
         </div>
+      </section>
+
+      <section className="mt-14" aria-labelledby="areas">
+        <ServiceAreas />
       </section>
 
       <section className="mt-14" aria-labelledby="safety">

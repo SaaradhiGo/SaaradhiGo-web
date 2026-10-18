@@ -6,11 +6,11 @@ import Link from 'next/link';
 // chrome: a visitor never sees operator navigation, and an operator never
 // sees a marketing header.
 export const metadata: Metadata = {
-  title: 'SaaradhiGo — rides across India',
+  title: 'SaaradhiGo — book a ride',
   description:
-    'SaaradhiGo is a ride-hailing service for Indian cities. See the fare '
-    + 'before you book, pay in cash or online, and get a receipt for every '
-    + 'ride. Create a rider account, or apply to drive.',
+    'SaaradhiGo is a ride-hailing service. See the fare before you book, '
+    + 'pay the way that suits you, and get a receipt for every ride. Create '
+    + 'a rider account, or apply to drive.',
 };
 
 const navLinks = [

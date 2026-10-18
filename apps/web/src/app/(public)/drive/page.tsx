@@ -100,7 +100,7 @@ export default function DrivePage() {
       <section className="mt-12 card">
         <h2 className="text-lg font-semibold">Requirements</h2>
         <ul className="mt-3 space-y-2 text-sm text-white/70 list-disc list-inside">
-          <li>A valid Indian driving licence</li>
+          <li>A valid driving licence for the country you drive in</li>
           <li>Vehicle registration certificate and valid insurance</li>
           <li>A bank account in your name for payouts</li>
           <li>An Android phone to run the driver app</li>

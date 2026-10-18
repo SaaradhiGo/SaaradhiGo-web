@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Alert, Field, SubmitButton } from '@/components/form';
+import PhoneField, { usePhoneMarkets } from '@/components/PhoneField';
+import { nationalLooksValid, toE164 } from '@/lib/markets';
 import {
   PublicRole,
   isUnverified,
   looksLikeEmail,
-  looksLikePhone,
   messageFor,
   otpSendingEnabled,
   sendPublicOtp,
@@ -35,7 +36,9 @@ export default function SignInForm({ role }: { role: PublicRole }) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('+91');
+  const { markets, failed: marketsFailed } = usePhoneMarkets();
+  const [country, setCountry] = useState('');
+  const [national, setNational] = useState('');
   const [otp, setOtp] = useState('');
   const [stage, setStage] = useState<'phone' | 'code'>('phone');
 
@@ -44,6 +47,16 @@ export default function SignInForm({ role }: { role: PublicRole }) {
   const [unverified, setUnverified] = useState(false);
 
   const canUseOtp = otpSendingEnabled();
+
+  // Preselect whatever the server says the default market is, once known.
+  // Defaulting to a country before the answer arrives is the India-only
+  // assumption in miniature.
+  useEffect(() => {
+    if (markets && !country) setCountry(markets.default_country);
+  }, [markets, country]);
+
+  const market = markets?.countries.find((m) => m.code === country);
+  const phone = toE164(market, national);
 
   function done() {
     router.replace(role === 'driver' ? '/drive' : '/');
@@ -81,8 +94,8 @@ export default function SignInForm({ role }: { role: PublicRole }) {
   async function submitPhone(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!looksLikePhone(phone)) {
-      setError('Use the international format, like +919876543210.');
+    if (!nationalLooksValid(market, national)) {
+      setError('Enter your mobile number without the country code.');
       return;
     }
     setBusy(true);
@@ -180,16 +193,14 @@ export default function SignInForm({ role }: { role: PublicRole }) {
         </form>
       ) : stage === 'phone' ? (
         <form onSubmit={submitPhone} className="space-y-4" noValidate>
-          <Field
-            label="Mobile number"
-            name="phone"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            help="We send a one-time code to this number."
-            required
+          <PhoneField
+            markets={markets}
+            failed={marketsFailed}
+            countryCode={country}
+            onCountryChange={setCountry}
+            national={national}
+            onNationalChange={setNational}
+            help="We will text you a 6-digit code."
           />
           <SubmitButton busy={busy} busyLabel="Sending…">
             Send code
