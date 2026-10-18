@@ -71,25 +71,24 @@ export default function HomePage() {
         <div className="card sm:flex sm:items-center sm:gap-8">
           <div className="sm:flex-1">
             <h2 id="booking" className="text-2xl font-semibold">
-              Booking happens in the app
+              Book here, or in the app
             </h2>
             <p className="mt-3 text-white/70">
-              Rides are booked in the SaaradhiGo Android app, where we can use
-              your live location to find your pickup and keep you and your
-              driver connected for the whole trip. The website is where you
-              create your account, get help and manage your details.
+              You can book a ride right here in your browser — we use your
+              location to find the pickup, show you the fare before you
+              confirm, and keep you updated while your driver is on the way.
+              The Android app does the same with background updates.
             </p>
             <p className="mt-3 text-sm text-white/55">
-              Create your account here and sign in with the same email on the
-              app.
+              The same account works in both.
             </p>
           </div>
           <div className="mt-5 sm:mt-0 sm:w-56 shrink-0">
-            <Link href="/sign-up" className="btn-primary w-full">
-              Create your account
+            <Link href="/book" className="btn-primary w-full">
+              Book a ride
             </Link>
-            <Link href="/contact" className="btn-ghost block text-center mt-3">
-              Ask us about availability
+            <Link href="/my-trips" className="btn-ghost block text-center mt-3">
+              Your trips and receipts
             </Link>
           </div>
         </div>
