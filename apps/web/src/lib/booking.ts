@@ -233,6 +233,9 @@ export async function tripDetail(tripId: number | string) {
 }
 
 export async function rideHistory() {
-  const data = await api.get<{ results?: unknown[] }>('/ride/history/');
+  // `/ride/ride-history/`, not `/ride/history/`. The shorter path 404s --
+  // caught by calling it against deployed QA with a real rider token, which
+  // is the only way a wrong URL ever shows up: it type-checks perfectly.
+  const data = await api.get<{ results?: unknown[] }>('/ride/ride-history/');
   return data?.results ?? (Array.isArray(data) ? data : []);
 }
