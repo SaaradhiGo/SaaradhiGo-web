@@ -1,16 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-// The public site and the ops console share one Next app but nothing else.
+// The public site and the ops console share one Next app and nothing else.
 // This layout wraps only the `(public)` group, so the console keeps its own
-// bare chrome and its own metadata -- a visitor should never see operator
-// navigation, and an operator should never see a marketing header.
+// chrome: a visitor never sees operator navigation, and an operator never
+// sees a marketing header.
 export const metadata: Metadata = {
   title: 'SaaradhiGo — rides across India',
   description:
-    'SaaradhiGo is a ride-hailing service operating a controlled pilot in '
-    + 'India. Book rides from the Android app; drive with us and get paid '
-    + 'per trip.',
+    'SaaradhiGo is a ride-hailing service for Indian cities. See the fare '
+    + 'before you book, pay in cash or online, and get a receipt for every '
+    + 'ride. Create a rider account, or apply to drive.',
 };
 
 const navLinks = [
@@ -26,9 +26,15 @@ export default function PublicLayout({
 }) {
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-white/5">
+      {/* First stop for a keyboard user, so they are not forced through the
+          whole nav on every page. */}
+      <a href="#main" className="skip-link">
+        Skip to main content
+      </a>
+
+      <header className="border-b border-white/5 sticky top-0 bg-ink-900/95 backdrop-blur z-40">
         <nav
-          className="mx-auto max-w-5xl px-4 py-4 flex items-center gap-6"
+          className="mx-auto max-w-5xl px-4 h-16 flex items-center gap-6"
           aria-label="Main"
         >
           <Link href="/" className="text-brand font-bold text-lg shrink-0">
@@ -41,39 +47,44 @@ export default function PublicLayout({
               </Link>
             ))}
           </div>
-          <div className="ml-auto flex items-center gap-3">
-            <Link href="/sign-in" className="btn-ghost">
+          <div className="ml-auto flex items-center gap-2 sm:gap-3">
+            <Link href="/sign-in" className="btn-ghost px-2">
               Sign in
             </Link>
-            <Link href="/sign-up" className="btn-primary text-sm">
+            <Link href="/sign-up" className="btn-primary text-sm px-4 py-2">
               Sign up
             </Link>
           </div>
         </nav>
       </header>
 
-      <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-10">
+      <main id="main" className="flex-1 mx-auto w-full max-w-5xl px-4 py-10">
         {children}
       </main>
 
       <footer className="border-t border-white/5 mt-12">
-        <div className="mx-auto max-w-5xl px-4 py-8 text-sm text-white/50 flex flex-col sm:flex-row gap-4 sm:items-center">
-          <p>© {new Date().getFullYear()} SaaradhiGo</p>
-          <div className="sm:ml-auto flex flex-wrap gap-5">
-            <Link href="/privacy" className="btn-ghost">
-              Privacy
-            </Link>
-            <Link href="/terms" className="btn-ghost">
-              Terms
-            </Link>
-            <Link href="/contact" className="btn-ghost">
-              Contact
-            </Link>
-            {/* Operators reach the console directly; it is not advertised
-                to visitors, but a working link beats a bookmark nobody has. */}
-            <Link href="/login" className="btn-ghost">
-              Operator sign-in
-            </Link>
+        <div className="mx-auto max-w-5xl px-4 py-8 text-sm text-white/50">
+          <div className="flex flex-col sm:flex-row gap-5 sm:items-center">
+            <p>© {new Date().getFullYear()} SaaradhiGo</p>
+            <div className="sm:ml-auto flex flex-wrap gap-x-5 gap-y-2">
+              <Link href="/drive" className="btn-ghost">
+                Drive with us
+              </Link>
+              <Link href="/contact" className="btn-ghost">
+                Contact
+              </Link>
+              <Link href="/privacy" className="btn-ghost">
+                Privacy
+              </Link>
+              <Link href="/terms" className="btn-ghost">
+                Terms
+              </Link>
+              {/* Staff reach the console directly. Not advertised, but a
+                  working link beats a bookmark nobody has. */}
+              <Link href="/login" className="btn-ghost">
+                Staff sign-in
+              </Link>
+            </div>
           </div>
         </div>
       </footer>

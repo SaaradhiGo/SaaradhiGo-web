@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------------
+   SaaradhiGo visual specification
+   ---------------------------------------------------------------------------
+   One place where the public site and the ops console agree on colour, type,
+   spacing, form controls and state. Everything below is used by both, so a
+   change here is a change everywhere rather than a change in one of them.
+
+   COLOUR        gold #EEBD2B on near-black ink. The gold is the brand and is
+                 reserved for the primary action and for emphasis; using it
+                 for decoration is what makes a primary button stop reading as
+                 the primary button. Status colours are red / amber / green,
+                 each with a 10% wash behind a 30% border so they register as
+                 a block without shouting.
+   TYPE          Inter. Page title 30px bold, section 20px semibold, body 14px,
+                 helper 12px at 60% opacity. No more sizes than that.
+   SPACING       4px scale. 16px inside a card, 24px between cards, 40px
+                 between page sections, 16px minimum page gutter on phones.
+   CONTROLS      44px minimum touch target. Every control shows a focus ring
+                 -- never `outline: none` without a replacement, because the
+                 ring is the only thing a keyboard user has to see where they
+                 are.
+   STATE         Every async surface has four: loading, empty, error, success.
+   MOTION        150ms, and only on colour or opacity. Respects
+                 prefers-reduced-motion.
+   --------------------------------------------------------------------------- */
+
 :root {
   color-scheme: dark;
 }
@@ -10,21 +36,106 @@ body {
   @apply bg-ink-900 text-white font-sans antialiased min-h-screen;
 }
 
+/* A visible focus ring everywhere, including for mouse users who then press
+   Tab. Removing it is the single most common accessibility regression. */
+:focus-visible {
+  @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-ink-900 rounded;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Visible only to screen readers; used for live-region announcements. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Keyboard users land here first. */
+.skip-link {
+  @apply sr-only;
+}
+.skip-link:focus {
+  @apply not-sr-only fixed top-3 left-3 z-50 bg-brand text-black font-semibold px-4 py-2 rounded-lg;
+}
+
 .card {
   @apply bg-ink-700 border border-white/5 rounded-2xl p-4;
 }
 
+/* --- buttons: 44px tall, disabled is visibly not-clickable --------------- */
+
 .btn-primary {
-  @apply bg-brand text-black font-semibold rounded-xl px-4 py-2 hover:bg-brand-dark transition disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 min-h-[44px] bg-brand text-black font-semibold
+         rounded-xl px-5 py-2.5 transition-colors duration-150
+         hover:bg-brand-dark disabled:opacity-40 disabled:cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 min-h-[44px] border border-white/15 text-white
+         font-medium rounded-xl px-5 py-2.5 transition-colors duration-150
+         hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed;
 }
 
 .btn-ghost {
-  @apply text-white/80 hover:text-white text-sm transition;
+  @apply text-white/80 hover:text-white text-sm transition-colors duration-150;
+}
+
+/* --- forms --------------------------------------------------------------- */
+
+.label {
+  @apply block text-sm font-medium text-white/80 mb-1.5;
 }
 
 .input {
-  @apply bg-ink-800 border border-white/5 rounded-xl px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:border-brand;
+  @apply w-full min-h-[44px] bg-ink-800 border border-white/10 rounded-xl px-3.5 py-2.5
+         text-white placeholder-white/35 transition-colors duration-150
+         focus:outline-none focus:border-brand
+         disabled:opacity-40 disabled:cursor-not-allowed;
 }
+
+/* Paired with aria-invalid, so the error is not carried by colour alone. */
+.input[aria-invalid='true'] {
+  @apply border-red-500/70;
+}
+
+.help {
+  @apply mt-1.5 text-xs text-white/55;
+}
+
+.field-error {
+  @apply mt-1.5 text-xs text-red-300;
+}
+
+/* --- status blocks ------------------------------------------------------- */
+
+.alert {
+  @apply rounded-xl border px-4 py-3 text-sm;
+}
+.alert-error {
+  @apply alert bg-red-900/25 border-red-800/40 text-red-200;
+}
+.alert-success {
+  @apply alert bg-emerald-900/25 border-emerald-800/40 text-emerald-200;
+}
+.alert-info {
+  @apply alert bg-sky-900/25 border-sky-800/40 text-sky-200;
+}
+
+/* --- console leftovers --------------------------------------------------- */
 
 .table-row {
   @apply border-b border-white/5;

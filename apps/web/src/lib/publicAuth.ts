@@ -1,28 +1,28 @@
-// Rider and driver authentication for the PUBLIC site.
+// Rider and driver authentication for the public site.
 //
-// WHY THIS IS SEPARATE FROM lib/api's auth helpers
-// ------------------------------------------------
-// Those exist for the ops console, which signs in operators and stores the
-// token under `saaradhi_admin_*`. A rider signing in on the marketing site is
-// a different principal with a different token and a different landing page,
-// and sharing one key would mean a rider's session could be mistaken for an
-// operator's by anything reading localStorage.
+// WHAT THE BACKEND ACTUALLY OFFERS, which is what these functions mirror:
 //
-// THE SMS GATE, WHICH IS THE IMPORTANT PART
-// -----------------------------------------
-// `POST /auth/otp/` sends a real SMS through AWS SNS to whatever number it is
-// given. On a public page that is a form anyone on the internet can use to
-// spend the project's money, one message at a time, and the pilot's standing
-// rule is that no unauthorised SMS goes out.
+//   POST /auth/email/register/        create a rider or driver account
+//   POST /auth/email/login/           email + password -> tokens
+//   POST /auth/password/forgot/       request a reset link
+//   POST /auth/password/reset/        uid + token + new password
+//   POST /auth/email/verify/confirm/  uid + token -> address verified
+//   POST /auth/otp/ + /auth/login/    the phone route, unchanged
 //
-// So sending is OFF unless `NEXT_PUBLIC_ALLOW_OTP_SEND` is explicitly "true".
-// That mirrors the two gates this project already uses -- the mobile apps'
-// `ALLOW_NON_PRODUCTION_HOST` and the backend's `AUTH_EMAIL_ALLOWLIST`, both
-// of which default to the safe answer and require a deliberate opt-in.
+// TWO THINGS THAT SHAPE THE UI
 //
-// With the gate closed the forms still render, still validate, and tell the
-// visitor what to do instead. They do not silently pretend to have sent
-// anything.
+// 1. An account cannot sign in with a password until its address is
+//    verified. The server answers AUTH_EMAIL_UNVERIFIED, and the sign-in
+//    page turns that into a specific instruction rather than "login failed".
+//
+// 2. Registration answers the same way whether the account was created or
+//    the address was already taken. That is deliberate on the server side --
+//    it stops the form being used to discover who holds an account -- so the
+//    UI must not claim "account created!" either. It says to check the inbox.
+//
+// SEPARATE TOKENS FROM THE OPS CONSOLE
+// A rider's session is stored under its own keys, never the console's
+// `saaradhi_admin_*`, so a rider session can never be read as an operator's.
 
 import { ApiError, api } from './api';
 
@@ -31,75 +31,87 @@ export const RIDER_REFRESH_KEY = 'saaradhi_rider_refresh_token';
 
 export type PublicRole = 'rider' | 'driver';
 
-/** Is this deployment allowed to make the backend send an SMS? */
+export type RegisterInput = {
+  fullName: string;
+  phone: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  role: PublicRole;
+};
+
+/** Sending an SMS costs money and reaches a real handset, so it is opt-in. */
 export function otpSendingEnabled(): boolean {
   return process.env.NEXT_PUBLIC_ALLOW_OTP_SEND === 'true';
 }
 
-/** Shown wherever the gate is closed, so the reason is never a mystery. */
-export const OTP_DISABLED_MESSAGE =
-  'Phone sign-in is not enabled on this environment, because sending an SMS ' +
-  'costs money and this build is not the production site. Install the Android ' +
-  'app to sign in, or contact us and we will help.';
-
-/** E.164-ish check. The backend normalises properly; this is to catch typos. */
 export function looksLikePhone(value: string): boolean {
-  const trimmed = value.replace(/[\s-]/g, '');
-  return /^\+\d{8,15}$/.test(trimmed);
+  return /^\+\d{8,15}$/.test(value.replace(/[\s-]/g, ''));
 }
 
 export function normalisePhone(value: string): string {
   return value.replace(/[\s-]/g, '');
 }
 
+export function looksLikeEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
 export function readRiderToken(): string | null {
   if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem(RIDER_TOKEN_KEY);
+  try {
+    return window.localStorage.getItem(RIDER_TOKEN_KEY);
+  } catch {
+    return null;
+  }
 }
 
 export function writeRiderTokens(access: string, refresh?: string) {
-  window.localStorage.setItem(RIDER_TOKEN_KEY, access);
-  if (refresh) window.localStorage.setItem(RIDER_REFRESH_KEY, refresh);
+  try {
+    window.localStorage.setItem(RIDER_TOKEN_KEY, access);
+    if (refresh) window.localStorage.setItem(RIDER_REFRESH_KEY, refresh);
+  } catch {
+    /* private mode: the session simply does not persist */
+  }
 }
 
 export function clearRiderTokens() {
-  window.localStorage.removeItem(RIDER_TOKEN_KEY);
-  window.localStorage.removeItem(RIDER_REFRESH_KEY);
-}
-
-/**
- * Ask the backend to send a sign-in code.
- *
- * `role` is sent because `/auth/otp/` binds the code to a role, and the
- * backend refuses any privileged value -- a self-declared `admin` is an
- * HTTP 400, which is the server half of a privilege-escalation fix. Only
- * `rider` and `driver` are self-service, and those are the only two values
- * this module can produce.
- */
-export async function sendPublicOtp(phone: string, role: PublicRole) {
-  if (!otpSendingEnabled()) {
-    throw new ApiError(0, 'OTP_SENDING_DISABLED', OTP_DISABLED_MESSAGE);
+  try {
+    window.localStorage.removeItem(RIDER_TOKEN_KEY);
+    window.localStorage.removeItem(RIDER_REFRESH_KEY);
+  } catch {
+    /* nothing to clear */
   }
-  return api.post<{ message?: string }>('/auth/otp/', {
-    phone_number: normalisePhone(phone),
-    role,
+}
+
+// ---------------------------------------------------------------------------
+// Registration
+// ---------------------------------------------------------------------------
+
+/**
+ * Create an account. Resolves with the server's message on success.
+ *
+ * The caller must NOT say "account created": see the note at the top.
+ */
+export async function registerAccount(input: RegisterInput) {
+  return api.post<{ message?: string }>('/auth/email/register/', {
+    full_name: input.fullName.trim(),
+    phone_number: normalisePhone(input.phone),
+    email: input.email.trim(),
+    password: input.password,
+    confirm_password: input.confirmPassword,
+    role: input.role,
   });
 }
 
-/**
- * Exchange the code for a session.
- *
- * The envelope really is `token` / `refresh_token`. Reading `access` /
- * `refresh` is the mistake that once made the ops console appear to sign in
- * and store nothing, looping straight back to the login page; it is written
- * out here so the same bug is not reintroduced on the public side.
- */
-export async function verifyPublicOtp(phone: string, otp: string) {
-  type LoginResp = { token?: string; refresh_token?: string; user?: unknown };
-  const data = await api.post<LoginResp>('/auth/login/', {
-    phone_number: normalisePhone(phone),
-    otp: otp.trim(),
-  });
+// ---------------------------------------------------------------------------
+// Sign in
+// ---------------------------------------------------------------------------
+
+type LoginResp = { token?: string; refresh_token?: string; user?: unknown };
+
+/** The envelope really is `token` / `refresh_token`, not `access` / `refresh`. */
+function storeSession(data: LoginResp) {
   if (!data?.token) {
     throw new ApiError(
       200,
@@ -109,4 +121,70 @@ export async function verifyPublicOtp(phone: string, otp: string) {
   }
   writeRiderTokens(data.token, data.refresh_token);
   return data;
+}
+
+export async function signInWithEmail(email: string, password: string) {
+  const data = await api.post<LoginResp>('/auth/email/login/', {
+    email: email.trim(),
+    password,
+  });
+  return storeSession(data);
+}
+
+export async function sendPublicOtp(phone: string, role: PublicRole) {
+  if (!otpSendingEnabled()) {
+    throw new ApiError(0, 'OTP_SENDING_DISABLED', 'Use your email and password to sign in.');
+  }
+  return api.post<{ message?: string }>('/auth/otp/', {
+    phone_number: normalisePhone(phone),
+    role,
+  });
+}
+
+export async function verifyPublicOtp(phone: string, otp: string) {
+  const data = await api.post<LoginResp>('/auth/login/', {
+    phone_number: normalisePhone(phone),
+    otp: otp.trim(),
+  });
+  return storeSession(data);
+}
+
+// ---------------------------------------------------------------------------
+// Password reset and email verification
+// ---------------------------------------------------------------------------
+
+export async function requestPasswordReset(email: string) {
+  return api.post<{ message?: string }>('/auth/password/forgot/', {
+    email: email.trim(),
+  });
+}
+
+export async function resetPassword(
+  uid: string,
+  token: string,
+  newPassword: string,
+) {
+  return api.post<{ message?: string }>('/auth/password/reset/', {
+    uid,
+    token,
+    new_password: newPassword,
+  });
+}
+
+export async function confirmEmailVerification(uid: string, token: string) {
+  return api.post<{ message?: string }>('/auth/email/verify/confirm/', {
+    uid,
+    token,
+  });
+}
+
+/** Turn a server error into something the person can act on. */
+export function messageFor(err: unknown, fallback: string): string {
+  if (err instanceof ApiError && err.message) return err.message;
+  return fallback;
+}
+
+/** The address exists but has not been confirmed yet. */
+export function isUnverified(err: unknown): boolean {
+  return err instanceof ApiError && err.code === 'AUTH_EMAIL_UNVERIFIED';
 }
