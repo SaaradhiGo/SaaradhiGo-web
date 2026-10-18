@@ -5,107 +5,127 @@ import ServiceAreas from '@/components/ServiceAreas';
 /**
  * The homepage.
  *
+ * THE BOOKING PANEL IS THE PAGE, not a column beside it. Someone arriving
+ * here wants a ride; the first thing under the headline is the form that
+ * gets them one, centred, at full width on a phone.
+ *
  * WHAT IT DELIBERATELY DOES NOT CLAIM
  * No fare estimates, no "drivers near you", no testimonials, no app-store
- * badges and no uptime or coverage promises. Every one of those would be a
- * number or a quote we cannot stand behind today, and a ride-hailing service
- * that overstates on its homepage has told the customer how much to trust the
- * fare screen.
+ * badges, no coverage or uptime promises, no map. Every one of those would
+ * be a number, a quote or a picture we cannot stand behind, and a
+ * ride-hailing service that overstates on its homepage has told the customer
+ * exactly how much to trust the fare screen.
  *
- * ON BOOKING
- * Booking runs over an authenticated WebSocket dispatch flow in the apps.
- * There is no browser booking surface, so the page says where booking happens
- * instead of implying a form that does not exist, and the next action it
- * offers -- create the account you will use in the app -- is one that works
- * today.
+ * The decoration is CSS only -- a warm glow and a faint route motif. It is
+ * not a map and is marked aria-hidden, because a decorative line that looks
+ * like a route must never be mistaken for one.
  */
 export default function HomePage() {
   return (
     <>
-      {/* Above the fold: the proposition on the left, a working booking
-          panel on the right. The first screen has to answer "how do I book a
-          ride?" without scrolling, which a column of marketing copy did not. */}
-      <section className="grid gap-8 lg:grid-cols-[1.05fr_minmax(0,24rem)] lg:items-center py-4 sm:py-8">
-        <div className="min-w-0">
-          <p className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/5 px-3 py-1 text-xs font-medium tracking-wide text-brand">
-            Fare agreed before you travel
+      {/* ---------------------------------------------------------------- */}
+      {/* Hero: headline, then the booking panel directly under it.        */}
+      {/* ---------------------------------------------------------------- */}
+      <section className="relative isolate pt-2 pb-10 sm:pt-6 sm:pb-16">
+        <div aria-hidden="true" className="hero-glow" />
+        <div aria-hidden="true" className="hero-routes" />
+
+        <div className="relative mx-auto max-w-2xl text-center">
+          <p className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/[0.07] px-3 py-1 text-xs font-medium tracking-wide text-brand">
+            The fare is agreed before you travel
           </p>
-          <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight">
+          <h1 className="mt-5 text-4xl sm:text-5xl lg:text-[3.5rem] font-bold leading-[1.04] tracking-tight">
             Know the fare
             <span className="block text-brand">before you get in.</span>
           </h1>
-          <p className="mt-5 text-lg text-white/65 max-w-xl">
-            Enter where you are and where you are going. We show the price and
-            the vehicle types available at your pickup, in that city&apos;s own
-            currency.
+          <p className="mt-4 text-base sm:text-lg text-white/60">
+            Tell us where you are and where you are going.
           </p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link href="/drive" className="btn-secondary">
-              Drive with SaaradhiGo
-            </Link>
-            <Link href="/my-trips" className="btn-ghost self-center">
-              Your trips and receipts →
-            </Link>
-          </div>
         </div>
 
-        <div className="lg:justify-self-end w-full min-w-0">
+        <div className="relative mt-8 sm:mt-10 mx-auto w-full max-w-xl">
           <BookingPanel />
         </div>
-      </section>
 
-      <section className="mt-14" aria-labelledby="riders">
-        <h2 id="riders" className="text-2xl font-semibold">
-          For riders
-        </h2>
-        <div className="mt-5 grid gap-4 sm:grid-cols-3">
-          {[
-            {
-              t: 'The price before the trip',
-              b: 'The fare is calculated from distance and time and shown to you before you confirm. The breakdown is on your receipt.',
-            },
-            {
-              t: 'Pay the way you want',
-              b: 'Cash to the driver, or online. Either way the trip is recorded and the receipt reaches your email.',
-            },
-            {
-              t: 'Help from a person',
-              b: 'Raise a problem about a specific trip and it becomes a ticket our support team works through, with the ride in front of them.',
-            },
-          ].map((c) => (
-            <article key={c.t} className="card">
-              <h3 className="font-semibold text-brand">{c.t}</h3>
-              <p className="mt-2 text-sm text-white/70">{c.b}</p>
-            </article>
-          ))}
+        <div className="relative mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
+          <Link href="/drive" className="text-brand hover:underline">
+            Drive with SaaradhiGo
+          </Link>
+          <Link href="/my-trips" className="text-white/60 hover:text-white">
+            Your trips and receipts
+          </Link>
         </div>
       </section>
 
-      <section className="mt-14" aria-labelledby="areas">
+      {/* ---------------------------------------------------------------- */}
+      {/* Three steps, as a numbered strip rather than three more cards.   */}
+      {/* ---------------------------------------------------------------- */}
+      <section className="border-y border-white/[0.07] py-10" aria-labelledby="how">
+        <h2 id="how" className="sr-only">
+          How it works
+        </h2>
+        <ol className="grid gap-8 sm:grid-cols-3 sm:gap-6">
+          {[
+            ['Set your pickup', 'Use your location, or type it in.'],
+            ['See the fare', 'Pick a vehicle and the price is shown up front.'],
+            ['Ride and pay', 'Cash to the driver or online. Receipt by email.'],
+          ].map(([title, body], i) => (
+            <li key={title} className="flex gap-4">
+              <span
+                aria-hidden="true"
+                className="shrink-0 grid place-items-center h-9 w-9 rounded-full border border-brand/30 text-brand font-semibold text-sm"
+              >
+                {i + 1}
+              </span>
+              <div className="min-w-0">
+                <h3 className="font-semibold">{title}</h3>
+                <p className="mt-1 text-sm text-white/60">{body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* ---------------------------------------------------------------- */}
+      <section className="py-12" aria-labelledby="areas">
         <ServiceAreas />
       </section>
 
-      <section className="mt-14" aria-labelledby="safety">
-        <div className="card">
-          <h2 id="safety" className="text-2xl font-semibold">
-            Safety
-          </h2>
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2 text-sm text-white/70">
-            <li>
-              Every driver&apos;s licence, vehicle registration and insurance is
-              checked by our team before their first trip.
-            </li>
-            <li>
-              An SOS control during the ride alerts our operations team and your
-              emergency contact.
-            </li>
-            <li>
-              Trips are recorded end to end, so support can reconstruct what
-              happened on a specific ride.
-            </li>
-            <li>Riders and drivers rate each other, and we read the ratings.</li>
-          </ul>
-        </div>
+      {/* ---------------------------------------------------------------- */}
+      {/* Safety: a band of short statements, not a card of bullet points. */}
+      {/* ---------------------------------------------------------------- */}
+      <section
+        className="rounded-3xl border border-white/[0.07] bg-ink-800/50 px-6 py-10 sm:px-10"
+        aria-labelledby="safety"
+      >
+        <h2 id="safety" className="text-2xl font-semibold">
+          Safety
+        </h2>
+        <dl className="mt-6 grid gap-x-10 gap-y-6 sm:grid-cols-2">
+          {[
+            [
+              'Drivers are checked',
+              'Licence, registration and insurance are verified before a first trip.',
+            ],
+            [
+              'SOS during the ride',
+              'Alerts our operations team and your emergency contact.',
+            ],
+            [
+              'Every trip is recorded',
+              'Support can reconstruct what happened on a specific ride.',
+            ],
+            [
+              'Ratings both ways',
+              'Riders and drivers rate each other, and we read them.',
+            ],
+          ].map(([title, body]) => (
+            <div key={title} className="min-w-0">
+              <dt className="font-medium text-brand">{title}</dt>
+              <dd className="mt-1 text-sm text-white/60">{body}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
     </>
   );

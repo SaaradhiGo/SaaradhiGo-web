@@ -38,6 +38,7 @@ export default function PhoneField({
   error,
   help,
   autoFocus,
+  label = 'Mobile number',
 }: {
   markets: Markets | null;
   /** The country list could not be loaded. Fall back, do not hang. */
@@ -49,6 +50,8 @@ export default function PhoneField({
   error?: string | null;
   help?: string;
   autoFocus?: boolean;
+  /** What this number IS on this screen -- a credential, or a contact detail. */
+  label?: string;
 }) {
   const id = useId();
   const countryId = `${id}-country`;
@@ -69,7 +72,7 @@ export default function PhoneField({
     return (
       <div>
         <label htmlFor={numberId} className="label">
-          Mobile number
+          {label}
         </label>
         <input
           id={numberId}
@@ -125,7 +128,7 @@ export default function PhoneField({
 
         <div>
           <label htmlFor={numberId} className="label">
-            Mobile number
+            {label}
           </label>
           <input
             id={numberId}

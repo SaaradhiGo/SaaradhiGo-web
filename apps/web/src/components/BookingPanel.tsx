@@ -102,8 +102,8 @@ export default function BookingPanel() {
   const zone = service?.zone;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-ink-700/90 p-5 sm:p-6 shadow-panel backdrop-blur">
-      <h2 className="text-lg font-semibold">Book a ride</h2>
+    <div className="panel-raised rounded-2xl border border-white/10 bg-ink-700/95 p-5 sm:p-7 backdrop-blur">
+      <h2 className="text-xl font-semibold">Book a ride</h2>
       <p className="mt-1 text-sm text-white/55">
         See the fare before you confirm.
       </p>
@@ -116,26 +116,37 @@ export default function BookingPanel() {
           {/* `min-w-0` matters: `.input` is `w-full`, and a w-full flex item
               keeps its intrinsic min-width unless told otherwise, so the row
               grew past the viewport on a phone. */}
-          <div className="flex gap-2 min-w-0">
-            <input
-              id="bp-pickup"
-              className="input min-w-0 flex-1"
-              placeholder="Your location"
-              value={pickupText}
-              onChange={(e) => setPickupText(e.target.value)}
-              onBlur={(e) => onPickupBlur(e.target.value)}
-            />
-            <button
-              type="button"
-              onClick={useMyLocation}
-              disabled={locating}
-              className="btn-secondary shrink-0 px-3"
-              aria-label="Use my current location"
-              title="Use my current location"
+          <input
+            id="bp-pickup"
+            className="input"
+            placeholder="Where are you?"
+            value={pickupText}
+            onChange={(e) => setPickupText(e.target.value)}
+            onBlur={(e) => onPickupBlur(e.target.value)}
+          />
+          {/* A labelled control, not a bare glyph. The icon-only button was
+              a "◎" nobody has to recognise, on the one action that saves a
+              rider from typing coordinates. */}
+          <button
+            type="button"
+            onClick={useMyLocation}
+            disabled={locating}
+            className="mt-2 inline-flex items-center gap-1.5 text-sm text-brand hover:underline disabled:opacity-50 disabled:no-underline"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
             >
-              {locating ? '…' : '◎'}
-            </button>
-          </div>
+              <circle cx="12" cy="12" r="3.5" />
+              <circle cx="12" cy="12" r="8" opacity="0.5" />
+              <path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" />
+            </svg>
+            {locating ? 'Finding you…' : 'Use my current location'}
+          </button>
         </div>
 
         <div>

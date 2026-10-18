@@ -12,6 +12,8 @@ import {
   looksLikeEmail,
   messageFor,
   otpSendingEnabled,
+  phoneAllowedForOtp,
+  qaTestPhones,
   sendPublicOtp,
   signInWithEmail,
   verifyPublicOtp,
@@ -46,7 +48,13 @@ export default function SignInForm({ role }: { role: PublicRole }) {
   const [error, setError] = useState<string | null>(null);
   const [unverified, setUnverified] = useState(false);
 
-  const canUseOtp = otpSendingEnabled();
+  // Both routes are always OFFERED. Hiding the mobile tab whenever this
+  // deployment cannot text the public meant the product appeared to have no
+  // mobile sign-in at all -- while every existing account was created with a
+  // phone number. The tab is shown, and the limitation is stated where it
+  // applies instead of being hidden by removing the feature.
+  const smsToAnyone = otpSendingEnabled();
+  const testPhones = qaTestPhones();
 
   // Preselect whatever the server says the default market is, once known.
   // Defaulting to a country before the answer arrives is the India-only
@@ -78,7 +86,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
 
     setBusy(true);
     try {
-      await signInWithEmail(email, password);
+      await signInWithEmail(email, password, role);
       done();
     } catch (err) {
       if (isUnverified(err)) {
@@ -114,7 +122,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
     setError(null);
     setBusy(true);
     try {
-      await verifyPublicOtp(phone, otp);
+      await verifyPublicOtp(phone, otp, role);
       done();
     } catch (err) {
       setError(messageFor(err, 'That code did not work.'));
@@ -125,12 +133,11 @@ export default function SignInForm({ role }: { role: PublicRole }) {
 
   return (
     <div className="space-y-4">
-      {canUseOtp && (
-        <div
-          className="flex rounded-xl border border-white/10 p-1"
-          role="tablist"
-          aria-label="How to sign in"
-        >
+      <div
+        className="flex rounded-xl border border-white/10 p-1"
+        role="tablist"
+        aria-label="How to sign in"
+      >
           {(['email', 'phone'] as const).map((m) => (
             <button
               key={m}
@@ -146,11 +153,10 @@ export default function SignInForm({ role }: { role: PublicRole }) {
                 mode === m ? 'bg-brand text-black' : 'text-white/70 hover:text-white'
               }`}
             >
-              {m === 'email' ? 'Email & password' : 'One-time code'}
+              {m === 'email' ? 'Email' : 'Mobile'}
             </button>
           ))}
-        </div>
-      )}
+      </div>
 
       {error && <Alert kind="error">{error}</Alert>}
 
@@ -193,6 +199,21 @@ export default function SignInForm({ role }: { role: PublicRole }) {
         </form>
       ) : stage === 'phone' ? (
         <form onSubmit={submitPhone} className="space-y-4" noValidate>
+          {!smsToAnyone && (
+            <Alert kind="info">
+              {testPhones.length > 0 ? (
+                <>
+                  This environment does not text the public. Mobile sign-in
+                  works here for approved QA test numbers only.
+                </>
+              ) : (
+                <>
+                  This environment does not text the public. Use your email and
+                  password to sign in.
+                </>
+              )}
+            </Alert>
+          )}
           <PhoneField
             markets={markets}
             failed={marketsFailed}
@@ -200,7 +221,11 @@ export default function SignInForm({ role }: { role: PublicRole }) {
             onCountryChange={setCountry}
             national={national}
             onNationalChange={setNational}
-            help="We will text you a 6-digit code."
+            help={
+              smsToAnyone
+                ? 'We will text you a 6-digit code.'
+                : 'Approved QA test numbers receive a fixed code without an SMS being sent.'
+            }
           />
           <SubmitButton busy={busy} busyLabel="Sending…">
             Send code

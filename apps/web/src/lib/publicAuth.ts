@@ -123,17 +123,77 @@ function storeSession(data: LoginResp) {
   return data;
 }
 
-export async function signInWithEmail(email: string, password: string) {
+/**
+ * Refuse a session whose role is not the one this entrance is for.
+ *
+ * A driver signing in through the rider entrance used to be accepted and
+ * landed on the rider home, where every driver action is missing; a rider
+ * through the driver entrance got an empty driver app. The server is still
+ * the authority -- it refuses the actions either way -- but letting the
+ * wrong role in and then showing them a broken screen is not an answer.
+ *
+ * The session is cleared before throwing, so a refused sign-in leaves no
+ * token behind.
+ */
+function requireRole(data: LoginResp, expected: PublicRole) {
+  const actual = (data?.user as { role?: string } | undefined)?.role;
+  if (actual && actual !== expected) {
+    clearRiderTokens();
+    const other = actual === 'driver' ? 'driver' : actual === 'admin' ? 'staff' : 'rider';
+    throw new ApiError(
+      403,
+      'AUTH_WRONG_ROLE',
+      expected === 'driver'
+        ? `That is a ${other} account. Use the rider sign-in instead.`
+        : `That is a ${other} account. Use the driver sign-in instead.`,
+    );
+  }
+  return data;
+}
+
+export async function signInWithEmail(
+  email: string,
+  password: string,
+  expectedRole?: PublicRole,
+) {
   const data = await api.post<LoginResp>('/auth/email/login/', {
     email: email.trim(),
     password,
   });
-  return storeSession(data);
+  const session = storeSession(data);
+  return expectedRole ? requireRole(session, expectedRole) : session;
+}
+
+/**
+ * Numbers for which the mobile route works on an environment that does not
+ * send SMS to the public.
+ *
+ * These are the SAME numbers the server already carries in
+ * `TEST_PHONE_NUMBERS`, which it answers without ever calling SNS. Listing
+ * them here does not create a bypass and does not weaken anything: it only
+ * stops the UI from offering a journey that would fail, and lets the mobile
+ * route be exercised in QA without sending a message to a real handset.
+ */
+export function qaTestPhones(): string[] {
+  return (process.env.NEXT_PUBLIC_QA_TEST_PHONES || '')
+    .split(',')
+    .map((v) => normalisePhone(v))
+    .filter(Boolean);
+}
+
+export function phoneAllowedForOtp(phone: string): boolean {
+  if (otpSendingEnabled()) return true;
+  return qaTestPhones().includes(normalisePhone(phone));
 }
 
 export async function sendPublicOtp(phone: string, role: PublicRole) {
-  if (!otpSendingEnabled()) {
-    throw new ApiError(0, 'OTP_SENDING_DISABLED', 'Use your email and password to sign in.');
+  if (!phoneAllowedForOtp(phone)) {
+    throw new ApiError(
+      0,
+      'OTP_SENDING_DISABLED',
+      'This environment does not send text messages to the public. Sign in '
+        + 'with your email and password, or use an approved QA test number.',
+    );
   }
   return api.post<{ message?: string }>('/auth/otp/', {
     phone_number: normalisePhone(phone),
@@ -141,12 +201,17 @@ export async function sendPublicOtp(phone: string, role: PublicRole) {
   });
 }
 
-export async function verifyPublicOtp(phone: string, otp: string) {
+export async function verifyPublicOtp(
+  phone: string,
+  otp: string,
+  expectedRole?: PublicRole,
+) {
   const data = await api.post<LoginResp>('/auth/login/', {
     phone_number: normalisePhone(phone),
     otp: otp.trim(),
   });
-  return storeSession(data);
+  const session = storeSession(data);
+  return expectedRole ? requireRole(session, expectedRole) : session;
 }
 
 // ---------------------------------------------------------------------------
