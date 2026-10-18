@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import BookingPanel from '@/components/BookingPanel';
 import ServiceAreas from '@/components/ServiceAreas';
 
 /**
@@ -21,22 +22,35 @@ import ServiceAreas from '@/components/ServiceAreas';
 export default function HomePage() {
   return (
     <>
-      <section className="py-6 sm:py-10">
-        <h1 className="text-4xl sm:text-5xl font-bold leading-[1.1] max-w-3xl">
-          The fare is agreed before you get in.
-        </h1>
-        <p className="mt-5 text-lg text-white/70 max-w-2xl">
-          SaaradhiGo is a ride-hailing service. You see what a trip costs
-          before you book it, pay the way that suits you, and get a receipt for
-          every ride — in each city&apos;s own currency.
-        </p>
-        <div className="mt-8 flex flex-col sm:flex-row gap-3">
-          <Link href="/sign-up" className="btn-primary sm:w-auto">
-            Create a rider account
-          </Link>
-          <Link href="/drive" className="btn-secondary sm:w-auto">
-            Drive with SaaradhiGo
-          </Link>
+      {/* Above the fold: the proposition on the left, a working booking
+          panel on the right. The first screen has to answer "how do I book a
+          ride?" without scrolling, which a column of marketing copy did not. */}
+      <section className="grid gap-8 lg:grid-cols-[1.05fr_minmax(0,24rem)] lg:items-center py-4 sm:py-8">
+        <div className="min-w-0">
+          <p className="inline-flex items-center gap-2 rounded-full border border-brand/25 bg-brand/5 px-3 py-1 text-xs font-medium tracking-wide text-brand">
+            Fare agreed before you travel
+          </p>
+          <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.05] tracking-tight">
+            Know the fare
+            <span className="block text-brand">before you get in.</span>
+          </h1>
+          <p className="mt-5 text-lg text-white/65 max-w-xl">
+            Enter where you are and where you are going. We show the price and
+            the vehicle types available at your pickup, in that city&apos;s own
+            currency.
+          </p>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Link href="/drive" className="btn-secondary">
+              Drive with SaaradhiGo
+            </Link>
+            <Link href="/my-trips" className="btn-ghost self-center">
+              Your trips and receipts →
+            </Link>
+          </div>
+        </div>
+
+        <div className="lg:justify-self-end w-full min-w-0">
+          <BookingPanel />
         </div>
       </section>
 
@@ -64,68 +78,6 @@ export default function HomePage() {
               <p className="mt-2 text-sm text-white/70">{c.b}</p>
             </article>
           ))}
-        </div>
-      </section>
-
-      <section className="mt-14" aria-labelledby="booking">
-        <div className="card sm:flex sm:items-center sm:gap-8">
-          <div className="sm:flex-1">
-            <h2 id="booking" className="text-2xl font-semibold">
-              Book here, or in the app
-            </h2>
-            <p className="mt-3 text-white/70">
-              You can book a ride right here in your browser — we use your
-              location to find the pickup, show you the fare before you
-              confirm, and keep you updated while your driver is on the way.
-              The Android app does the same with background updates.
-            </p>
-            <p className="mt-3 text-sm text-white/55">
-              The same account works in both.
-            </p>
-          </div>
-          <div className="mt-5 sm:mt-0 sm:w-56 shrink-0">
-            <Link href="/book" className="btn-primary w-full">
-              Book a ride
-            </Link>
-            <Link href="/my-trips" className="btn-ghost block text-center mt-3">
-              Your trips and receipts
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-14" aria-labelledby="drivers">
-        <h2 id="drivers" className="text-2xl font-semibold">
-          For drivers
-        </h2>
-        <div className="mt-5 grid gap-4 sm:grid-cols-3">
-          {[
-            {
-              t: 'See the fare before you accept',
-              b: 'Every offer shows where it goes and what it pays. You decide with the number in front of you.',
-            },
-            {
-              t: 'Commission you can check',
-              b: 'The commission is shown per trip, and your daily and weekly earnings are in the app.',
-            },
-            {
-              t: 'Paid to your bank',
-              b: 'Request a payout from your earnings balance to the account registered to you.',
-            },
-          ].map((c) => (
-            <article key={c.t} className="card">
-              <h3 className="font-semibold text-brand">{c.t}</h3>
-              <p className="mt-2 text-sm text-white/70">{c.b}</p>
-            </article>
-          ))}
-        </div>
-        <div className="mt-5 flex flex-col sm:flex-row gap-3">
-          <Link href="/driver/sign-up" className="btn-primary sm:w-auto">
-            Apply to drive
-          </Link>
-          <Link href="/drive" className="btn-secondary sm:w-auto">
-            What you need to start
-          </Link>
         </div>
       </section>
 

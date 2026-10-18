@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Alert, Field, SubmitButton } from '@/components/form';
 import {
   FareQuote,
@@ -40,7 +41,8 @@ import { messageFor, readRiderToken } from '@/lib/publicAuth';
  */
 type Stage = 'where' | 'choose' | 'requesting' | 'matched' | 'done';
 
-export default function BookPage() {
+function BookPageInner() {
+  const params = useSearchParams();
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
   const [pickup, setPickup] = useState<LatLng | null>(null);
@@ -78,6 +80,7 @@ export default function BookPage() {
     setSignedIn(Boolean(readRiderToken()));
   }, []);
 
+
   useEffect(
     () => () => {
       requestSocket.current?.close();
@@ -98,6 +101,29 @@ export default function BookPage() {
       setError(messageFor(err, 'We could not check this pickup point.'));
     }
   }, []);
+
+  // Carried from the booking panel on the homepage, so the two screens are
+  // one journey rather than two forms asking the same question.
+  useEffect(() => {
+    const parse = (v: string | null) => {
+      if (!v) return null;
+      const [a, b] = v.split(',').map((s) => Number(s.trim()));
+      return Number.isFinite(a) && Number.isFinite(b) ? { lat: a, lng: b } : null;
+    };
+    const p = parse(params.get('pickup'));
+    if (p) {
+      setPickup(p);
+      setPickupLabel(`${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`);
+      void loadServiceability(p);
+    }
+    const d = parse(params.get('dest'));
+    if (d) {
+      setDestination(d);
+      setDestinationLabel(`${d.lat.toFixed(5)}, ${d.lng.toFixed(5)}`);
+    }
+    const q = params.get('q');
+    if (q) setQuery(q);
+  }, [params, loadServiceability]);
 
   function useMyLocation() {
     setError(null);
@@ -653,5 +679,14 @@ export default function BookPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function BookPage() {
+  // useSearchParams needs a Suspense boundary for static rendering.
+  return (
+    <Suspense fallback={<p className="text-white/60">Loading…</p>}>
+      <BookPageInner />
+    </Suspense>
   );
 }

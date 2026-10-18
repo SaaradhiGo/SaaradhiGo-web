@@ -34,6 +34,10 @@
 
 body {
   @apply bg-ink-900 text-white font-sans antialiased min-h-screen;
+  /* Warm light from the top corners, so the page is charcoal rather than a
+     flat black rectangle behind gold type. */
+  background-image: theme('backgroundImage.warm-fade');
+  background-attachment: fixed;
 }
 
 /* A visible focus ring everywhere, including for mouse users who then press
@@ -73,7 +77,7 @@ body {
 }
 
 .card {
-  @apply bg-ink-700 border border-white/5 rounded-2xl p-4;
+  @apply bg-ink-700/80 border border-white/[0.07] rounded-2xl p-5;
 }
 
 /* --- buttons: 44px tall, disabled is visibly not-clickable --------------- */

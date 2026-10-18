@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import AuthNav from '@/components/AuthNav';
 
 // The public site and the ops console share one Next app and nothing else.
 // This layout wraps only the `(public)` group, so the console keeps its own
@@ -49,12 +50,7 @@ export default function PublicLayout({
             ))}
           </div>
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            <Link href="/sign-in" className="btn-ghost px-2">
-              Sign in
-            </Link>
-            <Link href="/sign-up" className="btn-primary text-sm px-4 py-2">
-              Sign up
-            </Link>
+            <AuthNav />
           </div>
         </nav>
       </header>

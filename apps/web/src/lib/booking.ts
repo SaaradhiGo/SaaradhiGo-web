@@ -68,15 +68,19 @@ export async function quoteFare(params: {
   durationMin: number;
   vehicleType: string;
 }): Promise<FareQuote> {
-  return api.post<FareQuote>('/ride/estimate-fare/', {
-    pickup_lat: params.pickup.lat,
-    pickup_long: params.pickup.lng,
-    destination_lat: params.destination.lat,
-    destination_long: params.destination.lng,
-    distance_km: params.distanceKm,
-    duration_min: params.durationMin,
-    vehicle_type: params.vehicleType,
-  });
+  return api.post<FareQuote>(
+    '/ride/estimate-fare/',
+    {
+      pickup_lat: params.pickup.lat,
+      pickup_long: params.pickup.lng,
+      destination_lat: params.destination.lat,
+      destination_long: params.destination.lng,
+      distance_km: params.distanceKm,
+      duration_min: params.durationMin,
+      vehicle_type: params.vehicleType,
+    },
+    readRiderToken(),
+  );
 }
 
 export type Place = { description: string; place_id: string };
@@ -93,6 +97,7 @@ export async function searchPlaces(query: string): Promise<Place[]> {
   const data = await api.post<{ predictions?: Place[]; results?: Place[] }>(
     '/ride/maps/geocode',
     { input: query },
+    readRiderToken(),
   );
   return data?.predictions ?? data?.results ?? [];
 }
@@ -101,7 +106,7 @@ export async function placeToPoint(placeId: string): Promise<LatLng | null> {
   const data = await api.post<{
     location?: { lat?: number; lng?: number };
     result?: { geometry?: { location?: { lat: number; lng: number } } };
-  }>('/ride/maps/place-details', { place_id: placeId });
+  }>('/ride/maps/place-details', { place_id: placeId }, readRiderToken());
 
   const loc = data?.location ?? data?.result?.geometry?.location;
   if (!loc || typeof loc.lat !== 'number' || typeof loc.lng !== 'number') {
@@ -225,17 +230,23 @@ export const RIDER_CANCEL_REASONS = [
 ] as const;
 
 export async function cancelTrip(tripId: number | string, reason: string) {
-  return api.post(`/ride/trip/${tripId}/cancel/`, { reason });
+  return api.post(`/ride/trip/${tripId}/cancel/`, { reason }, readRiderToken());
 }
 
 export async function tripDetail(tripId: number | string) {
-  return api.get<Record<string, unknown>>(`/ride/trip/${tripId}/`);
+  return api.get<Record<string, unknown>>(
+    `/ride/trip/${tripId}/`,
+    readRiderToken(),
+  );
 }
 
 export async function rideHistory() {
   // `/ride/ride-history/`, not `/ride/history/`. The shorter path 404s --
   // caught by calling it against deployed QA with a real rider token, which
   // is the only way a wrong URL ever shows up: it type-checks perfectly.
-  const data = await api.get<{ results?: unknown[] }>('/ride/ride-history/');
+  const data = await api.get<{ results?: unknown[] }>(
+    '/ride/ride-history/',
+    readRiderToken(),
+  );
   return data?.results ?? (Array.isArray(data) ? data : []);
 }
