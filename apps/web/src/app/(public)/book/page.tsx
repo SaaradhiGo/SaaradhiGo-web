@@ -79,6 +79,20 @@ const TRIP_STATE_LABEL: Record<string, string> = {
   cancelled: 'cancelled',
 };
 
+/**
+ * Send a Maps failure to the operational console, never to the page.
+ *
+ * The rider is told "Location search is temporarily unavailable"; this is
+ * where the reason survives -- an unset key, an exhausted quota and an
+ * upstream 5xx all look identical to a passenger and must not look identical
+ * to us.
+ */
+function logMapsFailure(stage: string, err: unknown) {
+  const detail =
+    err instanceof Error ? err.message : typeof err === 'string' ? err : 'unknown';
+  console.warn(`[maps] ${stage} unavailable: ${detail}`);
+}
+
 /** The PIN proves the right passenger got in. After that it proves nothing. */
 const PIN_IS_STILL_NEEDED = ['accepted', 'reached'];
 const TRIP_IS_OVER = ['completed', 'cancelled'];
@@ -309,9 +323,14 @@ function BookPageInner() {
       if (found.length === 0) setNotice('No places matched that search.');
     } catch (err) {
       if (isMapsUnavailable(err)) {
+        // The rider gets a short, actionable line; the provider's own
+        // explanation goes to the console so operations can see WHICH
+        // failure this was (no key, quota, upstream error) without it
+        // being printed on a customer's screen.
+        logMapsFailure('destination search', err);
         setMapsDown(true);
       } else {
-        setError(messageFor(err, 'Destination search failed.'));
+        setError(messageFor(err, 'We could not search just now. Please try again.'));
       }
     } finally {
       setBusy(false);
@@ -331,8 +350,12 @@ function BookPageInner() {
       setDestinationLabel(place.description);
       setPlaces([]);
     } catch (err) {
-      if (isMapsUnavailable(err)) setMapsDown(true);
-      else setError(messageFor(err, 'We could not resolve that place.'));
+      if (isMapsUnavailable(err)) {
+        logMapsFailure('place details', err);
+        setMapsDown(true);
+      } else {
+        setError(messageFor(err, 'We could not use that place. Please pick another.'));
+      }
     } finally {
       setBusy(false);
     }
@@ -654,18 +677,21 @@ function BookPageInner() {
             </form>
           ) : (
             <>
-              {/* The blocked state is the ANSWER here, stated plainly and
-                  on its own. Destination search needs a map provider and
-                  this deployment has none. */}
+              {/* Customer-facing copy.
+                  This used to read "This deployment has no map provider
+                  configured ... a configuration gap on our side", which is a
+                  sentence written for us, not for the passenger standing on a
+                  pavement. It also invited them to conclude the whole service
+                  was broken. Say what it means for them, say what still works,
+                  and tell them what to do. The provider's actual reason is
+                  logged for operations, not printed on the page. */}
               <div className="rounded-xl border border-amber-700/40 bg-amber-900/15 p-4">
                 <p className="font-medium text-amber-100">
-                  Destination search is unavailable
+                  Location search is temporarily unavailable
                 </p>
                 <p className="mt-1.5 text-sm text-amber-100/70">
-                  This deployment has no map provider configured, so we cannot
-                  look up addresses. This is a configuration gap on our side,
-                  not a problem with your account. Everything else -- fares,
-                  booking and trip tracking -- works.
+                  Please try again in a moment. You can still book — fares,
+                  drivers and trip tracking are working normally.
                 </p>
               </div>
 

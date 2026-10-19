@@ -51,12 +51,17 @@ export default function MapSurface({
               <path d="M9 4.5 3.5 6.8v12.7L9 17.2l6 2.3 5.5-2.3V4.5L15 6.8 9 4.5Z" />
               <path d="M9 4.5v12.7M15 6.8v12.7" />
             </svg>
+            {/* Customer-facing copy: what it means for THEM, not what is
+                missing on our side. "No map provider is configured for this
+                deployment" told a passenger about our configuration and left
+                them unsure whether their booking would work. Why the map is
+                absent belongs in the operational logs. */}
             <p className="mt-4 text-sm font-medium text-white/70">
-              Live map unavailable
+              Map view unavailable
             </p>
             <p className="mt-1.5 text-sm text-white/45">
-              No map provider is configured for this deployment, so we are not
-              showing one. Booking, fares and trip tracking are unaffected.
+              The map is temporarily unavailable. Booking, fares and trip
+              tracking are working normally.
             </p>
           </div>
         )}
