@@ -71,6 +71,10 @@ function BookPageInner() {
   const [tripId, setTripId] = useState<number | string | null>(null);
   const [tripState, setTripState] = useState<string>('');
   const [driver, setDriver] = useState<Record<string, unknown> | null>(null);
+  // The pickup PIN the driver must be told before the trip can start. The
+  // server broadcasts it on `accept`; this page used to drop it on the floor,
+  // so a rider on the website had no way to start their ride.
+  const [pickupOtp, setPickupOtp] = useState<string | null>(null);
   const [socketState, setSocketState] =
     useState<'connecting' | 'open' | 'closed'>('closed');
   const [cancelReason, setCancelReason] = useState<string>(
@@ -350,6 +354,20 @@ function BookPageInner() {
     const sock = new RideSocket(
       `/ws/ride/trip/${id}/`,
       (event: SocketEvent) => {
+        // The greeting carries the PIN for a rider whose trip is already
+        // assigned -- a reload, a dropped socket, or a second tab. Without
+        // this the PIN was visible only to a client that happened to be
+        // connected at the instant the driver accepted.
+        if (event.type === 'connection_established') {
+          const greetOtp = event.otp as string | number | undefined;
+          if (greetOtp !== undefined && greetOtp !== null
+              && `${greetOtp}`.trim() !== '') {
+            setPickupOtp(`${greetOtp}`.trim());
+          }
+          const greetStatus = event.trip_status as string | undefined;
+          if (greetStatus) setTripState(greetStatus);
+        }
+
         if (
           event.type === 'trip_update' ||
           event.type === 'trip_status_update'
@@ -365,8 +383,23 @@ function BookPageInner() {
               unknown
             >);
           if (d) setDriver(d);
+
+          // The OTP arrives with the accept broadcast, either at the top
+          // level or inside `trip`. Keep whichever we are given, and never
+          // clear it on a later event that simply does not repeat it.
+          const otp =
+            (event.otp as string | number | undefined) ??
+            ((event.trip as Record<string, unknown>)?.otp as
+              | string
+              | number
+              | undefined);
+          if (otp !== undefined && otp !== null && `${otp}`.trim() !== '') {
+            setPickupOtp(`${otp}`.trim());
+          }
+
           if (status === 'completed' || status === 'cancelled') {
             setStage('done');
+            setPickupOtp(null);
           }
         }
       },
@@ -693,6 +726,27 @@ function BookPageInner() {
             <strong>{tripState || 'requested'}</strong>
           </p>
           <p className="text-xs text-white/50">Live updates: {socketState}</p>
+
+          {/* The pickup PIN.
+              The driver cannot start the trip without it, and this page
+              never showed it -- the server broadcasts it on accept and the
+              client dropped it, so a rider booking on the website had no way
+              to begin their ride. It is only useful between the driver being
+              assigned and the trip starting, so it is shown exactly then. */}
+          {pickupOtp && tripState !== 'in_progress' ? (
+            <div className="rounded-xl border border-brand/40 bg-brand/10 p-4">
+              <p className="text-xs uppercase tracking-widest text-brand">
+                Pickup PIN
+              </p>
+              <p className="mt-1 text-3xl font-bold tracking-[0.3em] tabular-nums">
+                {pickupOtp}
+              </p>
+              <p className="mt-1 text-xs text-white/60">
+                Give this to your driver to start the trip. Do not share it
+                with anyone else.
+              </p>
+            </div>
+          ) : null}
 
           {driver ? (
             <div className="rounded-xl border border-white/10 p-4 text-sm">
