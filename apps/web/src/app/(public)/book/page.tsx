@@ -183,8 +183,13 @@ function BookPageInner() {
               `${dLat.toFixed(5)}, ${dLng.toFixed(5)}`,
           );
         }
-        const vehicle = (active.vehicle_info as Record<string, unknown> | null)
-          ?.type;
+        // What the rider ASKED for comes first: it exists from the moment
+        // they book, whereas the assigned vehicle is null until a driver
+        // accepts -- and was null on every trip until the server started
+        // recording it.
+        const vehicle =
+          active.requested_vehicle_type ??
+          (active.vehicle_info as Record<string, unknown> | null)?.type;
         if (typeof vehicle === 'string' && vehicle) setVehicleType(vehicle);
 
         openTripSocket(active.id as number | string);
