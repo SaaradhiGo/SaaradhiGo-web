@@ -43,6 +43,46 @@ import { messageFor, readRiderToken } from '@/lib/publicAuth';
  */
 type Stage = 'where' | 'choose' | 'requesting' | 'matched' | 'done';
 
+/**
+ * What the rider's trip is actually doing.
+ *
+ * The socket reports the COMMAND the driver issued -- `start`, `complete`,
+ * `confirm_cash` -- not the state the trip ended up in. Taken literally the
+ * rider was shown "status confirm_cash", and every check written against a
+ * real status silently never matched: the pickup PIN was still on screen,
+ * under a Cancel button, on a ride that had already been paid for. Trip #88
+ * finished with all three on display.
+ *
+ * So translate once, here, and let the screen ask about states.
+ */
+const TRIP_STATE_FROM_ACTION: Record<string, string> = {
+  accept: 'accepted',
+  arrive: 'reached',
+  start: 'in_progress',
+  complete: 'completed',
+  confirm_cash: 'completed',
+  cancel: 'cancelled',
+};
+
+function normaliseTripState(raw: string): string {
+  const key = String(raw ?? '').trim().toLowerCase();
+  return TRIP_STATE_FROM_ACTION[key] ?? key;
+}
+
+const TRIP_STATE_LABEL: Record<string, string> = {
+  requested: 'finding you a driver',
+  searching: 'finding you a driver',
+  accepted: 'driver on the way',
+  reached: 'driver is waiting at your pickup',
+  in_progress: 'on the way to your destination',
+  completed: 'completed',
+  cancelled: 'cancelled',
+};
+
+/** The PIN proves the right passenger got in. After that it proves nothing. */
+const PIN_IS_STILL_NEEDED = ['accepted', 'reached'];
+const TRIP_IS_OVER = ['completed', 'cancelled'];
+
 function BookPageInner() {
   const params = useSearchParams();
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
@@ -114,7 +154,7 @@ function BookPageInner() {
         );
         if (!active?.id) return;
         setTripId(active.id as number | string);
-        setTripState(String(active.status ?? ''));
+        setTripState(normaliseTripState(String(active.status ?? '')));
         setStage('matched');
         openTripSocket(active.id as number | string);
       })
@@ -406,7 +446,7 @@ function BookPageInner() {
             setPickupOtp(`${greetOtp}`.trim());
           }
           const greetStatus = event.trip_status as string | undefined;
-          if (greetStatus) setTripState(greetStatus);
+          if (greetStatus) setTripState(normaliseTripState(greetStatus));
         }
 
         if (
@@ -416,7 +456,8 @@ function BookPageInner() {
           const status =
             (event.status as string) ||
             ((event.trip as Record<string, unknown>)?.status as string);
-          if (status) setTripState(status);
+          const state = normaliseTripState(status ?? '');
+          if (state) setTripState(state);
           const d =
             (event.driver as Record<string, unknown>) ??
             ((event.trip as Record<string, unknown>)?.driver as Record<
@@ -438,7 +479,7 @@ function BookPageInner() {
             setPickupOtp(`${otp}`.trim());
           }
 
-          if (status === 'completed' || status === 'cancelled') {
+          if (TRIP_IS_OVER.includes(state)) {
             setStage('done');
             setPickupOtp(null);
           }
@@ -764,7 +805,9 @@ function BookPageInner() {
           <h2 className="text-xl font-semibold">Your ride</h2>
           <p className="text-sm">
             Trip <strong>#{tripId}</strong> · status{' '}
-            <strong>{tripState || 'requested'}</strong>
+            <strong>
+              {TRIP_STATE_LABEL[tripState] ?? tripState ?? 'requested'}
+            </strong>
           </p>
           <p className="text-xs text-white/50">Live updates: {socketState}</p>
 
@@ -774,7 +817,7 @@ function BookPageInner() {
               client dropped it, so a rider booking on the website had no way
               to begin their ride. It is only useful between the driver being
               assigned and the trip starting, so it is shown exactly then. */}
-          {pickupOtp && tripState !== 'in_progress' ? (
+          {pickupOtp && PIN_IS_STILL_NEEDED.includes(tripState) ? (
             <div className="rounded-xl border border-brand/40 bg-brand/10 p-4">
               <p className="text-xs uppercase tracking-widest text-brand">
                 Pickup PIN
@@ -800,13 +843,19 @@ function BookPageInner() {
                 </p>
               ) : null}
             </div>
-          ) : (
+          ) : TRIP_IS_OVER.includes(tripState) ? null : (
             <p className="text-sm text-white/60">
               Waiting for a driver to accept.
             </p>
           )}
 
-          <div className="border-t border-white/5 pt-4 space-y-3">
+          {/* A ride that is over cannot be cancelled, and offering it invites
+              a rider to try -- on trip #88 this sat under a paid-for fare. */}
+          <div
+            className={`border-t border-white/5 pt-4 space-y-3 ${
+              TRIP_IS_OVER.includes(tripState) ? 'hidden' : ''
+            }`}
+          >
             <label htmlFor="cancel-reason" className="label">
               Need to cancel?
             </label>
