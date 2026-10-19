@@ -17,6 +17,7 @@ import {
   isMapsUnavailable,
   placeToPoint,
   quoteFare,
+  rideHistory,
   searchPlaces,
   serviceabilityAt,
 } from '@/lib/booking';
@@ -86,6 +87,46 @@ function BookPageInner() {
 
   useEffect(() => {
     setSignedIn(Boolean(readRiderToken()));
+  }, []);
+
+  // Rejoin a ride that is already under way.
+  //
+  // This page used to know about a trip only because it had just created one,
+  // so a reload, a crashed tab or a second tab showed the booking form while
+  // a driver was waiting at the kerb -- and the pickup PIN, which only exists
+  // on this screen, was gone for good. Trip #88 died exactly that way.
+  //
+  // The server is the authority on whether a ride is in progress, so ask it
+  // instead of trusting anything kept in the browser. Reopening the socket is
+  // what recovers the PIN: the greeting carries it for a rider whose trip is
+  // already assigned.
+  useEffect(() => {
+    if (!readRiderToken()) return;
+    let cancelled = false;
+
+    const LIVE = ['requested', 'searching', 'accepted', 'reached', 'in_progress'];
+
+    rideHistory()
+      .then((rows) => {
+        if (cancelled) return;
+        const active = (rows as Array<Record<string, unknown>>).find((t) =>
+          LIVE.includes(String(t?.status ?? '').toLowerCase()),
+        );
+        if (!active?.id) return;
+        setTripId(active.id as number | string);
+        setTripState(String(active.status ?? ''));
+        setStage('matched');
+        openTripSocket(active.id as number | string);
+      })
+      .catch(() => {
+        // A rider who cannot be told about an older trip should still be able
+        // to book a new one, so this failure stays silent on the page.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
 
