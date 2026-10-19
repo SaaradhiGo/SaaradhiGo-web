@@ -149,42 +149,72 @@ body {
   @apply text-xs px-2 py-0.5 rounded-full border;
 }
 
-/* --- homepage decoration -------------------------------------------------
-   CSS only, aria-hidden, and deliberately NOT a map. A decorative line that
-   reads as a route must never be mistaken for a real one, so this is an
-   abstract diagonal weave at very low contrast, not a street layout. */
+/* --- the booking panel ---------------------------------------------------
+   A warm paper surface on charcoal. The panel used to be one more dark card
+   on a dark page, which gave the site's single most important control no
+   more presence than a paragraph. */
 
-.hero-glow {
-  position: absolute;
-  inset: -20% 0 auto 0;
-  height: 36rem;
-  pointer-events: none;
-  z-index: -2;
-  background:
-    radial-gradient(42rem 24rem at 50% 0%, rgba(238, 189, 43, 0.13), transparent 70%),
-    radial-gradient(28rem 18rem at 12% 12%, rgba(238, 189, 43, 0.06), transparent 70%);
-}
-
-.hero-routes {
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 34rem;
-  pointer-events: none;
-  z-index: -1;
-  opacity: 0.5;
-  background-image:
-    linear-gradient(115deg, transparent 49.6%, rgba(238, 189, 43, 0.10) 49.6%, rgba(238, 189, 43, 0.10) 50%, transparent 50%),
-    linear-gradient(65deg, transparent 49.7%, rgba(255, 255, 255, 0.045) 49.7%, rgba(255, 255, 255, 0.045) 50%, transparent 50%);
-  background-size: 15rem 15rem, 22rem 22rem;
-  -webkit-mask-image: linear-gradient(to bottom, black, transparent 78%);
-  mask-image: linear-gradient(to bottom, black, transparent 78%);
-}
-
-/* The booking panel is the page's primary surface, so it sits slightly
-   above everything else rather than reading as one more card. */
-.panel-raised {
+.booking-panel {
+  @apply rounded-2xl bg-sand-50 p-5 sm:p-6 text-sand-700;
   box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.06) inset,
-    0 24px 60px -24px rgba(0, 0, 0, 0.85),
-    0 0 0 1px rgba(238, 189, 43, 0.10);
+    0 1px 0 0 rgba(255, 255, 255, 0.6) inset,
+    0 2px 6px -1px rgba(0, 0, 0, 0.3),
+    0 30px 70px -28px rgba(0, 0, 0, 0.9),
+    0 0 0 1px rgba(238, 189, 43, 0.18);
+}
+
+.field-label {
+  @apply block text-xs font-semibold uppercase tracking-wider text-sand-600 mb-1.5;
+}
+
+.field-input {
+  @apply w-full min-h-[48px] rounded-xl bg-white border border-sand-200 px-3.5 py-3
+         text-[15px] text-sand-700 placeholder-sand-400
+         transition-shadow duration-150
+         focus:outline-none focus:border-brand-dark
+         focus:ring-2 focus:ring-brand/40;
+}
+
+/* Joins pickup to destination so the pair reads as one journey. */
+.route-rail {
+  @apply relative w-3 shrink-0;
+}
+.route-rail::before,
+.route-rail::after {
+  content: '';
+  @apply absolute left-1/2 -translate-x-1/2 rounded-full;
+}
+.route-rail::before {
+  top: 1.85rem;
+  @apply h-2.5 w-2.5 bg-emerald-600;
+}
+.route-rail::after {
+  bottom: 1.1rem;
+  @apply h-2.5 w-2.5 bg-brand-dark;
+}
+.route-rail > span {
+  content: '';
+}
+
+.btn-gold {
+  @apply inline-flex items-center justify-center min-h-[52px] rounded-xl
+         bg-brand text-black font-semibold text-base px-6
+         transition-colors duration-150
+         hover:bg-brand-dark
+         focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2
+         focus-visible:ring-offset-sand-50
+         disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* --- map surface ---------------------------------------------------------
+   Where the map goes. When no provider is configured, this shows a stated
+   blocked state -- never a drawn placeholder that could be mistaken for a
+   real map, and never invented streets. */
+
+.map-surface {
+  @apply relative overflow-hidden rounded-2xl border border-white/[0.07] bg-ink-800;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+  background-size: 48px 48px, 48px 48px;
 }

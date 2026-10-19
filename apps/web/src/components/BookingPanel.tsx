@@ -2,22 +2,24 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Alert } from '@/components/form';
 import { LatLng, Serviceability, serviceabilityAt } from '@/lib/booking';
 import { messageFor } from '@/lib/publicAuth';
 
 /**
- * The booking panel on the first screen.
+ * The booking panel: the first thing on the site, and the thing the site is
+ * for.
  *
- * It exists so the answer to "how do I book a ride?" is visible without
- * scrolling. It collects the two things a booking needs -- where you are and
- * where you are going -- checks the pickup against the server's service
- * zones, and hands both to /book, which runs the rest of the journey.
+ * SURFACE
+ * It is a warm paper panel on charcoal, not another dark card. As one more
+ * dark box on a dark page, the single most important control on the site had
+ * no more presence than a paragraph of text, and the page read as something
+ * to scroll rather than something to use.
  *
- * It states only what the server told it. "We do not operate here yet" comes
- * from `serviceable: false`; the city name and currency come from the zone.
- * There is no coverage claim, no driver count and no indicative price on this
- * panel, because none of those are things this page can know.
+ * WHAT IT CLAIMS
+ * Only what the server returned. "We do not operate here yet" comes from
+ * `serviceable: false`; the city, currency and distance unit come from the
+ * zone. No coverage claim, no driver count, no ETA and no indicative price,
+ * because this screen cannot know any of them.
  */
 export default function BookingPanel() {
   const router = useRouter();
@@ -90,9 +92,7 @@ export default function BookingPanel() {
       setError('Set a pickup point first.');
       return;
     }
-    const params = new URLSearchParams({
-      pickup: `${pickup.lat},${pickup.lng}`,
-    });
+    const params = new URLSearchParams({ pickup: `${pickup.lat},${pickup.lng}` });
     const d = parsePoint(destText);
     if (d) params.set('dest', `${d.lat},${d.lng}`);
     else if (destText.trim()) params.set('q', destText.trim());
@@ -102,100 +102,107 @@ export default function BookingPanel() {
   const zone = service?.zone;
 
   return (
-    <div className="panel-raised rounded-2xl border border-white/10 bg-ink-700/95 p-5 sm:p-7 backdrop-blur">
-      <h2 className="text-xl font-semibold">Book a ride</h2>
-      <p className="mt-1 text-sm text-white/55">
-        See the fare before you confirm.
-      </p>
-
-      <div className="mt-5 space-y-3">
-        <div>
-          <label htmlFor="bp-pickup" className="label">
-            Pickup
-          </label>
-          {/* `min-w-0` matters: `.input` is `w-full`, and a w-full flex item
-              keeps its intrinsic min-width unless told otherwise, so the row
-              grew past the viewport on a phone. */}
-          <input
-            id="bp-pickup"
-            className="input"
-            placeholder="Where are you?"
-            value={pickupText}
-            onChange={(e) => setPickupText(e.target.value)}
-            onBlur={(e) => onPickupBlur(e.target.value)}
-          />
-          {/* A labelled control, not a bare glyph. The icon-only button was
-              a "◎" nobody has to recognise, on the one action that saves a
-              rider from typing coordinates. */}
-          <button
-            type="button"
-            onClick={useMyLocation}
-            disabled={locating}
-            className="mt-2 inline-flex items-center gap-1.5 text-sm text-brand hover:underline disabled:opacity-50 disabled:no-underline"
-          >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              className="h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="12" cy="12" r="3.5" />
-              <circle cx="12" cy="12" r="8" opacity="0.5" />
-              <path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" />
-            </svg>
-            {locating ? 'Finding you…' : 'Use my current location'}
-          </button>
-        </div>
-
-        <div>
-          <label htmlFor="bp-dest" className="label">
-            Destination
-          </label>
-          <input
-            id="bp-dest"
-            className="input"
-            placeholder="Where to?"
-            value={destText}
-            onChange={(e) => setDestText(e.target.value)}
-          />
-        </div>
-
+    <div className="booking-panel">
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 className="text-xl font-semibold text-sand-700">Book a ride</h2>
         {busy && (
-          <p className="text-xs text-white/50" role="status">
-            Checking this pickup point…
-          </p>
+          <span className="text-xs text-sand-600" role="status">
+            Checking…
+          </span>
         )}
-
-        {service && !service.serviceable && (
-          <Alert kind="info">
-            We do not operate at that pickup point yet.
-          </Alert>
-        )}
-
-        {zone && service?.serviceable && (
-          <p className="text-xs text-white/55">
-            {zone.name} · fares in {zone.currency} ·{' '}
-            {service.vehicle_types.length}{' '}
-            {service.vehicle_types.length === 1 ? 'vehicle type' : 'vehicle types'}
-          </p>
-        )}
-
-        {error && <Alert kind="error">{error}</Alert>}
-
-        <button
-          type="button"
-          onClick={go}
-          className="btn-primary w-full"
-          disabled={busy}
-        >
-          See fares
-        </button>
-        <p className="text-xs text-white/40 text-center">
-          You will be asked to sign in before the ride is requested.
-        </p>
       </div>
+
+      {/* The two inputs, joined by a route rail so pickup and destination
+          read as one journey rather than two unrelated boxes. */}
+      <div className="mt-5 flex gap-3">
+        <div aria-hidden="true" className="route-rail" />
+
+        <div className="flex-1 min-w-0 space-y-3">
+          <div>
+            <label htmlFor="bp-pickup" className="field-label">
+              Pickup
+            </label>
+            <input
+              id="bp-pickup"
+              className="field-input"
+              placeholder="Where are you?"
+              value={pickupText}
+              onChange={(e) => setPickupText(e.target.value)}
+              onBlur={(e) => onPickupBlur(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={useMyLocation}
+              disabled={locating}
+              className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-sand-700 hover:text-black disabled:opacity-50"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="12" cy="12" r="3.5" />
+                <circle cx="12" cy="12" r="8" opacity="0.5" />
+                <path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" />
+              </svg>
+              {locating ? 'Finding you…' : 'Use my current location'}
+            </button>
+          </div>
+
+          <div>
+            <label htmlFor="bp-dest" className="field-label">
+              Destination
+            </label>
+            <input
+              id="bp-dest"
+              className="field-input"
+              placeholder="Where to?"
+              value={destText}
+              onChange={(e) => setDestText(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Four states, all from the server, none invented. */}
+      {service && !service.serviceable && (
+        <p className="mt-4 rounded-xl bg-amber-500/10 border border-amber-600/30 px-3.5 py-2.5 text-sm text-amber-900">
+          We do not operate at that pickup point yet.
+        </p>
+      )}
+
+      {zone && service?.serviceable && (
+        <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-sand-600">
+          <span className="inline-flex h-2 w-2 rounded-full bg-emerald-600" aria-hidden="true" />
+          <strong className="font-semibold text-sand-700">{zone.name}</strong>
+          <span>· fares in {zone.currency}</span>
+          <span>
+            · {service.vehicle_types.length}{' '}
+            {service.vehicle_types.length === 1 ? 'vehicle type' : 'vehicle types'}
+          </span>
+        </p>
+      )}
+
+      {error && (
+        <p className="mt-4 rounded-xl bg-red-500/10 border border-red-600/30 px-3.5 py-2.5 text-sm text-red-900">
+          {error}
+        </p>
+      )}
+
+      <button
+        type="button"
+        onClick={go}
+        className="btn-gold mt-5 w-full"
+        disabled={busy}
+      >
+        See fares
+      </button>
+      <p className="mt-3 text-center text-xs text-sand-600">
+        You will be asked to sign in before the ride is requested.
+      </p>
     </div>
   );
 }

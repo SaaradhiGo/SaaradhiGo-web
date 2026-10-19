@@ -20,6 +20,22 @@ const config: Config = {
           600: '#2E2822',
           500: '#3A332B',
         },
+        // Warm neutrals for the surfaces a customer actually works in.
+        //
+        // The booking panel used to be one more dark card on a dark page, so
+        // the single most important control on the site had no more presence
+        // than a paragraph. A warm paper surface against charcoal gives it
+        // the weight it should have had, and reads as a form you fill in
+        // rather than a block you read.
+        sand: {
+          50: '#FBF8F3',
+          100: '#F4EFE6',
+          200: '#E7DFD1',
+          300: '#D3C7B3',
+          400: '#A99C85',
+          600: '#6B6152',
+          700: '#4A4337',
+        },
       },
       boxShadow: {
         panel: '0 24px 60px -24px rgba(0,0,0,0.75)',

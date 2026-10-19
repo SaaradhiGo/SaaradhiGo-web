@@ -20,6 +20,7 @@ import {
   searchPlaces,
   serviceabilityAt,
 } from '@/lib/booking';
+import MapSurface from '@/components/MapSurface';
 import { messageFor, readRiderToken } from '@/lib/publicAuth';
 
 /**
@@ -53,6 +54,9 @@ function BookPageInner() {
   const [service, setService] = useState<Serviceability | null>(null);
   const [vehicleType, setVehicleType] = useState('');
   const [quote, setQuote] = useState<FareQuote | null>(null);
+  // One quote per category, so the rider can compare. `null` means that
+  // category could not be priced -- never a guessed number.
+  const [quotes, setQuotes] = useState<Record<string, FareQuote | null>>({});
 
   const [query, setQuery] = useState('');
   const [places, setPlaces] = useState<Place[]>([]);
@@ -221,29 +225,58 @@ function BookPageInner() {
 
   // --- quote -------------------------------------------------------------
 
-  async function getQuote() {
-    if (!pickup || !destination || !vehicleType) return;
+  /**
+   * Price EVERY category the zone offers, so the rider compares instead of
+   * picking blind and then discovering the number.
+   *
+   * One quote per category, each a real `/ride/estimate-fare/` call -- the
+   * server prices every one of them. A category whose quote fails is shown
+   * as unavailable rather than given a guessed or interpolated price: there
+   * is no arithmetic here that turns one category's fare into another's.
+   */
+  const quoteAll = useCallback(async () => {
+    if (!pickup || !destination || !service?.vehicle_types?.length) return;
     setBusy(true);
     setError(null);
-    try {
-      const km = haversineKm(pickup, destination);
-      const q = await quoteFare({
-        pickup,
-        destination,
-        distanceKm: km,
-        durationMin: Math.max(1, Math.round(km * 3)),
-        vehicleType,
-      });
-      setQuote(q);
-      setStage('choose');
-    } catch (err) {
-      setError(
-        messageFor(err, 'We could not price this trip. Please try again.'),
+
+    const km = haversineKm(pickup, destination);
+    const durationMin = Math.max(1, Math.round(km * 3));
+
+    const entries = await Promise.all(
+      service.vehicle_types.map(async (v) => {
+        try {
+          const q = await quoteFare({
+            pickup,
+            destination,
+            distanceKm: km,
+            durationMin,
+            vehicleType: v.type,
+          });
+          return [v.type, q] as const;
+        } catch {
+          return [v.type, null] as const;
+        }
+      }),
+    );
+
+    const next: Record<string, FareQuote | null> = {};
+    for (const [type, q] of entries) next[type] = q;
+    setQuotes(next);
+
+    const priced = entries.filter(([, q]) => q !== null);
+    if (priced.length === 0) {
+      setError('We could not price this trip. Please try again.');
+    } else {
+      // Preselect the cheapest priced option, and show its quote.
+      const cheapest = priced.reduce((a, b) =>
+        Number(a[1]!.estimated_fare) <= Number(b[1]!.estimated_fare) ? a : b,
       );
-    } finally {
-      setBusy(false);
+      setVehicleType((current) => current || cheapest[0]);
+      setQuote((current) => current ?? cheapest[1]);
+      setStage('choose');
     }
-  }
+    setBusy(false);
+  }, [pickup, destination, service]);
 
   // --- request -----------------------------------------------------------
 
@@ -391,7 +424,8 @@ function BookPageInner() {
     `${quote?.currency ? `${quote.currency} ` : ''}${amount}`;
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-10 items-start">
+      <div className="min-w-0">
       <h1 className="text-3xl font-bold">Book a ride</h1>
 
       {error && (
@@ -463,31 +497,53 @@ function BookPageInner() {
             </form>
           ) : (
             <>
-              <Alert kind="info">
-                Destination search is unavailable on this deployment: the maps
-                service is not configured. This is a configuration gap, not a
-                fault in your account.
-              </Alert>
-              <div className="rounded-xl border border-amber-800/40 bg-amber-900/15 p-3">
-                <p className="text-xs uppercase tracking-widest text-amber-200/80">
-                  QA test entry
+              {/* The blocked state is the ANSWER here, stated plainly and
+                  on its own. Destination search needs a map provider and
+                  this deployment has none. */}
+              <div className="rounded-xl border border-amber-700/40 bg-amber-900/15 p-4">
+                <p className="font-medium text-amber-100">
+                  Destination search is unavailable
                 </p>
-                <Field
-                  label="Destination coordinates"
-                  name="manualDest"
-                  placeholder="16.5190, 80.6305"
-                  value={manualDest}
-                  onChange={(e) => setManualDest(e.target.value)}
-                  help="Latitude and longitude. Available because maps search is not configured here."
-                />
-                <button
-                  type="button"
-                  className="btn-secondary mt-3"
-                  onClick={setManualDestination}
-                >
-                  Use these coordinates
-                </button>
+                <p className="mt-1.5 text-sm text-amber-100/70">
+                  This deployment has no map provider configured, so we cannot
+                  look up addresses. This is a configuration gap on our side,
+                  not a problem with your account. Everything else -- fares,
+                  booking and trip tracking -- works.
+                </p>
               </div>
+
+              {/* QA entry by coordinates. Deliberately collapsed and
+                  labelled: it is a testing affordance, and presenting it as
+                  the normal way to choose a destination would be presenting
+                  a broken product as a finished one. */}
+              <details className="group rounded-xl border border-white/10 bg-white/[0.02]">
+                <summary className="cursor-pointer list-none px-4 py-3 text-sm text-white/55 hover:text-white/80 flex items-center gap-2">
+                  <span
+                    aria-hidden="true"
+                    className="transition-transform group-open:rotate-90"
+                  >
+                    ›
+                  </span>
+                  QA testing: enter a destination by coordinates
+                </summary>
+                <div className="border-t border-white/[0.07] p-4">
+                  <Field
+                    label="Destination coordinates"
+                    name="manualDest"
+                    placeholder="16.5190, 80.6305"
+                    value={manualDest}
+                    onChange={(e) => setManualDest(e.target.value)}
+                    help="Latitude and longitude. For testing only, while map search is unconfigured."
+                  />
+                  <button
+                    type="button"
+                    className="btn-secondary mt-3"
+                    onClick={setManualDestination}
+                  >
+                    Use these coordinates
+                  </button>
+                </div>
+              </details>
             </>
           )}
 
@@ -526,51 +582,79 @@ function BookPageInner() {
             </Alert>
           ) : (
             <>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {service.vehicle_types.map((v) => (
-                  <button
-                    key={v.type}
-                    type="button"
-                    onClick={() => {
-                      setVehicleType(v.type);
-                      setQuote(null);
-                    }}
-                    aria-pressed={vehicleType === v.type}
-                    className={`text-left rounded-xl border px-4 py-3 transition-colors duration-150 ${
-                      vehicleType === v.type
-                        ? 'border-brand bg-brand/10'
-                        : 'border-white/10 hover:bg-white/5'
-                    }`}
-                  >
-                    <span className="font-medium capitalize">{v.type}</span>
-                    {v.description && (
-                      <span className="block text-xs text-white/55">
-                        {v.description}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
+              {/* Every category is priced by the server before the rider
+                  chooses, so this is a comparison rather than a guess
+                  followed by a reveal. A category the server could not
+                  price says so; nothing here interpolates a fare. */}
+              {Object.keys(quotes).length === 0 && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={quoteAll}
+                  disabled={busy}
+                >
+                  {busy ? 'Pricing…' : 'Show fares'}
+                </button>
+              )}
 
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={getQuote}
-                disabled={busy || !vehicleType}
-              >
-                {busy ? 'Pricing…' : 'Get fare estimate'}
-              </button>
+              <ul className="grid gap-2.5 sm:grid-cols-2">
+                {service.vehicle_types.map((v) => {
+                  const q = quotes[v.type];
+                  const priced = q !== undefined && q !== null;
+                  const unavailable = q === null;
+                  const selected = vehicleType === v.type;
+                  return (
+                    <li key={v.type}>
+                      <button
+                        type="button"
+                        disabled={unavailable}
+                        onClick={() => {
+                          setVehicleType(v.type);
+                          if (priced) setQuote(q);
+                        }}
+                        aria-pressed={selected}
+                        className={`w-full text-left rounded-xl border px-4 py-3.5 transition-colors duration-150 flex items-center justify-between gap-4 ${
+                          selected
+                            ? 'border-brand bg-brand/10'
+                            : unavailable
+                              ? 'border-white/5 opacity-50 cursor-not-allowed'
+                              : 'border-white/10 hover:bg-white/5'
+                        }`}
+                      >
+                        <span className="min-w-0">
+                          <span className="font-medium capitalize block">
+                            {v.type}
+                          </span>
+                          {v.description && (
+                            <span className="block text-xs text-white/55">
+                              {v.description}
+                            </span>
+                          )}
+                        </span>
+                        <span className="shrink-0 text-right">
+                          {priced ? (
+                            <span className="font-semibold tabular-nums">
+                              {money(q.estimated_fare)}
+                            </span>
+                          ) : unavailable ? (
+                            <span className="text-xs text-white/45">
+                              Unavailable
+                            </span>
+                          ) : (
+                            <span className="text-xs text-white/40">—</span>
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
 
               {quote && (
-                <div className="rounded-xl border border-white/10 p-4">
-                  <p className="text-2xl font-bold">
-                    {money(quote.estimated_fare)}
-                  </p>
-                  <p className="text-xs text-white/55 mt-1">
-                    Estimated. The final fare is confirmed at the end of the
-                    trip.
-                  </p>
-                </div>
+                <p className="text-xs text-white/55">
+                  Estimated. The final fare is confirmed at the end of the
+                  trip.
+                </p>
               )}
             </>
           )}
@@ -678,6 +762,65 @@ function BookPageInner() {
           Contact support
         </Link>
       </p>
+      </div>
+
+      {/* The journey so far, kept in view while the steps scroll. Every
+          value here is one the server returned. */}
+      <aside className="hidden lg:block lg:sticky lg:top-24 space-y-4">
+        <MapSurface
+          className="h-64"
+          zoneName={service?.zone?.name}
+          currency={service?.zone?.currency}
+          vehicleCount={service?.vehicle_types?.length ?? null}
+        />
+
+        <div className="card">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-white/50">
+            Your journey
+          </h2>
+          <dl className="mt-4 space-y-3 text-sm">
+            <div>
+              <dt className="text-white/45">Pickup</dt>
+              <dd className="mt-0.5 font-medium break-words">
+                {pickup ? pickupLabel : <span className="text-white/35">Not set</span>}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-white/45">Destination</dt>
+              <dd className="mt-0.5 font-medium break-words">
+                {destination ? destinationLabel : <span className="text-white/35">Not set</span>}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-white/45">Vehicle</dt>
+              <dd className="mt-0.5 font-medium capitalize">
+                {vehicleType || <span className="text-white/35">Not chosen</span>}
+              </dd>
+            </div>
+          </dl>
+
+          {quote && (
+            <div className="mt-4 border-t border-white/[0.07] pt-4">
+              <p className="text-xs text-white/45">Estimated fare</p>
+              <p className="mt-1 text-2xl font-bold tabular-nums">
+                {money(quote.estimated_fare)}
+              </p>
+              <p className="mt-1 text-xs text-white/45">
+                Confirmed at the end of the trip.
+              </p>
+            </div>
+          )}
+
+          {tripId && (
+            <div className="mt-4 border-t border-white/[0.07] pt-4">
+              <p className="text-xs text-white/45">Trip</p>
+              <p className="mt-1 font-semibold">#{tripId}</p>
+              <p className="mt-0.5 text-sm text-white/60">{tripState || 'requested'}</p>
+              <p className="mt-1 text-xs text-white/40">Live updates: {socketState}</p>
+            </div>
+          )}
+        </div>
+      </aside>
     </div>
   );
 }

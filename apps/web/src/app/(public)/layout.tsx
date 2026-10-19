@@ -1,11 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import AuthNav from '@/components/AuthNav';
+import SiteNav from '@/components/SiteNav';
 
 // The public site and the ops console share one Next app and nothing else.
 // This layout wraps only the `(public)` group, so the console keeps its own
 // chrome: a visitor never sees operator navigation, and an operator never
 // sees a marketing header.
+//
+// WIDTH: the container was max-w-5xl (1024px), which on a 1440px desktop left
+// a third of the screen empty and made a booking product feel like a blog.
+// Pages now opt into their own width -- the homepage goes full-bleed so the
+// booking panel and the map can sit side by side -- and this layout no longer
+// imposes a column on everything.
 export const metadata: Metadata = {
   title: 'SaaradhiGo — book a ride',
   description:
@@ -13,13 +19,6 @@ export const metadata: Metadata = {
     + 'pay the way that suits you, and get a receipt for every ride. Create '
     + 'a rider account, or apply to drive.',
 };
-
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/book', label: 'Book a ride' },
-  { href: '/drive', label: 'Drive with us' },
-  { href: '/contact', label: 'Contact' },
-];
 
 export default function PublicLayout({
   children,
@@ -34,36 +33,33 @@ export default function PublicLayout({
         Skip to main content
       </a>
 
-      <header className="border-b border-white/5 sticky top-0 bg-ink-900/95 backdrop-blur z-40">
-        <nav
-          className="mx-auto max-w-5xl px-4 h-16 flex items-center gap-6"
-          aria-label="Main"
-        >
-          <Link href="/" className="text-brand font-bold text-lg shrink-0">
-            SaaradhiGo
-          </Link>
-          <div className="hidden sm:flex items-center gap-5 text-sm">
-            {navLinks.map((l) => (
-              <Link key={l.href} href={l.href} className="btn-ghost">
-                {l.label}
-              </Link>
-            ))}
-          </div>
-          <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            <AuthNav />
-          </div>
-        </nav>
-      </header>
+      <SiteNav />
 
-      <main id="main" className="flex-1 mx-auto w-full max-w-5xl px-4 py-10">
+      {/* A container, but a wide one, and pages that want the whole screen
+          break out of it with `.full-bleed` rather than every other page
+          losing its gutters. */}
+      <main
+        id="main"
+        className="flex-1 w-full mx-auto max-w-[88rem] px-4 sm:px-6 lg:px-10 py-8 sm:py-10"
+      >
         {children}
       </main>
 
-      <footer className="border-t border-white/5 mt-12">
-        <div className="mx-auto max-w-5xl px-4 py-8 text-sm text-white/50">
-          <div className="flex flex-col sm:flex-row gap-5 sm:items-center">
-            <p>© {new Date().getFullYear()} SaaradhiGo</p>
-            <div className="sm:ml-auto flex flex-wrap gap-x-5 gap-y-2">
+      <footer className="border-t border-white/[0.06] mt-auto">
+        <div className="mx-auto max-w-[88rem] px-4 sm:px-6 lg:px-10 py-10">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-2.5">
+              <span
+                aria-hidden="true"
+                className="grid place-items-center h-7 w-7 rounded-md bg-brand text-black font-black text-xs"
+              >
+                S
+              </span>
+              <p className="text-sm text-white/50">
+                © {new Date().getFullYear()} SaaradhiGo
+              </p>
+            </div>
+            <div className="sm:ml-auto flex flex-wrap gap-x-6 gap-y-3 text-sm">
               <Link href="/drive" className="btn-ghost">
                 Drive with us
               </Link>
