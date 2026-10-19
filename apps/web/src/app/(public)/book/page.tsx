@@ -156,6 +156,37 @@ function BookPageInner() {
         setTripId(active.id as number | string);
         setTripState(normaliseTripState(String(active.status ?? '')));
         setStage('matched');
+
+        // Rebuild what the rider is looking at from the trip itself. Without
+        // this the summary beside a restored ride described the empty booking
+        // form instead: destination "Not set", and the vehicle reset to the
+        // cheapest category -- "Auto" next to a sedan already on its way.
+        const num = (v: unknown) => {
+          const n = Number(v);
+          return Number.isFinite(n) ? n : null;
+        };
+        const pLat = num(active.pickup_lat);
+        const pLng = num(active.pickup_long);
+        if (pLat !== null && pLng !== null) {
+          setPickup({ lat: pLat, lng: pLng });
+          setPickupLabel(
+            String(active.pickup_address ?? '') ||
+              `${pLat.toFixed(5)}, ${pLng.toFixed(5)}`,
+          );
+        }
+        const dLat = num(active.destination_lat);
+        const dLng = num(active.destination_long);
+        if (dLat !== null && dLng !== null) {
+          setDestination({ lat: dLat, lng: dLng });
+          setDestinationLabel(
+            String(active.destination_address ?? '') ||
+              `${dLat.toFixed(5)}, ${dLng.toFixed(5)}`,
+          );
+        }
+        const vehicle = (active.vehicle_info as Record<string, unknown> | null)
+          ?.type;
+        if (typeof vehicle === 'string' && vehicle) setVehicleType(vehicle);
+
         openTripSocket(active.id as number | string);
       })
       .catch(() => {
@@ -185,7 +216,13 @@ function BookPageInner() {
     try {
       const s = await serviceabilityAt(point);
       setService(s);
-      if (s.vehicle_types.length > 0) setVehicleType(s.vehicle_types[0].type);
+      // Only fill a gap. This used to overwrite whatever was already
+      // chosen, so re-checking the pickup point silently reset the
+      // rider's vehicle to the cheapest one -- and a restored trip
+      // showed "Auto" for a sedan it had already dispatched.
+      if (s.vehicle_types.length > 0) {
+        setVehicleType((current) => current || s.vehicle_types[0].type);
+      }
     } catch (err) {
       setError(messageFor(err, 'We could not check this pickup point.'));
     }
