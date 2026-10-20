@@ -115,6 +115,67 @@ export async function placeToPoint(placeId: string): Promise<LatLng | null> {
   return { lat: loc.lat, lng: loc.lng };
 }
 
+/** A drawable route: the encoded polyline plus what the server measured. */
+export type RouteLine = {
+  /** Google's encoded polyline, decoded by the map component. */
+  points: string;
+  distanceText: string;
+  durationText: string;
+  distanceMeters: number;
+  durationSeconds: number;
+};
+
+/**
+ * The road route between two points, for DRAWING only.
+ *
+ * Nothing here feeds the fare. `estimate-fare` recomputes distance
+ * server-side from the same provider and that remains the only number a
+ * rider is charged on -- this is the same journey rendered, not a second
+ * opinion about what it costs.
+ *
+ * The server proxies Routes API, caches the answer for 5 minutes on the
+ * coordinate pair, and rate-limits per rider, so calling this repeatedly for
+ * the same leg is cheap. Callers should still avoid asking on every GPS
+ * frame; see the route key in the booking page.
+ */
+export async function routeBetween(
+  origin: LatLng,
+  destination: LatLng,
+): Promise<RouteLine | null> {
+  const data = await api.post<{
+    status?: string;
+    routes?: Array<{
+      legs?: Array<{
+        distance?: { text?: string; value?: number };
+        duration?: { text?: string; value?: number };
+      }>;
+      overview_polyline?: { points?: string };
+    }>;
+  }>(
+    '/ride/maps/directions',
+    {
+      origin_lat: origin.lat,
+      origin_lng: origin.lng,
+      dest_lat: destination.lat,
+      dest_lng: destination.lng,
+    },
+    readRiderToken(),
+  );
+
+  const route = data?.routes?.[0];
+  const points = route?.overview_polyline?.points;
+  if (!points) return null;
+
+  const leg = route?.legs?.[0];
+  return {
+    points,
+    distanceText: leg?.distance?.text ?? '',
+    durationText: leg?.duration?.text ?? '',
+    distanceMeters: leg?.distance?.value ?? 0,
+    durationSeconds: leg?.duration?.value ?? 0,
+  };
+}
+
 export function isMapsUnavailable(err: unknown): boolean {
   return err instanceof ApiError && err.code === 'API_ERROR';
 }

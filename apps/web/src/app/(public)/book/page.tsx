@@ -18,6 +18,7 @@ import {
   placeToPoint,
   quoteFare,
   rideHistory,
+  routeBetween,
   searchPlaces,
   serviceabilityAt,
 } from '@/lib/booking';
@@ -93,6 +94,45 @@ function logMapsFailure(stage: string, err: unknown) {
   console.warn(`[maps] ${stage} unavailable: ${detail}`);
 }
 
+/**
+ * Which leg of the journey the rider should see drawn, for a given state.
+ *
+ * Before anyone is assigned, the rider is choosing a trip, so the route is
+ * the trip. Once a driver is on the way the useful line is the one that
+ * tells them how long until the car arrives. Once they are in it, it is the
+ * trip again. After it ends there is nothing to draw.
+ */
+function routeLegFor(
+  tripState: string,
+  pickup: LatLng | null,
+  destination: LatLng | null,
+  driver: LatLng | null,
+): { origin: LatLng; destination: LatLng } | null {
+  if (TRIP_IS_OVER.includes(tripState)) return null;
+
+  const enRouteToPickup = tripState === 'accepted' || tripState === 'reached';
+  if (enRouteToPickup && driver && pickup) {
+    return { origin: driver, destination: pickup };
+  }
+  if (pickup && destination) return { origin: pickup, destination };
+  return null;
+}
+
+/**
+ * A stable identity for a leg, so a moving driver does not buy a new route
+ * every few seconds.
+ *
+ * Rounded to 3 decimal places, about 110 m. The driver has to actually make
+ * progress before another request is worth making, and the server caches the
+ * answer for five minutes on top of that.
+ */
+function routeKey(leg: { origin: LatLng; destination: LatLng } | null): string {
+  if (!leg) return '';
+  const r = (n: number) => n.toFixed(3);
+  return `${r(leg.origin.lat)},${r(leg.origin.lng)}->`
+    + `${r(leg.destination.lat)},${r(leg.destination.lng)}`;
+}
+
 /** The PIN proves the right passenger got in. After that it proves nothing. */
 const PIN_IS_STILL_NEEDED = ['accepted', 'reached'];
 const TRIP_IS_OVER = ['completed', 'cancelled'];
@@ -130,6 +170,12 @@ function BookPageInner() {
   // Only ever a coordinate the server sent; never interpolated.
   const [driverPos, setDriverPos] =
     useState<{ lat: number; lng: number } | null>(null);
+  /** The encoded polyline currently drawn, or null when there is none. */
+  const [routePoints, setRoutePoints] = useState<string | null>(null);
+  /** The leg that polyline belongs to, so we only refetch when it changes. */
+  const drawnRouteKey = useRef<string>('');
+  /** Guards against a slow response overwriting a newer one. */
+  const routeRequest = useRef(0);
   // The pickup PIN the driver must be told before the trip can start. The
   // server broadcasts it on `accept`; this page used to drop it on the floor,
   // so a rider on the website had no way to start their ride.
@@ -231,6 +277,51 @@ function BookPageInner() {
     },
     [],
   );
+
+  // Draw the road the rider is actually going to travel.
+  //
+  // Keyed on the LEG, not on the driver's position: a GPS frame every few
+  // seconds must not turn into a Routes request every few seconds. The key
+  // rounds to ~110 m, and the server caches each answer for five minutes and
+  // rate-limits per rider, so a stationary or slow-moving driver costs
+  // nothing at all.
+  //
+  // Markers and live tracking do not depend on any of this -- if the route
+  // request fails the dot still moves.
+  useEffect(() => {
+    const leg = routeLegFor(tripState, pickup, destination, driverPos);
+    const key = routeKey(leg);
+
+    if (!leg) {
+      if (drawnRouteKey.current !== '') {
+        drawnRouteKey.current = '';
+        setRoutePoints(null);
+      }
+      return;
+    }
+    if (key === drawnRouteKey.current) return;
+
+    drawnRouteKey.current = key;
+    const ticket = ++routeRequest.current;
+
+    routeBetween(leg.origin, leg.destination)
+      .then((route) => {
+        // A response for a leg we have already moved on from is not an
+        // update, it is a stale picture of somewhere we were.
+        if (ticket !== routeRequest.current) return;
+        setRoutePoints(route?.points ?? null);
+      })
+      .catch((err) => {
+        if (ticket !== routeRequest.current) return;
+        // A missing route is a missing line, not a broken booking. The
+        // reason goes to operations; the rider keeps their markers.
+        logMapsFailure('route', err);
+        setRoutePoints(null);
+        // Allow a retry on the next state change rather than caching the
+        // failure against this key forever.
+        drawnRouteKey.current = '';
+      });
+  }, [tripState, pickup, destination, driverPos]);
 
   // --- pickup ------------------------------------------------------------
 
@@ -1004,6 +1095,7 @@ function BookPageInner() {
           pickup={pickup}
           destination={destination}
           driver={driverPos}
+          routePolyline={routePoints}
         />
 
         <div className="card">
