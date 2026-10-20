@@ -32,18 +32,45 @@ export function mapsConfigured(): boolean {
  * Never throws: a map that will not load is a degraded panel, not a broken
  * booking page, and the caller falls back to the placeholder.
  */
+/**
+ * The script tag loading is NOT the same as the library being usable.
+ *
+ * With `loading=async` Google ships a small bootstrap, and `google.maps.Map`
+ * does not exist until the library is pulled in. Found on QA the moment a
+ * real key was configured: the script loaded, `window.google.maps` was
+ * truthy, and constructing a map threw "maps.Map is not a constructor".
+ *
+ * `importLibrary` is the documented way to wait for it. Both libraries are
+ * requested because the markers and the map come from different ones.
+ */
+async function ready(): Promise<boolean> {
+  const g = (window as unknown as { google?: any }).google;
+  if (!g?.maps?.importLibrary) return Boolean(g?.maps?.Map);
+  try {
+    await Promise.all([
+      g.maps.importLibrary('maps'),
+      g.maps.importLibrary('marker'),
+    ]);
+    return Boolean(g.maps.Map);
+  } catch (e) {
+    console.warn('[maps] Google Maps libraries failed to initialise');
+    return false;
+  }
+}
+
 export function loadGoogleMaps(): Promise<boolean> {
   if (typeof window === 'undefined') return Promise.resolve(false);
   if (!mapsConfigured()) return Promise.resolve(false);
 
-  const w = window as unknown as { google?: { maps?: unknown } };
-  if (w.google?.maps) return Promise.resolve(true);
+  const w = window as unknown as { google?: { maps?: { Map?: unknown } } };
+  // Only a loaded CONSTRUCTOR counts as ready, not a present namespace.
+  if (w.google?.maps?.Map) return Promise.resolve(true);
   if (loader) return loader;
 
   loader = new Promise<boolean>((resolve) => {
     const existing = document.getElementById(SRC_ID) as HTMLScriptElement | null;
     if (existing) {
-      existing.addEventListener('load', () => resolve(true));
+      existing.addEventListener('load', () => void ready().then(resolve));
       existing.addEventListener('error', () => resolve(false));
       return;
     }
@@ -58,7 +85,9 @@ export function loadGoogleMaps(): Promise<boolean> {
       + '&v=weekly&loading=async';
     script.async = true;
     script.defer = true;
-    script.onload = () => resolve(true);
+    script.onload = () => {
+      void ready().then(resolve);
+    };
     script.onerror = () => {
       // Referrer restriction, billing, blocked network. The reason belongs in
       // operations; the rider just sees the placeholder.
