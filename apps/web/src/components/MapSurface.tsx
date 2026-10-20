@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { decodePolyline, loadGoogleMaps, mapsConfigured } from '@/lib/googleMaps';
+import { DESTINATION_SQUARE, mapStyles, readMapPalette } from '@/lib/mapStyle';
 
 export type MapPoint = { lat: number; lng: number };
 
@@ -18,14 +19,26 @@ export type MapPoint = { lat: number; lng: number };
  * an imaginary map has told the customer exactly how much to trust the
  * driver's position later.
  *
- * So: a faint neutral grid that is obviously a placeholder surface, a plain
- * statement of what is missing, and -- when the server has resolved a pickup
- * -- the real city, currency and vehicle count beneath it. Those come from
- * `/pricing/vehicle-types/`, not from here.
+ * So: a plain surface, a plain statement of what is missing, and -- when the
+ * server has resolved a pickup -- the real city, currency and vehicle count
+ * beneath it. Those come from `/pricing/vehicle-types/`, not from here. The
+ * fallback contract is unchanged by the redesign: `showingMap` still requires
+ * both a loaded library AND a real coordinate, and the host stays
+ * `invisible` until both hold.
  *
- * When a provider IS configured, this is the component to render the map
- * into; the contract (`ready`) is already here so the page does not need to
- * change shape when that day comes.
+ * WHAT THE REDESIGN ADDED
+ * The basemap is now the design system's own: `lib/mapStyle.ts` builds a
+ * Google style array out of the seven `--map-*` tokens, and the journey is
+ * drawn the way the handoff draws it --
+ *
+ *   * the route as a 4.5px `gold-500` line over an 18px `gold-soft` glow,
+ *   * pickup as a `pickup` CIRCLE inside a soft halo,
+ *   * destination as a rounded `gold-500` SQUARE with a `noir` centre,
+ *
+ * so the two ends of the journey differ in shape as well as in colour, here
+ * and in the location fields. Everything is re-read and redrawn when the
+ * rider switches theme, which is why the palette is resolved from the
+ * document instead of being baked in.
  */
 export default function MapSurface({
   ready = false,
@@ -37,6 +50,7 @@ export default function MapSurface({
   destination = null,
   routePolyline = null,
   driver = null,
+  children,
 }: {
   /** Force the placeholder off even when no provider is configured. */
   ready?: boolean;
@@ -51,11 +65,15 @@ export default function MapSurface({
   routePolyline?: string | null;
   /** The assigned driver's live position, once there is one. */
   driver?: MapPoint | null;
+  /** Floating `MapLabel` pills and scrims, drawn over the surface. */
+  children?: React.ReactNode;
 }) {
   const host = useRef<HTMLDivElement | null>(null);
   const map = useRef<unknown>(null);
   const drawn = useRef<unknown[]>([]);
   const [live, setLive] = useState(false);
+  // Bumped whenever the theme changes, to re-resolve the tokens and redraw.
+  const [themeTick, setThemeTick] = useState(0);
 
   // Load the library once, and only if the owner has configured a browser
   // key. Without one this resolves false and the placeholder stays.
@@ -70,11 +88,24 @@ export default function MapSurface({
     };
   }, []);
 
-  // Draw. Re-runs whenever the journey changes.
+  // The map's colours come from CSS custom properties, which a theme switch
+  // changes without React knowing. Watching the attribute is what keeps an
+  // ivory basemap from staying ivory after the rider goes back to dark.
+  useEffect(() => {
+    const target = document.documentElement;
+    const observer = new MutationObserver(() => setThemeTick((n) => n + 1));
+    observer.observe(target, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
+
+  // Draw. Re-runs whenever the journey or the theme changes.
   useEffect(() => {
     if (!live || !host.current) return;
     const g = (window as unknown as { google?: any }).google;
     if (!g?.maps) return;
+
+    const palette = readMapPalette();
+    const styles = mapStyles(palette);
 
     const centre = pickup ?? destination ?? null;
     if (!map.current) {
@@ -87,7 +118,12 @@ export default function MapSurface({
         zoomControl: true,
         gestureHandling: 'cooperative',
         clickableIcons: false,
+        styles,
       });
+    } else {
+      // A theme switch restyles the existing map rather than rebuilding it,
+      // so the rider keeps their pan and zoom.
+      (map.current as any).setOptions({ styles });
     }
     const m = map.current as any;
 
@@ -97,40 +133,153 @@ export default function MapSurface({
     const bounds = new g.maps.LatLngBounds();
     let anything = false;
 
-    const pin = (at: MapPoint, color: string, title: string) => {
-      const marker = new g.maps.Marker({
-        position: at,
-        map: m,
-        title,
-        icon: {
-          path: g.maps.SymbolPath.CIRCLE,
-          scale: 7,
-          fillColor: color,
-          fillOpacity: 1,
-          strokeColor: '#1a1a1a',
-          strokeWeight: 2,
-        },
-      });
-      drawn.current.push(marker);
-      bounds.extend(at);
-      anything = true;
+    const add = (overlay: any, at?: MapPoint) => {
+      drawn.current.push(overlay);
+      if (at) {
+        bounds.extend(at);
+        anything = true;
+      }
     };
 
-    if (pickup) pin(pickup, '#e8b93b', 'Pickup');
-    if (destination) pin(destination, '#8ab4f8', 'Destination');
-    if (driver) pin(driver, '#34d399', 'Your driver');
+    /**
+     * Pickup: a circle, inside a halo.
+     *
+     * Two markers rather than one, because the halo is the same shape at a
+     * lower opacity and a single symbol cannot be both. The halo is drawn
+     * first and sits beneath, so the solid core stays crisp.
+     */
+    const pickupPin = (at: MapPoint) => {
+      add(
+        new g.maps.Marker({
+          position: at,
+          map: m,
+          clickable: false,
+          zIndex: 3,
+          icon: {
+            path: g.maps.SymbolPath.CIRCLE,
+            scale: 18,
+            fillColor: palette.pickup,
+            fillOpacity: 0.16,
+            strokeWeight: 0,
+          },
+        }),
+      );
+      add(
+        new g.maps.Marker({
+          position: at,
+          map: m,
+          title: 'Pickup',
+          zIndex: 5,
+          icon: {
+            path: g.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: palette.pickup,
+            fillOpacity: 1,
+            strokeColor: palette.surface,
+            strokeWeight: 4,
+          },
+        }),
+        at,
+      );
+    };
+
+    /**
+     * Destination: a rounded gold square with a `noir` centre.
+     *
+     * The centre dot is what makes it read as a destination marker rather
+     * than a gold tile, and it is `noir` in both themes because it sits
+     * inside a gold fill, which does not change between them.
+     */
+    const destinationPin = (at: MapPoint) => {
+      add(
+        new g.maps.Marker({
+          position: at,
+          map: m,
+          title: 'Destination',
+          zIndex: 5,
+          icon: {
+            path: DESTINATION_SQUARE,
+            scale: 0.8,
+            fillColor: palette.gold,
+            fillOpacity: 1,
+            strokeColor: palette.surface,
+            strokeWeight: 4,
+            anchor: new g.maps.Point(0, 0),
+          },
+        }),
+        at,
+      );
+      add(
+        new g.maps.Marker({
+          position: at,
+          map: m,
+          clickable: false,
+          zIndex: 6,
+          icon: {
+            path: g.maps.SymbolPath.CIRCLE,
+            scale: 2.5,
+            fillColor: palette.noir,
+            fillOpacity: 1,
+            strokeWeight: 0,
+          },
+        }),
+      );
+    };
+
+    /** The driver's car: champagne, so it is neither end of the journey. */
+    const driverPin = (at: MapPoint) => {
+      add(
+        new g.maps.Marker({
+          position: at,
+          map: m,
+          title: 'Your driver',
+          zIndex: 7,
+          icon: {
+            path: g.maps.SymbolPath.CIRCLE,
+            scale: 7,
+            fillColor: palette.gold,
+            fillOpacity: 1,
+            strokeColor: palette.noir,
+            strokeWeight: 2,
+          },
+        }),
+        at,
+      );
+    };
+
+    if (pickup) pickupPin(pickup);
+    if (destination) destinationPin(destination);
+    if (driver) driverPin(driver);
 
     if (routePolyline) {
       const path = decodePolyline(routePolyline);
       if (path.length > 1) {
-        const line = new g.maps.Polyline({
-          path,
-          map: m,
-          strokeColor: '#e8b93b',
-          strokeOpacity: 0.9,
-          strokeWeight: 4,
-        });
-        drawn.current.push(line);
+        // The glow first, then the line on top of it. `gold-soft` IS
+        // `gold-500` at 14% -- the token is the rgba form of exactly that --
+        // and the Maps API takes a colour plus an opacity rather than an rgba
+        // string, so it is expressed as the pair here.
+        add(
+          new g.maps.Polyline({
+            path,
+            map: m,
+            clickable: false,
+            zIndex: 1,
+            strokeColor: palette.gold,
+            strokeOpacity: 0.14,
+            strokeWeight: 18,
+          }),
+        );
+        add(
+          new g.maps.Polyline({
+            path,
+            map: m,
+            clickable: false,
+            zIndex: 2,
+            strokeColor: palette.gold,
+            strokeOpacity: 1,
+            strokeWeight: 4.5,
+          }),
+        );
         for (const point of path) bounds.extend(point);
         anything = true;
       }
@@ -144,26 +293,37 @@ export default function MapSurface({
         m.fitBounds(bounds, 48);
       }
     }
-  }, [live, pickup, destination, routePolyline, driver]);
+  }, [live, pickup, destination, routePolyline, driver, themeTick]);
 
   // A map is drawn only when the library loaded AND there is a real point to
   // show. Anything else keeps the honest placeholder.
   const showingMap = live && Boolean(pickup || destination || routePolyline);
 
   return (
-    <div className={`map-surface ${className}`}>
+    <div className={`map-surface sg-map ${className}`}>
+      {/* The map host.
+          `aria-label` on a bare <div> is an ARIA error -- a generic element
+          has no role for the name to attach to -- and until there is a map in
+          here it is an empty box, so labelling it announces a region with
+          nothing in it. Both are fixed by naming it only once it holds
+          something: `role="region"` while a journey is drawn, and nothing at
+          all while the fallback is showing. */}
       <div
         ref={host}
-        aria-label="Map"
+        {...(showingMap ? { role: 'region', 'aria-label': 'Map' } : { 'aria-hidden': true })}
         className={`absolute inset-0 ${showingMap ? '' : 'invisible'}`}
       />
-      <div className="absolute inset-0 grid place-items-center p-8 text-center">
+
+      {/* Scrims and floating labels, over the surface. */}
+      {showingMap && children}
+
+      <div className="absolute inset-0 grid place-items-center p-sg-6 text-center pointer-events-none">
         {ready || showingMap ? null : (
           <div className="max-w-sm">
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
-              className="mx-auto h-9 w-9 text-white/25"
+              className="mx-auto h-9 w-9 text-ink-subtle"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.5"
@@ -176,10 +336,8 @@ export default function MapSurface({
                 deployment" told a passenger about our configuration and left
                 them unsure whether their booking would work. Why the map is
                 absent belongs in the operational logs. */}
-            <p className="mt-4 text-sm font-medium text-white/70">
-              Map view unavailable
-            </p>
-            <p className="mt-1.5 text-sm text-white/45">
+            <p className="mt-sg-4 title">Map view unavailable</p>
+            <p className="mt-sg-2 body text-ink-muted">
               The map is temporarily unavailable. Booking, fares and trip
               tracking are working normally.
             </p>
@@ -188,16 +346,13 @@ export default function MapSurface({
       </div>
 
       {zoneName && (
-        <div className="absolute inset-x-0 bottom-0 border-t border-white/[0.07] bg-ink-900/85 px-5 py-3.5 backdrop-blur">
-          <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm">
-            <span
-              aria-hidden="true"
-              className="inline-flex h-2 w-2 rounded-full bg-emerald-400"
-            />
-            <strong className="font-semibold">{zoneName}</strong>
-            {currency && <span className="text-white/55">fares in {currency}</span>}
+        <div className="absolute inset-x-0 bottom-0 z-10 border-t border-gold-line bg-bg-glass px-sg-5 py-sg-3 backdrop-blur">
+          <p className="caption flex flex-wrap items-center gap-x-sg-3 gap-y-sg-1">
+            <span className="sg-field__marker sg-field__marker--pickup" aria-hidden="true" />
+            <strong className="title">{zoneName}</strong>
+            {currency && <span className="text-ink-muted">fares in {currency}</span>}
             {typeof vehicleCount === 'number' && (
-              <span className="text-white/55">
+              <span className="text-ink-muted sg-num">
                 {vehicleCount} {vehicleCount === 1 ? 'vehicle type' : 'vehicle types'}
               </span>
             )}

@@ -125,7 +125,7 @@ export default function WithdrawalsPage() {
             key={s}
             onClick={() => setStatusFilter(s === statusFilter ? '' : s)}
             className={`tag capitalize ${
-              s === statusFilter ? 'border-brand text-brand' : 'border-white/20 text-white/60'
+              s === statusFilter ? 'border-brand text-gold-text' : 'border-white/20 text-white/60'
             }`}
           >
             {s}
@@ -164,7 +164,7 @@ export default function WithdrawalsPage() {
                 <tr key={w.id} className="table-row hover:bg-white/5">
                   <td className="py-2">#{w.id}</td>
                   <td className="py-2">
-                    <Link href={`/drivers/${w.driver}`} className="text-brand hover:underline">
+                    <Link href={`/drivers/${w.driver}`} className="sg-link">
                       {w.driver_name || `#${w.driver}`}
                     </Link>
                   </td>
@@ -193,7 +193,7 @@ export default function WithdrawalsPage() {
                     {w.status === 'pending' && (
                       <>
                         <button
-                          className="btn-ghost text-brand text-xs disabled:opacity-40"
+                          className="btn-ghost text-gold-text text-xs disabled:opacity-40"
                           disabled={busyId === w.id || !w.driver_kyc_approved}
                           title={
                             w.driver_kyc_approved

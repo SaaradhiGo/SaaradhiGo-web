@@ -56,7 +56,7 @@ function VerifyEmailInner() {
       footer={
         state === 'bad' ? (
           <p>
-            <Link href="/forgot-password" className="text-brand hover:underline">
+            <Link href="/forgot-password" className="sg-link">
               Ask for a new link
             </Link>
           </p>
@@ -64,7 +64,7 @@ function VerifyEmailInner() {
       }
     >
       {state === 'checking' && (
-        <p className="text-sm text-white/60" role="status">
+        <p className="text-sm text-ink-subtle" role="status">
           Confirming your address…
         </p>
       )}
@@ -88,7 +88,7 @@ export default function VerifyEmailPage() {
     <Suspense
       fallback={
         <AuthShell title="Confirm your email">
-          <p className="text-sm text-white/60">Loading…</p>
+          <p className="text-sm text-ink-subtle">Loading…</p>
         </AuthShell>
       }
     >

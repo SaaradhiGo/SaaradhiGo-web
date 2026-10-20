@@ -79,7 +79,7 @@ export default function TripsPage() {
               {trips.map((t) => (
                 <tr key={t.id} className="table-row hover:bg-white/5 cursor-pointer">
                   <td className="py-2">
-                    <Link href={`/trips/${t.id}`} className="text-brand hover:underline">#{t.id}</Link>
+                    <Link href={`/trips/${t.id}`} className="sg-link">#{t.id}</Link>
                   </td>
                   <td className="py-2">{t.status ?? t.status_id?.status_code ?? '—'}</td>
                   <td className="py-2">{t.pickup_address ?? '—'}</td>

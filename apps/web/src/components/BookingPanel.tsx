@@ -4,22 +4,33 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LatLng, Serviceability, serviceabilityAt } from '@/lib/booking';
 import { messageFor } from '@/lib/publicAuth';
+import { Button } from '@/components/sg/Button';
+import { GlassPanel } from '@/components/sg/GlassPanel';
+import {
+  LocateAction,
+  LocationField,
+  RouteFields,
+} from '@/components/sg/LocationField';
+import { ArrowRight } from '@/components/sg/icons';
 
 /**
  * The booking panel: the first thing on the site, and the thing the site is
  * for.
  *
  * SURFACE
- * It is a warm paper panel on charcoal, not another dark card. As one more
- * dark box on a dark page, the single most important control on the site had
- * no more presence than a paragraph of text, and the page read as something
- * to scroll rather than something to use.
+ * A `bg-glass` panel floating over the hero map, with the design system's
+ * 56px gold bar on its top edge and a `gold-line` hairline around it. It was
+ * previously a warm paper card in a `sand` palette that the design system
+ * does not contain; the glass panel is what the handoff specifies for a
+ * control that sits on top of a map.
  *
  * WHAT IT CLAIMS
  * Only what the server returned. "We do not operate here yet" comes from
- * `serviceable: false`; the city, currency and distance unit come from the
+ * `serviceable: false`; the city, currency and vehicle count come from the
  * zone. No coverage claim, no driver count, no ETA and no indicative price,
- * because this screen cannot know any of them.
+ * because this screen cannot know any of them. The logic below is unchanged
+ * from before the redesign -- same serviceability check, same geolocation
+ * fallbacks, same query string handed to `/book`.
  */
 export default function BookingPanel() {
   const router = useRouter();
@@ -102,107 +113,78 @@ export default function BookingPanel() {
   const zone = service?.zone;
 
   return (
-    <div className="booking-panel">
-      <div className="flex items-baseline justify-between gap-4">
-        <h2 className="text-xl font-semibold text-sand-700">Book a ride</h2>
-        {busy && (
-          <span className="text-xs text-sand-600" role="status">
+    <GlassPanel
+      title="Book a ride"
+      action={
+        busy ? (
+          <span className="caption text-ink-muted" role="status">
             Checking…
           </span>
-        )}
-      </div>
+        ) : undefined
+      }
+      note="You will be asked to sign in before the ride is requested."
+    >
+      {/* The two inputs, joined by the dashed route rail so pickup and
+          destination read as one journey rather than two unrelated boxes.
+          The markers differ in shape -- circle, square -- not only colour. */}
+      <RouteFields>
+        <LocationField
+          id="bp-pickup"
+          kind="pickup"
+          label="Pickup"
+          placeholder="Where are you?"
+          value={pickupText}
+          autoComplete="off"
+          onChange={(e) => setPickupText(e.target.value)}
+          onBlur={(e) => onPickupBlur(e.target.value)}
+          action={<LocateAction onClick={useMyLocation} busy={locating} />}
+        />
+        <LocationField
+          id="bp-dest"
+          kind="drop"
+          label="Destination"
+          placeholder="Where to?"
+          value={destText}
+          autoComplete="off"
+          onChange={(e) => setDestText(e.target.value)}
+        />
+      </RouteFields>
 
-      {/* The two inputs, joined by a route rail so pickup and destination
-          read as one journey rather than two unrelated boxes. */}
-      <div className="mt-5 flex gap-3">
-        <div aria-hidden="true" className="route-rail" />
-
-        <div className="flex-1 min-w-0 space-y-3">
-          <div>
-            <label htmlFor="bp-pickup" className="field-label">
-              Pickup
-            </label>
-            <input
-              id="bp-pickup"
-              className="field-input"
-              placeholder="Where are you?"
-              value={pickupText}
-              onChange={(e) => setPickupText(e.target.value)}
-              onBlur={(e) => onPickupBlur(e.target.value)}
-            />
-            <button
-              type="button"
-              onClick={useMyLocation}
-              disabled={locating}
-              className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-sand-700 hover:text-black disabled:opacity-50"
-            >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <circle cx="12" cy="12" r="3.5" />
-                <circle cx="12" cy="12" r="8" opacity="0.5" />
-                <path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" />
-              </svg>
-              {locating ? 'Finding you…' : 'Use my current location'}
-            </button>
-          </div>
-
-          <div>
-            <label htmlFor="bp-dest" className="field-label">
-              Destination
-            </label>
-            <input
-              id="bp-dest"
-              className="field-input"
-              placeholder="Where to?"
-              value={destText}
-              onChange={(e) => setDestText(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Four states, all from the server, none invented. */}
+      {/* Four states, all from the server, none invented. Each one says a
+          word; none of them is carried by a colour alone. */}
       {service && !service.serviceable && (
-        <p className="mt-4 rounded-xl bg-amber-500/10 border border-amber-600/30 px-3.5 py-2.5 text-sm text-amber-900">
+        <p className="alert alert-info" role="status">
           We do not operate at that pickup point yet.
         </p>
       )}
 
       {zone && service?.serviceable && (
-        <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-sand-600">
-          <span className="inline-flex h-2 w-2 rounded-full bg-emerald-600" aria-hidden="true" />
-          <strong className="font-semibold text-sand-700">{zone.name}</strong>
-          <span>· fares in {zone.currency}</span>
-          <span>
-            · {service.vehicle_types.length}{' '}
+        <p className="sg-row caption text-ink-muted" role="status">
+          <span className="sg-row__left">
+            <span
+              className="sg-field__marker sg-field__marker--pickup"
+              aria-hidden="true"
+            />
+            <strong className="text-ink font-bold">{zone.name}</strong>
+          </span>
+          <span className="sg-num">
+            fares in {zone.currency} · {service.vehicle_types.length}{' '}
             {service.vehicle_types.length === 1 ? 'vehicle type' : 'vehicle types'}
           </span>
         </p>
       )}
 
       {error && (
-        <p className="mt-4 rounded-xl bg-red-500/10 border border-red-600/30 px-3.5 py-2.5 text-sm text-red-900">
+        <p className="alert alert-error" role="alert">
           {error}
         </p>
       )}
 
-      <button
-        type="button"
-        onClick={go}
-        className="btn-gold mt-5 w-full"
-        disabled={busy}
-      >
+      {/* The one primary action on this view. */}
+      <Button variant="primary" size="lg" block onClick={go} disabled={busy}>
         See fares
-      </button>
-      <p className="mt-3 text-center text-xs text-sand-600">
-        You will be asked to sign in before the ride is requested.
-      </p>
-    </div>
+        <ArrowRight />
+      </Button>
+    </GlassPanel>
   );
 }

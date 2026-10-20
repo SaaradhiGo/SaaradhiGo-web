@@ -41,7 +41,7 @@ export default function MyTripsPage() {
       );
   }, []);
 
-  if (signedIn === null) return <p className="text-white/60">Loading…</p>;
+  if (signedIn === null) return <p className="text-ink-subtle">Loading…</p>;
 
   if (!signedIn) {
     return (
@@ -58,7 +58,7 @@ export default function MyTripsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="sg-page max-w-2xl">
       <h1 className="text-3xl font-bold">Your trips</h1>
 
       {error && (
@@ -70,14 +70,14 @@ export default function MyTripsPage() {
       {trips === null && !error && (
         <div className="card mt-6 space-y-2" aria-hidden="true">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-14 rounded-lg bg-white/5 animate-pulse" />
+            <div key={i} className="h-14 rounded-lg bg-bg-200 animate-pulse" />
           ))}
         </div>
       )}
 
       {trips !== null && trips.length === 0 && (
         <div className="card mt-6">
-          <p className="text-white/70">
+          <p className="text-ink-muted">
             You have not taken a ride yet. When you do, it appears here with its
             receipt.
           </p>
@@ -97,7 +97,7 @@ export default function MyTripsPage() {
                     {t.pickup_address || 'Pickup'} →{' '}
                     {t.destination_address || 'Destination'}
                   </p>
-                  <p className="text-xs text-white/55 mt-1">
+                  <p className="text-xs text-ink-subtle mt-1">
                     {t.requested_at
                       ? new Date(t.requested_at).toLocaleString()
                       : ''}
@@ -107,13 +107,13 @@ export default function MyTripsPage() {
                   <p className="font-semibold">
                     {t.final_fare ?? t.estimated_fare ?? '—'}
                   </p>
-                  <p className="text-xs text-white/55 capitalize">
+                  <p className="text-xs text-ink-subtle capitalize">
                     {t.status ?? ''}
                   </p>
                 </div>
               </div>
               {t.payment_status && (
-                <p className="mt-2 text-xs text-white/55">
+                <p className="mt-2 text-xs text-ink-subtle">
                   Payment: {t.payment_status}
                 </p>
               )}

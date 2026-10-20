@@ -42,16 +42,16 @@ const routes = [
 
 export default function ContactPage() {
   return (
-    <>
+    <div className="sg-page">
       <h1 className="text-3xl font-bold">Contact us</h1>
-      <p className="mt-4 text-white/70 max-w-2xl">
+      <p className="mt-4 text-ink-muted max-w-2xl">
         We would rather you reached a person than a form. Here is the quickest
         way to get the right one.
       </p>
 
       <div className="card mt-8">
         <h2 className="text-lg font-semibold">Email</h2>
-        <p className="mt-2 text-sm text-white/70">
+        <p className="mt-2 text-sm text-ink-muted">
           Support, payments, driver applications and press:
         </p>
         <a
@@ -60,7 +60,7 @@ export default function ContactPage() {
         >
           support@saaradhigo.in
         </a>
-        <p className="mt-3 text-xs text-white/50">
+        <p className="mt-3 text-xs text-ink-subtle">
           Include your registered mobile number and, if it is about a trip, the
           date and the driver&apos;s name. It saves a round trip.
         </p>
@@ -71,8 +71,8 @@ export default function ContactPage() {
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           {routes.map((r) => (
             <div key={r.heading} className="card">
-              <h3 className="font-semibold text-brand">{r.heading}</h3>
-              <p className="mt-2 text-sm text-white/70">{r.body}</p>
+              <h3 className="font-semibold text-gold-text">{r.heading}</h3>
+              <p className="mt-2 text-sm text-ink-muted">{r.body}</p>
             </div>
           ))}
         </div>
@@ -80,13 +80,13 @@ export default function ContactPage() {
 
       <section className="mt-10 card">
         <h2 className="text-lg font-semibold">Are you an operator?</h2>
-        <p className="mt-2 text-sm text-white/70">
+        <p className="mt-2 text-sm text-ink-muted">
           The operations console is a separate, internal application.
         </p>
         <Link href="/login" className="btn-ghost inline-block mt-3">
           Operator sign-in →
         </Link>
       </section>
-    </>
+    </div>
   );
 }

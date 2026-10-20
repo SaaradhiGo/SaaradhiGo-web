@@ -83,7 +83,7 @@ export default function ZonesPage() {
                 <span className={`tag ${z.is_active ? 'border-emerald-500/40 text-emerald-300' : 'border-white/20 text-white/60'}`}>
                   {z.is_active ? 'Active' : 'Inactive'}
                 </span>
-                <button className="btn-ghost text-brand text-sm" onClick={() => loadCards(z.id)}>
+                <button className="btn-ghost text-gold-text text-sm" onClick={() => loadCards(z.id)}>
                   Show rate cards
                 </button>
               </div>

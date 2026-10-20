@@ -17,13 +17,13 @@ export default function Page() {
         <>
           <p>
             New to SaaradhiGo?{' '}
-            <Link href="/sign-up" className="text-brand hover:underline">
+            <Link href="/sign-up" className="sg-link">
               Create an account
             </Link>
           </p>
           <p>
             Driver?{' '}
-            <Link href="/driver/sign-in" className="text-brand hover:underline">
+            <Link href="/driver/sign-in" className="sg-link">
               Sign in as a driver
             </Link>
           </p>

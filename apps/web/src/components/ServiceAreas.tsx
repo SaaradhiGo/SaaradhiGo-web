@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Zone, fetchZones } from '@/lib/markets';
+import { ButtonLink } from '@/components/sg/Button';
 
 /**
  * Where SaaradhiGo actually operates, read from `GET /pricing/zones/`.
@@ -20,6 +21,9 @@ import { Zone, fetchZones } from '@/lib/markets';
  * The empty state matters most. A pre-launch deployment has no zones, and a
  * marketing page that implies coverage it does not have is the first promise
  * a rider finds broken.
+ *
+ * Restyled onto the design system: `sg-eyebrow` over an `sg-h2`, cities as
+ * `sg-chip`s. The data, the four states and the endpoint are unchanged.
  */
 export default function ServiceAreas() {
   const [zones, setZones] = useState<Zone[] | null>(null);
@@ -35,13 +39,22 @@ export default function ServiceAreas() {
     };
   }, []);
 
+  const head = (
+    <>
+      <span className="sg-eyebrow">Where we operate</span>
+      <h2 className="sg-h2">
+        Live in <em>your city.</em>
+      </h2>
+    </>
+  );
+
   if (failed) {
     return (
-      <div className="card">
-        <h2 className="text-2xl font-semibold">Where we operate</h2>
-        <p className="mt-3 text-white/60">
+      <div>
+        {head}
+        <p className="sg-lead">
           We could not load our service areas just now.{' '}
-          <Link href="/contact" className="text-brand hover:underline">
+          <Link href="/contact" className="sg-link">
             Ask us where we run
           </Link>
           .
@@ -52,14 +65,11 @@ export default function ServiceAreas() {
 
   if (zones === null) {
     return (
-      <div className="card">
-        <h2 className="text-2xl font-semibold">Where we operate</h2>
-        <div className="mt-4 flex flex-wrap gap-2" aria-hidden="true">
+      <div>
+        {head}
+        <div className="mt-sg-4 flex flex-wrap gap-sg-2" aria-hidden="true">
           {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="h-8 w-28 rounded-lg bg-white/5 animate-pulse"
-            />
+            <span key={i} className="h-9 w-28 rounded-sg-pill bg-bg-200 animate-pulse" />
           ))}
         </div>
         <p className="sr-only" role="status">
@@ -71,15 +81,17 @@ export default function ServiceAreas() {
 
   if (zones.length === 0) {
     return (
-      <div className="card">
-        <h2 className="text-2xl font-semibold">Where we operate</h2>
-        <p className="mt-3 text-white/70">
+      <div>
+        {head}
+        <p className="sg-lead">
           We are not live in any city yet. Create an account and we will tell
           you when we reach yours.
         </p>
-        <Link href="/sign-up" className="btn-primary inline-flex mt-4">
-          Create an account
-        </Link>
+        <div className="mt-sg-5">
+          <ButtonLink href="/sign-up" variant="secondary">
+            Create an account
+          </ButtonLink>
+        </div>
       </div>
     );
   }
@@ -90,25 +102,26 @@ export default function ServiceAreas() {
   }, {});
 
   return (
-    <div className="card">
-      <h2 className="text-2xl font-semibold">Where we operate</h2>
-      <p className="mt-2 text-sm text-white/60">
+    <div>
+      {head}
+      <p className="sg-lead">
         {zones.length === 1
           ? 'One service area is live today.'
           : `${zones.length} service areas are live today.`}
       </p>
-      <div className="mt-4 space-y-4">
+      <div className="mt-sg-5 grid gap-sg-4">
         {Object.entries(byCountry).map(([country, list]) => (
           <div key={country}>
-            <h3 className="text-xs uppercase tracking-widest text-white/45">
-              {country}
-            </h3>
-            <ul className="mt-2 flex flex-wrap gap-2">
+            {/* The country heading only earns its place when there is more
+                than one. On a single-market deployment it is a bare "IN"
+                above the cities, which tells a rider nothing they did not
+                already know from the city names. */}
+            {Object.keys(byCountry).length > 1 && (
+              <h3 className="label uppercase text-ink-subtle">{country}</h3>
+            )}
+            <ul className="mt-sg-2 flex flex-wrap gap-sg-2">
               {list.map((z) => (
-                <li
-                  key={z.code}
-                  className="rounded-lg border border-white/10 px-3 py-1.5 text-sm"
-                >
+                <li key={z.code} className="sg-chip">
                   {z.city || z.name}
                 </li>
               ))}

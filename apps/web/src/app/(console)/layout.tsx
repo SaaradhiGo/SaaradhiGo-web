@@ -30,10 +30,18 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
     router.replace('/login');
   }
 
+  // The console is pinned to the dark theme.
+  //
+  // The rider site lets a visitor choose, and that choice is stored on <html>
+  // where it would reach these pages too. The console is built on `text-white`
+  // at various opacities -- it predates the token palette -- and white text on
+  // the light theme's ivory surfaces is unreadable. `data-theme` here
+  // redefines the tokens for this subtree only, so an operator who switched
+  // the public site to light still gets a working console.
   return (
-    <div className="min-h-screen grid grid-cols-[220px_1fr]">
-      <aside className="bg-ink-800 border-r border-white/5 p-4 flex flex-col">
-        <div className="text-brand font-bold text-lg tracking-wider">SaaradhiGo</div>
+    <div data-theme="dark" className="min-h-screen grid grid-cols-[220px_1fr] bg-bg-000 text-ink">
+      <aside className="bg-bg-100 border-r border-line p-4 flex flex-col">
+        <div className="text-gold-text font-bold text-lg tracking-wider">SaaradhiGo</div>
         <div className="text-white/40 text-xs uppercase tracking-widest mb-6">Ops</div>
         <nav className="flex-1 space-y-1">
           {NAV.map((item) => {

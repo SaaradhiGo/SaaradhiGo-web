@@ -1,49 +1,73 @@
+/* The design system comes first: `tokens.css` is the only file in this app
+   that may contain a colour literal, and `saaradhigo.css` is the component
+   layer ported from the handoff. Both are imported ahead of Tailwind so that
+   Tailwind's utilities, which are emitted last, can still override a
+   component rule when a page needs to. */
+@import '../styles/tokens.css';
+@import '../styles/saaradhigo.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ---------------------------------------------------------------------------
-   SaaradhiGo visual specification
+   SaaradhiGo — application styles
    ---------------------------------------------------------------------------
-   One place where the public site and the ops console agree on colour, type,
-   spacing, form controls and state. Everything below is used by both, so a
-   change here is a change everywhere rather than a change in one of them.
+   The visual specification now lives in the design system, not here. What is
+   left in this file is the small set of utilities the operations console and
+   the authentication forms were built on, rebased onto the tokens so that
+   NOTHING in this app carries a colour of its own.
 
-   COLOUR        gold #EEBD2B on near-black ink. The gold is the brand and is
-                 reserved for the primary action and for emphasis; using it
-                 for decoration is what makes a primary button stop reading as
-                 the primary button. Status colours are red / amber / green,
-                 each with a 10% wash behind a 30% border so they register as
-                 a block without shouting.
-   TYPE          Inter. Page title 30px bold, section 20px semibold, body 14px,
-                 helper 12px at 60% opacity. No more sizes than that.
-   SPACING       4px scale. 16px inside a card, 24px between cards, 40px
-                 between page sections, 16px minimum page gutter on phones.
-   CONTROLS      44px minimum touch target. Every control shows a focus ring
-                 -- never `outline: none` without a replacement, because the
-                 ring is the only thing a keyboard user has to see where they
-                 are.
-   STATE         Every async surface has four: loading, empty, error, success.
-   MOTION        150ms, and only on colour or opacity. Respects
-                 prefers-reduced-motion.
+   WHAT CHANGED AND WHY
+   The old file declared its own palette in prose -- a brighter, yellower
+   gold on near-black ink, a warm-fade radial gradient, an Inter stack and a
+   `sand` paper surface for the booking panel -- and that palette had drifted
+   from the brand it was meant to express. All of it is gone:
+
+     * The old gold literal now resolves to `--gold-500`. Every `brand`
+       utility in the app points at the token through `tailwind.config.ts`, so
+       the console moved with it and no page needed editing.
+     * The `warm-fade` background gradient is removed. The design system
+       permits gradients only for map scrims.
+     * `.booking-panel`, `.field-label`, `.field-input`, `.route-rail` and
+       `.btn-gold` are removed: the glass booking panel, the location-field
+       pair and the primary button are `sg-` components now.
+     * `.label` is renamed `.form-label`. The design system defines `.label`
+       as a type class (Manrope 11/16, 700, .12em tracking) and a form label
+       cannot also be that.
+
+   TYPE        Cormorant Garamond for headlines and promises; Manrope for
+               every number, label and control; Cinzel for the brand name,
+               eyebrows and map labels. Nothing else.
+   CONTROLS    48px minimum touch target on mobile. Every control shows a
+               2px `focus-ring` at 2px offset -- never `outline: none`
+               without a replacement, because the ring is the only thing a
+               keyboard user has to see where they are.
+   STATE       Every async surface has four: loading, empty, error, success.
+   MOTION      140ms on hover and press, 240ms on sheets and selection,
+               ease-out. Respects prefers-reduced-motion.
    --------------------------------------------------------------------------- */
 
-:root {
-  color-scheme: dark;
+body {
+  @apply bg-bg-000 text-ink font-sans antialiased min-h-screen;
 }
 
-body {
-  @apply bg-ink-900 text-white font-sans antialiased min-h-screen;
-  /* Warm light from the top corners, so the page is charcoal rather than a
-     flat black rectangle behind gold type. */
-  background-image: theme('backgroundImage.warm-fade');
-  background-attachment: fixed;
+/* The themes are not a media query. `data-theme` on <html> is authoritative
+   so a rider can choose, and `color-scheme` follows it so native form
+   controls and scrollbars match the page instead of fighting it. */
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+[data-theme='light'] {
+  color-scheme: light;
 }
 
 /* A visible focus ring everywhere, including for mouse users who then press
    Tab. Removing it is the single most common accessibility regression. */
 :focus-visible {
-  @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-ink-900 rounded;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -73,148 +97,96 @@ body {
   @apply sr-only;
 }
 .skip-link:focus {
-  @apply not-sr-only fixed top-3 left-3 z-50 bg-brand text-black font-semibold px-4 py-2 rounded-lg;
+  @apply not-sr-only fixed top-3 left-3 z-50 bg-gold-500 text-on-gold font-semibold px-4 py-2 rounded-sg-sm;
 }
 
 .card {
-  @apply bg-ink-700/80 border border-white/[0.07] rounded-2xl p-5;
+  @apply bg-bg-100 border border-line rounded-sg-lg p-5;
 }
 
-/* --- buttons: 44px tall, disabled is visibly not-clickable --------------- */
+/* --- buttons -------------------------------------------------------------
+   The rider-facing primary button is `sg-btn sg-btn--primary`. These three
+   remain for the console and the authentication forms, and are the same
+   shapes rebased onto tokens. */
 
 .btn-primary {
-  @apply inline-flex items-center justify-center gap-2 min-h-[44px] bg-brand text-black font-semibold
-         rounded-xl px-5 py-2.5 transition-colors duration-150
-         hover:bg-brand-dark disabled:opacity-40 disabled:cursor-not-allowed;
+  @apply inline-flex items-center justify-center gap-2 min-h-[48px] bg-gold-500 text-on-gold font-bold
+         rounded-sg-md px-5 py-2.5 transition-colors duration-press
+         hover:bg-gold-300 disabled:opacity-45 disabled:cursor-not-allowed;
 }
 
 .btn-secondary {
-  @apply inline-flex items-center justify-center gap-2 min-h-[44px] border border-white/15 text-white
-         font-medium rounded-xl px-5 py-2.5 transition-colors duration-150
-         hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed;
+  @apply inline-flex items-center justify-center gap-2 min-h-[48px] border border-line-strong text-ink
+         font-semibold rounded-sg-md px-5 py-2.5 transition-colors duration-press
+         hover:bg-bg-300 hover:border-gold-500 disabled:opacity-45 disabled:cursor-not-allowed;
 }
 
 .btn-ghost {
-  @apply text-white/80 hover:text-white text-sm transition-colors duration-150;
+  @apply text-ink-muted hover:text-ink text-sm transition-colors duration-press;
 }
 
 /* --- forms --------------------------------------------------------------- */
 
-.label {
-  @apply block text-sm font-medium text-white/80 mb-1.5;
+/* Named `form-label`, not `label`: the design system owns `.label`. */
+.form-label {
+  @apply block text-sm font-semibold text-ink-muted mb-1.5;
 }
 
 .input {
-  @apply w-full min-h-[44px] bg-ink-800 border border-white/10 rounded-xl px-3.5 py-2.5
-         text-white placeholder-white/35 transition-colors duration-150
-         focus:outline-none focus:border-brand
-         disabled:opacity-40 disabled:cursor-not-allowed;
+  @apply w-full min-h-[48px] bg-bg-300 border border-line rounded-sg-md px-3.5 py-2.5
+         text-ink placeholder-ink-subtle transition-colors duration-press
+         focus:border-gold-500
+         disabled:opacity-45 disabled:cursor-not-allowed;
 }
 
 /* Paired with aria-invalid, so the error is not carried by colour alone. */
 .input[aria-invalid='true'] {
-  @apply border-red-500/70;
+  @apply border-danger;
 }
 
 .help {
-  @apply mt-1.5 text-xs text-white/55;
+  @apply mt-1.5 text-xs text-ink-muted;
 }
 
 .field-error {
-  @apply mt-1.5 text-xs text-red-300;
+  @apply mt-1.5 text-xs text-danger;
 }
 
-/* --- status blocks ------------------------------------------------------- */
+/* --- status blocks -------------------------------------------------------
+   A word in every one of them: the colour supports the meaning and never
+   carries it alone. */
 
 .alert {
-  @apply rounded-xl border px-4 py-3 text-sm;
+  @apply rounded-sg-md border px-4 py-3 text-sm;
 }
 .alert-error {
-  @apply alert bg-red-900/25 border-red-800/40 text-red-200;
+  @apply alert bg-bg-200 border-danger text-danger;
 }
 .alert-success {
-  @apply alert bg-emerald-900/25 border-emerald-800/40 text-emerald-200;
+  @apply alert bg-bg-200 border-success text-success;
 }
 .alert-info {
-  @apply alert bg-sky-900/25 border-sky-800/40 text-sky-200;
+  @apply alert bg-bg-200 border-gold-line text-gold-text;
 }
 
 /* --- console leftovers --------------------------------------------------- */
 
 .table-row {
-  @apply border-b border-white/5;
+  @apply border-b border-line;
 }
 
 .tag {
-  @apply text-xs px-2 py-0.5 rounded-full border;
-}
-
-/* --- the booking panel ---------------------------------------------------
-   A warm paper surface on charcoal. The panel used to be one more dark card
-   on a dark page, which gave the site's single most important control no
-   more presence than a paragraph. */
-
-.booking-panel {
-  @apply rounded-2xl bg-sand-50 p-5 sm:p-6 text-sand-700;
-  box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.6) inset,
-    0 2px 6px -1px rgba(0, 0, 0, 0.3),
-    0 30px 70px -28px rgba(0, 0, 0, 0.9),
-    0 0 0 1px rgba(238, 189, 43, 0.18);
-}
-
-.field-label {
-  @apply block text-xs font-semibold uppercase tracking-wider text-sand-600 mb-1.5;
-}
-
-.field-input {
-  @apply w-full min-h-[48px] rounded-xl bg-white border border-sand-200 px-3.5 py-3
-         text-[15px] text-sand-700 placeholder-sand-400
-         transition-shadow duration-150
-         focus:outline-none focus:border-brand-dark
-         focus:ring-2 focus:ring-brand/40;
-}
-
-/* Joins pickup to destination so the pair reads as one journey. */
-.route-rail {
-  @apply relative w-3 shrink-0;
-}
-.route-rail::before,
-.route-rail::after {
-  content: '';
-  @apply absolute left-1/2 -translate-x-1/2 rounded-full;
-}
-.route-rail::before {
-  top: 1.85rem;
-  @apply h-2.5 w-2.5 bg-emerald-600;
-}
-.route-rail::after {
-  bottom: 1.1rem;
-  @apply h-2.5 w-2.5 bg-brand-dark;
-}
-.route-rail > span {
-  content: '';
-}
-
-.btn-gold {
-  @apply inline-flex items-center justify-center min-h-[52px] rounded-xl
-         bg-brand text-black font-semibold text-base px-6
-         transition-colors duration-150
-         hover:bg-brand-dark
-         focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2
-         focus-visible:ring-offset-sand-50
-         disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply text-xs px-2 py-0.5 rounded-sg-pill border border-line;
 }
 
 /* --- map surface ---------------------------------------------------------
-   Where the map goes. When no provider is configured, this shows a stated
-   blocked state -- never a drawn placeholder that could be mistaken for a
-   real map, and never invented streets. */
+   Where the map goes.
+
+   THIS SURFACE WILL NOT DRAW A FAKE MAP. When the provider is unavailable,
+   it is a plain `bg-100` panel carrying a stated fallback -- never
+   decorative streets, and never the faint grid it used to draw, which a
+   customer could reasonably read as "this is where I am". */
 
 .map-surface {
-  @apply relative overflow-hidden rounded-2xl border border-white/[0.07] bg-ink-800;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
-  background-size: 48px 48px, 48px 48px;
+  @apply relative overflow-hidden bg-bg-100;
 }

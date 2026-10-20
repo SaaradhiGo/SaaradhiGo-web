@@ -84,7 +84,7 @@ export default function DriversPage() {
                 return (
                   <tr key={d.id} className="table-row hover:bg-white/5">
                     <td className="py-2">
-                      <Link href={`/drivers/${d.id}`} className="text-brand hover:underline">#{d.id}</Link>
+                      <Link href={`/drivers/${d.id}`} className="sg-link">#{d.id}</Link>
                     </td>
                     <td className="py-2">{u?.phone_number ?? '—'}</td>
                     <td className="py-2">{u?.full_name ?? '—'}</td>
@@ -99,7 +99,7 @@ export default function DriversPage() {
                     ) : '—'}</td>
                     <td className="py-2">
                       {!d.approved && (
-                        <button className="btn-ghost text-brand text-xs" onClick={() => approve(d.id)}>
+                        <button className="btn-ghost text-gold-text text-xs" onClick={() => approve(d.id)}>
                           Approve
                         </button>
                       )}

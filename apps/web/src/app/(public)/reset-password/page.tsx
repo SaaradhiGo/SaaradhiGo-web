@@ -61,7 +61,7 @@ function ResetPasswordInner() {
         title="Set a new password"
         footer={
           <p>
-            <Link href="/forgot-password" className="text-brand hover:underline">
+            <Link href="/forgot-password" className="sg-link">
               Ask for a new link
             </Link>
           </p>
@@ -127,7 +127,7 @@ export default function ResetPasswordPage() {
     <Suspense
       fallback={
         <AuthShell title="Set a new password">
-          <p className="text-sm text-white/60">Loading…</p>
+          <p className="text-sm text-ink-subtle">Loading…</p>
         </AuthShell>
       }
     >

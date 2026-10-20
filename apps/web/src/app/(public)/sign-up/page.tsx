@@ -17,13 +17,13 @@ export default function Page() {
         <>
           <p>
             Already have an account?{' '}
-            <Link href="/sign-in" className="text-brand hover:underline">
+            <Link href="/sign-in" className="sg-link">
               Sign in
             </Link>
           </p>
           <p>
             Want to drive with us?{' '}
-            <Link href="/driver/sign-up" className="text-brand hover:underline">
+            <Link href="/driver/sign-up" className="sg-link">
               Apply to drive
             </Link>
           </p>

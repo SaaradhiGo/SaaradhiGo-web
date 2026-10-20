@@ -124,7 +124,7 @@ export default function SosPage() {
             key={s || 'all'}
             onClick={() => setStatusFilter(s)}
             className={`tag capitalize ${
-              s === statusFilter ? 'border-brand text-brand' : 'border-white/20 text-white/60'
+              s === statusFilter ? 'border-brand text-gold-text' : 'border-white/20 text-white/60'
             }`}
           >
             {s ? s.replace('_', ' ') : 'all'}
@@ -167,7 +167,7 @@ export default function SosPage() {
                       {ev.user_phone && (
                         <>
                           {' · '}
-                          <a href={`tel:${ev.user_phone}`} className="text-brand hover:underline">
+                          <a href={`tel:${ev.user_phone}`} className="sg-link">
                             {ev.user_phone}
                           </a>
                         </>
@@ -175,7 +175,7 @@ export default function SosPage() {
                     </p>
                     <p className="text-sm text-white/60 mt-1">
                       {ev.trip_id ? (
-                        <Link href={`/trips/${ev.trip_id}`} className="text-brand hover:underline">
+                        <Link href={`/trips/${ev.trip_id}`} className="sg-link">
                           Trip #{ev.trip_id}
                         </Link>
                       ) : (
@@ -186,7 +186,7 @@ export default function SosPage() {
                         <>
                           {' · '}
                           <a
-                            className="text-brand hover:underline"
+                            className="sg-link"
                             target="_blank"
                             rel="noreferrer"
                             href={`https://www.google.com/maps/search/?api=1&query=${ev.latitude},${ev.longitude}`}

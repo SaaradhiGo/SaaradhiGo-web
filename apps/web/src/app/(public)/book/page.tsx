@@ -24,6 +24,22 @@ import {
 } from '@/lib/booking';
 import MapSurface from '@/components/MapSurface';
 import { messageFor, readRiderToken } from '@/lib/publicAuth';
+import { formatDistance, formatFare } from '@/lib/money';
+import { vehicleClassLabel, vehicleProductName } from '@/lib/vehicles';
+import { Badge } from '@/components/sg/Badge';
+import { Button, ButtonLink } from '@/components/sg/Button';
+import { DriverCard, initialsFor } from '@/components/sg/DriverCard';
+import { FareLock, FareSummary } from '@/components/sg/FareSummary';
+import { GlassPanel } from '@/components/sg/GlassPanel';
+import {
+  LocateAction,
+  LocationField,
+  RouteFields,
+  RouteMarker,
+} from '@/components/sg/LocationField';
+import { MapLabel } from '@/components/sg/MapLabel';
+import { VehicleList, VehicleOption } from '@/components/sg/VehicleOption';
+import { ArrowRight, Card as CardIcon, Check, Clock } from '@/components/sg/icons';
 
 /**
  * Book a ride in the browser.
@@ -688,412 +704,114 @@ function BookPageInner() {
   // --- render ------------------------------------------------------------
 
   if (signedIn === null) {
-    return <p className="text-white/60">Loading…</p>;
-  }
-
-  if (!signedIn) {
     return (
-      <div className="max-w-md mx-auto">
-        <h1 className="text-3xl font-bold">Book a ride</h1>
-        <div className="card mt-6 space-y-4">
-          <Alert kind="info">Sign in to book a ride.</Alert>
-          <Link href="/sign-in" className="btn-primary w-full">
-            Sign in
-          </Link>
-          <Link href="/sign-up" className="btn-secondary w-full">
-            Create an account
-          </Link>
-        </div>
+      <div className="sg-page">
+        <p className="body text-ink-muted" role="status">
+          Loading…
+        </p>
       </div>
     );
   }
 
-  const money = (amount: string) =>
-    `${quote?.currency ? `${quote.currency} ` : ''}${amount}`;
+  if (!signedIn) {
+    return (
+      <div className="sg-page max-w-md">
+        <GlassPanel glass={false} title="Book a ride">
+          <Alert kind="info">Sign in to book a ride.</Alert>
+          {/* One primary action: signing in is the thing this view is for. */}
+          <ButtonLink href="/sign-in" variant="primary" size="lg" block>
+            Sign in
+          </ButtonLink>
+          <ButtonLink href="/sign-up" variant="secondary" block>
+            Create an account
+          </ButtonLink>
+        </GlassPanel>
+      </div>
+    );
+  }
+
+  // --- presentation ------------------------------------------------------
+
+  /**
+   * What to call the trip, in the rider's words.
+   *
+   * The design's live-trip panel leads with "Ravi is 3 min away". The ETA is
+   * not available: the trip socket carries the driver's position and the
+   * trip's state, and neither the accept broadcast nor `tripDetail` returns a
+   * time to arrival.
+   *
+   * TODO(eta): lead with the minutes once the server sends them. The Routes
+   * API call the backend already makes for the route has a duration in it, so
+   * this is a matter of relaying it on the accept broadcast rather than a new
+   * integration. Until then the heading says what is happening, which is the
+   * part we know, and never a number we would be guessing.
+   */
+  const driverName = typeof driver?.name === 'string' ? driver.name : null;
+  const driverFirstName = driverName ? driverName.split(/\s+/)[0] : null;
+  const plate = driver && driver.vehicle_number ? String(driver.vehicle_number) : null;
+
+  function tripHeadline(): string {
+    if (tripState === 'cancelled') return 'Ride cancelled';
+    if (tripState === 'completed') return 'You have arrived';
+    if (tripState === 'started') {
+      return destinationLabel ? `On your way to ${destinationLabel}` : 'On your way';
+    }
+    if (tripState === 'reached') {
+      return driverFirstName ? `${driverFirstName} has arrived` : 'Your Saaradhi has arrived';
+    }
+    if (tripState === 'accepted') {
+      return driverFirstName ? `${driverFirstName} is on the way` : 'Your Saaradhi is on the way';
+    }
+    return 'Finding your Saaradhi';
+  }
+
+  const tripTone: 'success' | 'danger' | 'neutral' =
+    tripState === 'cancelled' ? 'danger' : tripState ? 'success' : 'neutral';
+
+  const fare = formatFare(quote?.estimated_fare, quote?.currency);
+  const journeyKm = pickup && destination ? haversineKm(pickup, destination) : null;
+  const bothEndsSet = Boolean(pickup && destination);
+
+  /** Start the destination over, from the panel's "Edit trip" link. */
+  function editTrip() {
+    setDestination(null);
+    setDestinationLabel('');
+    setQuery('');
+    setPlaces([]);
+    setQuotes({});
+    setQuote(null);
+    setVehicleType('');
+  }
+
+  /** The journey recap, shown in place of the fields once both ends are known. */
+  const summary = (
+    <div className="sg-summary">
+      <div>
+        <RouteMarker kind="pickup" />
+        <span className="min-w-0 truncate">{pickupLabel || 'Pickup'}</span>
+        <small>Now</small>
+      </div>
+      <div>
+        <RouteMarker kind="drop" />
+        <span className="min-w-0 truncate">{destinationLabel || 'Destination'}</span>
+        {/* Straight-line distance, and labelled as such by being the only
+            distance on the panel. The road distance is inside the server's
+            own quote and is not repeated here as though it were this one. */}
+        <small className="sg-num">
+          {formatDistance(journeyKm, service?.zone?.distance_unit ?? 'km') ?? ''}
+        </small>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-10 items-start">
-      <div className="min-w-0">
-      <h1 className="text-3xl font-bold">Book a ride</h1>
-
-      {error && (
-        <div className="mt-4">
-          <Alert kind="error">{error}</Alert>
-        </div>
-      )}
-      {notice && (
-        <div className="mt-4">
-          <Alert kind="info">{notice}</Alert>
-        </div>
-      )}
-
-      {/* ---------------- pickup ---------------- */}
-      <section className="card mt-6 space-y-4">
-        <h2 className="text-xl font-semibold">1. Pickup</h2>
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={useMyLocation}
-            disabled={busy}
-          >
-            Use my location
-          </button>
-        </div>
-        <Field
-          label="Or enter a pickup point"
-          name="pickup"
-          placeholder="16.5062, 80.6480"
-          help='Latitude and longitude, separated by a comma.'
-          onBlur={(e) => e.target.value && setManualPickup(e.target.value)}
-        />
-        {pickup && (
-          <p className="text-sm text-white/70">
-            Pickup: <strong>{pickupLabel}</strong>
-          </p>
-        )}
-
-        {service && !service.serviceable && (
-          <Alert kind="info">
-            We do not operate at that pickup point yet. Try another location.
-          </Alert>
-        )}
-        {service?.serviceable && service.zone && (
-          <p className="text-sm text-white/60">
-            {service.zone.name} · prices in {service.zone.currency} · distances
-            in {service.zone.distance_unit}
-          </p>
-        )}
-      </section>
-
-      {/* ---------------- destination ---------------- */}
-      {service?.serviceable && (
-        <section className="card mt-5 space-y-4">
-          <h2 className="text-xl font-semibold">2. Destination</h2>
-
-          {!mapsDown ? (
-            <form onSubmit={runSearch} className="space-y-3" noValidate>
-              <Field
-                label="Search for a destination"
-                name="q"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              <button type="submit" className="btn-secondary" disabled={busy}>
-                {busy ? 'Searching…' : 'Search'}
-              </button>
-            </form>
-          ) : (
-            <>
-              {/* Customer-facing copy.
-                  This used to read "This deployment has no map provider
-                  configured ... a configuration gap on our side", which is a
-                  sentence written for us, not for the passenger standing on a
-                  pavement. It also invited them to conclude the whole service
-                  was broken. Say what it means for them, say what still works,
-                  and tell them what to do. The provider's actual reason is
-                  logged for operations, not printed on the page. */}
-              <div className="rounded-xl border border-amber-700/40 bg-amber-900/15 p-4">
-                <p className="font-medium text-amber-100">
-                  Location search is temporarily unavailable
-                </p>
-                <p className="mt-1.5 text-sm text-amber-100/70">
-                  Please try again in a moment. You can still book — fares,
-                  drivers and trip tracking are working normally.
-                </p>
-              </div>
-
-              {/* QA entry by coordinates. Deliberately collapsed and
-                  labelled: it is a testing affordance, and presenting it as
-                  the normal way to choose a destination would be presenting
-                  a broken product as a finished one. */}
-              <details className="group rounded-xl border border-white/10 bg-white/[0.02]">
-                <summary className="cursor-pointer list-none px-4 py-3 text-sm text-white/55 hover:text-white/80 flex items-center gap-2">
-                  <span
-                    aria-hidden="true"
-                    className="transition-transform group-open:rotate-90"
-                  >
-                    ›
-                  </span>
-                  QA testing: enter a destination by coordinates
-                </summary>
-                <div className="border-t border-white/[0.07] p-4">
-                  <Field
-                    label="Destination coordinates"
-                    name="manualDest"
-                    placeholder="16.5190, 80.6305"
-                    value={manualDest}
-                    onChange={(e) => setManualDest(e.target.value)}
-                    help="Latitude and longitude. For testing only, while map search is unconfigured."
-                  />
-                  <button
-                    type="button"
-                    className="btn-secondary mt-3"
-                    onClick={setManualDestination}
-                  >
-                    Use these coordinates
-                  </button>
-                </div>
-              </details>
-            </>
-          )}
-
-          {places.length > 0 && (
-            <ul className="divide-y divide-white/5">
-              {places.map((p) => (
-                <li key={p.place_id}>
-                  <button
-                    type="button"
-                    className="w-full text-left py-3 hover:text-brand"
-                    onClick={() => choosePlace(p)}
-                  >
-                    {p.description}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {destination && (
-            <p className="text-sm text-white/70">
-              Destination: <strong>{destinationLabel}</strong>
-            </p>
-          )}
-        </section>
-      )}
-
-      {/* ---------------- vehicle + fare ---------------- */}
-      {service?.serviceable && destination && (
-        <section className="card mt-5 space-y-4">
-          <h2 className="text-xl font-semibold">3. Vehicle and fare</h2>
-
-          {service.vehicle_types.length === 0 ? (
-            <Alert kind="info">
-              No vehicle categories are available at this pickup point yet.
-            </Alert>
-          ) : (
-            <>
-              {/* Every category is priced by the server before the rider
-                  chooses, so this is a comparison rather than a guess
-                  followed by a reveal. A category the server could not
-                  price says so; nothing here interpolates a fare. */}
-              {Object.keys(quotes).length === 0 && (
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={quoteAll}
-                  disabled={busy}
-                >
-                  {busy ? 'Pricing…' : 'Show fares'}
-                </button>
-              )}
-
-              <ul className="grid gap-2.5 sm:grid-cols-2">
-                {service.vehicle_types.map((v) => {
-                  const q = quotes[v.type];
-                  const priced = q !== undefined && q !== null;
-                  const unavailable = q === null;
-                  const selected = vehicleType === v.type;
-                  return (
-                    <li key={v.type}>
-                      <button
-                        type="button"
-                        disabled={unavailable}
-                        onClick={() => {
-                          setVehicleType(v.type);
-                          if (priced) setQuote(q);
-                        }}
-                        aria-pressed={selected}
-                        className={`w-full text-left rounded-xl border px-4 py-3.5 transition-colors duration-150 flex items-center justify-between gap-4 ${
-                          selected
-                            ? 'border-brand bg-brand/10'
-                            : unavailable
-                              ? 'border-white/5 opacity-50 cursor-not-allowed'
-                              : 'border-white/10 hover:bg-white/5'
-                        }`}
-                      >
-                        <span className="min-w-0">
-                          <span className="font-medium capitalize block">
-                            {v.type}
-                          </span>
-                          {v.description && (
-                            <span className="block text-xs text-white/55">
-                              {v.description}
-                            </span>
-                          )}
-                        </span>
-                        <span className="shrink-0 text-right">
-                          {priced ? (
-                            <span className="font-semibold tabular-nums">
-                              {money(q.estimated_fare)}
-                            </span>
-                          ) : unavailable ? (
-                            <span className="text-xs text-white/45">
-                              Unavailable
-                            </span>
-                          ) : (
-                            <span className="text-xs text-white/40">—</span>
-                          )}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-
-              {quote && (
-                <p className="text-xs text-white/55">
-                  Estimated. The final fare is confirmed at the end of the
-                  trip.
-                </p>
-              )}
-            </>
-          )}
-        </section>
-      )}
-
-      {/* ---------------- request ---------------- */}
-      {quote && stage !== 'matched' && stage !== 'done' && (
-        <section className="card mt-5 space-y-3">
-          <h2 className="text-xl font-semibold">4. Confirm</h2>
-          <p className="text-sm text-white/60">
-            You will pay the driver in cash at the end of this trip.
-          </p>
-          <SubmitButton
-            busy={stage === 'requesting'}
-            busyLabel="Finding you a driver…"
-            onClick={requestRide}
-            type="button"
-          >
-            Request this ride
-          </SubmitButton>
-          {stage === 'requesting' && (
-            <p className="text-sm text-white/60" role="status">
-              Dispatch connection: {socketState}
-            </p>
-          )}
-        </section>
-      )}
-
-      {/* ---------------- live trip ---------------- */}
-      {stage === 'matched' && (
-        <section className="card mt-5 space-y-4">
-          <h2 className="text-xl font-semibold">Your ride</h2>
-          <p className="text-sm">
-            Trip <strong>#{tripId}</strong> · status{' '}
-            <strong>
-              {TRIP_STATE_LABEL[tripState] ?? tripState ?? 'requested'}
-            </strong>
-          </p>
-          <p className="text-xs text-white/50">Live updates: {socketState}</p>
-
-          {/* The pickup PIN.
-              The driver cannot start the trip without it, and this page
-              never showed it -- the server broadcasts it on accept and the
-              client dropped it, so a rider booking on the website had no way
-              to begin their ride. It is only useful between the driver being
-              assigned and the trip starting, so it is shown exactly then. */}
-          {pickupOtp && PIN_IS_STILL_NEEDED.includes(tripState) ? (
-            <div className="rounded-xl border border-brand/40 bg-brand/10 p-4">
-              <p className="text-xs uppercase tracking-widest text-brand">
-                Pickup PIN
-              </p>
-              <p className="mt-1 text-3xl font-bold tracking-[0.3em] tabular-nums">
-                {pickupOtp}
-              </p>
-              <p className="mt-1 text-xs text-white/60">
-                Give this to your driver to start the trip. Do not share it
-                with anyone else.
-              </p>
-            </div>
-          ) : null}
-
-          {driver ? (
-            <div className="rounded-xl border border-white/10 p-4 text-sm">
-              <p className="font-medium">
-                {(driver.name as string) ?? 'Your driver'}
-              </p>
-              {driver.vehicle_number ? (
-                <p className="text-white/60">
-                  {String(driver.vehicle_number)}
-                </p>
-              ) : null}
-            </div>
-          ) : TRIP_IS_OVER.includes(tripState) ? null : (
-            <p className="text-sm text-white/60">
-              Waiting for a driver to accept.
-            </p>
-          )}
-
-          {/* A ride that is over cannot be cancelled, and offering it invites
-              a rider to try -- on trip #88 this sat under a paid-for fare. */}
-          <div
-            className={`border-t border-white/5 pt-4 space-y-3 ${
-              TRIP_IS_OVER.includes(tripState) ? 'hidden' : ''
-            }`}
-          >
-            <label htmlFor="cancel-reason" className="label">
-              Need to cancel?
-            </label>
-            <select
-              id="cancel-reason"
-              className="input"
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-            >
-              {RIDER_CANCEL_REASONS.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="btn-secondary w-full"
-              onClick={doCancel}
-              disabled={busy}
-            >
-              {busy ? 'Cancelling…' : 'Cancel this ride'}
-            </button>
-          </div>
-        </section>
-      )}
-
-      {stage === 'done' && (
-        <section className="card mt-5 space-y-3">
-          <h2 className="text-xl font-semibold">
-            {tripState === 'cancelled' ? 'Ride cancelled' : 'Trip complete'}
-          </h2>
-          {tripState !== 'cancelled' && (
-            <p className="text-sm text-white/70">
-              Pay the driver in cash. Your receipt is emailed once they confirm
-              they have collected it.
-            </p>
-          )}
-          <Link href="/my-trips" className="btn-secondary inline-flex">
-            See your trips
-          </Link>
-        </section>
-      )}
-
-      <p className="mt-8 text-sm text-white/50">
-        Need help?{' '}
-        <Link href="/contact" className="text-brand hover:underline">
-          Contact support
-        </Link>
-      </p>
-      </div>
-
-      {/* The journey so far, kept in view while the steps scroll. Every
-          value here is one the server returned. */}
-      {/* On a phone this sits ABOVE the form rather than being hidden.
-          A rider booking on a handset is the common case and was the one
-          shown no map at all. `order-first` moves the single existing
-          instance; it is not a second map, so nothing is drawn twice and
-          no extra tiles are bought. */}
-      <aside className="order-first lg:order-none lg:sticky lg:top-24 space-y-4">
+    <div className="sg-ws">
+      {/* The map: full-bleed behind the panel on a desktop, above it on a
+          phone. One instance, so nothing is drawn twice and no extra tiles
+          are bought. Every coordinate on it is one the server returned. */}
+      <div className="sg-ws__map">
         <MapSurface
-          className="h-64"
+          className="h-full"
           zoneName={service?.zone?.name}
           currency={service?.zone?.currency}
           vehicleCount={service?.vehicle_types?.length ?? null}
@@ -1101,55 +819,448 @@ function BookPageInner() {
           destination={destination}
           driver={driverPos}
           routePolyline={routePoints}
-        />
-
-        <div className="card">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-white/50">
-            Your journey
-          </h2>
-          <dl className="mt-4 space-y-3 text-sm">
-            <div>
-              <dt className="text-white/45">Pickup</dt>
-              <dd className="mt-0.5 font-medium break-words">
-                {pickup ? pickupLabel : <span className="text-white/35">Not set</span>}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-white/45">Destination</dt>
-              <dd className="mt-0.5 font-medium break-words">
-                {destination ? destinationLabel : <span className="text-white/35">Not set</span>}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-white/45">Vehicle</dt>
-              <dd className="mt-0.5 font-medium capitalize">
-                {vehicleType || <span className="text-white/35">Not chosen</span>}
-              </dd>
-            </div>
-          </dl>
-
-          {quote && (
-            <div className="mt-4 border-t border-white/[0.07] pt-4">
-              <p className="text-xs text-white/45">Estimated fare</p>
-              <p className="mt-1 text-2xl font-bold tabular-nums">
-                {money(quote.estimated_fare)}
-              </p>
-              <p className="mt-1 text-xs text-white/45">
-                Confirmed at the end of the trip.
-              </p>
-            </div>
+        >
+          {/* One floating label, for the one fact worth putting on the map:
+              the locked fare. It is aria-hidden, because the same number is
+              in the panel beside it, in reading order. */}
+          {fare && stage !== 'done' && (
+            <MapLabel left="72%" top="26%">
+              {destinationLabel ? `${destinationLabel.split(',')[0]} · ` : ''}
+              <b className="sg-num">{fare}</b>
+            </MapLabel>
           )}
+        </MapSurface>
+        <div className="sg-scrim-bottom md:hidden" />
+      </div>
 
-          {tripId && (
-            <div className="mt-4 border-t border-white/[0.07] pt-4">
-              <p className="text-xs text-white/45">Trip</p>
-              <p className="mt-1 font-semibold">#{tripId}</p>
-              <p className="mt-0.5 text-sm text-white/60">{tripState || 'requested'}</p>
-              <p className="mt-1 text-xs text-white/40">Live updates: {socketState}</p>
+      <section className="sg-ws__panel">
+        {/* The page's heading. The panels carry the visible titles, as the
+            design has them, so this exists for the document outline and for
+            anyone navigating by headings. */}
+        <h1 className="sr-only">Book a ride</h1>
+
+        {error && <Alert kind="error">{error}</Alert>}
+        {notice && <Alert kind="info">{notice}</Alert>}
+
+        {/* ---------------- the journey and the fare ---------------- */}
+        {stage !== 'matched' && stage !== 'done' && (
+          <GlassPanel
+            title={bothEndsSet ? 'Choose a ride' : 'Book a ride'}
+            action={
+              bothEndsSet ? (
+                <button type="button" className="sg-link" onClick={editTrip}>
+                  Edit trip
+                </button>
+              ) : undefined
+            }
+          >
+            {bothEndsSet ? (
+              summary
+            ) : (
+              <RouteFields>
+                <LocationField
+                  id="bk-pickup"
+                  kind="pickup"
+                  label="Pickup"
+                  placeholder="Where are you?"
+                  defaultValue={pickupLabel}
+                  autoComplete="off"
+                  onBlur={(e) => e.target.value && setManualPickup(e.target.value)}
+                  action={<LocateAction onClick={useMyLocation} busy={busy} />}
+                />
+                <LocationField
+                  id="bk-dest"
+                  kind="drop"
+                  label="Destination"
+                  placeholder="Where to?"
+                  value={query}
+                  autoComplete="off"
+                  disabled={!service?.serviceable}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      void runSearch(e as unknown as React.FormEvent);
+                    }
+                  }}
+                />
+              </RouteFields>
+            )}
+
+            {/* Pickup is entered as coordinates on this deployment, and that
+                is said once, quietly, rather than discovered through a failed
+                parse. */}
+            {!bothEndsSet && !pickup && (
+              <p className="caption text-ink-subtle">
+                Use your location, or type a pickup as “latitude, longitude”.
+              </p>
+            )}
+
+            {service && !service.serviceable && (
+              <Alert kind="info">
+                We do not operate at that pickup point yet. Try another
+                location.
+              </Alert>
+            )}
+
+            {!bothEndsSet && service?.serviceable && !mapsDown && (
+              <Button variant="secondary" onClick={runSearch} disabled={busy}>
+                {busy ? 'Searching…' : 'Search destination'}
+              </Button>
+            )}
+
+            {/* Customer-facing copy.
+                This used to read "This deployment has no map provider
+                configured ... a configuration gap on our side", which is a
+                sentence written for us, not for the passenger standing on a
+                pavement. It also invited them to conclude the whole service
+                was broken. Say what it means for them, say what still works,
+                and tell them what to do. The provider's actual reason is
+                logged for operations, not printed on the page. */}
+            {!bothEndsSet && service?.serviceable && mapsDown && (
+              <>
+                <div className="alert alert-info" role="status">
+                  <span className="title block">
+                    Location search is temporarily unavailable
+                  </span>
+                  <span className="caption text-ink-muted block mt-sg-1">
+                    Please try again in a moment. You can still book — fares,
+                    drivers and trip tracking are working normally.
+                  </span>
+                </div>
+
+                {/* QA entry by coordinates. Deliberately collapsed and
+                    labelled: it is a testing affordance, and presenting it as
+                    the normal way to choose a destination would be presenting
+                    a broken product as a finished one. */}
+                <details className="group rounded-sg-md border border-line bg-bg-200">
+                  <summary className="cursor-pointer list-none px-sg-4 py-sg-3 caption text-ink-muted hover:text-ink flex items-center gap-sg-2">
+                    <span
+                      aria-hidden="true"
+                      className="transition-transform group-open:rotate-90"
+                    >
+                      ›
+                    </span>
+                    QA testing: enter a destination by coordinates
+                  </summary>
+                  <div className="border-t border-line p-sg-4">
+                    <Field
+                      label="Destination coordinates"
+                      name="manualDest"
+                      placeholder="16.5190, 80.6305"
+                      value={manualDest}
+                      onChange={(e) => setManualDest(e.target.value)}
+                      help="Latitude and longitude. For testing only, while map search is unconfigured."
+                    />
+                    <div className="mt-sg-3">
+                      <Button variant="secondary" onClick={setManualDestination}>
+                        Use these coordinates
+                      </Button>
+                    </div>
+                  </div>
+                </details>
+              </>
+            )}
+
+            {places.length > 0 && (
+              <div>
+                {places.map((p) => (
+                  <button
+                    key={p.place_id}
+                    type="button"
+                    className="sg-place w-full text-left"
+                    onClick={() => choosePlace(p)}
+                  >
+                    <span className="sg-place__icon" aria-hidden="true">
+                      <Clock />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="sg-place__name block truncate">
+                        {p.description.split(',')[0]}
+                      </span>
+                      <span className="sg-place__addr block truncate">
+                        {p.description.split(',').slice(1).join(',').trim()}
+                      </span>
+                    </span>
+                    <span />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* ---------------- the vehicle classes ---------------- */}
+            {bothEndsSet && service?.serviceable && (
+              service.vehicle_types.length === 0 ? (
+                <Alert kind="info">
+                  No vehicle categories are available at this pickup point yet.
+                </Alert>
+              ) : (
+                <>
+                  {/* Every category is priced by the server before the rider
+                      chooses, so this is a comparison rather than a guess
+                      followed by a reveal. A category the server could not
+                      price says so; nothing here interpolates a fare. */}
+                  {Object.keys(quotes).length === 0 && (
+                    <Button variant="secondary" block onClick={quoteAll} disabled={busy}>
+                      {busy ? 'Pricing…' : 'Show fares'}
+                    </Button>
+                  )}
+
+                  <VehicleList>
+                    {service.vehicle_types.map((v) => {
+                      const q = quotes[v.type];
+                      const priced = q !== undefined && q !== null;
+                      return (
+                        <VehicleOption
+                          key={v.type}
+                          category={v.type}
+                          name={vehicleProductName(v.type)}
+                          /* TODO(eta, seats): the design's meta line is "5 min
+                             away · 4 seats". Neither is available --
+                             `/pricing/vehicle-types/` returns a category code
+                             and a description, and there is no endpoint for a
+                             nearby-driver ETA per class. The server's own
+                             description is shown instead of a fabricated ETA. */
+                          meta={v.description || null}
+                          fare={
+                            priced
+                              ? formatFare(
+                                  q.estimated_fare,
+                                  q.currency ?? service.zone?.currency,
+                                )
+                              : null
+                          }
+                          selected={vehicleType === v.type}
+                          onSelect={() => {
+                            setVehicleType(v.type);
+                            if (priced) setQuote(q);
+                          }}
+                        />
+                      );
+                    })}
+                  </VehicleList>
+                </>
+              )
+            )}
+
+            {/* ---------------- how it settles ---------------- */}
+            {quote && (
+              /* TODO(payments): the design's row reads "UPI · srini@okaxis"
+                 with a "Change" link. There is no saved payment method and no
+                 online payment on this deployment, so the row states the
+                 method the trip actually settles with -- which the trip
+                 record confirms -- and offers no link to a screen that does
+                 not exist. */
+              <div className="sg-row">
+                <span className="sg-row__left">
+                  <CardIcon />
+                  Cash to the driver
+                </span>
+              </div>
+            )}
+
+            {/* ---------------- confirm ---------------- */}
+            {quote && stage !== 'requesting' && (
+              <div className="sg-ws__primary">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  block
+                  onClick={requestRide}
+                  disabled={busy}
+                >
+                  Confirm {vehicleClassLabel(vehicleType)}
+                  {fare ? ` · ${fare}` : ''}
+                  <ArrowRight />
+                </Button>
+                <FareLock>Fare locked. No surge after you book.</FareLock>
+              </div>
+            )}
+
+            {stage === 'requesting' && (
+              <div className="sg-ws__primary">
+                <div className="sg-progress" aria-hidden="true">
+                  <i />
+                </div>
+                <p className="caption text-ink-muted mt-sg-3" role="status">
+                  Finding you a driver. Dispatch connection: {socketState}.
+                </p>
+              </div>
+            )}
+          </GlassPanel>
+        )}
+
+        {/* ---------------- the live trip ---------------- */}
+        {stage === 'matched' && (
+          <GlassPanel>
+            <div className="flex items-start justify-between gap-sg-4">
+              <div className="min-w-0">
+                <h2 className="display-lg text-[34px] leading-[40px] m-0">
+                  {tripHeadline()}
+                </h2>
+                <p className="sg-sheet__sub">
+                  {pickupLabel ? `Meet at ${pickupLabel}` : `Trip #${tripId}`}
+                </p>
+              </div>
+              <Badge tone={tripTone}>
+                {TRIP_STATE_LABEL[tripState] ?? tripState ?? 'Requested'}
+              </Badge>
             </div>
-          )}
-        </div>
-      </aside>
+
+            {driverName ? (
+              <DriverCard
+                name={driverName}
+                initials={initialsFor(driverName)}
+                plate={plate}
+                /* TODO(driver details): the design's card carries a rating to
+                   two decimals and a "Make Model · Colour" line. The accept
+                   broadcast sends `name` and `vehicle_number` and nothing
+                   else, so those lines are left out rather than filled in. A
+                   rider matching a stranger's car against an invented make
+                   and colour is worse off than one who can see the field is
+                   blank. */
+              />
+            ) : (
+              <p className="body text-ink-muted" role="status">
+                Waiting for a driver to accept.
+              </p>
+            )}
+
+            {/* The pickup PIN.
+                The driver cannot start the trip without it, and this page
+                never showed it -- the server broadcasts it on accept and the
+                client dropped it, so a rider booking on the website had no
+                way to begin their ride. It is only useful between the driver
+                being assigned and the trip starting, so it is shown exactly
+                then. */}
+            {pickupOtp && PIN_IS_STILL_NEEDED.includes(tripState) ? (
+              <div className="sg-row">
+                <span>
+                  <span className="sg-field__label block">Ride PIN</span>
+                  <span className="sg-sheet__sub m-0">
+                    Share only once you are in the car
+                  </span>
+                </span>
+                <span className="sg-pin sg-num">
+                  {pickupOtp.split('').map((digit, i) => (
+                    // A four-digit PIN repeats digits; the position is the
+                    // only stable key it has.
+                    // eslint-disable-next-line react/no-array-index-key
+                    <span key={i}>{digit}</span>
+                  ))}
+                </span>
+              </div>
+            ) : null}
+
+            <ol className="sg-timeline">
+              <li>
+                <i className="sg-field__marker--pickup rounded-sg-pill" />
+                <div>
+                  <b>{pickupLabel || 'Pickup'}</b>
+                  <span>Pickup</span>
+                </div>
+              </li>
+              <li>
+                <i className="sg-field__marker--drop rounded-[3px]" />
+                <div>
+                  <b>{destinationLabel || 'Destination'}</b>
+                  <span>
+                    Drop
+                    {fare ? ` · ${fare} locked` : ''}
+                    {' · Cash'}
+                  </span>
+                </div>
+              </li>
+            </ol>
+
+            <p className="caption text-ink-subtle">Live updates: {socketState}</p>
+
+            {/* TODO(share, safety): the design's trip sheet offers "Share
+                trip" and "Safety". Neither exists on the web app -- there is
+                no shareable-trip endpoint, and the SOS path is implemented in
+                the mobile apps against the device's own contacts. A button
+                that looks like a safety feature and does nothing is worse
+                than its absence, so the panel carries only what works. */}
+
+            {/* A ride that is over cannot be cancelled, and offering it
+                invites a rider to try -- on trip #88 this sat under a
+                paid-for fare. */}
+            <div
+              className={`border-t border-line pt-sg-4 grid gap-sg-3 ${
+                TRIP_IS_OVER.includes(tripState) ? 'hidden' : ''
+              }`}
+            >
+              <label htmlFor="cancel-reason" className="form-label">
+                Need to cancel?
+              </label>
+              <select
+                id="cancel-reason"
+                className="input"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+              >
+                {RIDER_CANCEL_REASONS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+              <Button variant="ghost" block onClick={doCancel} disabled={busy}>
+                {busy ? 'Cancelling…' : 'Cancel ride'}
+              </Button>
+            </div>
+          </GlassPanel>
+        )}
+
+        {/* ---------------- the trip is over ---------------- */}
+        {stage === 'done' && (
+          <GlassPanel>
+            <div className="grid justify-items-center gap-sg-3 text-center">
+              {tripState !== 'cancelled' && (
+                <span className="grid place-items-center h-14 w-14 rounded-sg-pill bg-gold-500 text-on-gold">
+                  <Check className="h-7 w-7" />
+                </span>
+              )}
+              <h2 className="display-lg text-[38px] leading-[42px] m-0">
+                {tripState === 'cancelled' ? 'Ride cancelled' : 'You have arrived'}
+              </h2>
+              {destinationLabel && <p className="sg-sheet__sub m-0">{destinationLabel}</p>}
+            </div>
+
+            {tripState !== 'cancelled' && (
+              <>
+                <FareSummary
+                  label="Paid in cash"
+                  amount={quote?.estimated_fare}
+                  currency={quote?.currency ?? service?.zone?.currency}
+                  badge={<Badge tone="neutral">Cash</Badge>}
+                  lock={false}
+                />
+                <p className="caption text-ink-muted text-center">
+                  Pay the driver in cash. Your receipt is emailed once they
+                  confirm they have collected it.
+                </p>
+              </>
+            )}
+
+            {/* TODO(rating, tip): the design's completion sheet asks for a
+                star rating and offers three tip chips. The rider-side rating
+                endpoint and tipping are not built, so neither is shown: a
+                star control that discards the tap is worse than no control. */}
+
+            <ButtonLink href="/my-trips" variant="secondary" block>
+              See your trips
+            </ButtonLink>
+          </GlassPanel>
+        )}
+
+        <p className="caption text-ink-subtle">
+          Need help?{' '}
+          <Link href="/contact" className="sg-link">
+            Contact support
+          </Link>
+        </p>
+      </section>
     </div>
   );
 }
@@ -1157,7 +1268,15 @@ function BookPageInner() {
 export default function BookPage() {
   // useSearchParams needs a Suspense boundary for static rendering.
   return (
-    <Suspense fallback={<p className="text-white/60">Loading…</p>}>
+    <Suspense
+      fallback={
+        <div className="sg-page">
+          <p className="body text-ink-muted" role="status">
+            Loading…
+          </p>
+        </div>
+      }
+    >
       <BookPageInner />
     </Suspense>
   );

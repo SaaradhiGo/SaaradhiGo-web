@@ -33,10 +33,10 @@ const steps = [
 
 export default function DrivePage() {
   return (
-    <>
+    <div className="sg-page">
       <section>
         <h1 className="text-3xl sm:text-4xl font-bold">Drive with SaaradhiGo</h1>
-        <p className="mt-4 text-white/70 max-w-2xl text-lg">
+        <p className="mt-4 text-ink-muted max-w-2xl text-lg">
           You bring the vehicle and the licence. We bring the riders, the
           dispatch, and a fare you can see before you accept.
         </p>
@@ -46,7 +46,7 @@ export default function DrivePage() {
           </Link>
           <Link
             href="/driver/sign-in"
-            className="btn-ghost border border-white/10 rounded-xl px-4 py-2"
+            className="btn-ghost border border-line rounded-xl px-4 py-2"
           >
             Driver sign in
           </Link>
@@ -59,14 +59,14 @@ export default function DrivePage() {
           {steps.map((s) => (
             <li key={s.n} className="card flex gap-4">
               <span
-                className="shrink-0 h-8 w-8 rounded-full bg-brand text-black font-bold grid place-items-center"
+                className="shrink-0 h-8 w-8 rounded-full bg-gold-500 text-on-gold font-bold grid place-items-center"
                 aria-hidden="true"
               >
                 {s.n}
               </span>
               <div>
                 <h3 className="font-semibold">{s.title}</h3>
-                <p className="mt-1 text-sm text-white/70">{s.body}</p>
+                <p className="mt-1 text-sm text-ink-muted">{s.body}</p>
               </div>
             </li>
           ))}
@@ -75,22 +75,22 @@ export default function DrivePage() {
 
       <section className="mt-12 grid gap-4 sm:grid-cols-3">
         <div className="card">
-          <h2 className="font-semibold text-brand">Transparent earnings</h2>
-          <p className="mt-2 text-sm text-white/70">
+          <h2 className="font-semibold text-gold-text">Transparent earnings</h2>
+          <p className="mt-2 text-sm text-ink-muted">
             Commission is shown per trip, not buried. Your daily and weekly
             earnings are in the app.
           </p>
         </div>
         <div className="card">
-          <h2 className="font-semibold text-brand">Withdraw to your bank</h2>
-          <p className="mt-2 text-sm text-white/70">
+          <h2 className="font-semibold text-gold-text">Withdraw to your bank</h2>
+          <p className="mt-2 text-sm text-ink-muted">
             Request a payout from your earnings balance to the account you
             registered.
           </p>
         </div>
         <div className="card">
-          <h2 className="font-semibold text-brand">Support when it matters</h2>
-          <p className="mt-2 text-sm text-white/70">
+          <h2 className="font-semibold text-gold-text">Support when it matters</h2>
+          <p className="mt-2 text-sm text-ink-muted">
             An SOS control during a trip, and a support team that can see what
             happened on the ride.
           </p>
@@ -99,20 +99,20 @@ export default function DrivePage() {
 
       <section className="mt-12 card">
         <h2 className="text-lg font-semibold">Requirements</h2>
-        <ul className="mt-3 space-y-2 text-sm text-white/70 list-disc list-inside">
+        <ul className="mt-3 space-y-2 text-sm text-ink-muted list-disc list-inside">
           <li>A valid driving licence for the country you drive in</li>
           <li>Vehicle registration certificate and valid insurance</li>
           <li>A bank account in your name for payouts</li>
           <li>An Android phone to run the driver app</li>
         </ul>
-        <p className="mt-4 text-sm text-white/50">
+        <p className="mt-4 text-sm text-ink-subtle">
           Questions before you apply?{' '}
-          <Link href="/contact" className="text-brand hover:underline">
+          <Link href="/contact" className="sg-link">
             Talk to us
           </Link>
           .
         </p>
       </section>
-    </>
+    </div>
   );
 }

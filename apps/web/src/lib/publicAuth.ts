@@ -245,7 +245,10 @@ export async function confirmEmailVerification(uid: string, token: string) {
 
 /** Turn a server error into something the person can act on. */
 export function messageFor(err: unknown, fallback: string): string {
-  if (err instanceof ApiError && err.message) return err.message;
+  // Only text the SERVER wrote for a person reaches a screen. Anything this
+  // client synthesised from a status code -- "HTTP 502" -- is for the log,
+  // and the caller's fallback is what the rider reads instead.
+  if (err instanceof ApiError && err.fromServer && err.message) return err.message;
   return fallback;
 }
 

@@ -134,7 +134,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
   return (
     <div className="space-y-4">
       <div
-        className="flex rounded-xl border border-white/10 p-1"
+        className="flex rounded-xl border border-line p-1"
         role="tablist"
         aria-label="How to sign in"
       >
@@ -150,7 +150,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
                 setUnverified(false);
               }}
               className={`flex-1 min-h-[40px] rounded-lg text-sm font-medium transition-colors duration-150 ${
-                mode === m ? 'bg-brand text-black' : 'text-white/70 hover:text-white'
+                mode === m ? 'bg-gold-500 text-on-gold' : 'text-ink-muted hover:text-ink'
               }`}
             >
               {m === 'email' ? 'Email' : 'Mobile'}
@@ -192,7 +192,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
             Sign in
           </SubmitButton>
           <p className="text-sm">
-            <Link href="/forgot-password" className="text-brand hover:underline">
+            <Link href="/forgot-password" className="sg-link">
               Forgot your password?
             </Link>
           </p>

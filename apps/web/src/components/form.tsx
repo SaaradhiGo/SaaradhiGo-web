@@ -30,7 +30,7 @@ export function Field({
 
   return (
     <div>
-      <label htmlFor={id} className="label">
+      <label htmlFor={id} className="form-label">
         {label}
       </label>
       <input
@@ -116,12 +116,15 @@ export function AuthShell({
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
+  // `sg-page` carries the design system's gutters: the public layout imposes
+  // no container of its own, because the homepage hero and the booking
+  // workspace are full-bleed maps.
   return (
-    <div className="max-w-md mx-auto">
-      <h1 className="text-3xl font-bold">{title}</h1>
-      {intro && <p className="mt-2 text-sm text-white/60">{intro}</p>}
-      <div className="card mt-6 space-y-4">{children}</div>
-      {footer && <div className="mt-5 space-y-2 text-sm text-white/60">{footer}</div>}
+    <div className="sg-page max-w-md">
+      <h1 className="display-lg">{title}</h1>
+      {intro && <p className="sg-lead mt-sg-2">{intro}</p>}
+      <div className="card mt-sg-5 space-y-sg-4">{children}</div>
+      {footer && <div className="mt-sg-5 space-y-sg-2 caption text-ink-muted">{footer}</div>}
     </div>
   );
 }

@@ -195,7 +195,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
 
   const tabs = (
     <div
-      className="flex rounded-xl border border-white/10 p-1"
+      className="flex rounded-xl border border-line p-1"
       role="tablist"
       aria-label="How to sign up"
     >
@@ -207,7 +207,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           aria-selected={tab === t}
           onClick={() => switchTab(t)}
           className={`flex-1 min-h-[40px] rounded-lg text-sm font-medium transition-colors duration-150 ${
-            tab === t ? 'bg-brand text-black' : 'text-white/70 hover:text-white'
+            tab === t ? 'bg-gold-500 text-on-gold' : 'text-ink-muted hover:text-ink'
           }`}
         >
           {t === 'email' ? 'Email' : 'Mobile'}
@@ -251,7 +251,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
   if (stage === 'contact') {
     return (
       <form onSubmit={onSubmitContact} className="space-y-4" noValidate>
-        <p className="text-sm text-white/60">
+        <p className="text-sm text-ink-subtle">
           Step 2 of 2 — how your driver reaches you.
         </p>
         {formError && <Alert kind="error">{formError}</Alert>}
@@ -373,11 +373,11 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
 
       <p className="help">
         By continuing you agree to our{' '}
-        <Link href="/terms" className="text-brand hover:underline">
+        <Link href="/terms" className="sg-link">
           terms
         </Link>{' '}
         and{' '}
-        <Link href="/privacy" className="text-brand hover:underline">
+        <Link href="/privacy" className="sg-link">
           privacy policy
         </Link>
         .

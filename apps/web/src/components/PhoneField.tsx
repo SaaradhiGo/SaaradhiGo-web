@@ -71,7 +71,7 @@ export default function PhoneField({
   if (failed) {
     return (
       <div>
-        <label htmlFor={numberId} className="label">
+        <label htmlFor={numberId} className="form-label">
           {label}
         </label>
         <input
@@ -104,7 +104,7 @@ export default function PhoneField({
     <div>
       <div className="grid grid-cols-[minmax(0,9rem)_1fr] gap-3">
         <div>
-          <label htmlFor={countryId} className="label">
+          <label htmlFor={countryId} className="form-label">
             Country
           </label>
           <select
@@ -127,7 +127,7 @@ export default function PhoneField({
         </div>
 
         <div>
-          <label htmlFor={numberId} className="label">
+          <label htmlFor={numberId} className="form-label">
             {label}
           </label>
           <input

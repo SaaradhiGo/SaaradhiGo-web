@@ -26,7 +26,21 @@ export function clearTokens() {
 }
 
 export class ApiError extends Error {
-  constructor(public status: number, public code: string, message: string) {
+  /**
+   * Whether `message` was written by the server FOR A PERSON.
+   *
+   * It matters because `messageFor` decides from it whether the text may be
+   * shown to a rider. A 502 from a gateway has no error body, so the message
+   * became "HTTP 502" -- which is true, useless to a passenger, and was
+   * appearing on the booking panel. The status is still on the error for the
+   * log; it is simply no longer mistaken for copy.
+   */
+  constructor(
+    public status: number,
+    public code: string,
+    message: string,
+    public fromServer: boolean = false,
+  ) {
     super(message);
   }
 }
@@ -67,10 +81,12 @@ async function call<T>(
   }
   if (!resp.ok) {
     const err = json?.error ?? {};
+    const authored = typeof err.message === 'string' && err.message.trim() !== '';
     throw new ApiError(
       resp.status,
       err.code ?? 'UNKNOWN_ERROR',
-      err.message ?? `HTTP ${resp.status}`,
+      authored ? err.message : `HTTP ${resp.status}`,
+      authored,
     );
   }
   // Standard backend envelope: {status, data} for success

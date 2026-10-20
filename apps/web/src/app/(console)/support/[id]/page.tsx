@@ -114,7 +114,7 @@ export default function SupportTicketDetailPage() {
           Opened {fmt(ticket.created_at)} &middot; last updated {fmt(ticket.updated_at)}
           {ticket.resolved_at && <> &middot; resolved {fmt(ticket.resolved_at)}</>}
           {ticket.trip_id && (
-            <> &middot; <Link href={`/trips/${ticket.trip_id}`} className="text-brand hover:underline">Trip #{ticket.trip_id}</Link></>
+            <> &middot; <Link href={`/trips/${ticket.trip_id}`} className="sg-link">Trip #{ticket.trip_id}</Link></>
           )}
         </p>
       </div>
@@ -141,11 +141,11 @@ export default function SupportTicketDetailPage() {
             return (
               <div key={m.id} className={`text-sm rounded-lg p-3 ${
                 isSystem ? 'bg-white/5 italic text-white/60 text-center text-xs'
-                : isSupport ? 'bg-brand/10 border border-brand/30'
-                : 'bg-ink-800 border border-white/5'
+                : isSupport ? 'bg-gold-soft border border-gold-line'
+                : 'bg-bg-100 border border-line'
               }`}>
                 <div className="flex justify-between items-baseline">
-                  <span className={`text-xs uppercase tracking-widest ${isSupport ? 'text-brand' : 'text-white/50'}`}>
+                  <span className={`text-xs uppercase tracking-widest ${isSupport ? 'text-gold-text' : 'text-white/50'}`}>
                     {isSupport ? 'Support' : isSystem ? 'System' : (m.author_name || 'User')}
                   </span>
                   <span className="text-xs text-white/40">{fmt(m.created_at)}</span>
