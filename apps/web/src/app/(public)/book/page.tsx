@@ -126,6 +126,10 @@ function BookPageInner() {
   const [tripId, setTripId] = useState<number | string | null>(null);
   const [tripState, setTripState] = useState<string>('');
   const [driver, setDriver] = useState<Record<string, unknown> | null>(null);
+  // The assigned driver's live position, straight off the trip socket.
+  // Only ever a coordinate the server sent; never interpolated.
+  const [driverPos, setDriverPos] =
+    useState<{ lat: number; lng: number } | null>(null);
   // The pickup PIN the driver must be told before the trip can start. The
   // server broadcasts it on `accept`; this page used to drop it on the floor,
   // so a rider on the website had no way to start their ride.
@@ -514,6 +518,17 @@ function BookPageInner() {
           if (greetStatus) setTripState(normaliseTripState(greetStatus));
         }
 
+        // The driver moving. The consumer sends this to the RIDER only --
+        // the driver is the source of its own position and does not need an
+        // echo of it.
+        if (event.type === 'driver_location_update') {
+          const lat = Number(event.lat);
+          const lng = Number(event.lng);
+          if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            setDriverPos({ lat, lng });
+          }
+        }
+
         if (
           event.type === 'trip_update' ||
           event.type === 'trip_status_update'
@@ -547,6 +562,8 @@ function BookPageInner() {
           if (TRIP_IS_OVER.includes(state)) {
             setStage('done');
             setPickupOtp(null);
+            // No driver is on their way any more; stop showing one.
+            setDriverPos(null);
           }
         }
       },
@@ -984,6 +1001,9 @@ function BookPageInner() {
           zoneName={service?.zone?.name}
           currency={service?.zone?.currency}
           vehicleCount={service?.vehicle_types?.length ?? null}
+          pickup={pickup}
+          destination={destination}
+          driver={driverPos}
         />
 
         <div className="card">
