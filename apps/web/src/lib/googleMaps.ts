@@ -44,18 +44,34 @@ export function mapsConfigured(): boolean {
  * requested because the markers and the map come from different ones.
  */
 async function ready(): Promise<boolean> {
-  const g = (window as unknown as { google?: any }).google;
-  if (!g?.maps?.importLibrary) return Boolean(g?.maps?.Map);
-  try {
-    await Promise.all([
-      g.maps.importLibrary('maps'),
-      g.maps.importLibrary('marker'),
-    ]);
-    return Boolean(g.maps.Map);
-  } catch (e) {
-    console.warn('[maps] Google Maps libraries failed to initialise');
-    return false;
+  // `load` fires when the bootstrap SCRIPT arrives, which is not when the
+  // bootstrap has finished defining `importLibrary`. Observed on QA and
+  // reproduced locally: at onload `google.maps` existed, `importLibrary` did
+  // not, and the loader concluded the library was unusable and gave up --
+  // so the map stayed hidden behind the placeholder even though a map could
+  // be constructed by hand a second later.
+  //
+  // So wait for the function to appear rather than sampling once.
+  const deadline = Date.now() + 8000;
+  while (Date.now() < deadline) {
+    const g = (window as unknown as { google?: any }).google;
+    if (g?.maps?.Map) return true;
+    if (g?.maps?.importLibrary) {
+      try {
+        await Promise.all([
+          g.maps.importLibrary('maps'),
+          g.maps.importLibrary('marker'),
+        ]);
+        return Boolean(g.maps.Map);
+      } catch {
+        console.warn('[maps] Google Maps libraries failed to initialise');
+        return false;
+      }
+    }
+    await new Promise((r) => setTimeout(r, 100));
   }
+  console.warn('[maps] Google Maps did not become usable in time');
+  return false;
 }
 
 export function loadGoogleMaps(): Promise<boolean> {
