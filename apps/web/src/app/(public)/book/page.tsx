@@ -1086,7 +1086,12 @@ function BookPageInner() {
 
       {/* The journey so far, kept in view while the steps scroll. Every
           value here is one the server returned. */}
-      <aside className="hidden lg:block lg:sticky lg:top-24 space-y-4">
+      {/* On a phone this sits ABOVE the form rather than being hidden.
+          A rider booking on a handset is the common case and was the one
+          shown no map at all. `order-first` moves the single existing
+          instance; it is not a second map, so nothing is drawn twice and
+          no extra tiles are bought. */}
+      <aside className="order-first lg:order-none lg:sticky lg:top-24 space-y-4">
         <MapSurface
           className="h-64"
           zoneName={service?.zone?.name}
