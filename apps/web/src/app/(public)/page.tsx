@@ -13,20 +13,16 @@ export const metadata: Metadata = {
   description:
     "Wherever you're headed, find a ride that works for you. See the fare "
     + 'before you book, share a PIN to start, and track the trip live.',
-  alternates: {
-    // `hreflang` for the languages the public site genuinely serves. There
-    // is one URL per locale today -- the preference is stored rather than
-    // routed -- so each tag points at the same page and `x-default` names
-    // the English fallback.
-    languages: {
-      'en-IN': '/',
-      'te-IN': '/',
-      'hi-IN': '/',
-      'en-US': '/',
-      'es-US': '/',
-      'x-default': '/',
-    },
-  },
+  // NO `hreflang` HERE, DELIBERATELY. The five locales share one URL --
+  // the preference is stored, not routed -- and `hreflang` declares that a
+  // DIFFERENT URL serves a different language. Pointing all five at `/` is
+  // an invalid signal, which Lighthouse scores as such and a crawler would
+  // either ignore or act on wrongly.
+  //
+  // To do this properly: serve the locales on their own paths
+  // (`/en-IN`, `/te-IN`, ...) and declare absolute URLs for each, with
+  // `x-default` on the English one. That is locale routing, which is a
+  // larger change than this page.
 };
 
 export default function HomePage() {
