@@ -25,7 +25,7 @@ import {
 import MapSurface from '@/components/MapSurface';
 import { messageFor, readRiderToken } from '@/lib/publicAuth';
 import { formatDistance, formatFare } from '@/lib/money';
-import { vehicleClassLabel, vehicleProductName } from '@/lib/vehicles';
+import { publicRideName, vehicleClassLabel } from '@/lib/vehicles';
 import { Badge } from '@/components/sg/Badge';
 import { Button, ButtonLink } from '@/components/sg/Button';
 import { DriverCard, initialsFor } from '@/components/sg/DriverCard';
@@ -150,6 +150,20 @@ function routeKey(leg: { origin: LatLng; destination: LatLng } | null): string {
 }
 
 /** The PIN proves the right passenger got in. After that it proves nothing. */
+/**
+ * Public ride names for the booking page.
+ *
+ * The homepage takes these from the active dictionary. The booking flow is
+ * not translated yet, so it passes the English set explicitly rather than
+ * rendering half a screen in one language and half in another.
+ */
+const BOOKING_RIDE_NAMES = {
+  auto: 'Auto',
+  mini: 'Mini',
+  sedan: 'Sedan',
+  suv: 'SUV',
+} as const;
+
 const PIN_IS_STILL_NEEDED = ['accepted', 'reached'];
 const TRIP_IS_OVER = ['completed', 'cancelled'];
 
@@ -1014,7 +1028,7 @@ function BookPageInner() {
                         <VehicleOption
                           key={v.type}
                           category={v.type}
-                          name={vehicleProductName(v.type)}
+                          name={publicRideName(v.type, BOOKING_RIDE_NAMES)}
                           /* TODO(eta, seats): the design's meta line is "5 min
                              away · 4 seats". Neither is available --
                              `/pricing/vehicle-types/` returns a category code

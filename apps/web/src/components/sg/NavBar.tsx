@@ -7,6 +7,8 @@ import AuthNav from '@/components/AuthNav';
 import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
 import { Close, Menu } from './icons';
+import { LanguagePicker } from './LanguagePicker';
+import { useT } from '@/i18n/LocaleProvider';
 
 /**
  * The public header: logo left, links centred, session controls right.
@@ -24,16 +26,18 @@ import { Close, Menu } from './icons';
  * Under 768px the links collapse into a drawer holding the same items plus
  * the session controls, which are hidden from the bar at that width.
  */
+/** Labels come from the dictionary; the hrefs never move. */
 const LINKS = [
-  { href: '/book', label: 'Ride' },
-  { href: '/drive', label: 'Drive' },
-  { href: '/#safety', label: 'Safety' },
-  { href: '/#how-it-works', label: 'About' },
-  { href: '/contact', label: 'Help' },
-];
+  { key: 'ride', href: '/book' },
+  { key: 'drive', href: '/drive' },
+  { key: 'safety', href: '/#safety' },
+  { key: 'about', href: '/#how-it-works' },
+  { key: 'help', href: '/contact' },
+] as const;
 
 export function NavBar({ quiet }: { quiet?: boolean }) {
   const pathname = usePathname();
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   // `/book` owns the page's gold button in every one of its states.
@@ -67,26 +71,31 @@ export function NavBar({ quiet }: { quiet?: boolean }) {
               className="hp-nav__link"
               aria-current={isCurrent(l.href) ? 'page' : undefined}
             >
-              {l.label}
+              {t.nav[l.key]}
             </Link>
           ))}
         </div>
 
         <div className="hp-nav__session">
+          <LanguagePicker />
           <ThemeToggle />
           <AuthNav quiet={quietHere} />
         </div>
 
-        <button
-          type="button"
-          className="hp-nav__toggle"
-          aria-expanded={open}
-          aria-controls="hp-drawer"
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? <Close /> : <Menu />}
-        </button>
+        {/* On a phone the bar keeps the logo, the language and the menu. */}
+        <div className="hp-nav__mobile">
+          <LanguagePicker compact />
+          <button
+            type="button"
+            className="hp-nav__toggle"
+            aria-expanded={open}
+            aria-controls="hp-drawer"
+            aria-label={open ? t.nav.menuClose : t.nav.menuOpen}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <Close /> : <Menu />}
+          </button>
+        </div>
       </nav>
 
       {open && (
@@ -97,7 +106,7 @@ export function NavBar({ quiet }: { quiet?: boolean }) {
               href={l.href}
               aria-current={isCurrent(l.href) ? 'page' : undefined}
             >
-              {l.label}
+              {t.nav[l.key]}
             </Link>
           ))}
           <div className="hp-drawer__session">

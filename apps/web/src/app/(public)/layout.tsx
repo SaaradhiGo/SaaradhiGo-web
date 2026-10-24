@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { NavBar } from '@/components/sg/NavBar';
 import { Footer } from '@/components/sg/Footer';
+import { LocaleProvider } from '@/i18n/LocaleProvider';
 
 // The public site and the ops console share one Next app and nothing else.
 // This layout wraps only the `(public)` group, so the console keeps its own
@@ -28,6 +29,7 @@ export default function PublicLayout({
   children: React.ReactNode;
 }) {
   return (
+    <LocaleProvider>
     <div className="min-h-screen flex flex-col bg-bg-000">
       {/* First stop for a keyboard user, so they are not forced through the
           whole nav on every page. */}
@@ -43,5 +45,6 @@ export default function PublicLayout({
 
       <Footer />
     </div>
+    </LocaleProvider>
   );
 }

@@ -26,6 +26,7 @@ export function ImageSlot({
   src,
   alt,
   needs,
+  pendingLabel,
   className = '',
 }: {
   /** The licensed photograph, once there is one. */
@@ -34,6 +35,8 @@ export function ImageSlot({
   alt?: string;
   /** What this slot is waiting for, shown while it is empty. */
   needs: string;
+  /** Translated "Photography pending" heading. */
+  pendingLabel?: string;
   className?: string;
 }) {
   if (src) {
@@ -54,7 +57,7 @@ export function ImageSlot({
 
   return (
     <div className={`hp-slot ${className}`.trim()} role="note">
-      <strong>Photography pending</strong>
+      <strong>{pendingLabel ?? 'Photography pending'}</strong>
       <span>{needs}</span>
     </div>
   );

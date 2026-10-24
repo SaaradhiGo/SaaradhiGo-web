@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
 import { Logo } from './Logo';
+import { useT } from '@/i18n/LocaleProvider';
 
 /**
  * The public footer: the lockup, the same navigation as the header, and the
@@ -11,20 +14,21 @@ import { Logo } from './Logo';
  * exist, which is the same rule the header follows.
  */
 const NAV = [
-  { key: 'ride', href: '/book', label: 'Ride' },
-  { key: 'drive', href: '/drive', label: 'Drive' },
-  { key: 'safety', href: '/#safety', label: 'Safety' },
-  { key: 'about', href: '/#how-it-works', label: 'About' },
-  { key: 'help', href: '/contact', label: 'Help' },
-  { key: 'contact', href: '/contact', label: 'Contact' },
-];
-
-const LEGAL = [
-  { href: '/privacy', label: 'Privacy Policy' },
-  { href: '/terms', label: 'Terms of Service' },
-];
+  { key: 'ride', href: '/book' },
+  { key: 'drive', href: '/drive' },
+  { key: 'safety', href: '/#safety' },
+  { key: 'about', href: '/#how-it-works' },
+  { key: 'help', href: '/contact' },
+  { key: 'contact', href: '/contact' },
+] as const;
 
 export function Footer() {
+  const t = useT();
+  const LEGAL = [
+    { href: '/privacy', label: t.footer.privacy },
+    { href: '/terms', label: t.footer.terms },
+  ];
+
   return (
     <footer className="hp-footer sg-on-noir">
       <div className="hp">
@@ -33,7 +37,7 @@ export function Footer() {
           <nav className="hp-footer__nav" aria-label="Footer">
             {NAV.map((l) => (
               <Link key={l.key} href={l.href}>
-                {l.label}
+                {t.nav[l.key]}
               </Link>
             ))}
           </nav>

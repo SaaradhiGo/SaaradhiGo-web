@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, ButtonLink } from '@/components/sg/Button';
 import { clearRiderTokens, readRiderToken } from '@/lib/publicAuth';
+import { useT } from '@/i18n/LocaleProvider';
 
 /**
  * The right-hand side of the nav.
@@ -26,6 +27,7 @@ import { clearRiderTokens, readRiderToken } from '@/lib/publicAuth';
  */
 export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
   const router = useRouter();
+  const t = useT();
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -40,10 +42,10 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
     return (
       <>
         <ButtonLink href="/sign-in" variant="ghost" size="sm">
-          Log in
+          {t.nav.login}
         </ButtonLink>
         <ButtonLink href="/sign-up" variant={quiet ? 'secondary' : 'primary'} size="sm">
-          Sign up
+          {t.nav.signup}
         </ButtonLink>
       </>
     );

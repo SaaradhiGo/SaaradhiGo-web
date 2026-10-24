@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { vehicleProductName } from '@/lib/vehicles';
+import { publicRideName, rideBlurbKey } from '@/lib/vehicles';
+import { useT } from '@/i18n/LocaleProvider';
 import { vehicleGlyphFor } from '@/components/sg/icons';
 import { primaryArea, fetchServiceAreas } from '@/lib/serviceAreas';
 import { serviceabilityAt } from '@/lib/booking';
@@ -36,6 +37,7 @@ const BLURBS: Record<string, string> = {
 type Category = { type: string; description: string };
 
 export function RideCategories() {
+  const t = useT();
   const [categories, setCategories] = useState<Category[] | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -62,16 +64,15 @@ export function RideCategories() {
   return (
     <section className="hp hp-section" id="rides" aria-labelledby="rides-h">
       <h2 id="rides-h" className="hp-h2">
-        Choose your ride
+        {t.rides.heading}
       </h2>
       <p className="hp-lead">
-        Every class is priced for your trip before you book.
+        {t.rides.lead}
       </p>
 
       {failed && (
         <p className="hp-lead">
-          We could not load our ride classes just now. Set a pickup point on
-          the booking page to see what is available near you.
+          {t.rides.failed}
         </p>
       )}
 
@@ -104,13 +105,14 @@ export function RideCategories() {
           {categories.map((c) => {
             const Glyph = vehicleGlyphFor(c.type);
             // The server's own description wins where it has one.
-            const blurb = c.description?.trim() || BLURBS[c.type.toLowerCase()] || null;
+            const key = rideBlurbKey(c.type);
+            const blurb = c.description?.trim() || (key ? t.rideBlurbs[key] : null);
             return (
               <li key={c.type} className="hp-ride">
                 <span className="hp-ride__art" aria-hidden="true">
                   <Glyph />
                 </span>
-                <h3>{vehicleProductName(c.type)}</h3>
+                <h3>{publicRideName(c.type, t.rideNames)}</h3>
                 {blurb && <p>{blurb}</p>}
               </li>
             );

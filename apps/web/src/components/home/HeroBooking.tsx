@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/sg/Button';
 import { ArrowRight } from '@/components/sg/icons';
 import { Place, placeToPoint, searchPlaces } from '@/lib/booking';
-import { readRiderToken } from '@/lib/publicAuth';
+import { useT } from '@/i18n/LocaleProvider';
 
 /**
  * Pickup, destination, and the one action the homepage is for.
@@ -16,14 +16,20 @@ import { readRiderToken } from '@/lib/publicAuth';
  * or computes a fare; duplicating any of that is how two prices end up on
  * one screen.
  *
- * AUTOCOMPLETE IS ONLY OFFERED WHEN IT CAN ACTUALLY WORK.
- * `/ride/maps/geocode` is authenticated -- it answers 401 without a rider
- * token -- so a signed-out visitor has no place search. Rather than show a
- * suggestion box that silently never fills, the control checks for a session
- * first: signed in, you get real Places suggestions; signed out, you type
- * freely and the text is carried to `/book`, which runs the search once you
- * are signed in. The visitor is never told a location was resolved when it
- * was not.
+ * A GUEST GETS REAL AUTOCOMPLETE. `/ride/maps/geocode` and
+ * `/ride/maps/place-details` used to be `IsAuthenticated`, which is why an
+ * earlier version of this control fell back to a plain text box when signed
+ * out. They are now open to anonymous callers behind an IP throttle that
+ * signed-in riders bypass, so a visitor can search, pick a real place and
+ * carry its coordinates into the booking flow before being asked to sign in.
+ * Ride operations next to them -- directions, estimates, trip creation --
+ * are still authenticated.
+ *
+ * PICKUP NOW IS THE ONLY OPTION, AND IT IS NOT A DROPDOWN. There is no
+ * scheduled-ride lifecycle in the backend: the Trip model has no scheduled
+ * time and nothing dispatches a future booking. A "Schedule later" choice
+ * would be a control that cannot do what it says, so the state is shown as
+ * what it is and the menu is omitted.
  *
  * WHAT IS HANDED OVER. `/book` already reads `pickup`, `dest` and `q` from
  * the query string, so a resolved place travels as coordinates and typed
@@ -37,22 +43,20 @@ export function HeroBooking() {
   const [destText, setDestText] = useState('');
   const [pickupPlace, setPickupPlace] = useState<Place | null>(null);
   const [destPlace, setDestPlace] = useState<Place | null>(null);
+  /** Set by geolocation: a real point with no place id behind it. */
+  const [pickupPoint, setPickupPoint] = useState<{ lat: number; lng: number } | null>(null);
 
-  const [canSearch, setCanSearch] = useState(false);
   const [active, setActive] = useState<'pickup' | 'dest' | null>(null);
   const [suggestions, setSuggestions] = useState<Place[]>([]);
   const [errors, setErrors] = useState<{ pickup?: string; dest?: string }>({});
   const [busy, setBusy] = useState(false);
-
-  // The session decides whether place search is available at all.
-  useEffect(() => {
-    setCanSearch(Boolean(readRiderToken()));
-  }, []);
+  const [locating, setLocating] = useState(false);
+  const t = useT();
 
   // Debounced lookup, and only for the field being typed in.
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (!canSearch || !active) return;
+    if (!active) return;
     const text = active === 'pickup' ? pickupText : destText;
     if (text.trim().length < 3) {
       setSuggestions([]);
@@ -67,7 +71,7 @@ export function HeroBooking() {
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [canSearch, active, pickupText, destText]);
+  }, [active, pickupText, destText]);
 
   function choose(place: Place) {
     if (active === 'pickup') {
@@ -85,8 +89,8 @@ export function HeroBooking() {
     // Both are required. An empty field is a validation error, not a silent
     // navigation to a half-filled booking page.
     const next: { pickup?: string; dest?: string } = {};
-    if (!pickupText.trim()) next.pickup = 'Enter a pickup location.';
-    if (!destText.trim()) next.dest = 'Enter a destination.';
+    if (!pickupText.trim()) next.pickup = t.validation.pickupRequired;
+    if (!destText.trim()) next.dest = t.validation.destRequired;
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
@@ -97,7 +101,9 @@ export function HeroBooking() {
     // If resolution fails the text still travels: the booking page can search
     // for it again, and nothing here pretends it was pinned.
     try {
-      if (pickupPlace) {
+      if (pickupPoint) {
+        params.set('pickup', `${pickupPoint.lat},${pickupPoint.lng}`);
+      } else if (pickupPlace) {
         const p = await placeToPoint(pickupPlace.place_id);
         if (p) params.set('pickup', `${p.lat},${p.lng}`);
       }
@@ -112,6 +118,32 @@ export function HeroBooking() {
     if (!params.has('dest') && destText.trim()) params.set('q', destText.trim());
     setBusy(false);
     router.push(params.toString() ? `/book?${params.toString()}` : '/book');
+  }
+
+  /** Browser geolocation, only on an explicit click, with a usable error. */
+  function useMyLocation() {
+    if (!navigator.geolocation) {
+      setErrors((p) => ({ ...p, pickup: t.validation.geoUnsupported }));
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        // Coordinates are the honest label here: we have a point, not a
+        // place name, and claiming a street address would be inventing one.
+        setPickupText(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+        setPickupPlace(null);
+        setPickupPoint({ lat: latitude, lng: longitude });
+        setErrors((p) => ({ ...p, pickup: undefined }));
+        setLocating(false);
+      },
+      () => {
+        setErrors((p) => ({ ...p, pickup: t.validation.geoDenied }));
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
   }
 
   const field = (
@@ -177,15 +209,50 @@ export function HeroBooking() {
 
   return (
     <div className="hp-hero__form">
-      {field('pickup', 'Pickup location', 'Enter pickup location', pickupText, setPickupText, () => setPickupPlace(null))}
-      {field('dest', 'Destination', 'Where to?', destText, setDestText, () => setDestPlace(null))}
+      {/* Pickup now is the only timing the platform supports, so it is shown
+          as a state rather than as a menu with one item. */}
+      <div className="hp-when" aria-label={t.hero.pickupNow}>
+        <ClockIcon />
+        {t.hero.pickupNow}
+      </div>
+
+      {field('pickup', t.hero.pickupLabel, t.hero.pickupPlaceholder, pickupText, setPickupText, () => {
+        setPickupPlace(null);
+        setPickupPoint(null);
+      })}
+
+      <button type="button" className="hp-locate" onClick={useMyLocation} disabled={locating}>
+        <LocateIcon />
+        {locating ? t.hero.locating : t.hero.useLocation}
+      </button>
+
+      {field('dest', t.hero.destLabel, t.hero.destPlaceholder, destText, setDestText, () => setDestPlace(null))}
 
       <div className="mt-sg-2">
         <Button variant="primary" size="lg" block onClick={submit} disabled={busy}>
-          See ride options
+          {t.hero.cta}
           <ArrowRight />
         </Button>
       </div>
     </div>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+function LocateIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="7" />
+      <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+    </svg>
   );
 }
