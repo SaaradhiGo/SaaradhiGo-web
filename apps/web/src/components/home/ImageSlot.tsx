@@ -27,6 +27,7 @@ export function ImageSlot({
   alt,
   needs,
   pendingLabel,
+  sample,
   className = '',
 }: {
   /** The licensed photograph, once there is one. */
@@ -37,6 +38,8 @@ export function ImageSlot({
   needs: string;
   /** Translated "Photography pending" heading. */
   pendingLabel?: string;
+  /** Brand sample art to show until a licensed photograph exists. */
+  sample?: React.ReactNode;
   className?: string;
 }) {
   if (src) {
@@ -54,6 +57,11 @@ export function ImageSlot({
       />
     );
   }
+
+  // No licensed photograph yet. `sample` lets the caller supply brand art
+  // so the page reads as a composition instead of as two grey boxes; it is
+  // labelled as a sample and occupies the exact box the photo will use.
+  if (sample) return <>{sample}</>;
 
   return (
     <div className={`hp-slot ${className}`.trim()} role="note">

@@ -19,7 +19,7 @@ import type { Locale } from './locales';
  */
 const en: {
   nav: Record<'ride' | 'drive' | 'safety' | 'about' | 'help' | 'contact' | 'login' | 'signup' | 'menuOpen' | 'menuClose' | 'language' | 'country', string>;
-  hero: Record<'titleTop' | 'titleBottom' | 'subtitle' | 'pickupNow' | 'pickupLabel' | 'pickupPlaceholder' | 'destLabel' | 'destPlaceholder' | 'cta' | 'useLocation' | 'locating' | 'photoPending' | 'photoNeeds', string>;
+  hero: Record<'titleTop' | 'titleBottom' | 'subtitle' | 'pickupNow' | 'pickupLabel' | 'pickupPlaceholder' | 'destLabel' | 'destPlaceholder' | 'cta' | 'useLocation' | 'locating' | 'photoPending' | 'photoNeeds' | 'sampleTag', string>;
   validation: Record<'pickupRequired' | 'destRequired' | 'geoDenied' | 'geoUnsupported' | 'searchFailed', string>;
   rides: Record<'heading' | 'lead' | 'loading' | 'failed' | 'empty', string>;
   rideNames: Record<'auto' | 'mini' | 'sedan' | 'suv', string>;
@@ -60,6 +60,7 @@ const en: {
     locating: 'Finding your location…',
     photoPending: 'Photography pending',
     photoNeeds: 'Licensed photograph: an Indian urban street scene with a passenger and car.',
+    sampleTag: 'Sample artwork',
   },
   validation: {
     pickupRequired: 'Enter a pickup location.',
@@ -161,6 +162,7 @@ const hi: Messages = {
     locating: 'आपका स्थान खोजा जा रहा है…',
     photoPending: 'फ़ोटोग्राफ़ी प्रतीक्षित',
     photoNeeds: 'लाइसेंस प्राप्त तस्वीर: यात्री और कार के साथ भारतीय शहरी दृश्य।',
+    sampleTag: 'नमूना चित्र',
   },
   validation: {
     pickupRequired: 'पिकअप स्थान दर्ज करें।',
@@ -256,6 +258,7 @@ const te: Messages = {
     locating: 'మీ ప్రదేశాన్ని కనుగొంటున్నాం…',
     photoPending: 'ఫోటోగ్రఫీ పెండింగ్‌లో ఉంది',
     photoNeeds: 'లైసెన్స్ పొందిన ఫోటో: ప్రయాణికుడు మరియు కారుతో భారతీయ నగర దృశ్యం.',
+    sampleTag: 'నమూనా చిత్రం',
   },
   validation: {
     pickupRequired: 'పికప్ ప్రదేశాన్ని నమోదు చేయండి.',
@@ -351,6 +354,7 @@ const es: Messages = {
     locating: 'Buscando tu ubicación…',
     photoPending: 'Fotografía pendiente',
     photoNeeds: 'Fotografía con licencia: una escena urbana india con un pasajero y un coche.',
+    sampleTag: 'Imagen de muestra',
   },
   validation: {
     pickupRequired: 'Introduce un lugar de recogida.',

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ButtonLink } from '@/components/sg/Button';
 import { HeroBooking } from '@/components/home/HeroBooking';
 import { ImageSlot } from '@/components/home/ImageSlot';
+import { CityArt, DriverArt } from '@/components/home/SampleArt';
 import { RideCategories } from '@/components/home/RideCategories';
 import { Lock, Phone, Shield } from '@/components/sg/icons';
 import { useT } from '@/i18n/LocaleProvider';
@@ -54,7 +55,11 @@ export function HomeContent() {
           </div>
 
           <div className="hp-hero__media">
-            <ImageSlot needs={t.hero.photoNeeds} pendingLabel={t.hero.photoPending} />
+            <ImageSlot
+              needs={t.hero.photoNeeds}
+              pendingLabel={t.hero.photoPending}
+              sample={<CityArt label={t.hero.sampleTag} />}
+            />
           </div>
         </div>
       </section>
@@ -95,7 +100,11 @@ export function HomeContent() {
             </div>
           </div>
           <div className="hp-split__media">
-            <ImageSlot needs={t.drive.photoNeeds} pendingLabel={t.hero.photoPending} />
+            <ImageSlot
+              needs={t.drive.photoNeeds}
+              pendingLabel={t.hero.photoPending}
+              sample={<DriverArt label={t.hero.sampleTag} />}
+            />
           </div>
         </div>
       </section>
