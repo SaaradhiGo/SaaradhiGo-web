@@ -26,13 +26,45 @@ export function clearTokens() {
 }
 
 export class ApiError extends Error {
-  constructor(public status: number, public code: string, message: string) {
+  /**
+   * Whether `message` was written by the server FOR A PERSON.
+   *
+   * It matters because `messageFor` decides from it whether the text may be
+   * shown to a rider. A 502 from a gateway has no error body, so the message
+   * became "HTTP 502" -- which is true, useless to a passenger, and was
+   * appearing on the booking panel. The status is still on the error for the
+   * log; it is simply no longer mistaken for copy.
+   */
+  constructor(
+    public status: number,
+    public code: string,
+    message: string,
+    public fromServer: boolean = false,
+  ) {
     super(message);
   }
 }
 
-async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const token = readToken();
+/**
+ * `authToken` exists because this client serves TWO principals.
+ *
+ * The ops console stores its session under `saaradhi_admin_access_token`;
+ * a rider on the public site stores one under `saaradhi_rider_access_token`.
+ * `readToken()` only ever knew about the first, so every authenticated call
+ * the public site made went out with NO Authorization header and came back
+ * 401 -- which looked like a broken endpoint rather than a missing token.
+ *
+ * Callers on the public side pass their own token explicitly. Nothing here
+ * guesses which principal is active, because guessing is how a rider session
+ * would end up being sent to an operator endpoint.
+ */
+async function call<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  authToken?: string | null,
+): Promise<T> {
+  const token = authToken !== undefined ? authToken : readToken();
   const resp = await fetch(`${BASE}${path}`, {
     method,
     headers: {
@@ -49,10 +81,12 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   }
   if (!resp.ok) {
     const err = json?.error ?? {};
+    const authored = typeof err.message === 'string' && err.message.trim() !== '';
     throw new ApiError(
       resp.status,
       err.code ?? 'UNKNOWN_ERROR',
-      err.message ?? `HTTP ${resp.status}`,
+      authored ? err.message : `HTTP ${resp.status}`,
+      authored,
     );
   }
   // Standard backend envelope: {status, data} for success
@@ -61,10 +95,14 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 }
 
 export const api = {
-  get: <T,>(path: string) => call<T>('GET', path),
-  post: <T,>(path: string, body?: unknown) => call<T>('POST', path, body),
-  patch: <T,>(path: string, body?: unknown) => call<T>('PATCH', path, body),
-  delete: <T,>(path: string) => call<T>('DELETE', path),
+  get: <T,>(path: string, authToken?: string | null) =>
+    call<T>('GET', path, undefined, authToken),
+  post: <T,>(path: string, body?: unknown, authToken?: string | null) =>
+    call<T>('POST', path, body, authToken),
+  patch: <T,>(path: string, body?: unknown, authToken?: string | null) =>
+    call<T>('PATCH', path, body, authToken),
+  delete: <T,>(path: string, authToken?: string | null) =>
+    call<T>('DELETE', path, undefined, authToken),
 };
 
 // ---- Auth helpers ----

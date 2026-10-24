@@ -1,0 +1,427 @@
+/* SaaradhiGo public homepage.
+   ---------------------------------------------------------------------------
+   The homepage's own layout, to the implementation contract's metrics:
+   1200px content column, 72px header, 32px desktop / 20px mobile gutters, and
+   an 8 / 16 / 24 / 32 / 48 / 64 / 96 spacing scale.
+
+   It is a separate file from `saaradhigo.css` on purpose. That file mirrors
+   the design handoff and is shared with the booking and trip screens; this
+   one is the marketing page only, so tuning the homepage cannot move the
+   product UI underneath it.
+
+   Every colour is a token. Deliberately absent, per the contract: gradients,
+   glows, decorative eyebrow rules, italic headline flourishes, and the
+   rounded-card-for-everything habit. Borders are 1px `line`; the only
+   generous radius is on the hero photograph.
+   ------------------------------------------------------------------------- */
+
+:root {
+  --hp-max: 1200px;
+  --hp-gutter: 32px;
+  --hp-header: 72px;
+}
+
+.hp {
+  width: 100%;
+  max-width: var(--hp-max);
+  margin: 0 auto;
+  padding-left: var(--hp-gutter);
+  padding-right: var(--hp-gutter);
+  box-sizing: border-box;
+}
+
+/* 96px between sections, which is the top of the spacing scale. */
+.hp-section { padding: 96px 0; }
+.hp-section--tight { padding: 64px 0; }
+.hp-section + .hp-section { padding-top: 0; }
+
+.hp-h2 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 36px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.hp-lead {
+  margin: 16px 0 0;
+  max-width: 60ch;
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+}
+
+/* --- header ------------------------------------------------------------- */
+
+.hp-header {
+  position: sticky; top: 0; z-index: 40;
+  background: var(--noir);
+  border-bottom: 1px solid var(--line);
+}
+.hp-nav {
+  height: var(--hp-header);
+  display: flex; align-items: center; gap: 32px;
+}
+.hp-nav__logo { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; flex: none; }
+.hp-nav__logo .sg-logo { width: 40px; }
+.hp-nav__name {
+  font-family: var(--font-brand); font-size: 18px; font-weight: 600;
+  letter-spacing: 0.06em; color: var(--gold-500); white-space: nowrap;
+}
+/* Centre group, so the links sit between the logo and the session controls. */
+.hp-nav__links { display: flex; gap: 4px; margin: 0 auto; }
+.hp-nav__link {
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+  color: var(--on-noir-muted); text-decoration: none;
+  padding: 8px 12px; border-radius: var(--radius-sm);
+  transition: color 140ms ease, background-color 140ms ease;
+}
+.hp-nav__link:hover { color: var(--on-noir); background: var(--bg-200); }
+.hp-nav__link[aria-current="page"] { color: var(--on-noir); }
+.hp-nav__session { display: flex; align-items: center; gap: 8px; flex: none; }
+
+.hp-nav__toggle {
+  display: none; width: 44px; height: 44px; margin-left: auto;
+  align-items: center; justify-content: center;
+  background: none; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  color: var(--on-noir); cursor: pointer;
+}
+.hp-nav__toggle svg { width: 22px; height: 22px; }
+
+.hp-drawer {
+  background: var(--noir);
+  border-bottom: 1px solid var(--line);
+  padding: 8px var(--hp-gutter) 24px;
+}
+.hp-drawer a {
+  display: flex; align-items: center; min-height: 48px;
+  font-family: var(--font-sans); font-size: 16px; font-weight: 600;
+  color: var(--on-noir-muted); text-decoration: none;
+}
+.hp-drawer a[aria-current="page"] { color: var(--on-noir); }
+.hp-drawer__session { display: flex; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line); margin-top: 8px; }
+
+/* --- hero --------------------------------------------------------------- */
+
+.hp-hero {
+  display: grid;
+  grid-template-columns: 45fr 55fr;
+  gap: 48px;
+  align-items: center;
+  min-height: 520px;
+  padding: 64px 0;
+}
+.hp-hero__title {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 64px;
+  line-height: 1.04;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+/* The second line is the brand moment, and the only one on the page. */
+.hp-hero__title span { display: block; color: var(--gold-text); }
+.hp-hero__sub {
+  margin: 24px 0 0;
+  font-family: var(--font-sans); font-size: 18px; line-height: 1.6;
+  color: var(--ink-muted); max-width: 46ch;
+}
+.hp-hero__form { margin-top: 32px; display: grid; gap: 12px; max-width: 460px; }
+
+.hp-hero__media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--bg-100);
+  border: 1px solid var(--line);
+}
+.hp-hero__media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* The slot a licensed photograph goes into. It states what is missing
+   instead of standing in for it with a decorative graphic. */
+.hp-slot {
+  width: 100%; height: 100%;
+  display: grid; place-content: center; gap: 8px;
+  padding: 32px; text-align: center;
+  font-family: var(--font-sans); color: var(--ink-subtle);
+}
+.hp-slot strong { display: block; font-size: 15px; font-weight: 700; color: var(--ink-muted); }
+.hp-slot span { font-size: 13px; line-height: 1.5; }
+
+/* --- booking control ---------------------------------------------------- */
+
+.hp-field { position: relative; display: grid; gap: 6px; }
+.hp-field__label {
+  font-family: var(--font-sans); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-subtle);
+}
+.hp-field__box {
+  display: flex; align-items: center; gap: 12px;
+  height: 56px; padding: 0 16px;
+  background: var(--bg-200);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  transition: border-color 140ms ease;
+}
+.hp-field__box:focus-within { border-color: var(--gold-500); }
+.hp-field__box input {
+  all: unset; flex: 1; min-width: 0;
+  font-family: var(--font-sans); font-size: 16px; color: var(--ink);
+}
+.hp-field__box input::placeholder { color: var(--ink-subtle); }
+.hp-field__box[data-invalid="true"] { border-color: var(--danger); }
+.hp-field__marker { width: 10px; height: 10px; flex: none; }
+.hp-field__marker--pickup { border-radius: var(--radius-pill); background: var(--pickup); }
+.hp-field__marker--drop { border-radius: 2px; background: var(--gold-500); }
+
+.hp-suggest {
+  position: absolute; z-index: 20; top: 100%; left: 0; right: 0; margin-top: 4px;
+  background: var(--bg-100); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-panel);
+  max-height: 260px; overflow-y: auto; padding: 4px;
+}
+.hp-suggest button {
+  display: block; width: 100%; text-align: left;
+  padding: 12px; border: 0; background: none; cursor: pointer;
+  font-family: var(--font-sans); font-size: 15px; color: var(--ink);
+  border-radius: var(--radius-sm);
+}
+.hp-suggest button:hover, .hp-suggest button:focus-visible { background: var(--bg-300); }
+
+.hp-error {
+  font-family: var(--font-sans); font-size: 14px; color: var(--danger); margin: 0;
+}
+
+/* --- ride categories ---------------------------------------------------- */
+
+.hp-rides { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 48px; padding: 0; list-style: none; }
+.hp-ride { display: grid; gap: 12px; align-content: start; }
+.hp-ride__art {
+  display: grid; place-items: center;
+  height: 120px; border-radius: var(--radius-sm);
+  background: var(--bg-100); border: 1px solid var(--line);
+  color: var(--gold-text);
+}
+.hp-ride__art svg { width: 64px; height: 64px; }
+.hp-ride h3 { margin: 0; font-family: var(--font-sans); font-size: 18px; font-weight: 700; color: var(--ink); }
+.hp-ride p { margin: 0; font-family: var(--font-sans); font-size: 15px; line-height: 1.5; color: var(--ink-muted); }
+
+/* --- numbered steps ----------------------------------------------------- */
+
+.hp-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; margin: 48px 0 0; padding: 0; list-style: none; }
+.hp-step__n {
+  font-family: var(--font-sans); font-size: 14px; font-weight: 700;
+  letter-spacing: 0.08em; color: var(--gold-text);
+}
+.hp-step h3 { margin: 12px 0 8px; font-family: var(--font-sans); font-size: 20px; font-weight: 700; color: var(--ink); }
+.hp-step p { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--ink-muted); }
+
+/* --- split section (drive) ---------------------------------------------- */
+
+.hp-split { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+.hp-split__media { aspect-ratio: 3 / 2; border-radius: 12px; overflow: hidden; background: var(--bg-100); border: 1px solid var(--line); }
+.hp-split__media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* --- safety: a factual list, not marketing cards ------------------------ */
+
+.hp-facts { margin: 48px 0 0; padding: 0; list-style: none; display: grid; gap: 0; }
+.hp-fact {
+  display: grid; grid-template-columns: 24px 1fr; gap: 20px; align-items: start;
+  padding: 24px 0; border-top: 1px solid var(--line);
+}
+.hp-fact:last-child { border-bottom: 1px solid var(--line); }
+.hp-fact__icon { color: var(--gold-text); margin-top: 2px; }
+.hp-fact__icon svg { width: 24px; height: 24px; }
+.hp-fact h3 { margin: 0 0 6px; font-family: var(--font-sans); font-size: 17px; font-weight: 700; color: var(--ink); }
+.hp-fact p { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--ink-muted); max-width: 70ch; }
+
+/* --- cities ------------------------------------------------------------- */
+
+.hp-cities { margin: 32px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.hp-city {
+  display: inline-flex; align-items: center; height: 40px; padding: 0 16px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--bg-100);
+  font-family: var(--font-sans); font-size: 15px; font-weight: 600; color: var(--ink);
+}
+
+/* --- closing ------------------------------------------------------------ */
+
+.hp-closing { padding: 96px 0; border-top: 1px solid var(--line); }
+.hp-closing .hp-lead { margin-left: 0; }
+.hp-closing__actions { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 16px; }
+
+/* --- footer ------------------------------------------------------------- */
+
+.hp-footer { background: var(--noir); border-top: 1px solid var(--line); padding: 64px 0 32px; }
+.hp-footer__top { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; justify-content: space-between; }
+.hp-footer__nav { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.hp-footer__nav a,
+.hp-footer__legal a {
+  font-family: var(--font-sans); font-size: 15px; color: var(--on-noir-muted); text-decoration: none;
+}
+.hp-footer__nav a:hover, .hp-footer__legal a:hover { color: var(--on-noir); }
+.hp-footer__base {
+  margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between;
+  font-family: var(--font-sans); font-size: 14px; color: var(--on-noir-muted);
+}
+.hp-footer__legal { display: flex; gap: 24px; }
+
+/* --- responsive ---------------------------------------------------------
+   Checked at 320, 390, 768, 1024 and 1440. */
+
+@media (max-width: 1024px) {
+  .hp-hero { grid-template-columns: 1fr; gap: 40px; min-height: 0; padding: 48px 0; }
+  .hp-hero__title { font-size: 48px; }
+  .hp-split { grid-template-columns: 1fr; gap: 32px; }
+  .hp-steps { gap: 32px; }
+}
+
+@media (max-width: 1023px) {
+  .hp-rides { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  :root { --hp-gutter: 20px; }
+  .hp-nav__links { display: none; }
+  .hp-nav__session { display: none; }
+  .hp-nav__toggle { display: inline-flex; }
+  .hp-section { padding: 64px 0; }
+  .hp-section + .hp-section { padding-top: 0; }
+  .hp-closing { padding: 64px 0; }
+  .hp-steps { grid-template-columns: 1fr; gap: 32px; }
+  .hp-h2 { font-size: 28px; }
+}
+
+@media (max-width: 480px) {
+  .hp-hero__title { font-size: 40px; }
+  .hp-hero__sub { font-size: 16px; }
+  /* Two across still reads at 390; one across wastes the fold. */
+  .hp-rides { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .hp-ride__art { height: 88px; }
+  .hp-ride__art svg { width: 44px; height: 44px; }
+}
+
+/* 320px is the narrowest supported width: the ride grid goes single column
+   rather than squeezing two cards into 140px each. */
+@media (max-width: 360px) {
+  .hp-rides { grid-template-columns: 1fr; }
+  .hp-hero__title { font-size: 34px; }
+}
+
+/* --- language + country picker ------------------------------------------ */
+
+.hp-lang { position: relative; flex: none; }
+.hp-lang__button {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; padding: 0 12px;
+  background: none; border: 1px solid var(--line); border-radius: var(--radius-pill);
+  color: var(--on-noir-muted); cursor: pointer;
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+}
+.hp-lang__button:hover { color: var(--on-noir); border-color: var(--line-strong); }
+.hp-lang__button svg { width: 18px; height: 18px; flex: none; }
+
+.hp-lang__panel {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 50;
+  width: 260px; padding: 12px;
+  background: var(--bg-100); border: 1px solid var(--line);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-panel);
+}
+.hp-lang__section {
+  font-family: var(--font-sans); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-subtle);
+  margin: 4px 4px 8px;
+}
+.hp-lang__row { display: flex; gap: 8px; margin-bottom: 12px; }
+.hp-lang__chip {
+  flex: 1; height: 36px; border-radius: var(--radius-sm);
+  background: var(--bg-200); border: 1px solid var(--line); cursor: pointer;
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--ink);
+}
+.hp-lang__chip[aria-pressed="true"] { border-color: var(--gold-500); background: var(--gold-soft); }
+.hp-lang__list { display: grid; gap: 2px; }
+.hp-lang__item {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; min-height: 44px; padding: 0 10px;
+  background: none; border: 0; border-radius: var(--radius-sm); cursor: pointer;
+  font-family: var(--font-sans); font-size: 15px; color: var(--ink); text-align: left;
+}
+.hp-lang__item:hover { background: var(--bg-200); }
+.hp-lang__item[aria-pressed="true"] { color: var(--gold-text); font-weight: 700; }
+.hp-lang__item svg { width: 16px; height: 16px; flex: none; }
+.hp-lang__note {
+  margin: 12px 4px 2px; font-family: var(--font-sans); font-size: 12px;
+  line-height: 1.5; color: var(--ink-subtle);
+}
+
+/* The picker stays in the bar on mobile, beside the menu button. */
+@media (max-width: 768px) {
+  .hp-nav__mobile { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .hp-lang__panel { right: 0; width: min(260px, calc(100vw - 40px)); }
+}
+@media (min-width: 769px) { .hp-nav__mobile { display: none; } }
+
+/* --- app section --------------------------------------------------------- */
+
+.hp-apps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 48px; }
+.hp-app {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 24px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--bg-100);
+}
+.hp-app h3 { margin: 0 0 4px; font-family: var(--font-sans); font-size: 17px; font-weight: 700; color: var(--ink); }
+.hp-app span { font-family: var(--font-sans); font-size: 14px; color: var(--ink-muted); }
+@media (max-width: 768px) { .hp-apps { grid-template-columns: 1fr; gap: 16px; } }
+
+/* --- hero booking extras ------------------------------------------------- */
+
+.hp-when {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; padding: 0 14px; width: fit-content;
+  border: 1px solid var(--line); border-radius: var(--radius-pill);
+  background: var(--bg-200);
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--ink);
+}
+.hp-when svg { width: 16px; height: 16px; color: var(--gold-text); }
+
+.hp-locate {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: none; border: 0; padding: 0; cursor: pointer; width: fit-content;
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--gold-text);
+}
+.hp-locate:disabled { opacity: 0.6; cursor: default; }
+.hp-locate svg { width: 16px; height: 16px; }
+
+/* --- sample artwork ------------------------------------------------------
+   Stands in for a licensed photograph. It fills the same box the photo will
+   fill, and carries a visible tag so it is never mistaken for finished
+   work. */
+.hp-art { position: relative; width: 100%; height: 100%; }
+.hp-art svg { width: 100%; height: 100%; display: block; }
+.hp-art__tag {
+  position: absolute; left: 12px; bottom: 12px;
+  padding: 4px 10px; border-radius: var(--radius-pill);
+  background: var(--bg-glass); border: 1px solid var(--line);
+  font-family: var(--font-sans); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted);
+}
+
+/* 320px is the narrowest supported width and the nav is what breaks there:
+   the emblem, the "Saaradhi Go" wordmark, the language button and the menu
+   button together measured 335px against a 320px viewport. The wordmark is
+   the one piece that is redundant -- the emblem already identifies the
+   brand -- so it goes, and the row tightens. */
+@media (max-width: 400px) {
+  .hp-nav { gap: 12px; }
+  .hp-nav__name { display: none; }
+  .hp-nav__logo .sg-logo { width: 34px; }
+  .hp-nav__mobile { gap: 4px; }
+  .hp-lang__button { padding: 0 10px; }
+}

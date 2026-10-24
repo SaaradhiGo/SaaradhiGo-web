@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "check-icons": "node scripts/check-icons.mjs",
+    "check-tokens": "node scripts/check-tokens.mjs"
   },
   "dependencies": {
     "next": "15.5.26",

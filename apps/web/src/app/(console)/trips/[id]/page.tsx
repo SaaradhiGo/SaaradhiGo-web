@@ -152,14 +152,14 @@ export default function TripDetailPage() {
             Trip #{data.id}{' '}
             <span className="ml-3 tag border-white/20 text-sm">{data.status ?? '—'}</span>
             {data.zone && (
-              <span className="ml-2 tag border-brand/40 text-brand text-xs">{data.zone.code}</span>
+              <span className="ml-2 tag border-gold-line text-gold-text text-xs">{data.zone.code}</span>
             )}
           </h1>
         </div>
         <div className="flex gap-2">
-          <button onClick={resendReceipt} className="btn-ghost text-brand text-sm">Resend receipt</button>
-          <button onClick={refundCredit} className="btn-ghost text-brand text-sm">Refund to credits</button>
-          <button onClick={refundOriginal} className="btn-ghost text-brand text-sm">Refund to original</button>
+          <button onClick={resendReceipt} className="btn-ghost text-gold-text text-sm">Resend receipt</button>
+          <button onClick={refundCredit} className="btn-ghost text-gold-text text-sm">Refund to credits</button>
+          <button onClick={refundOriginal} className="btn-ghost text-gold-text text-sm">Refund to original</button>
         </div>
       </div>
       {actionMsg && <p className="text-emerald-400 text-sm">{actionMsg}</p>}
@@ -298,7 +298,7 @@ export default function TripDetailPage() {
         )}
         {data.promo && (
           <div className="mt-3 text-sm">
-            <span className="tag border-brand/40 text-brand">{data.promo.code}</span>
+            <span className="tag border-gold-line text-gold-text">{data.promo.code}</span>
             <span className="text-white/60 ml-2">discount: Rs {data.promo.discount_amount}</span>
           </div>
         )}
@@ -362,7 +362,7 @@ export default function TripDetailPage() {
                   <td className="py-2">Rs {r.gst_amount}</td>
                   <td className="py-2">{r.sent_to_email || '—'}</td>
                   <td className="py-2">{fmt(r.last_sent_at)}</td>
-                  <td className="py-2">{r.pdf_url ? <a className="text-brand" href={r.pdf_url} target="_blank">Open</a> : '—'}</td>
+                  <td className="py-2">{r.pdf_url ? <a className="text-gold-text" href={r.pdf_url} target="_blank">Open</a> : '—'}</td>
                 </tr>
               ))}
             </tbody>

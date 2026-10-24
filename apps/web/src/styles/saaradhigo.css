@@ -1,0 +1,502 @@
+/* SaaradhiGo component styles.
+   ---------------------------------------------------------------------------
+   Ported from the design handoff's `design-system/components/saaradhigo.css`,
+   rule for rule and value for value. Every value is a token from tokens.css.
+   Do not add colours, sizes or components here: this file mirrors the design
+   system, and anything invented in it is a divergence that will show up the
+   next time the handoff is regenerated.
+
+   Taken from the `_f` revision of the handoff, which is a colour-only update:
+   the same classes and the same token names, with noir moved to a true black
+   and the gold to the brighter brand yellow. The values live in tokens.css.
+
+   THREE MECHANICAL DEVIATIONS FROM THE HANDOFF FILE:
+
+   1. The Google Fonts `@import` is gone. A CSS `@import` of a remote
+      stylesheet blocks rendering and cannot be preconnected, so the three
+      families are linked from the root layout's <head> instead -- same
+      families, same weights, `display=swap`.
+
+   2. The `.sg-logo--*` masks were 138KB of inlined base64. They now point at
+      the SVGs in `public/brand/`, which the handoff offers as the
+      alternative, at the artwork's own aspect ratios.
+
+   3. The handoff sets only `-webkit-mask-image`; the unprefixed property is
+      set alongside it so the mark is not invisible in Firefox.
+
+   WHY THE RGBA LITERALS STAY LITERAL. A few rules carry `rgba(255,215,0,...)`
+   rather than `var(--gold-line)`, and that is deliberate in the original:
+   every one of them sits on a `noir` surface that stays black in BOTH themes,
+   where the light theme's token would resolve to a near-invisible hairline.
+   ------------------------------------------------------------------------- */
+
+/* SaaradhiGo component styles. Every value is a token from tokens.css. */
+.sg, .sg * { box-sizing: border-box; }
+.sg { font-family: var(--font-sans); color: var(--ink); -webkit-font-smoothing: antialiased; }
+.sg-num { font-variant-numeric: tabular-nums; }
+
+/* Focus — one rule for every control */
+.sg-btn:focus-visible, .sg-field input:focus-visible, .sg-vehicle:focus-visible, .sg-nav a:focus-visible, .sg-link:focus-visible {
+  outline: 2px solid var(--focus-ring); outline-offset: 2px;
+}
+
+/* Button */
+.sg-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
+  height: 48px; padding: 0 var(--space-5); border-radius: var(--radius-md); border: 1px solid transparent;
+  font: 700 15px/22px var(--font-sans); letter-spacing: .01em; cursor: pointer; text-decoration: none;
+  transition: background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease, border-color 140ms ease; }
+.sg-btn:active { transform: translateY(1px); }
+.sg-btn svg { width: 18px; height: 18px; flex: none; }
+.sg-btn--primary { background: var(--gold-500); color: var(--on-gold); box-shadow: var(--shadow-sheen); letter-spacing: .02em; }
+.sg-btn--primary:hover { background: var(--gold-300); box-shadow: var(--shadow-sheen), var(--shadow-glow); }
+.sg-btn--primary:active { background: var(--gold-700); box-shadow: none; }
+.sg-btn--secondary { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.sg-btn--secondary:hover { background: var(--bg-300); border-color: var(--gold-500); }
+.sg-btn--ghost { background: transparent; color: var(--ink-muted); }
+.sg-btn--ghost:hover { color: var(--ink); background: var(--bg-300); }
+.sg-btn--lg { height: 56px; font-size: 16px; padding: 0 var(--space-6); }
+.sg-btn--sm { height: 36px; font-size: 13px; padding: 0 var(--space-4); border-radius: var(--radius-sm); }
+.sg-btn--block { width: 100%; }
+.sg-btn[disabled] { opacity: .45; cursor: not-allowed; box-shadow: none; }
+
+/* Location field — pickup / destination pair joined by a route rail */
+.sg-route { position: relative; display: grid; gap: var(--space-3); }
+.sg-route::before { content: ""; position: absolute; left: 19px; top: 30px; bottom: 30px; width: 2px;
+  background: repeating-linear-gradient(to bottom, var(--line-strong) 0 4px, transparent 4px 8px); }
+.sg-field { position: relative; display: flex; align-items: center; gap: var(--space-3);
+  height: 60px; padding: 0 var(--space-4) 0 var(--space-3); border-radius: var(--radius-md);
+  background: var(--bg-300); border: 1px solid transparent; transition: border-color 140ms ease, background-color 140ms ease; }
+.sg-field:focus-within { border-color: var(--gold-500); background: var(--bg-200); }
+.sg-field__marker { width: 16px; height: 16px; flex: none; margin: 0 4px; position: relative; z-index: 1; }
+.sg-field__marker--pickup { border-radius: var(--radius-pill); background: var(--pickup); box-shadow: 0 0 0 4px var(--bg-300); }
+.sg-field__marker--drop { border-radius: 3px; background: var(--gold-500); box-shadow: 0 0 0 4px var(--bg-300); }
+.sg-field__body { display: grid; flex: 1; min-width: 0; }
+.sg-field__label { font: 700 11px/16px var(--font-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-subtle); }
+.sg-field input { all: unset; font: 600 15px/22px var(--font-sans); color: var(--ink); width: 100%; }
+.sg-field input::placeholder { color: var(--ink-subtle); }
+.sg-field__action { background: none; border: 0; color: var(--gold-text); padding: var(--space-2); border-radius: var(--radius-sm); cursor: pointer; display: grid; }
+.sg-field__action svg { width: 20px; height: 20px; }
+
+/* Vehicle option row */
+.sg-vehicles { display: grid; gap: var(--space-2); }
+.sg-vehicle { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--bg-200);
+  border: 1px solid var(--line); cursor: pointer; text-align: left; color: var(--ink); font-family: var(--font-sans);
+  transition: border-color 240ms ease, background-color 240ms ease; width: 100%; }
+.sg-vehicle:hover { background: var(--bg-300); }
+.sg-vehicle[aria-pressed="true"], .sg-vehicle.is-selected { border-color: var(--gold-500); background: var(--gold-soft); box-shadow: 0 0 0 3px var(--gold-soft); }
+.sg-vehicle__glyph { width: 56px; height: 40px; border-radius: var(--radius-sm); background: var(--bg-300); display: grid; place-items: center; color: var(--gold-text); }
+.sg-vehicle__glyph svg { width: 30px; height: 30px; }
+.sg-vehicle__name { font: 700 16px/22px var(--font-sans); display: flex; align-items: center; gap: var(--space-2); }
+.sg-vehicle__meta { font: 500 13px/18px var(--font-sans); color: var(--ink-muted); }
+.sg-vehicle__fare { font: 800 18px/24px var(--font-sans); font-variant-numeric: tabular-nums; text-align: right; }
+.sg-vehicle__was { display: block; font: 500 12px/16px var(--font-sans); color: var(--ink-subtle); text-decoration: line-through; }
+
+/* Badge */
+.sg-badge { display: inline-flex; align-items: center; gap: var(--space-1); height: 22px; padding: 0 var(--space-2);
+  border-radius: var(--radius-pill); font: 700 11px/16px var(--font-sans); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+.sg-badge::before { content: ""; width: 6px; height: 6px; border-radius: var(--radius-pill); background: currentColor; }
+.sg-badge--gold { background: var(--gold-soft); color: var(--gold-text); }
+.sg-badge--premium { background: var(--champagne); color: var(--on-gold); }
+.sg-badge--premium::before { display: none; }
+.sg-badge--success { background: var(--bg-300); color: var(--success); }
+.sg-badge--danger { background: var(--bg-300); color: var(--danger); }
+.sg-badge--neutral { background: var(--bg-300); color: var(--ink-muted); }
+
+/* Panel — the floating booking card */
+.sg-panel { background: var(--bg-100); border-radius: var(--radius-lg); padding: var(--space-6) var(--space-5) var(--space-5); box-shadow: var(--shadow-panel); border: 1px solid var(--gold-line); position: relative; }
+.sg-panel::before { content: ""; position: absolute; left: 50%; width: 56px; margin-left: -28px; top: -1px; height: 2px; background: var(--gold-500); border-radius: 0 0 2px 2px; }
+.sg-panel__title { font: 600 32px/36px var(--font-display); letter-spacing: -.005em; margin: 0 0 var(--space-5); }
+.sg-panel__note { font: 500 13px/18px var(--font-sans); color: var(--ink-subtle); text-align: center; margin: var(--space-3) 0 0; }
+
+/* Fare summary */
+.sg-fare { background: var(--bg-200); border-radius: var(--radius-lg); padding: var(--space-5); border: 1px solid var(--gold-line); }
+.sg-fare__head { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--space-4); }
+.sg-fare__total { font: 800 40px/44px var(--font-sans); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.sg-fare__total small { font-size: 22px; font-weight: 700; color: var(--gold-text); margin-right: 4px; vertical-align: 6px; }
+.sg-fare__rows { list-style: none; margin: var(--space-4) 0 0; padding: var(--space-4) 0 0; border-top: 1px solid var(--line); display: grid; gap: var(--space-2); }
+.sg-fare__rows li { display: flex; justify-content: space-between; font: 500 14px/20px var(--font-sans); color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.sg-fare__rows li strong { color: var(--ink); font-weight: 700; }
+.sg-fare__lock { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-4); font: 600 13px/18px var(--font-sans); color: var(--gold-text); }
+.sg-fare__lock svg { width: 16px; height: 16px; }
+
+/* Driver card */
+.sg-driver { display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-4); align-items: center;
+  background: var(--bg-200); border: 1px solid var(--gold-line); border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); }
+.sg-driver__avatar { width: 56px; height: 56px; border-radius: var(--radius-pill); background: var(--bg-300); color: var(--gold-text);
+  display: grid; place-items: center; font: 700 18px/1 var(--font-sans); box-shadow: 0 0 0 2px var(--gold-500); }
+.sg-driver__name { font: 700 18px/24px var(--font-sans); }
+.sg-driver__meta { font: 500 13px/18px var(--font-sans); color: var(--ink-muted); display: flex; gap: var(--space-2); align-items: center; }
+.sg-driver__rating { color: var(--gold-text); font-weight: 700; }
+.sg-plate { display: inline-block; font: 800 14px/20px var(--font-sans); letter-spacing: .08em; padding: 4px var(--space-2);
+  border-radius: var(--radius-sm); background: var(--champagne); color: var(--on-gold); font-variant-numeric: tabular-nums; }
+
+/* Steps */
+.sg-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-6); counter-reset: s; }
+.sg-step { display: grid; grid-template-columns: 40px 1fr; gap: var(--space-4); align-items: start; }
+.sg-step::before { counter-increment: s; content: counter(s, decimal-leading-zero); font: italic 600 34px/40px var(--font-display); color: var(--gold-text); }
+.sg-step h4 { margin: 0; font: 700 17px/24px var(--font-sans); }
+.sg-step p { margin: 2px 0 0; font: 500 14px/20px var(--font-sans); color: var(--ink-muted); }
+@media (max-width: 640px) { .sg-steps { grid-template-columns: 1fr; gap: var(--space-5); } }
+
+/* Navigation bar */
+.sg-nav { display: flex; align-items: center; gap: var(--space-6); height: 80px; padding: 0 var(--space-6);
+  background: var(--noir); border-bottom: 1px solid rgba(255,215,0,0.30); }
+.sg-wordmark { display: inline-flex; align-items: center; gap: var(--space-3); font: 600 20px/1 var(--font-brand); letter-spacing: .06em; color: var(--gold-500); text-decoration: none; white-space: nowrap; }
+.sg-wordmark .sg-logo { width: 50px; }
+.sg-appicon { width: 64px; height: 64px; border-radius: var(--radius-lg); background: var(--noir); overflow: hidden; display: grid; place-items: center; box-shadow: 0 0 0 1px var(--line); }
+.sg-appicon .sg-logo { width: 78%; }
+.sg-nav__links { display: flex; gap: var(--space-1); flex: 1; }
+.sg-nav a.sg-nav__link { font: 600 14px/20px var(--font-sans); color: var(--on-noir-muted); text-decoration: none; padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill); }
+.sg-nav a.sg-nav__link:hover { color: var(--on-noir); }
+.sg-nav a.sg-nav__link[aria-current="page"] { color: var(--on-noir); background: var(--gold-soft); }
+.sg-nav .sg-btn--ghost { color: var(--on-noir-muted); }
+.sg-nav .sg-btn--ghost:hover { color: var(--on-noir); background: rgba(241,245,249,0.08); }
+
+.sg-link { color: var(--gold-text); font-weight: 700; text-decoration: none; border-bottom: 1px solid currentColor; }
+
+/* ---------- Screens: map, sheet, phone, trip pieces ---------- */
+.sg-map { position: relative; background: var(--bg-100); overflow: hidden; }
+.sg-map > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sg-map .roads path { stroke: var(--line); fill: none; stroke-linecap: round; }
+.sg-map .m-ground { fill: var(--map-ground); }
+.sg-map .m-park { fill: var(--map-park); }
+.sg-map .m-water { fill: var(--map-water); }
+.sg-map .m-street { stroke: var(--map-street); fill: none; }
+.sg-map .m-arterial { stroke: var(--map-arterial); fill: none; stroke-linecap: round; }
+.sg-map .m-highway { stroke: var(--map-highway); fill: none; stroke-linecap: round; }
+.sg-map .m-label { fill: var(--map-label); font-family: var(--font-brand); font-weight: 600; letter-spacing: .28em; }
+.sg-map .m-car rect { fill: var(--on-noir-muted); opacity: .55; } .sg-map .m-car .m-glass, .sg-map .m-glass { fill: var(--noir); opacity: .7; }
+.sg-map .pin-halo { fill: var(--pickup); opacity: .16; } .sg-map .pin-halo--d { fill: var(--gold-500); }
+.sg-map .pin-d-dot { fill: var(--noir); }
+.sg-map .car-halo { fill: var(--gold-500); opacity: .14; }
+.sg-map .roads .major { stroke-width: 9; } .sg-map .roads .minor { stroke-width: 3; }
+.sg-map .route-glow { stroke: var(--gold-soft); stroke-width: 18; fill: none; stroke-linecap: round; }
+.sg-map .blocks rect { fill: var(--bg-200); opacity: .7; }
+.sg-map .route { stroke: var(--gold-500); stroke-width: 4.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.sg-map .route-done { stroke: var(--line-strong); stroke-width: 5; fill: none; stroke-dasharray: 2 9; stroke-linecap: round; }
+.sg-map .pin-p { fill: var(--pickup); stroke: var(--bg-100); stroke-width: 4; }
+.sg-map .pin-d { fill: var(--gold-500); stroke: var(--bg-100); stroke-width: 4; }
+.sg-map .car { fill: var(--champagne); stroke: var(--gold-700); stroke-width: 1.5; }
+.sg-map .ring { fill: none; stroke: var(--pickup); stroke-width: 2; }
+.sg-maplabel { position: absolute; transform: translate(-50%, calc(-100% - 18px)); background: var(--noir); color: var(--on-noir);
+  font: 700 12px/16px var(--font-sans); padding: 7px 12px; border-radius: var(--radius-pill); white-space: nowrap; box-shadow: var(--shadow-panel); border: 1px solid rgba(255,215,0,0.35); }
+.sg-maplabel b { color: var(--gold-500); }
+
+.sg-sheet { background: var(--bg-100); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: var(--space-3) var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-panel); position: relative; }
+.sg-sheet::before { content: ""; display: block; width: 40px; height: 4px; border-radius: var(--radius-pill); background: var(--line-strong); margin: 0 auto var(--space-4); }
+.sg-sheet__title { font: 700 20px/26px var(--font-sans); margin: 0; }
+.sg-sheet__sub { font: 500 13px/18px var(--font-sans); color: var(--ink-muted); margin: 2px 0 0; }
+
+.sg-iconbtn { width: 44px; height: 44px; border-radius: var(--radius-pill); display: grid; place-items: center; border: 1px solid var(--line);
+  background: var(--bg-100); color: var(--ink); cursor: pointer; box-shadow: var(--shadow-panel); }
+.sg-iconbtn svg { width: 20px; height: 20px; }
+
+.sg-chip { display: inline-flex; align-items: center; gap: var(--space-2); height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-pill);
+  background: var(--bg-200); border: 1px solid var(--line); font: 600 13px/18px var(--font-sans); color: var(--ink); white-space: nowrap; }
+.sg-chip svg { width: 16px; height: 16px; color: var(--gold-text); }
+.sg-chip.is-selected { border-color: var(--gold-500); background: var(--gold-soft); color: var(--ink); }
+
+.sg-search { display: flex; align-items: center; gap: var(--space-3); height: 56px; padding: 0 var(--space-4); border-radius: var(--radius-md);
+  background: var(--bg-300); font: 700 17px/24px var(--font-sans); color: var(--ink); }
+.sg-search .sg-field__marker { margin: 0; }
+.sg-search span.sg-search__time { margin-left: auto; font: 600 13px/18px var(--font-sans); color: var(--ink-muted); background: var(--bg-100); padding: 6px 10px; border-radius: var(--radius-pill); }
+
+.sg-place { display: grid; grid-template-columns: 40px 1fr auto; gap: var(--space-3); align-items: center; padding: var(--space-3) 0; border-bottom: 1px solid var(--line); }
+.sg-place:last-child { border-bottom: 0; }
+.sg-place__icon { width: 40px; height: 40px; border-radius: var(--radius-pill); background: var(--bg-200); display: grid; place-items: center; color: var(--ink-muted); }
+.sg-place__icon svg { width: 18px; height: 18px; }
+.sg-place__name { font: 700 15px/20px var(--font-sans); }
+.sg-place__addr { font: 500 13px/18px var(--font-sans); color: var(--ink-muted); }
+.sg-place__km { font: 600 12px/16px var(--font-sans); color: var(--ink-subtle); }
+
+.sg-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) 0; font: 600 14px/20px var(--font-sans); }
+.sg-row__left { display: flex; align-items: center; gap: var(--space-3); }
+.sg-row__left svg { width: 20px; height: 20px; color: var(--gold-text); }
+
+.sg-pin { display: inline-flex; gap: 6px; }
+.sg-pin span { width: 36px; height: 44px; border-radius: var(--radius-sm); background: var(--bg-300); display: grid; place-items: center;
+  font: 800 20px/1 var(--font-sans); font-variant-numeric: tabular-nums; color: var(--ink); border: 1px solid var(--line-strong); }
+
+.sg-progress { height: 4px; border-radius: var(--radius-pill); background: var(--bg-300); overflow: hidden; }
+.sg-progress > i { display: block; height: 100%; width: 40%; background: var(--gold-500); border-radius: inherit; }
+
+.sg-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); }
+.sg-action { display: grid; justify-items: center; gap: 6px; font: 600 12px/16px var(--font-sans); color: var(--ink-muted); background: none; border: 0; cursor: pointer; }
+.sg-action i { width: 48px; height: 48px; border-radius: var(--radius-pill); background: var(--bg-200); border: 1px solid var(--line); display: grid; place-items: center; color: var(--ink); }
+.sg-action i svg { width: 20px; height: 20px; }
+.sg-action--safety i { color: var(--danger); }
+
+.sg-stars { display: flex; gap: var(--space-2); justify-content: center; }
+.sg-stars svg { width: 36px; height: 36px; color: var(--gold-500); }
+.sg-stars svg.off { color: var(--bg-300); }
+
+.sg-timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); position: relative; }
+.sg-timeline::before { content: ""; position: absolute; left: 7px; top: 12px; bottom: 12px; width: 2px; background: repeating-linear-gradient(to bottom, var(--line-strong) 0 4px, transparent 4px 8px); }
+.sg-timeline li { display: grid; grid-template-columns: 16px 1fr auto; gap: var(--space-3); align-items: start; position: relative; }
+.sg-timeline li > i { width: 16px; height: 16px; margin-top: 2px; box-shadow: 0 0 0 4px var(--bg-100); }
+.sg-timeline b { display: block; font: 700 14px/20px var(--font-sans); }
+.sg-timeline span { font: 500 13px/18px var(--font-sans); color: var(--ink-muted); }
+.sg-timeline time { font: 600 12px/20px var(--font-sans); color: var(--ink-subtle); }
+
+/* Phone frame used only to present mobile screens */
+.sg-phone { width: 360px; height: 760px; border-radius: 44px; background: var(--bg-000); border: 8px solid var(--noir);
+  box-shadow: 0 0 0 1px var(--line-strong), var(--shadow-panel); overflow: hidden; position: relative; display: flex; flex-direction: column; }
+.sg-statusbar { height: 36px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+  font: 700 13px/1 var(--font-sans); color: var(--ink); position: relative; z-index: 3; }
+.sg-statusbar i { display: inline-block; width: 22px; height: 10px; border: 1.5px solid currentColor; border-radius: 3px; position: relative; }
+.sg-statusbar i::after { content: ""; position: absolute; inset: 1.5px 5px 1.5px 1.5px; background: currentColor; border-radius: 1px; }
+
+/* Premium details */
+.sg-eyebrow { display: inline-flex; align-items: center; gap: var(--space-3); font: 600 12px/16px var(--font-brand); letter-spacing: .24em; text-transform: uppercase; color: var(--gold-text); }
+.sg-eyebrow::before { content: ""; width: 28px; height: 1px; background: var(--gold-500); }
+.sg-promise { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--gold-line); border-bottom: 1px solid var(--gold-line); }
+.sg-promise > div { padding: var(--space-6) var(--space-5); display: grid; gap: var(--space-2); align-content: start; }
+.sg-promise > div + div { border-left: 1px solid var(--gold-line); }
+.sg-promise h4 { margin: 0; font: 600 13px/18px var(--font-brand); letter-spacing: .2em; text-transform: uppercase; color: var(--gold-text); }
+.sg-promise p { margin: 0; font: 500 26px/32px var(--font-display); color: var(--ink); }
+.sg-promise span { font: 500 14px/20px var(--font-sans); color: var(--ink-muted); }
+@media (max-width: 760px) { .sg-promise { grid-template-columns: 1fr; } .sg-promise > div + div { border-left: 0; border-top: 1px solid var(--gold-line); } }
+
+/* Logo — the mark is a CSS mask, coloured by the `logo` token (gold on dark, dark gold on light).
+   Use: <span class="sg-logo sg-logo--emblem" role="img" aria-label="SaaradhiGo"></span>; set a width. */
+.sg-logo { display: inline-block; background: var(--logo); -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; flex: none; }
+.sg-nav .sg-logo, .sg-appicon .sg-logo, .sg-on-noir .sg-logo { background: var(--gold-500); }
+
+/* Glass — panels floating over the map */
+.sg-glass { background: var(--bg-glass); -webkit-backdrop-filter: blur(18px) saturate(1.15); backdrop-filter: blur(18px) saturate(1.15); }
+.sg-scrim-left { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, var(--bg-000) 0%, var(--bg-000) 26%, rgba(0,0,0,0) 62%); }
+[data-theme="light"] .sg-scrim-left { background: linear-gradient(90deg, var(--bg-000) 0%, var(--bg-000) 26%, rgba(250,250,250,0) 62%); }
+.sg-scrim-bottom { position: absolute; left: 0; right: 0; bottom: 0; height: 160px; pointer-events: none; background: linear-gradient(0deg, var(--bg-000), rgba(0,0,0,0)); }
+[data-theme="light"] .sg-scrim-bottom { background: linear-gradient(0deg, var(--bg-000), rgba(250,250,250,0)); }
+
+/* Membership card — Saaradhi Black */
+.sg-member { position: relative; width: 380px; aspect-ratio: 1.586; border-radius: 20px; background: var(--noir); overflow: hidden;
+  border: 1px solid rgba(255,215,0,0.45); box-shadow: 0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08); padding: 26px 28px; display: flex; flex-direction: column; justify-content: space-between; color: var(--on-noir); }
+.sg-member .sg-logo--emblem.wm { position: absolute; right: -60px; top: -30px; width: 280px; opacity: .10; }
+.sg-member__tier { font: 600 13px/16px var(--font-brand); letter-spacing: .32em; color: var(--gold-500); }
+.sg-member__name { font: 600 30px/32px var(--font-display); color: var(--on-noir); }
+.sg-member__meta { display: flex; justify-content: space-between; font: 600 11px/14px var(--font-sans); letter-spacing: .14em; text-transform: uppercase; color: var(--on-noir-muted); }
+
+/* Section scaffolding for marketing pages */
+.sg-section { padding: var(--space-8) var(--space-7); }
+.sg-section + .sg-section { padding-top: 0; }
+.sg-h2 { font: 600 52px/56px var(--font-display); letter-spacing: -.01em; margin: var(--space-4) 0 var(--space-4); }
+.sg-h2 em { font-style: italic; color: var(--gold-text); }
+.sg-lead { font: 500 17px/27px var(--font-sans); color: var(--ink-muted); max-width: 520px; margin: 0; }
+.sg-class { background: var(--bg-100); border: 1px solid var(--gold-line); border-radius: var(--radius-lg); padding: var(--space-5); display: grid; gap: var(--space-3); }
+.sg-class__glyph { width: 64px; height: 48px; color: var(--gold-text); } .sg-class__glyph svg { width: 100%; height: 100%; }
+.sg-class h3 { margin: 0; font: 600 26px/30px var(--font-display); }
+.sg-class p { margin: 0; font: 500 14px/20px var(--font-sans); color: var(--ink-muted); }
+.sg-class .sg-from { font: 700 13px/18px var(--font-sans); color: var(--gold-text); letter-spacing: .02em; }
+.sg-store { display: inline-flex; align-items: center; gap: var(--space-3); height: 52px; padding: 0 var(--space-5); border-radius: var(--radius-md);
+  background: var(--noir); color: var(--on-noir); border: 1px solid rgba(255,215,0,0.35); font: 700 14px/18px var(--font-sans); text-decoration: none; }
+.sg-store small { display: block; font: 600 10px/12px var(--font-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--on-noir-muted); }
+.sg-footer { background: var(--noir); color: var(--on-noir-muted); padding: var(--space-7) var(--space-7) var(--space-6); border-top: 1px solid rgba(255,215,0,0.30); }
+.sg-footer h5 { margin: 0 0 var(--space-3); font: 600 11px/16px var(--font-brand); letter-spacing: .24em; color: var(--gold-500); }
+.sg-footer a { display: block; color: var(--on-noir-muted); text-decoration: none; font: 500 14px/28px var(--font-sans); }
+.sg-footer a:hover { color: var(--on-noir); }
+.sg-map > :not(svg) { z-index: 2; }
+.sg-logo--emblem { aspect-ratio: 1772 / 1944;
+  -webkit-mask-image: url('/brand/emblem-gold.svg'); mask-image: url('/brand/emblem-gold.svg'); }
+.sg-logo--wordmark { aspect-ratio: 2271 / 336;
+  -webkit-mask-image: url('/brand/wordmark-gold.svg'); mask-image: url('/brand/wordmark-gold.svg'); }
+.sg-logo--lockup { aspect-ratio: 2271 / 2461;
+  -webkit-mask-image: url('/brand/lockup-gold.svg'); mask-image: url('/brand/lockup-gold.svg'); }
+
+/* Controls on a surface that stays `noir` in both themes -- the nav, the
+   footer, any `sg-on-noir` band. `--ink` is near-black in the light theme, so
+   without these a secondary button there is invisible text on a black panel. */
+.sg-on-noir .sg-btn--secondary { color: var(--on-noir); border-color: rgba(255,215,0,0.45); }
+.sg-on-noir .sg-btn--secondary:hover { background: rgba(241,245,249,0.08); border-color: var(--gold-500); }
+.sg-on-noir .sg-btn--ghost { color: var(--on-noir-muted); }
+.sg-on-noir .sg-btn--ghost:hover { color: var(--on-noir); background: rgba(241,245,249,0.08); }
+.sg-on-noir .sg-link { color: var(--gold-500); }
+
+/* `h3`/`h2` alongside the handoff's `h4`/`h5`, so pages keep a sequential
+   heading outline without restyling the strip or the footer. */
+.sg-promise h3 { margin: 0; font: 600 13px/18px var(--font-brand); letter-spacing: .2em; text-transform: uppercase; color: var(--gold-text); }
+.sg-footer h2 { margin: 0 0 var(--space-3); font: 600 11px/16px var(--font-brand); letter-spacing: .24em; color: var(--gold-500); }
+
+
+/* ===========================================================================
+   APPLICATION LAYOUT
+   ---------------------------------------------------------------------------
+   Below this line is NOT from the handoff: it is the responsive and page
+   scaffolding the previews provide as inline <style> in each `preview.html`
+   (`.hero`, `.ws`, `.black`, `.app`, `.foot`, the phone-screen frames), plus
+   the mobile behaviour the brief specifies for under 768px. Every value is
+   still a token; nothing new is introduced.
+   ======================================================================== */
+
+/* The ordinary page gutter.
+   The public layout imposes no container, because the hero and the booking
+   workspace are full-bleed. Every other page takes its width and its gutters
+   from this instead -- 64px at the sides, dropping to 16px on a phone, which
+   is the design system's own spacing and not a second set of margins. */
+.sg-page { max-width: 1408px; margin: 0 auto; padding: var(--space-6) var(--space-7) var(--space-8); }
+
+/* The hero: a full-bleed map with the headline and booking panel over it. */
+/* The design's hero is 880px tall because a full-bleed map fills it. This
+   app has no coordinate to centre that map on yet (see the TODO on the
+   homepage), so the hero sizes to its content instead: 880px of empty
+   surface under a headline reads as a page that failed, not as a map. Restore
+   `min-height: 880px` with the map. */
+/* The hero is a two-column grid, not a full-bleed map with text floated on
+   top of it. The visual is one column of that grid, so the section keeps its
+   proportions when the map cannot draw -- which is every build without a
+   browser Maps key, and any moment the provider is down. */
+.sg-hero { position: relative; overflow: hidden; display: grid;
+  grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: var(--space-7);
+  align-items: center; padding: var(--space-8) var(--space-7); }
+.sg-hero__map { position: relative; height: 100%; min-height: 520px;
+  border-radius: var(--radius-lg); overflow: hidden;
+  border: 1px solid var(--gold-line); }
+.sg-hero__inner { position: relative; z-index: 2; width: 100%; }
+.sg-hero__panel { width: 100%; max-width: 440px; }
+.sg-hero__h1 { margin: 0 0 var(--space-4); font-family: var(--font-display);
+  font-size: clamp(48px, 5vw, 76px); line-height: 1.02; font-weight: 600; letter-spacing: -0.01em; }
+.sg-hero__h1 em { color: var(--gold-text); font-style: italic; }
+.sg-hero__sub { margin: 0 0 var(--space-6); color: var(--ink-muted); }
+
+/* The booking / live-trip workspace: a floating 430px panel over the map. */
+.sg-ws { position: relative; min-height: calc(100vh - 80px); padding: 36px var(--space-7); overflow: hidden; }
+.sg-ws__map { position: absolute; inset: 0; z-index: 0; }
+.sg-ws__panel { position: relative; z-index: 2; width: 430px; max-width: 100%; display: grid; gap: var(--space-5); align-content: start; }
+.sg-ws .sg-panel { display: grid; gap: var(--space-4); }
+.sg-ws .sg-panel__title { margin: 0; }
+
+/* A journey recap: two rows, each with its own marker shape. */
+.sg-summary { display: grid; gap: 10px; padding: var(--space-4); border-radius: var(--radius-md); background: var(--bg-200); border: 1px solid var(--line); }
+.sg-summary > div { display: flex; gap: var(--space-3); align-items: center; font: 600 14px/20px var(--font-sans); }
+.sg-summary small { color: var(--ink-muted); font-weight: 500; margin-left: auto; font-size: 13px; }
+
+/* Marketing sections. */
+.sg-wrap { padding: 0 var(--space-7); }
+.sg-head { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--space-7); margin-bottom: 40px; }
+.sg-classes { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); }
+.sg-classes--three { grid-template-columns: repeat(3, 1fr); }
+/* Cards in a row match height, so a longer line does not leave its
+   neighbours floating half-size. */
+.sg-classes > .sg-class { align-content: start; }
+.sg-class.is-black { background: var(--noir); border-color: rgba(214,168,62,0.45); }
+.sg-class.is-black h3 { color: var(--on-noir); }
+.sg-class.is-black p { color: var(--on-noir-muted); }
+.sg-class.is-black .sg-from, .sg-class.is-black .sg-class__glyph { color: var(--gold-500); }
+
+/* The Saaradhi Black band: `noir` in both themes, like the nav. */
+.sg-black { background: var(--noir); display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7); align-items: center;
+  padding: var(--space-8) var(--space-7); border-top: 1px solid rgba(214,168,62,0.30); border-bottom: 1px solid rgba(214,168,62,0.30); }
+.sg-black__list { list-style: none; margin: 28px 0 36px; padding: 0; display: grid; gap: var(--space-3); }
+.sg-black__list li { font: 600 15px/22px var(--font-sans); color: var(--on-noir); display: flex; gap: 14px; align-items: center; }
+.sg-black__list li::before { content: ""; width: 8px; height: 8px; flex: none; transform: rotate(45deg); background: var(--gold-500); }
+.sg-black__card { display: grid; place-items: center; }
+.sg-black__card .sg-member { transform: rotate(-6deg); }
+
+/* The app section and the footer grid. */
+.sg-app { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7); align-items: end; }
+.sg-section.sg-app { padding-bottom: 0; }
+.sg-app > div:first-child { padding-bottom: 120px; }
+.sg-app__phone { display: flex; justify-content: center; height: 560px; overflow: hidden; align-items: flex-start; }
+/* The handoff's phone sits on `bg-000` and reads as a device because a bright
+   map fills it. This one has no screenshot inside it -- there is no rider
+   data to put there (see the homepage TODO) -- so on the same `bg-000` page
+   the 8px `noir` bezel was invisible and the screen content looked like loose
+   text. `bg-100` is the design system's next surface up and gives the frame
+   an edge without introducing a colour. */
+.sg-app__phone .sg-phone { background: var(--bg-100); }
+.sg-foot { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: var(--space-6); padding-bottom: 40px; border-bottom: 1px solid rgba(214,168,62,0.20); }
+.sg-foot__base { display: flex; justify-content: space-between; gap: var(--space-4); padding-top: var(--space-5); font: 500 13px/18px var(--font-sans); }
+
+/* The panel's primary action, as its own row so the phone rule can pin it. */
+.sg-ws__primary { display: grid; gap: var(--space-2); }
+
+/* The bottom sheet, for phones. The map is on top, the sheet is pinned to the
+   bottom of the viewport, and the single primary action sits at the foot of
+   the sheet where a thumb reaches it. */
+.sg-bottomsheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-height: 72vh; overflow-y: auto;
+  padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px)); }
+.sg-bottomsheet__stack { display: grid; gap: var(--space-3); }
+.sg-bottomsheet__primary { position: sticky; bottom: 0; padding-top: var(--space-3); background: var(--bg-100); }
+
+/* --- under 768px: map on top, sheet at the bottom, 48px touch targets ---- */
+@media (max-width: 767px) {
+  .sg-nav { height: 64px; padding: 0 var(--space-4); gap: var(--space-3); }
+  .sg-nav__links { display: none; }
+
+  /* One column, content first: on a phone the booking fields are the point
+     of the hero and the city view is context, so the view does not get to
+     push them below the fold. */
+  .sg-hero { grid-template-columns: 1fr; gap: var(--space-5);
+    padding: var(--space-6) var(--space-4) var(--space-7); }
+  .sg-hero__inner { width: 100%; }
+  .sg-hero__panel { width: 100%; max-width: none; }
+  .sg-hero__h1 { font-size: 40px; line-height: 42px; }
+  .sg-hero__map { height: 220px; min-height: 0; }
+  .sg-classes--three { grid-template-columns: 1fr; }
+
+  .sg-ws { min-height: 0; padding: 0; }
+  .sg-ws__map { position: relative; inset: auto; height: 44vh; min-height: 260px; }
+  .sg-ws__panel { width: 100%; gap: var(--space-3); }
+
+  .sg-wrap, .sg-section { padding-left: var(--space-4); padding-right: var(--space-4); }
+  .sg-page { padding: var(--space-5) var(--space-4) var(--space-7); }
+  .sg-section { padding-top: var(--space-7); padding-bottom: var(--space-7); }
+  .sg-head { flex-direction: column; align-items: flex-start; gap: var(--space-4); margin-bottom: var(--space-5); }
+  .sg-h2 { font: 600 34px/38px var(--font-display); }
+  .sg-classes { grid-template-columns: 1fr; }
+  .sg-black { grid-template-columns: 1fr; padding: var(--space-7) var(--space-4); }
+  .sg-black__card .sg-member { transform: none; width: 100%; }
+  .sg-app { grid-template-columns: 1fr; }
+  .sg-app > div:first-child { padding-bottom: var(--space-6); }
+  .sg-app__phone { display: none; }
+  .sg-foot { grid-template-columns: 1fr 1fr; }
+  .sg-foot__base { flex-direction: column; gap: var(--space-2); }
+  .sg-footer { padding: var(--space-6) var(--space-4); }
+
+  /* The workspace panel becomes the bottom sheet: it meets the map with
+     square shoulders and a grab handle instead of the floating panel's
+     centred gold bar, which is a detail for a card that has edges. */
+  .sg-ws__panel > .sg-panel {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-left: 0; border-right: 0; border-bottom: 0;
+    margin-top: calc(var(--radius-lg) * -1);
+    padding: var(--space-3) var(--space-4) var(--space-5);
+  }
+  .sg-ws__panel > .sg-panel::before {
+    position: static; display: block; content: "";
+    width: 40px; height: 4px; margin: 0 auto var(--space-4);
+    background: var(--line-strong); border-radius: var(--radius-pill);
+  }
+
+  /* ONE primary button, pinned to the foot of the sheet, where a thumb is.
+     Letting it scroll away with the content is how the button that books the
+     ride ends up off-screen on the device most riders are using. */
+  .sg-ws__primary {
+    position: sticky; bottom: 0; z-index: 5;
+    margin: 0 calc(var(--space-4) * -1);
+    padding: var(--space-3) var(--space-4)
+             calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+    background: var(--bg-100);
+    border-top: 1px solid var(--line);
+  }
+
+  /* Every control a thumb has to hit. `--sm` is desktop-only by design. */
+  .sg-btn { height: 48px; }
+  .sg-btn--sm { height: 48px; font-size: 14px; }
+  .sg-action i { width: 48px; height: 48px; }
+  .sg-field__action { min-width: 48px; min-height: 48px; place-items: center; }
+}
+
+@media (min-width: 768px) {
+  /* The sheet is a phone pattern; on a desktop the panel floats instead. */
+  .sg-bottomsheet { position: static; max-height: none; overflow: visible; padding-bottom: 0; }
+}
+
+/* Motion, as specified: 140ms for hover and press, 240ms for sheets and
+   selection, ease-out. And none of it for anyone who has asked for none. */
+@media (prefers-reduced-motion: reduce) {
+  .sg-btn, .sg-field, .sg-vehicle, .sg-bottomsheet { transition: none !important; }
+  .sg-btn:active { transform: none; }
+}

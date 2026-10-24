@@ -46,7 +46,7 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen grid place-items-center px-4">
       <div className="card w-full max-w-sm">
-        <h1 className="text-xl font-semibold text-brand">SaaradhiGo Ops</h1>
+        <h1 className="text-xl font-semibold text-gold-text">SaaradhiGo Ops</h1>
         <p className="text-sm text-white/60 mt-1">
           Sign in with your admin phone number.
         </p>

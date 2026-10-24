@@ -1,0 +1,107 @@
+/* SaaradhiGo — generated from tokens.json */
+:root, [data-theme="dark"] {
+  --noir: #000000;
+  --on-noir: #f1f5f9;
+  --on-noir-muted: #94a3b8;
+  --bg-000: #000000;
+  --bg-100: #141414;
+  --bg-200: #18181b;
+  --bg-300: #27272a;
+  --line: #27272a;
+  --line-strong: #71717a;
+  --ink: #f1f5f9;
+  --ink-muted: #94a3b8;
+  --ink-subtle: #8090a6;
+  --gold-500: #ffd700;
+  --gold-300: #ffe34d;
+  --gold-700: #d4b200;
+  --on-gold: #000000;
+  --gold-text: #ffd700;
+  --gold-soft: rgba(255,215,0,0.10);
+  --gold-line: rgba(255,215,0,0.20);
+  --bg-glass: rgba(10,10,10,0.80);
+  --map-ground: #0a0a0a;
+  --map-street: #18181b;
+  --map-arterial: #27272a;
+  --map-highway: #3a3205;
+  --map-water: #0a1418;
+  --map-park: #0d140e;
+  --map-label: #7d8ba1;
+  --logo: #ffd700;
+  --champagne: #fff4bf;
+  --pickup: #46c98b;
+  --success: #46c98b;
+  --danger: #ff8a6b;
+  --focus-ring: #ffe766;
+  --shadow-panel: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,215,0,0.12);
+  --shadow-glow: 0 8px 28px rgba(255,215,0,0.30);
+  --shadow-sheen: inset 0 1px 0 rgba(255,255,255,0.38), inset 0 -2px 0 rgba(0,0,0,0.16);
+}
+[data-theme="light"] {
+  --noir: #000000;
+  --on-noir: #f1f5f9;
+  --on-noir-muted: #94a3b8;
+  --bg-000: #fafafa;
+  --bg-100: #ffffff;
+  --bg-200: #f4f4f5;
+  --bg-300: #e4e4e7;
+  --line: #e4e4e7;
+  --line-strong: #71717a;
+  --ink: #0a0a0a;
+  --ink-muted: #475569;
+  --ink-subtle: #5b6577;
+  --gold-500: #ffd700;
+  --gold-300: #ffe34d;
+  --gold-700: #d4b200;
+  --on-gold: #000000;
+  --gold-text: #7a6000;
+  --gold-soft: rgba(255,215,0,0.18);
+  --gold-line: rgba(122,96,0,0.28);
+  --bg-glass: rgba(255,255,255,0.86);
+  --map-ground: #ececec;
+  --map-street: #fafafa;
+  --map-arterial: #ffffff;
+  --map-highway: #fbeaa0;
+  --map-water: #d3dde2;
+  --map-park: #dfe6d8;
+  --map-label: #5b6577;
+  --logo: #7a6000;
+  --champagne: #fff4bf;
+  --pickup: #1d7a4e;
+  --success: #1d7a4e;
+  --danger: #b83a1e;
+  --focus-ring: #7a6000;
+  --shadow-panel: 0 24px 56px rgba(10,10,10,0.12), 0 0 0 1px rgba(10,10,10,0.06);
+  --shadow-glow: 0 8px 24px rgba(212,178,0,0.30);
+  --shadow-sheen: inset 0 1px 0 rgba(255,255,255,0.38), inset 0 -2px 0 rgba(0,0,0,0.16);
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 72px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+  --font-display: "Cormorant Garamond", "Cormorant", "Noto Serif", Georgia, serif;
+  --font-sans: "Manrope", "Noto Sans", "Noto Sans Telugu", "Noto Sans Devanagari", system-ui, sans-serif;
+  --font-brand: "Cinzel", "Trajan Pro", Georgia, serif;
+}
+.display-xl { font-family: var(--font-display); font-size: 76px; line-height: 72px; font-weight: 600; letter-spacing: -0.01em; }
+.display-lg { font-family: var(--font-display); font-size: 48px; line-height: 52px; font-weight: 600; letter-spacing: -0.005em; }
+.brand-name { font-family: var(--font-brand); font-size: 20px; line-height: 24px; font-weight: 600; letter-spacing: 0.06em; }
+.eyebrow { font-family: var(--font-brand); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.24em; }
+.heading { font-family: var(--font-sans); font-size: 26px; line-height: 32px; font-weight: 700; letter-spacing: -0.01em; }
+.title { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 700; }
+.body-lg { font-family: var(--font-sans); font-size: 17px; line-height: 26px; font-weight: 500; }
+.body { font-family: var(--font-sans); font-size: 15px; line-height: 22px; font-weight: 500; }
+.caption { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 500; }
+.label { font-family: var(--font-sans); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 0.12em; }
+.fare-xl { font-family: var(--font-sans); font-size: 40px; line-height: 44px; font-weight: 800; letter-spacing: -0.02em; }
+.fare { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 800; }

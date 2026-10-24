@@ -140,7 +140,7 @@ export default function DriverDetailPage() {
         </div>
         <div className="flex gap-2">
           {!data.approved && (
-            <button onClick={approve} className="btn-ghost text-brand text-sm">Approve KYC</button>
+            <button onClick={approve} className="btn-ghost text-gold-text text-sm">Approve KYC</button>
           )}
           {data.approved && (
             <button
@@ -182,7 +182,7 @@ export default function DriverDetailPage() {
               : ''
             }>{data.license_expiry ?? '—'}</dd>
             <dt className="text-white/50 mt-2">License doc</dt>
-            <dd>{data.license_doc_url ? <a className="text-brand" href={data.license_doc_url} target="_blank">Open</a> : '—'}</dd>
+            <dd>{data.license_doc_url ? <a className="text-gold-text" href={data.license_doc_url} target="_blank">Open</a> : '—'}</dd>
             {data.fatigue && (
               <>
                 <dt className="text-white/50 mt-2">Active 24h</dt>
@@ -223,7 +223,7 @@ export default function DriverDetailPage() {
             {data.vehicles.map((v) => (
               <tr key={v.id} className="table-row">
                 <td className="py-2">
-                  {v.id}{v.is_active_vehicle && <span className="ml-2 tag border-brand/40 text-brand text-xs">active</span>}
+                  {v.id}{v.is_active_vehicle && <span className="ml-2 tag border-gold-line text-gold-text text-xs">active</span>}
                 </td>
                 <td className="py-2">{v.type}</td>
                 <td className="py-2">{v.brand} {v.model} {v.color && `(${v.color})`}</td>
@@ -315,7 +315,7 @@ export default function DriverDetailPage() {
             {data.recent_trips.map((t) => (
               <tr key={t.id} className="table-row">
                 <td className="py-2">
-                  <Link href={`/trips/${t.id}`} className="text-brand hover:underline">#{t.id}</Link>
+                  <Link href={`/trips/${t.id}`} className="sg-link">#{t.id}</Link>
                 </td>
                 <td className="py-2">{t.status ?? '—'}</td>
                 <td className="py-2">{t.pickup_address ?? '—'}</td>

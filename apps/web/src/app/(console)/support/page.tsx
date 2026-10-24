@@ -74,7 +74,7 @@ export default function SupportPage() {
               {tickets.map((t) => (
                 <tr key={t.id} className="table-row hover:bg-white/5">
                   <td className="py-2">
-                    <Link href={`/support/${t.id}`} className="text-brand hover:underline">#{t.id}</Link>
+                    <Link href={`/support/${t.id}`} className="sg-link">#{t.id}</Link>
                   </td>
                   <td className="py-2">{t.issue_type}</td>
                   <td className="py-2">
