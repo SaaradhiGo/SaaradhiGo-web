@@ -51,6 +51,8 @@ export function HeroBooking() {
   const [errors, setErrors] = useState<{ pickup?: string; dest?: string }>({});
   const [busy, setBusy] = useState(false);
   const [locating, setLocating] = useState(false);
+  /** A reason the suggestion list is empty, when there is one worth saying. */
+  const [searchNote, setSearchNote] = useState<string | null>(null);
   const t = useT();
 
   // Debounced lookup, and only for the field being typed in.
@@ -65,13 +67,28 @@ export function HeroBooking() {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       searchPlaces(text)
-        .then(setSuggestions)
-        .catch(() => setSuggestions([]));
+        .then((places) => {
+          setSuggestions(places);
+          setSearchNote(null);
+        })
+        .catch((err) => {
+          setSuggestions([]);
+          // A rate limit is a REASON, not an empty result. The guest cap is
+          // shared across anonymous callers, so a visitor can hit it through
+          // no fault of their own; showing nothing leaves them retyping into
+          // a box that will never answer. 429 says wait, or sign in -- a
+          // signed-in rider bypasses the cap entirely.
+          const status = (err as { status?: number } | null)?.status;
+          setSearchNote(status === 429 ? t.validation.searchThrottled : null);
+        });
     }, 250);
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [active, pickupText, destText]);
+    // `t` is in the deps because the throttle note is a translated string:
+    // without it, switching language mid-search would leave the previous
+    // language's message on screen.
+  }, [active, pickupText, destText, t.validation.searchThrottled]);
 
   function choose(place: Place) {
     if (active === 'pickup') {
@@ -227,6 +244,12 @@ export function HeroBooking() {
       </button>
 
       {field('dest', t.hero.destLabel, t.hero.destPlaceholder, destText, setDestText, () => setDestPlace(null))}
+
+      {searchNote && (
+        <p className="hp-error" role="status">
+          {searchNote}
+        </p>
+      )}
 
       <div className="mt-sg-2">
         <Button variant="primary" size="lg" block onClick={submit} disabled={busy}>

@@ -20,7 +20,7 @@ import type { Locale } from './locales';
 const en: {
   nav: Record<'ride' | 'drive' | 'safety' | 'about' | 'help' | 'contact' | 'login' | 'signup' | 'menuOpen' | 'menuClose' | 'language' | 'country', string>;
   hero: Record<'titleTop' | 'titleBottom' | 'subtitle' | 'pickupNow' | 'pickupLabel' | 'pickupPlaceholder' | 'destLabel' | 'destPlaceholder' | 'cta' | 'useLocation' | 'locating' | 'photoPending' | 'photoNeeds' | 'sampleTag', string>;
-  validation: Record<'pickupRequired' | 'destRequired' | 'geoDenied' | 'geoUnsupported' | 'searchFailed', string>;
+  validation: Record<'pickupRequired' | 'destRequired' | 'geoDenied' | 'geoUnsupported' | 'searchFailed' | 'searchThrottled', string>;
   rides: Record<'heading' | 'lead' | 'loading' | 'failed' | 'empty', string>;
   rideNames: Record<'auto' | 'mini' | 'sedan' | 'suv', string>;
   rideBlurbs: Record<'auto' | 'mini' | 'sedan' | 'suv', string>;
@@ -68,6 +68,7 @@ const en: {
     geoDenied: 'We could not read your location. Allow location access, or type a pickup point.',
     geoUnsupported: 'This browser cannot share your location. Type a pickup point instead.',
     searchFailed: 'We could not search just now. Please try again.',
+    searchThrottled: 'Too many searches right now. Wait a moment and try again, or sign in to continue.',
   },
   rides: {
     heading: 'Choose your ride',
@@ -170,6 +171,7 @@ const hi: Messages = {
     geoDenied: 'हम आपका स्थान नहीं पढ़ सके। स्थान की अनुमति दें, या पिकअप स्थान टाइप करें।',
     geoUnsupported: 'यह ब्राउज़र आपका स्थान साझा नहीं कर सकता। इसके बजाय पिकअप स्थान टाइप करें।',
     searchFailed: 'अभी खोज नहीं हो सकी। कृपया फिर से प्रयास करें।',
+    searchThrottled: 'अभी बहुत अधिक खोजें हो रही हैं। थोड़ी देर बाद प्रयास करें, या जारी रखने के लिए लॉग इन करें।',
   },
   rides: {
     heading: 'अपनी सवारी चुनें',
@@ -266,6 +268,7 @@ const te: Messages = {
     geoDenied: 'మీ ప్రదేశాన్ని చదవలేకపోయాం. ప్రదేశ అనుమతి ఇవ్వండి, లేదా పికప్ ప్రదేశాన్ని టైప్ చేయండి.',
     geoUnsupported: 'ఈ బ్రౌజర్ మీ ప్రదేశాన్ని పంచుకోలేదు. బదులుగా పికప్ ప్రదేశాన్ని టైప్ చేయండి.',
     searchFailed: 'ఇప్పుడే వెతకలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.',
+    searchThrottled: 'ప్రస్తుతం చాలా ఎక్కువ శోధనలు జరుగుతున్నాయి. కొద్దిసేపటి తర్వాత ప్రయత్నించండి, లేదా కొనసాగించడానికి లాగిన్ అవ్వండి.',
   },
   rides: {
     heading: 'మీ ప్రయాణాన్ని ఎంచుకోండి',
@@ -362,6 +365,7 @@ const es: Messages = {
     geoDenied: 'No pudimos leer tu ubicación. Permite el acceso a la ubicación o escribe un lugar de recogida.',
     geoUnsupported: 'Este navegador no puede compartir tu ubicación. Escribe un lugar de recogida.',
     searchFailed: 'No pudimos buscar en este momento. Inténtalo de nuevo.',
+    searchThrottled: 'Demasiadas búsquedas en este momento. Espera un poco e inténtalo de nuevo, o inicia sesión para continuar.',
   },
   rides: {
     heading: 'Elige tu viaje',
