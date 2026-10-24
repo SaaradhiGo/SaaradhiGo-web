@@ -5,6 +5,9 @@
    component rule when a page needs to. */
 @import '../styles/tokens.css';
 @import '../styles/saaradhigo.css';
+/* The public homepage's own layout. Marketing only: it does not reach the
+   booking or trip screens. */
+@import '../styles/home.css';
 
 @tailwind base;
 @tailwind components;

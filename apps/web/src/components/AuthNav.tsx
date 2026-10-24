@@ -40,7 +40,7 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
     return (
       <>
         <ButtonLink href="/sign-in" variant="ghost" size="sm">
-          Sign in
+          Log in
         </ButtonLink>
         <ButtonLink href="/sign-up" variant={quiet ? 'secondary' : 'primary'} size="sm">
           Sign up

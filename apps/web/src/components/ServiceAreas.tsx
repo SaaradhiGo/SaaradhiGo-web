@@ -22,8 +22,8 @@ import { ButtonLink } from '@/components/sg/Button';
  * marketing page that implies coverage it does not have is the first promise
  * a rider finds broken.
  *
- * Restyled onto the design system: `sg-eyebrow` over an `sg-h2`, cities as
- * `sg-chip`s. The data, the four states and the endpoint are unchanged.
+ * A plain `sg-h2` and the cities as `sg-chip`s. The data, the four states
+ * and the endpoint are unchanged.
  */
 export default function ServiceAreas() {
   const [zones, setZones] = useState<Zone[] | null>(null);
@@ -39,20 +39,17 @@ export default function ServiceAreas() {
     };
   }, []);
 
-  const head = (
-    <>
-      <span className="sg-eyebrow">Where we operate</span>
-      <h2 className="sg-h2">
-        Live in <em>your city.</em>
-      </h2>
-    </>
-  );
+  // A plain section label. This used to be a gold rule over a letterspaced
+  // eyebrow and an italic headline -- the same construction as every other
+  // section, which is what made the page read as generated rather than as a
+  // product telling you where it operates.
+  const head = <h2 className="sg-h2">Where we operate</h2>;
 
   if (failed) {
     return (
       <div>
         {head}
-        <p className="sg-lead">
+        <p className="sg-lead mt-sg-3">
           We could not load our service areas just now.{' '}
           <Link href="/contact" className="sg-link">
             Ask us where we run
@@ -83,7 +80,7 @@ export default function ServiceAreas() {
     return (
       <div>
         {head}
-        <p className="sg-lead">
+        <p className="sg-lead mt-sg-3">
           We are not live in any city yet. Create an account and we will tell
           you when we reach yours.
         </p>
@@ -104,7 +101,7 @@ export default function ServiceAreas() {
   return (
     <div>
       {head}
-      <p className="sg-lead">
+      <p className="sg-lead mt-sg-3">
         {zones.length === 1
           ? 'One service area is live today.'
           : `${zones.length} service areas are live today.`}

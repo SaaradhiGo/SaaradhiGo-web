@@ -1,284 +1,166 @@
-import BookingPanel from '@/components/BookingPanel';
-import ServiceAreas from '@/components/ServiceAreas';
+import Link from 'next/link';
 import { ButtonLink } from '@/components/sg/Button';
-import { HeroEyebrow } from '@/components/sg/HeroEyebrow';
-import { MembershipCard } from '@/components/sg/MembershipCard';
-import { PromiseStrip } from '@/components/sg/PromiseStrip';
-import { RouteMarker } from '@/components/sg/LocationField';
-import {
-  ArrowRight,
-  AutoGlyph,
-  BikeGlyph,
-  CarGlyph,
-  SuvGlyph,
-} from '@/components/sg/icons';
+import { HeroBooking } from '@/components/home/HeroBooking';
+import { ImageSlot } from '@/components/home/ImageSlot';
+import { RideCategories } from '@/components/home/RideCategories';
+import { OperatingCities } from '@/components/home/OperatingCities';
+import { Lock, Phone, Shield } from '@/components/sg/icons';
 
 /**
- * The homepage, in the order the design system's HomeScreen specifies:
- * hero, promise strip, ways to ride, service areas, Saaradhi Black, the app,
- * footer.
+ * The SaaradhiGo public homepage.
  *
- * ONE PRIMARY ACTION. It is "See fares", inside the booking panel, because
- * that is what this page is for. The "Ride Black" button in the Saaradhi
- * Black band is therefore `secondary` here even though the handoff's preview
- * draws it as a gold fill: two gold buttons on one page means neither of them
- * is the primary one. That is the design system's own rule applied to its own
- * preview, which composes each section in isolation.
+ * Built to the implementation contract: 1200px column, 72px header, the
+ * 8/16/24/32/48/64/96 spacing scale, and seven sections in a fixed order.
+ * Layout lives in `src/styles/home.css`; the booking flow it hands off to is
+ * untouched.
  *
- * WHAT IS REAL AND WHAT IS NOT
- * The hero eyebrow and the service areas come from `/pricing/zones/`. The
- * vehicle classes and their descriptions are product facts. The three
- * promises are things the platform does. Everything the server cannot tell
- * this page yet -- a "from" price per class, the hero's map, a membership
- * name, the app store listings -- is marked TODO below rather than filled
- * with a plausible number.
+ * WHAT IT CLAIMS IS WHAT THE PLATFORM DOES. Ride categories come from
+ * `/pricing/vehicle-types/`; cities come from `/pricing/zones/` and are
+ * described as configured service areas rather than as live coverage, since
+ * a priced zone does not prove a driver is online in it. The safety section
+ * lists three implemented capabilities and makes none of the claims a safety
+ * section is expected to make -- no 24/7 response desk, no background-check
+ * programme, no insurance, no ride recording.
+ *
+ * No fabricated statistics, testimonials, partner logos, app-store badges or
+ * contact details. No `href="#"`: every link resolves to a route that exists
+ * or to an anchor on this page.
  */
 
-// The India launch classes, in the design system's order and naming. These
-// are product facts, not sample data: the names are fixed ("Saaradhi
-// <Class>") and the copy describes what each class is.
-//
-// TODO(pricing): no "from" price. A per-class floor needs an endpoint that
-// returns a minimum fare for a zone without a pickup and destination --
-// `/pricing/vehicle-types/` answers "which classes serve this point", not
-// "what does the cheapest Sedan ride cost". Until that exists these cards
-// carry no price, because an indicative number on a page whose promise is
-// "know the fare before you get in" is the one thing it cannot show.
-const CLASSES = [
+const STEPS = [
+  { n: '01', title: 'Enter your destination', body: 'Choose where you want to go.' },
+  { n: '02', title: 'Choose your ride', body: 'Compare the available ride options.' },
+  { n: '03', title: 'Confirm and go', body: 'Review your trip and request your ride.' },
+];
+
+/** Implemented and shipping. Nothing aspirational. */
+const SAFETY = [
   {
-    name: 'Saaradhi Bike',
-    glyph: BikeGlyph,
-    body: 'One seat, through the traffic. The quickest way across town.',
+    icon: Lock,
+    title: 'A PIN starts every ride',
+    body: 'Your driver cannot start the trip until you give them the four-digit PIN shown on your screen. It is verified on our servers, not in the app.',
   },
   {
-    name: 'Saaradhi Auto',
-    glyph: AutoGlyph,
-    body: 'Three seats, metered honestly, for the short hop that used to be an argument.',
+    icon: Phone,
+    title: 'Live trip tracking',
+    body: "Your driver's position updates on your map for the length of the trip, and the route being travelled is drawn as you go.",
   },
   {
-    name: 'Saaradhi Sedan',
-    glyph: CarGlyph,
-    body: 'Four seats and a boot. The everyday ride to the office and the airport.',
-  },
-  {
-    name: 'Saaradhi Black',
-    glyph: SuvGlyph,
-    body: 'Premium sedans and top-rated Saaradhis, for the arrival that matters.',
-    black: true,
+    icon: Shield,
+    title: 'Alerts reach our operations team',
+    body: 'A safety alert raised during a ride is delivered to our operations team with the trip and its location attached.',
   },
 ];
 
 export default function HomePage() {
   return (
     <>
-      {/* ---------------------------------------------------------------- */}
-      {/* Hero                                                             */}
-      {/* ---------------------------------------------------------------- */}
-      <section className="sg-hero">
-        {/* TODO(map): the design's hero is a full-bleed map with the
-            headline and the booking panel over a left scrim. There is no map
-            here, and that is a data problem rather than a styling one: a
-            truthful basemap needs a coordinate, and the only ones this page
-            could centre on are the rider's own location -- which it will not
-            ask for unprompted on a marketing page -- or a zone centroid,
-            which `/pricing/zones/` does not return.
+      {/* 1 — Hero ------------------------------------------------------- */}
+      <section className="hp" aria-labelledby="hero-title">
+        <div className="hp-hero">
+          <div>
+            <h1 id="hero-title" className="hp-hero__title">
+              Your city.
+              <span>Your ride.</span>
+            </h1>
+            <p className="hp-hero__sub">
+              Wherever you&rsquo;re headed, find a ride that works for you.
+            </p>
+            <HeroBooking />
+          </div>
 
-            Rendering the surface anyway was worse than leaving it out. It
-            cannot draw streets it does not have, so the hero became 880px of
-            empty charcoal under the headline, which reads as a page that
-            failed rather than as a map still loading.
-
-            To restore it: add a centroid to the zones endpoint, render
-            `<div className="sg-hero__map"><MapSurface pickup={centroid} />
-            <div className="sg-scrim-left" /></div>` here, and put
-            `min-height: 880px` back on `.sg-hero`. MapSurface already draws
-            the design's basemap, route and markers from the map tokens. */}
-
-        <div className="sg-hero__inner">
-          <HeroEyebrow />
-          <h1 className="sg-hero__h1">
-            Know the fare
-            <br />
-            <em>before you get in.</em>
-          </h1>
-          {/* The handoff's preview ends this line with "No surge surprises."
-              The brief's copy rules forbid the word outside the single phrase
-              "No surge after you book", which the promise strip below carries
-              in full, so the sentence stops here. */}
-          <p className="body-lg sg-hero__sub">
-            Set your pickup, choose a vehicle, see the price up front.
-          </p>
-
-          <div className="sg-hero__panel">
-            <BookingPanel />
+          <div className="hp-hero__media">
+            <ImageSlot needs="Licensed photograph: an Indian urban street scene with a passenger and car. 4:3, supplied by the brand team." />
           </div>
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- */}
-      {/* The three promises                                               */}
-      {/* ---------------------------------------------------------------- */}
-      <div className="sg-wrap">
-        <PromiseStrip />
-      </div>
+      {/* 2 — Choose your ride -------------------------------------------- */}
+      <RideCategories />
 
-      {/* ---------------------------------------------------------------- */}
-      {/* Ways to ride                                                     */}
-      {/* ---------------------------------------------------------------- */}
-      <section className="sg-section" aria-labelledby="ways">
-        <div className="sg-head">
+      {/* 3 — Getting there is simple ------------------------------------- */}
+      <section className="hp hp-section" id="how-it-works" aria-labelledby="how">
+        <h2 id="how" className="hp-h2">
+          Getting there is simple
+        </h2>
+        <ol className="hp-steps">
+          {STEPS.map((s) => (
+            <li key={s.n} className="hp-step">
+              <div className="hp-step__n">{s.n}</div>
+              <h3>{s.title}</h3>
+              <p>{s.body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* 4 — Drive with SaaradhiGo --------------------------------------- */}
+      <section className="hp hp-section" id="drive" aria-labelledby="drive-h">
+        <div className="hp-split">
           <div>
-            <span className="sg-eyebrow">Ways to ride</span>
-            <h2 id="ways" className="sg-h2">
-              A Saaradhi for <em>every journey.</em>
+            <h2 id="drive-h" className="hp-h2">
+              Drive with SaaradhiGo
             </h2>
+            <p className="hp-lead">
+              Interested in driving? Learn how to get started with SaaradhiGo.
+            </p>
+            <div className="mt-sg-6">
+              {/* Driver onboarding is live: `/driver/sign-up` is a working
+                  route backed by the document-upload flow. */}
+              <ButtonLink href="/driver/sign-up" variant="primary" size="lg">
+                Become a driver
+              </ButtonLink>
+            </div>
           </div>
-          <p className="sg-lead">
-            From a quick bike hop to a quiet sedan after a long flight. Every
-            class shows its fare before you book.
-          </p>
+          <div className="hp-split__media">
+            <ImageSlot needs="Licensed photograph: a SaaradhiGo driver with their vehicle. 3:2, supplied by the brand team." />
+          </div>
         </div>
+      </section>
 
-        <ul className="sg-classes">
-          {CLASSES.map(({ name, glyph: Glyph, body, black }) => (
-            <li
-              key={name}
-              className={`sg-class ${black ? 'is-black sg-on-noir' : ''}`.trim()}
-            >
-              <span className="sg-class__glyph" aria-hidden="true">
-                <Glyph />
+      {/* 5 — Safety ------------------------------------------------------ */}
+      <section className="hp hp-section" id="safety" aria-labelledby="safety-h">
+        <h2 id="safety-h" className="hp-h2">
+          Safety
+        </h2>
+        <p className="hp-lead">
+          Your safety matters. Learn about the safety features and support
+          available during your journey.
+        </p>
+        <ul className="hp-facts">
+          {SAFETY.map(({ icon: Icon, title, body }) => (
+            <li key={title} className="hp-fact">
+              <span className="hp-fact__icon" aria-hidden="true">
+                <Icon />
               </span>
-              <h3>{name}</h3>
-              <p>{body}</p>
+              <div>
+                <h3>{title}</h3>
+                <p>{body}</p>
+              </div>
             </li>
           ))}
         </ul>
       </section>
 
-      {/* ----------------------------------------------------------------
-          Where we operate.
+      {/* 6 — Where we operate -------------------------------------------- */}
+      <OperatingCities />
 
-          Not in the handoff's HomeScreen order, and kept anyway: this is the
-          only place on the site that states which cities SaaradhiGo serves,
-          it reads the dispatcher's own zones, and removing it to match a
-          preview would have traded a fact for a gap.
-          ---------------------------------------------------------------- */}
-      <section className="sg-section pt-0">
-        <ServiceAreas />
-      </section>
-
-      {/* ---------------------------------------------------------------- */}
-      {/* Saaradhi Black — `noir` in both themes                           */}
-      {/* ---------------------------------------------------------------- */}
-      <section className="sg-black sg-on-noir" aria-labelledby="black">
-        <div>
-          <span className="sg-eyebrow text-gold-500">Saaradhi Black</span>
-          <h2 id="black" className="sg-h2 text-on-noir">
-            Arrive like
-            <br />
-            <em className="text-gold-500">it matters.</em>
+      {/* 7 — Closing ----------------------------------------------------- */}
+      <section className="hp" aria-labelledby="closing">
+        <div className="hp-closing">
+          <h2 id="closing" className="hp-h2">
+            Ready to go?
           </h2>
-          <p className="sg-lead text-on-noir-muted">
-            Premium sedans, top-rated Saaradhis, priority pickup at the airport
-            and a quiet cabin when you want one.
+          <p className="hp-lead">
+            Enter your destination and explore your ride options.
           </p>
-          {/* TODO(membership): the perks below are the tier's product
-              definition and are safe to state. What does not exist yet is the
-              membership itself -- no tier record, no enrolment endpoint, no
-              eligibility rule -- so this button goes to the booking flow,
-              where a rider can choose the Black class on a real trip, rather
-              than to a sign-up page for a programme that cannot enrol them. */}
-          <ul className="sg-black__list">
-            <li>Priority pickup at the airport</li>
-            <li>Top-rated drivers only</li>
-            <li>A quiet-ride option on every trip</li>
-          </ul>
-          {/* Secondary, not primary: the page's one gold button is "See
-              fares". */}
-          <ButtonLink href="/book" variant="secondary" size="lg">
-            Ride Black
-            <ArrowRight />
-          </ButtonLink>
-        </div>
-        <div className="sg-black__card">
-          <MembershipCard />
-        </div>
-      </section>
-
-      {/* ---------------------------------------------------------------- */}
-      {/* The app                                                          */}
-      {/* ---------------------------------------------------------------- */}
-      <section className="sg-section sg-app" aria-labelledby="app">
-        <div>
-          <span className="sg-eyebrow">The app</span>
-          <h2 id="app" className="sg-h2">
-            Your Saaradhi,
-            <br />
-            <em>in your pocket.</em>
-          </h2>
-          <p className="sg-lead">
-            Book in three taps, track your ride live, pay the way that suits
-            you, and share every trip with family.
-          </p>
-
-          {/* TODO(stores): the rider app is not published yet, so there are no
-              App Store or Play listings to link to. These are rendered as
-              disabled controls that say so, rather than as working-looking
-              buttons behind `href="#"` -- a store button that does nothing is
-              the kind of thing a visitor tries exactly once. Swap each one for
-              an `<a className="sg-store" href="{listing}">` when the listings
-              go live. */}
-          <div className="mt-sg-6 flex flex-wrap gap-sg-3">
-            <span className="sg-store" aria-disabled="true">
-              <span>
-                <small>Not yet published</small>
-                iPhone
-              </span>
-            </span>
-            <span className="sg-store" aria-disabled="true">
-              <span>
-                <small>Not yet published</small>
-                Android
-              </span>
-            </span>
-          </div>
-          <p className="caption text-ink-subtle mt-sg-3">
-            Booking, live tracking and receipts all work in your browser today.
-          </p>
-        </div>
-
-        {/* The phone, as the design presents mobile screens.
-            TODO(app-preview): the handoff fills this frame with sample places
-            and distances ("Inorbit Mall · 4.2 km"). Those are not shown: a
-            recent-destinations list belongs to a signed-in rider, and inventing
-            three of them on a public page is exactly the sample content the
-            brief rules out. The frame carries the real chrome -- the greeting,
-            the search field and the saved-place chips -- and the list below it
-            fills in once `/ride/places/recent/` exists. */}
-        <div className="sg-app__phone" aria-hidden="true">
-          <div className="sg-phone">
-            <div className="sg-statusbar">
-              <span className="sg-num">9:41</span>
-              <i />
-            </div>
-            <div className="px-sg-4 pb-sg-4 grid gap-sg-4">
-              <div>
-                <p className="sg-sheet__sub">Good evening</p>
-                <h3 className="display-lg text-[32px] leading-[36px] m-0">
-                  Where to?
-                </h3>
-              </div>
-              <div className="sg-search">
-                <RouteMarker kind="drop" />
-                Search destination
-                <span className="sg-search__time">Now</span>
-              </div>
-              <div className="flex gap-sg-2 overflow-hidden">
-                <span className="sg-chip">Home</span>
-                <span className="sg-chip">Work</span>
-                <span className="sg-chip">Airport</span>
-              </div>
-            </div>
+          <div className="hp-closing__actions">
+            <ButtonLink href="/book" variant="primary" size="lg">
+              Book a ride
+            </ButtonLink>
+            <Link href="/contact" className="sg-link self-center">
+              Contact support
+            </Link>
           </div>
         </div>
       </section>

@@ -6,32 +6,31 @@
    system, and anything invented in it is a divergence that will show up the
    next time the handoff is regenerated.
 
-   THREE DEVIATIONS FROM THE HANDOFF FILE, all mechanical:
+   Taken from the `_f` revision of the handoff, which is a colour-only update:
+   the same classes and the same token names, with noir moved to a true black
+   and the gold to the brighter brand yellow. The values live in tokens.css.
 
-   1. The Google Fonts `@import` at the top of the original is gone. A CSS
-      `@import` of a remote stylesheet blocks rendering until it resolves and
-      cannot be preconnected, so the three families are linked from the root
-      layout's <head> instead -- same families, same weights, `display=swap`.
+   THREE MECHANICAL DEVIATIONS FROM THE HANDOFF FILE:
 
-   2. The `.sg-logo--*` masks were 138KB of inlined base64 data URIs. They now
-      point at the SVG files in `public/brand/`, which the handoff explicitly
-      offers as the alternative. The `aspect-ratio` values are the artwork's
-      own viewBoxes (1772x1944, 2271x336, 2271x2461), so the mark renders at
-      exactly the proportions it was traced at.
+   1. The Google Fonts `@import` is gone. A CSS `@import` of a remote
+      stylesheet blocks rendering and cannot be preconnected, so the three
+      families are linked from the root layout's <head> instead -- same
+      families, same weights, `display=swap`.
 
-   3. The handoff set only `-webkit-mask-image`. The unprefixed `mask-image`
-      is set alongside it, so the logo is not invisible in Firefox.
+   2. The `.sg-logo--*` masks were 138KB of inlined base64. They now point at
+      the SVGs in `public/brand/`, which the handoff offers as the
+      alternative, at the artwork's own aspect ratios.
 
-   WHY THE RGBA LITERALS STAY LITERAL. A handful of rules carry
-   `rgba(214,168,62,0.30)` rather than `var(--gold-line)`, and that is
-   deliberate in the original, not an oversight: every one of them sits on a
-   `noir` surface -- the nav, the footer, the store buttons, the map labels,
-   the membership card -- which stays black in BOTH themes. `--gold-line`
-   resolves to a dark gold in the light theme, so using the token there would
-   put a near-invisible hairline on a black bar. These are not hex literals,
-   so the no-hex check still passes.
+   3. The handoff sets only `-webkit-mask-image`; the unprefixed property is
+      set alongside it so the mark is not invisible in Firefox.
+
+   WHY THE RGBA LITERALS STAY LITERAL. A few rules carry `rgba(255,215,0,...)`
+   rather than `var(--gold-line)`, and that is deliberate in the original:
+   every one of them sits on a `noir` surface that stays black in BOTH themes,
+   where the light theme's token would resolve to a near-invisible hairline.
    ------------------------------------------------------------------------- */
 
+/* SaaradhiGo component styles. Every value is a token from tokens.css. */
 .sg, .sg * { box-sizing: border-box; }
 .sg { font-family: var(--font-sans); color: var(--ink); -webkit-font-smoothing: antialiased; }
 .sg-num { font-variant-numeric: tabular-nums; }
@@ -119,7 +118,7 @@
 .sg-fare__rows li { display: flex; justify-content: space-between; font: 500 14px/20px var(--font-sans); color: var(--ink-muted); font-variant-numeric: tabular-nums; }
 .sg-fare__rows li strong { color: var(--ink); font-weight: 700; }
 .sg-fare__lock { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-4); font: 600 13px/18px var(--font-sans); color: var(--gold-text); }
-.sg-fare__lock svg { width: 16px; height: 16px; flex: none; }
+.sg-fare__lock svg { width: 16px; height: 16px; }
 
 /* Driver card */
 .sg-driver { display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-4); align-items: center;
@@ -142,7 +141,7 @@
 
 /* Navigation bar */
 .sg-nav { display: flex; align-items: center; gap: var(--space-6); height: 80px; padding: 0 var(--space-6);
-  background: var(--noir); border-bottom: 1px solid rgba(214,168,62,0.30); }
+  background: var(--noir); border-bottom: 1px solid rgba(255,215,0,0.30); }
 .sg-wordmark { display: inline-flex; align-items: center; gap: var(--space-3); font: 600 20px/1 var(--font-brand); letter-spacing: .06em; color: var(--gold-500); text-decoration: none; white-space: nowrap; }
 .sg-wordmark .sg-logo { width: 50px; }
 .sg-appicon { width: 64px; height: 64px; border-radius: var(--radius-lg); background: var(--noir); overflow: hidden; display: grid; place-items: center; box-shadow: 0 0 0 1px var(--line); }
@@ -152,21 +151,9 @@
 .sg-nav a.sg-nav__link:hover { color: var(--on-noir); }
 .sg-nav a.sg-nav__link[aria-current="page"] { color: var(--on-noir); background: var(--gold-soft); }
 .sg-nav .sg-btn--ghost { color: var(--on-noir-muted); }
-.sg-nav .sg-btn--ghost:hover { color: var(--on-noir); background: rgba(246,240,228,0.08); }
+.sg-nav .sg-btn--ghost:hover { color: var(--on-noir); background: rgba(241,245,249,0.08); }
 
 .sg-link { color: var(--gold-text); font-weight: 700; text-decoration: none; border-bottom: 1px solid currentColor; }
-
-/* Controls on a surface that stays `noir` in both themes.
-   `.sg-btn--secondary` and `--ghost` colour themselves from `--ink`, which is
-   near-black in the light theme -- so on the Saaradhi Black band or in the
-   footer they became invisible text on a black panel. These are the same
-   rules `.sg-nav` already carried, lifted to the class that actually means
-   "this surface does not flip with the theme". */
-.sg-on-noir .sg-btn--secondary { color: var(--on-noir); border-color: rgba(214,168,62,0.45); }
-.sg-on-noir .sg-btn--secondary:hover { background: rgba(246,240,228,0.08); border-color: var(--gold-500); }
-.sg-on-noir .sg-btn--ghost { color: var(--on-noir-muted); }
-.sg-on-noir .sg-btn--ghost:hover { color: var(--on-noir); background: rgba(246,240,228,0.08); }
-.sg-on-noir .sg-link { color: var(--gold-500); }
 
 /* ---------- Screens: map, sheet, phone, trip pieces ---------- */
 .sg-map { position: relative; background: var(--bg-100); overflow: hidden; }
@@ -193,7 +180,7 @@
 .sg-map .car { fill: var(--champagne); stroke: var(--gold-700); stroke-width: 1.5; }
 .sg-map .ring { fill: none; stroke: var(--pickup); stroke-width: 2; }
 .sg-maplabel { position: absolute; transform: translate(-50%, calc(-100% - 18px)); background: var(--noir); color: var(--on-noir);
-  font: 700 12px/16px var(--font-sans); padding: 7px 12px; border-radius: var(--radius-pill); white-space: nowrap; box-shadow: var(--shadow-panel); border: 1px solid rgba(214,168,62,0.35); }
+  font: 700 12px/16px var(--font-sans); padding: 7px 12px; border-radius: var(--radius-pill); white-space: nowrap; box-shadow: var(--shadow-panel); border: 1px solid rgba(255,215,0,0.35); }
 .sg-maplabel b { color: var(--gold-500); }
 
 .sg-sheet { background: var(--bg-100); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: var(--space-3) var(--space-4) var(--space-5);
@@ -226,7 +213,7 @@
 
 .sg-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) 0; font: 600 14px/20px var(--font-sans); }
 .sg-row__left { display: flex; align-items: center; gap: var(--space-3); }
-.sg-row__left svg { width: 20px; height: 20px; color: var(--gold-text); flex: none; }
+.sg-row__left svg { width: 20px; height: 20px; color: var(--gold-text); }
 
 .sg-pin { display: inline-flex; gap: 6px; }
 .sg-pin span { width: 36px; height: 44px; border-radius: var(--radius-sm); background: var(--bg-300); display: grid; place-items: center;
@@ -267,9 +254,7 @@
 .sg-promise { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--gold-line); border-bottom: 1px solid var(--gold-line); }
 .sg-promise > div { padding: var(--space-6) var(--space-5); display: grid; gap: var(--space-2); align-content: start; }
 .sg-promise > div + div { border-left: 1px solid var(--gold-line); }
-/* `h3` alongside the handoff's `h4`: same rule, so the page can keep a
-   sequential heading outline without restyling the strip. */
-.sg-promise h3, .sg-promise h4 { margin: 0; font: 600 13px/18px var(--font-brand); letter-spacing: .2em; text-transform: uppercase; color: var(--gold-text); }
+.sg-promise h4 { margin: 0; font: 600 13px/18px var(--font-brand); letter-spacing: .2em; text-transform: uppercase; color: var(--gold-text); }
 .sg-promise p { margin: 0; font: 500 26px/32px var(--font-display); color: var(--ink); }
 .sg-promise span { font: 500 14px/20px var(--font-sans); color: var(--ink-muted); }
 @media (max-width: 760px) { .sg-promise { grid-template-columns: 1fr; } .sg-promise > div + div { border-left: 0; border-top: 1px solid var(--gold-line); } }
@@ -278,23 +263,17 @@
    Use: <span class="sg-logo sg-logo--emblem" role="img" aria-label="SaaradhiGo"></span>; set a width. */
 .sg-logo { display: inline-block; background: var(--logo); -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; flex: none; }
 .sg-nav .sg-logo, .sg-appicon .sg-logo, .sg-on-noir .sg-logo { background: var(--gold-500); }
-.sg-logo--emblem { aspect-ratio: 1772 / 1944;
-  -webkit-mask-image: url('/brand/emblem-gold.svg'); mask-image: url('/brand/emblem-gold.svg'); }
-.sg-logo--wordmark { aspect-ratio: 2271 / 336;
-  -webkit-mask-image: url('/brand/wordmark-gold.svg'); mask-image: url('/brand/wordmark-gold.svg'); }
-.sg-logo--lockup { aspect-ratio: 2271 / 2461;
-  -webkit-mask-image: url('/brand/lockup-gold.svg'); mask-image: url('/brand/lockup-gold.svg'); }
 
 /* Glass — panels floating over the map */
 .sg-glass { background: var(--bg-glass); -webkit-backdrop-filter: blur(18px) saturate(1.15); backdrop-filter: blur(18px) saturate(1.15); }
 .sg-scrim-left { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, var(--bg-000) 0%, var(--bg-000) 26%, rgba(0,0,0,0) 62%); }
-[data-theme="light"] .sg-scrim-left { background: linear-gradient(90deg, var(--bg-000) 0%, var(--bg-000) 26%, rgba(250,246,238,0) 62%); }
+[data-theme="light"] .sg-scrim-left { background: linear-gradient(90deg, var(--bg-000) 0%, var(--bg-000) 26%, rgba(250,250,250,0) 62%); }
 .sg-scrim-bottom { position: absolute; left: 0; right: 0; bottom: 0; height: 160px; pointer-events: none; background: linear-gradient(0deg, var(--bg-000), rgba(0,0,0,0)); }
-[data-theme="light"] .sg-scrim-bottom { background: linear-gradient(0deg, var(--bg-000), rgba(250,246,238,0)); }
+[data-theme="light"] .sg-scrim-bottom { background: linear-gradient(0deg, var(--bg-000), rgba(250,250,250,0)); }
 
 /* Membership card — Saaradhi Black */
 .sg-member { position: relative; width: 380px; aspect-ratio: 1.586; border-radius: 20px; background: var(--noir); overflow: hidden;
-  border: 1px solid rgba(214,168,62,0.45); box-shadow: 0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08); padding: 26px 28px; display: flex; flex-direction: column; justify-content: space-between; color: var(--on-noir); }
+  border: 1px solid rgba(255,215,0,0.45); box-shadow: 0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08); padding: 26px 28px; display: flex; flex-direction: column; justify-content: space-between; color: var(--on-noir); }
 .sg-member .sg-logo--emblem.wm { position: absolute; right: -60px; top: -30px; width: 280px; opacity: .10; }
 .sg-member__tier { font: 600 13px/16px var(--font-brand); letter-spacing: .32em; color: var(--gold-500); }
 .sg-member__name { font: 600 30px/32px var(--font-display); color: var(--on-noir); }
@@ -302,6 +281,7 @@
 
 /* Section scaffolding for marketing pages */
 .sg-section { padding: var(--space-8) var(--space-7); }
+.sg-section + .sg-section { padding-top: 0; }
 .sg-h2 { font: 600 52px/56px var(--font-display); letter-spacing: -.01em; margin: var(--space-4) 0 var(--space-4); }
 .sg-h2 em { font-style: italic; color: var(--gold-text); }
 .sg-lead { font: 500 17px/27px var(--font-sans); color: var(--ink-muted); max-width: 520px; margin: 0; }
@@ -311,13 +291,34 @@
 .sg-class p { margin: 0; font: 500 14px/20px var(--font-sans); color: var(--ink-muted); }
 .sg-class .sg-from { font: 700 13px/18px var(--font-sans); color: var(--gold-text); letter-spacing: .02em; }
 .sg-store { display: inline-flex; align-items: center; gap: var(--space-3); height: 52px; padding: 0 var(--space-5); border-radius: var(--radius-md);
-  background: var(--noir); color: var(--on-noir); border: 1px solid rgba(214,168,62,0.35); font: 700 14px/18px var(--font-sans); text-decoration: none; }
+  background: var(--noir); color: var(--on-noir); border: 1px solid rgba(255,215,0,0.35); font: 700 14px/18px var(--font-sans); text-decoration: none; }
 .sg-store small { display: block; font: 600 10px/12px var(--font-sans); letter-spacing: .12em; text-transform: uppercase; color: var(--on-noir-muted); }
-.sg-footer { background: var(--noir); color: var(--on-noir-muted); padding: var(--space-7) var(--space-7) var(--space-6); border-top: 1px solid rgba(214,168,62,0.30); }
-.sg-footer h2, .sg-footer h5 { margin: 0 0 var(--space-3); font: 600 11px/16px var(--font-brand); letter-spacing: .24em; color: var(--gold-500); }
+.sg-footer { background: var(--noir); color: var(--on-noir-muted); padding: var(--space-7) var(--space-7) var(--space-6); border-top: 1px solid rgba(255,215,0,0.30); }
+.sg-footer h5 { margin: 0 0 var(--space-3); font: 600 11px/16px var(--font-brand); letter-spacing: .24em; color: var(--gold-500); }
 .sg-footer a { display: block; color: var(--on-noir-muted); text-decoration: none; font: 500 14px/28px var(--font-sans); }
 .sg-footer a:hover { color: var(--on-noir); }
 .sg-map > :not(svg) { z-index: 2; }
+.sg-logo--emblem { aspect-ratio: 1772 / 1944;
+  -webkit-mask-image: url('/brand/emblem-gold.svg'); mask-image: url('/brand/emblem-gold.svg'); }
+.sg-logo--wordmark { aspect-ratio: 2271 / 336;
+  -webkit-mask-image: url('/brand/wordmark-gold.svg'); mask-image: url('/brand/wordmark-gold.svg'); }
+.sg-logo--lockup { aspect-ratio: 2271 / 2461;
+  -webkit-mask-image: url('/brand/lockup-gold.svg'); mask-image: url('/brand/lockup-gold.svg'); }
+
+/* Controls on a surface that stays `noir` in both themes -- the nav, the
+   footer, any `sg-on-noir` band. `--ink` is near-black in the light theme, so
+   without these a secondary button there is invisible text on a black panel. */
+.sg-on-noir .sg-btn--secondary { color: var(--on-noir); border-color: rgba(255,215,0,0.45); }
+.sg-on-noir .sg-btn--secondary:hover { background: rgba(241,245,249,0.08); border-color: var(--gold-500); }
+.sg-on-noir .sg-btn--ghost { color: var(--on-noir-muted); }
+.sg-on-noir .sg-btn--ghost:hover { color: var(--on-noir); background: rgba(241,245,249,0.08); }
+.sg-on-noir .sg-link { color: var(--gold-500); }
+
+/* `h3`/`h2` alongside the handoff's `h4`/`h5`, so pages keep a sequential
+   heading outline without restyling the strip or the footer. */
+.sg-promise h3 { margin: 0; font: 600 13px/18px var(--font-brand); letter-spacing: .2em; text-transform: uppercase; color: var(--gold-text); }
+.sg-footer h2 { margin: 0 0 var(--space-3); font: 600 11px/16px var(--font-brand); letter-spacing: .24em; color: var(--gold-500); }
+
 
 /* ===========================================================================
    APPLICATION LAYOUT
@@ -342,11 +343,20 @@
    homepage), so the hero sizes to its content instead: 880px of empty
    surface under a headline reads as a page that failed, not as a map. Restore
    `min-height: 880px` with the map. */
-.sg-hero { position: relative; overflow: hidden; }
-.sg-hero__map { position: absolute; inset: 0; }
-.sg-hero__inner { position: relative; z-index: 2; width: 600px; padding: var(--space-8) 0 var(--space-8) var(--space-7); }
-.sg-hero__panel { width: 440px; max-width: 100%; }
-.sg-hero__h1 { margin: var(--space-5) 0 var(--space-4); font-family: var(--font-display); font-size: 76px; line-height: 74px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+/* The hero is a two-column grid, not a full-bleed map with text floated on
+   top of it. The visual is one column of that grid, so the section keeps its
+   proportions when the map cannot draw -- which is every build without a
+   browser Maps key, and any moment the provider is down. */
+.sg-hero { position: relative; overflow: hidden; display: grid;
+  grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: var(--space-7);
+  align-items: center; padding: var(--space-8) var(--space-7); }
+.sg-hero__map { position: relative; height: 100%; min-height: 520px;
+  border-radius: var(--radius-lg); overflow: hidden;
+  border: 1px solid var(--gold-line); }
+.sg-hero__inner { position: relative; z-index: 2; width: 100%; }
+.sg-hero__panel { width: 100%; max-width: 440px; }
+.sg-hero__h1 { margin: 0 0 var(--space-4); font-family: var(--font-display);
+  font-size: clamp(48px, 5vw, 76px); line-height: 1.02; font-weight: 600; letter-spacing: -0.01em; }
 .sg-hero__h1 em { color: var(--gold-text); font-style: italic; }
 .sg-hero__sub { margin: 0 0 var(--space-6); color: var(--ink-muted); }
 
@@ -366,6 +376,10 @@
 .sg-wrap { padding: 0 var(--space-7); }
 .sg-head { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--space-7); margin-bottom: 40px; }
 .sg-classes { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); }
+.sg-classes--three { grid-template-columns: repeat(3, 1fr); }
+/* Cards in a row match height, so a longer line does not leave its
+   neighbours floating half-size. */
+.sg-classes > .sg-class { align-content: start; }
 .sg-class.is-black { background: var(--noir); border-color: rgba(214,168,62,0.45); }
 .sg-class.is-black h3 { color: var(--on-noir); }
 .sg-class.is-black p { color: var(--on-noir-muted); }
@@ -411,11 +425,16 @@
   .sg-nav { height: 64px; padding: 0 var(--space-4); gap: var(--space-3); }
   .sg-nav__links { display: none; }
 
-  .sg-hero { min-height: 0; }
-  .sg-hero__inner { width: 100%; padding: var(--space-6) var(--space-4) var(--space-7); }
-  .sg-hero__panel { width: 100%; }
-  .sg-hero__h1 { font-size: 40px; line-height: 42px; white-space: normal; }
-  .sg-hero__map { position: relative; inset: auto; height: 42vh; min-height: 260px; }
+  /* One column, content first: on a phone the booking fields are the point
+     of the hero and the city view is context, so the view does not get to
+     push them below the fold. */
+  .sg-hero { grid-template-columns: 1fr; gap: var(--space-5);
+    padding: var(--space-6) var(--space-4) var(--space-7); }
+  .sg-hero__inner { width: 100%; }
+  .sg-hero__panel { width: 100%; max-width: none; }
+  .sg-hero__h1 { font-size: 40px; line-height: 42px; }
+  .sg-hero__map { height: 220px; min-height: 0; }
+  .sg-classes--three { grid-template-columns: 1fr; }
 
   .sg-ws { min-height: 0; padding: 0; }
   .sg-ws__map { position: relative; inset: auto; height: 44vh; min-height: 260px; }

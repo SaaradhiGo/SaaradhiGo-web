@@ -50,6 +50,7 @@ export default function MapSurface({
   destination = null,
   routePolyline = null,
   driver = null,
+  cityCentre = null,
   children,
 }: {
   /** Force the placeholder off even when no provider is configured. */
@@ -65,6 +66,12 @@ export default function MapSurface({
   routePolyline?: string | null;
   /** The assigned driver's live position, once there is one. */
   driver?: MapPoint | null;
+  /**
+   * A city to centre on, for a map that illustrates a service area rather
+   * than a journey. It draws NO marker: a pin here would read as the rider's
+   * own pickup, which is the one thing this surface must never imply.
+   */
+  cityCentre?: MapPoint | null;
   /** Floating `MapLabel` pills and scrims, drawn over the surface. */
   children?: React.ReactNode;
 }) {
@@ -107,13 +114,15 @@ export default function MapSurface({
     const palette = readMapPalette();
     const styles = mapStyles(palette);
 
-    const centre = pickup ?? destination ?? null;
+    const centre = pickup ?? destination ?? cityCentre ?? null;
     if (!map.current) {
       map.current = new g.maps.Map(host.current, {
         // Centre on a REAL point only. With nothing resolved yet there is
         // nothing truthful to centre on, so the placeholder is still showing.
         center: centre ?? { lat: 0, lng: 0 },
-        zoom: centre ? 14 : 2,
+        // A city centre is a wider view than a pickup: it is showing a
+        // place, not a doorstep.
+        zoom: pickup || destination ? 14 : cityCentre ? 12 : 2,
         disableDefaultUI: true,
         zoomControl: true,
         gestureHandling: 'cooperative',
@@ -293,11 +302,12 @@ export default function MapSurface({
         m.fitBounds(bounds, 48);
       }
     }
-  }, [live, pickup, destination, routePolyline, driver, themeTick]);
+  }, [live, pickup, destination, routePolyline, driver, cityCentre, themeTick]);
 
   // A map is drawn only when the library loaded AND there is a real point to
   // show. Anything else keeps the honest placeholder.
-  const showingMap = live && Boolean(pickup || destination || routePolyline);
+  const showingMap = live
+    && Boolean(pickup || destination || routePolyline || cityCentre);
 
   return (
     <div className={`map-surface sg-map ${className}`}>
