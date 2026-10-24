@@ -19,13 +19,13 @@ import type { Locale } from './locales';
  */
 const en: {
   nav: Record<'ride' | 'drive' | 'safety' | 'about' | 'help' | 'contact' | 'login' | 'signup' | 'menuOpen' | 'menuClose' | 'language' | 'country', string>;
-  hero: Record<'titleTop' | 'titleBottom' | 'subtitle' | 'pickupNow' | 'pickupLabel' | 'pickupPlaceholder' | 'destLabel' | 'destPlaceholder' | 'cta' | 'useLocation' | 'locating' | 'photoPending' | 'photoNeeds' | 'sampleTag', string>;
+  hero: Record<'titleTop' | 'titleBottom' | 'subtitle' | 'pickupLabel' | 'pickupPlaceholder' | 'destLabel' | 'destPlaceholder' | 'cta' | 'useLocation' | 'locating' | 'photoAlt', string>;
   validation: Record<'pickupRequired' | 'destRequired' | 'geoDenied' | 'geoUnsupported' | 'searchFailed' | 'searchThrottled', string>;
   rides: Record<'heading' | 'lead' | 'loading' | 'failed' | 'empty', string>;
   rideNames: Record<'auto' | 'mini' | 'sedan' | 'suv', string>;
   rideBlurbs: Record<'auto' | 'mini' | 'sedan' | 'suv', string>;
   steps: Record<'heading' | 's1t' | 's1b' | 's2t' | 's2b' | 's3t' | 's3b', string>;
-  drive: Record<'heading' | 'body' | 'cta' | 'photoNeeds', string>;
+  drive: Record<'heading' | 'body' | 'cta' | 'photoAlt', string>;
   safety: Record<'heading' | 'lead' | 'pinT' | 'pinB' | 'trackT' | 'trackB' | 'alertT' | 'alertB', string>;
   apps: Record<'heading' | 'lead' | 'rider' | 'driver' | 'comingSoon', string>;
   closing: Record<'heading' | 'body' | 'cta' | 'support', string>;
@@ -50,7 +50,6 @@ const en: {
     titleTop: 'Your city.',
     titleBottom: 'Your ride.',
     subtitle: "Wherever you're headed, find a ride that works for you.",
-    pickupNow: 'Pickup now',
     pickupLabel: 'Pickup location',
     pickupPlaceholder: 'Enter pickup location',
     destLabel: 'Destination',
@@ -58,9 +57,7 @@ const en: {
     cta: 'See ride options',
     useLocation: 'Use my current location',
     locating: 'Finding your location…',
-    photoPending: 'Photography pending',
-    photoNeeds: 'Licensed photograph: an Indian urban street scene with a passenger and car.',
-    sampleTag: 'Sample artwork',
+    photoAlt: 'Yellow taxis waiting at a junction on a city street in Kolkata, India.',
   },
   validation: {
     pickupRequired: 'Enter a pickup location.',
@@ -97,7 +94,7 @@ const en: {
     heading: 'Drive with SaaradhiGo',
     body: 'Interested in driving? Learn how to get started with SaaradhiGo.',
     cta: 'Become a driver',
-    photoNeeds: 'Licensed photograph: a driver with their vehicle.',
+    photoAlt: 'Yellow auto-rickshaws on a busy street in Hyderabad, India.',
   },
   safety: {
     heading: 'Safety',
@@ -153,7 +150,6 @@ const hi: Messages = {
     titleTop: 'आपका शहर।',
     titleBottom: 'आपकी सवारी।',
     subtitle: 'आप जहाँ भी जा रहे हों, अपने लिए सही सवारी चुनें।',
-    pickupNow: 'अभी पिकअप',
     pickupLabel: 'पिकअप स्थान',
     pickupPlaceholder: 'पिकअप स्थान दर्ज करें',
     destLabel: 'गंतव्य',
@@ -161,9 +157,7 @@ const hi: Messages = {
     cta: 'सवारी विकल्प देखें',
     useLocation: 'मेरा वर्तमान स्थान उपयोग करें',
     locating: 'आपका स्थान खोजा जा रहा है…',
-    photoPending: 'फ़ोटोग्राफ़ी प्रतीक्षित',
-    photoNeeds: 'लाइसेंस प्राप्त तस्वीर: यात्री और कार के साथ भारतीय शहरी दृश्य।',
-    sampleTag: 'नमूना चित्र',
+    photoAlt: 'कोलकाता, भारत में एक शहर की सड़क पर चौराहे पर खड़ी पीली टैक्सियाँ।',
   },
   validation: {
     pickupRequired: 'पिकअप स्थान दर्ज करें।',
@@ -200,7 +194,7 @@ const hi: Messages = {
     heading: 'SaaradhiGo के साथ ड्राइव करें',
     body: 'ड्राइविंग में रुचि है? जानें कि SaaradhiGo के साथ शुरुआत कैसे करें।',
     cta: 'ड्राइवर बनें',
-    photoNeeds: 'लाइसेंस प्राप्त तस्वीर: अपने वाहन के साथ एक ड्राइवर।',
+    photoAlt: 'हैदराबाद, भारत की एक व्यस्त सड़क पर पीले ऑटो-रिक्शा।',
   },
   safety: {
     heading: 'सुरक्षा',
@@ -250,7 +244,6 @@ const te: Messages = {
     titleTop: 'మీ నగరం.',
     titleBottom: 'మీ ప్రయాణం.',
     subtitle: 'మీరు ఎక్కడికి వెళ్తున్నా, మీకు సరిపోయే ప్రయాణాన్ని ఎంచుకోండి.',
-    pickupNow: 'ఇప్పుడే పికప్',
     pickupLabel: 'పికప్ ప్రదేశం',
     pickupPlaceholder: 'పికప్ ప్రదేశాన్ని నమోదు చేయండి',
     destLabel: 'గమ్యం',
@@ -258,9 +251,7 @@ const te: Messages = {
     cta: 'ప్రయాణ ఎంపికలు చూడండి',
     useLocation: 'నా ప్రస్తుత ప్రదేశాన్ని ఉపయోగించండి',
     locating: 'మీ ప్రదేశాన్ని కనుగొంటున్నాం…',
-    photoPending: 'ఫోటోగ్రఫీ పెండింగ్‌లో ఉంది',
-    photoNeeds: 'లైసెన్స్ పొందిన ఫోటో: ప్రయాణికుడు మరియు కారుతో భారతీయ నగర దృశ్యం.',
-    sampleTag: 'నమూనా చిత్రం',
+    photoAlt: 'భారతదేశంలోని కోల్‌కతా నగర వీధిలో కూడలి వద్ద ఆగి ఉన్న పసుపు టాక్సీలు.',
   },
   validation: {
     pickupRequired: 'పికప్ ప్రదేశాన్ని నమోదు చేయండి.',
@@ -297,7 +288,7 @@ const te: Messages = {
     heading: 'SaaradhiGoతో డ్రైవ్ చేయండి',
     body: 'డ్రైవింగ్‌పై ఆసక్తి ఉందా? SaaradhiGoతో ఎలా ప్రారంభించాలో తెలుసుకోండి.',
     cta: 'డ్రైవర్ కండి',
-    photoNeeds: 'లైసెన్స్ పొందిన ఫోటో: తన వాహనంతో ఒక డ్రైవర్.',
+    photoAlt: 'భారతదేశంలోని హైదరాబాద్‌లో రద్దీగా ఉన్న వీధిలో పసుపు ఆటోలు.',
   },
   safety: {
     heading: 'భద్రత',
@@ -347,7 +338,6 @@ const es: Messages = {
     titleTop: 'Tu ciudad.',
     titleBottom: 'Tu viaje.',
     subtitle: 'Vayas a donde vayas, encuentra un viaje que se adapte a ti.',
-    pickupNow: 'Recogida ahora',
     pickupLabel: 'Lugar de recogida',
     pickupPlaceholder: 'Introduce el lugar de recogida',
     destLabel: 'Destino',
@@ -355,9 +345,7 @@ const es: Messages = {
     cta: 'Ver opciones de viaje',
     useLocation: 'Usar mi ubicación actual',
     locating: 'Buscando tu ubicación…',
-    photoPending: 'Fotografía pendiente',
-    photoNeeds: 'Fotografía con licencia: una escena urbana india con un pasajero y un coche.',
-    sampleTag: 'Imagen de muestra',
+    photoAlt: 'Taxis amarillos esperando en un cruce de una calle de Calcuta, India.'
   },
   validation: {
     pickupRequired: 'Introduce un lugar de recogida.',
@@ -394,7 +382,7 @@ const es: Messages = {
     heading: 'Conduce con SaaradhiGo',
     body: '¿Te interesa conducir? Descubre cómo empezar con SaaradhiGo.',
     cta: 'Hazte conductor',
-    photoNeeds: 'Fotografía con licencia: un conductor con su vehículo.',
+    photoAlt: 'Auto-rickshaws amarillos en una calle concurrida de Hyderabad, India.',
   },
   safety: {
     heading: 'Seguridad',

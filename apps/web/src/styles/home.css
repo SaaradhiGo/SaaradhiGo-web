@@ -132,7 +132,6 @@
 .hp-hero__form { margin-top: 32px; display: grid; gap: 12px; max-width: 460px; }
 
 .hp-hero__media {
-  position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
   border-radius: 12px;
@@ -144,14 +143,6 @@
 
 /* The slot a licensed photograph goes into. It states what is missing
    instead of standing in for it with a decorative graphic. */
-.hp-slot {
-  width: 100%; height: 100%;
-  display: grid; place-content: center; gap: 8px;
-  padding: 32px; text-align: center;
-  font-family: var(--font-sans); color: var(--ink-subtle);
-}
-.hp-slot strong { display: block; font-size: 15px; font-weight: 700; color: var(--ink-muted); }
-.hp-slot span { font-size: 13px; line-height: 1.5; }
 
 /* --- booking control ---------------------------------------------------- */
 
@@ -239,16 +230,6 @@
 .hp-fact__icon svg { width: 24px; height: 24px; }
 .hp-fact h3 { margin: 0 0 6px; font-family: var(--font-sans); font-size: 17px; font-weight: 700; color: var(--ink); }
 .hp-fact p { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--ink-muted); max-width: 70ch; }
-
-/* --- cities ------------------------------------------------------------- */
-
-.hp-cities { margin: 32px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
-.hp-city {
-  display: inline-flex; align-items: center; height: 40px; padding: 0 16px;
-  border: 1px solid var(--line); border-radius: var(--radius-sm);
-  background: var(--bg-100);
-  font-family: var(--font-sans); font-size: 15px; font-weight: 600; color: var(--ink);
-}
 
 /* --- closing ------------------------------------------------------------ */
 
@@ -382,15 +363,6 @@
 
 /* --- hero booking extras ------------------------------------------------- */
 
-.hp-when {
-  display: inline-flex; align-items: center; gap: 8px;
-  height: 36px; padding: 0 14px; width: fit-content;
-  border: 1px solid var(--line); border-radius: var(--radius-pill);
-  background: var(--bg-200);
-  font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--ink);
-}
-.hp-when svg { width: 16px; height: 16px; color: var(--gold-text); }
-
 .hp-locate {
   display: inline-flex; align-items: center; gap: 8px;
   background: none; border: 0; padding: 0; cursor: pointer; width: fit-content;
@@ -398,20 +370,6 @@
 }
 .hp-locate:disabled { opacity: 0.6; cursor: default; }
 .hp-locate svg { width: 16px; height: 16px; }
-
-/* --- sample artwork ------------------------------------------------------
-   Stands in for a licensed photograph. It fills the same box the photo will
-   fill, and carries a visible tag so it is never mistaken for finished
-   work. */
-.hp-art { position: relative; width: 100%; height: 100%; }
-.hp-art svg { width: 100%; height: 100%; display: block; }
-.hp-art__tag {
-  position: absolute; left: 12px; bottom: 12px;
-  padding: 4px 10px; border-radius: var(--radius-pill);
-  background: var(--bg-glass); border: 1px solid var(--line);
-  font-family: var(--font-sans); font-size: 11px; font-weight: 700;
-  letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted);
-}
 
 /* 320px is the narrowest supported width and the nav is what breaks there:
    the emblem, the "Saaradhi Go" wordmark, the language button and the menu
@@ -424,4 +382,221 @@
   .hp-nav__logo .sg-logo { width: 34px; }
   .hp-nav__mobile { gap: 4px; }
   .hp-lang__button { padding: 0 10px; }
+}
+
+/* --- photography ---------------------------------------------------------
+
+   EVERY PHOTO SLOT ESTABLISHES A CONTAINING BLOCK, and they are listed here
+   together rather than each remembering for itself.
+
+   `<Photo>` renders a `fill` image, which is `position: absolute`. A slot
+   without `position: relative` therefore hands the photograph the page as
+   its containing block -- and because the containing block is then OUTSIDE
+   the slot, `overflow: hidden` does not clip it either. That is not a
+   subtle misalignment: `.hp-split__media` was missing this line, so the
+   drive photograph stretched from the top of the homepage down over the
+   hero, the ride classes and the three steps, hiding all three. Caught in a
+   screenshot, not by the type checker, the linter or the build, none of
+   which can see a painted page. */
+
+.hp-hero__media, .hp-split__media, .hp-band { position: relative; }
+.hp-hero__media img, .hp-split__media img, .hp-band img { display: block; }
+
+/* Credits. Required by CC BY, so this is licence compliance rather than
+   decoration: collapsed by default because it is reference material, but
+   always present. */
+.hp-credits { margin-top: 32px; }
+.hp-credits summary {
+  cursor: pointer; font-family: var(--font-sans); font-size: 13px;
+  color: var(--on-noir-muted); list-style: none;
+}
+.hp-credits summary::-webkit-details-marker { display: none; }
+.hp-credits summary::before { content: "+ "; }
+.hp-credits[open] summary::before { content: "– "; }
+.hp-credits summary:hover { color: var(--on-noir); }
+.hp-credits ul {
+  margin: 12px 0 0; padding: 0; list-style: none;
+  display: grid; gap: 6px;
+  font-family: var(--font-sans); font-size: 12px; line-height: 1.6;
+  color: var(--on-noir-muted);
+}
+.hp-credits a { color: var(--on-noir-muted); text-decoration: underline; }
+.hp-credits a:hover { color: var(--gold-500); }
+
+/* --- interior public pages ----------------------------------------------
+   /ride, /drive, /safety, /about and /help share one shell, so the site
+   reads as one site rather than five pages that each invented a layout.
+
+   The metrics are the homepage's: the same 1200px column via `.hp`, the
+   same 96px section rhythm, the same 8/16/24/32/48/64 steps inside it.
+   Prose is capped at 70ch because a 1200px line of body text is unreadable
+   however wide the screen is.
+
+   NO CARDS. An interior page is a document, and a grid of bordered boxes
+   around three sentences each is the look the owner rejected. Structure
+   comes from type size and vertical space; the only borders are the hairline
+   rules that separate list rows. */
+
+.hp-masthead { padding: 64px 0 0; }
+.hp-h1 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 48px;
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  max-width: 24ch;
+}
+.hp-masthead .hp-lead { font-size: 19px; max-width: 64ch; margin-top: 20px; }
+
+.hp-blocks { margin: 0; padding: 0; list-style: none; display: grid; gap: 48px; }
+
+/* HEADING LEFT, BODY RIGHT, on a wide screen.
+   Stacked, a 70ch paragraph inside a 1200px column leaves the right-hand
+   third of a desktop empty, which reads as a page that ran out rather than
+   one that was composed. Splitting the two across the column uses the width
+   the contract asks for and keeps the measure readable. Under 1024px they
+   stack, because two columns of 300px each is neither. */
+.hp-block {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 0 48px;
+  align-items: start;
+}
+.hp-block h2 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.hp-block p {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--ink-muted);
+  max-width: 62ch;
+}
+
+/* Numbered rather than bulleted, for pages that describe a sequence. */
+.hp-blocks--numbered { counter-reset: hp-block; }
+.hp-blocks--numbered .hp-block { grid-template-columns: 56px 280px minmax(0, 1fr); }
+.hp-blocks--numbered .hp-block::before {
+  counter-increment: hp-block;
+  content: counter(hp-block, decimal-leading-zero);
+  font-family: var(--font-sans); font-size: 15px; font-weight: 700;
+  color: var(--gold-text); padding-top: 6px; font-variant-numeric: tabular-nums;
+}
+
+.hp-actions { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+
+/* The honesty block: what a page explicitly does NOT claim. Set apart so a
+   reader skimming the safety page cannot miss it, and deliberately not
+   styled as a warning -- it is a statement of scope, not an alarm. */
+.hp-caveat {
+  margin: 48px 0 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold-500);
+  background: var(--bg-100);
+}
+.hp-caveat h2 { margin: 0 0 8px; font-family: var(--font-sans); font-size: 18px; font-weight: 700; color: var(--ink); }
+.hp-caveat p { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.65; color: var(--ink-muted); max-width: 70ch; }
+
+/* Questions and answers, as rules rather than accordions: four short
+   answers are faster to read than four things to click. */
+.hp-qa { margin: 48px 0 0; padding: 0; list-style: none; }
+.hp-qa > div { padding: 24px 0; border-top: 1px solid var(--line); }
+.hp-qa > div:last-child { border-bottom: 1px solid var(--line); }
+.hp-qa dt { font-family: var(--font-sans); font-size: 17px; font-weight: 700; color: var(--ink); }
+.hp-qa dd { margin: 8px 0 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.65; color: var(--ink-muted); max-width: 70ch; }
+
+/* Help topics: two columns of short answers on desktop, one on a phone. */
+/* COLUMNS, NOT A GRID. Five topics in a two-column grid puts three in the
+   first column and two in the second, leaving an obvious hole under the
+   shorter one. Flowing them balances the two columns by height instead. */
+.hp-topics { margin: 48px 0 0; padding: 0; list-style: none; columns: 2; column-gap: 48px; }
+.hp-topic { break-inside: avoid; margin-bottom: 40px; }
+.hp-topic:last-child { margin-bottom: 0; }
+.hp-topic h2 {
+  margin: 0 0 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
+  font-family: var(--font-sans); font-size: 18px; font-weight: 700; color: var(--ink);
+}
+.hp-topic ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.hp-topic li {
+  font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--ink-muted);
+  padding-left: 18px; position: relative;
+}
+.hp-topic li::before {
+  content: ''; position: absolute; left: 0; top: 10px;
+  width: 6px; height: 6px; border-radius: var(--radius-pill); background: var(--gold-500);
+}
+
+/* A full-width photograph closing a page. 3:1 on desktop so it reads as a
+   band rather than a hero competing with the page's own title. */
+.hp-band { aspect-ratio: 3 / 1; border-radius: 12px; overflow: hidden; background: var(--bg-100); border: 1px solid var(--line); }
+.hp-band img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+@media (max-width: 1023px) {
+  .hp-h1 { font-size: 40px; }
+  .hp-block { grid-template-columns: 1fr; }
+  .hp-block h2 { margin-bottom: 12px; }
+  .hp-blocks--numbered .hp-block { grid-template-columns: 56px minmax(0, 1fr); }
+  .hp-topics { column-gap: 32px; }
+}
+
+@media (max-width: 768px) {
+  .hp-masthead { padding-top: 48px; }
+  .hp-h1 { font-size: 34px; }
+  .hp-masthead .hp-lead { font-size: 17px; }
+  .hp-blocks { gap: 40px; }
+  .hp-topics { columns: 1; }
+  .hp-band { aspect-ratio: 16 / 9; }
+}
+
+@media (max-width: 480px) {
+  .hp-h1 { font-size: 30px; }
+  .hp-blocks--numbered .hp-block { grid-template-columns: 36px minmax(0, 1fr); gap: 0 12px; }
+  .hp-caveat { padding: 20px; }
+}
+
+/* Beside a photograph the question list carries the section's top spacing
+   already, so it does not add its own. */
+.hp-qa--flush { margin-top: 0; }
+
+/* The line under an action that says what to put in the message. Smaller
+   than body text because it is an aside, not a paragraph of the page. */
+.hp-hint {
+  margin: 16px 0 0;
+  font-family: var(--font-sans); font-size: 14px; line-height: 1.6;
+  color: var(--ink-subtle); max-width: 60ch;
+}
+
+/* A topic whose answer is a sentence rather than a list of them. */
+.hp-topic p {
+  margin: 0;
+  font-family: var(--font-sans); font-size: 16px; line-height: 1.6;
+  color: var(--ink-muted); max-width: 60ch;
+}
+
+/* --- the bar between the drawer and a roomy desktop --------------------
+   The header is a three-part row -- logo, links, session controls -- and how
+   wide it is depends on the language. Measured at a 1024px viewport, which
+   leaves 960px of content: English needed 838px, Hindi 853, Telugu 950, and
+   SPANISH 1007, because "Viajar / Conducir / Seguridad / Nosotros / Ayuda"
+   plus "Iniciar sesión" and "Registrarse" are simply longer words. So the
+   bar overflowed by 47px in Spanish at a width it passed in English.
+
+   Tuning it for the one language that broke would leave the next
+   translation to find the same edge, so the row tightens for every language
+   below 1120px: half the gap, narrower link padding. That brings the worst
+   case -- the longest link set with the longest session controls -- to about
+   880px, inside the column with room left. */
+@media (max-width: 1120px) {
+  .hp-nav { gap: 16px; }
+  .hp-nav__link { padding: 8px 8px; }
 }

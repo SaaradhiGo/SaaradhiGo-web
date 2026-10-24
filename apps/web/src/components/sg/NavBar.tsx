@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import AuthNav from '@/components/AuthNav';
 import { Logo } from './Logo';
-import { ThemeToggle } from './ThemeToggle';
 import { Close, Menu } from './icons';
 import { LanguagePicker } from './LanguagePicker';
 import { useT } from '@/i18n/LocaleProvider';
@@ -18,21 +17,26 @@ import { useT } from '@/i18n/LocaleProvider';
  * `ink` -- which is what stops the bar inverting when a visitor picks the
  * light theme.
  *
- * EVERY LINK RESOLVES. Ride, Drive and Help have routes. Safety and About do
- * not have pages yet, so they address the homepage sections that carry
- * exactly that content; they become `/safety` and `/about` the day those
- * pages exist. Nothing points at `href="#"`.
+ * EVERY LINK RESOLVES TO A PAGE OF ITS OWN. These were homepage anchors
+ * while /ride, /safety, /about and /help did not exist; all five are real
+ * routes now, so the header no longer sends a visitor to a fragment and
+ * nothing points at `href="#"`.
+ *
+ * NO THEME CONTROL. The approved experience is black and gold, the light
+ * theme is not finished to the same standard, and a switch that leads to an
+ * unfinished surface is worse than no switch. The tokens for it remain in
+ * the stylesheet; the public control does not.
  *
  * Under 768px the links collapse into a drawer holding the same items plus
  * the session controls, which are hidden from the bar at that width.
  */
 /** Labels come from the dictionary; the hrefs never move. */
 const LINKS = [
-  { key: 'ride', href: '/book' },
+  { key: 'ride', href: '/ride' },
   { key: 'drive', href: '/drive' },
-  { key: 'safety', href: '/#safety' },
-  { key: 'about', href: '/#how-it-works' },
-  { key: 'help', href: '/contact' },
+  { key: 'safety', href: '/safety' },
+  { key: 'about', href: '/about' },
+  { key: 'help', href: '/help' },
 ] as const;
 
 export function NavBar({ quiet }: { quiet?: boolean }) {
@@ -78,7 +82,6 @@ export function NavBar({ quiet }: { quiet?: boolean }) {
 
         <div className="hp-nav__session">
           <LanguagePicker />
-          <ThemeToggle />
           <AuthNav quiet={quietHere} />
         </div>
 
@@ -111,7 +114,6 @@ export function NavBar({ quiet }: { quiet?: boolean }) {
           ))}
           <div className="hp-drawer__session">
             <AuthNav quiet={quietHere} />
-            <ThemeToggle />
           </div>
         </div>
       )}

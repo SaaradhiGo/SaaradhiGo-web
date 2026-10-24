@@ -1,0 +1,41 @@
+[
+  {
+    "file": "/photography/hero-city.jpg",
+    "slot": "hero-city",
+    "title": "Streets of Kolkata, Cars, India.jpg",
+    "author": "Vyacheslav Argenberg",
+    "licence": "CC BY 4.0",
+    "licence_url": "https://creativecommons.org/licenses/by/4.0",
+    "source": "https://commons.wikimedia.org/wiki/File%3AStreets%20of%20Kolkata%2C%20Cars%2C%20India.jpg",
+    "source_site": "Wikimedia Commons",
+    "alt": "Yellow taxis waiting at a junction on a city street in Kolkata, India.",
+    "commercial_use": true,
+    "notes": "Selected after visual review. No identifiable individual is the subject."
+  },
+  {
+    "file": "/photography/drive-autos.jpg",
+    "slot": "drive-autos",
+    "title": "AutoRickshaws Hyderabad Street.jpg",
+    "author": "thotfulspot",
+    "licence": "CC BY 2.0",
+    "licence_url": "https://creativecommons.org/licenses/by/2.0",
+    "source": "https://commons.wikimedia.org/wiki/File%3AAutoRickshaws%20Hyderabad%20Street.jpg",
+    "source_site": "Wikimedia Commons",
+    "alt": "Yellow auto-rickshaws on a busy street in Hyderabad, India.",
+    "commercial_use": true,
+    "notes": "Selected after visual review. No identifiable individual is the subject."
+  },
+  {
+    "file": "/photography/ride-sedan.jpg",
+    "slot": "ride-sedan",
+    "title": "Honda - City-EXi - Kolkata 2011-09-15 5178.JPG",
+    "author": "Biswarup Ganguly",
+    "licence": "CC BY 3.0",
+    "licence_url": "https://creativecommons.org/licenses/by/3.0",
+    "source": "https://commons.wikimedia.org/wiki/File%3AHonda%20-%20City-EXi%20-%20Kolkata%202011-09-15%205178.JPG",
+    "source_site": "Wikimedia Commons",
+    "alt": "A silver saloon car parked on a driveway.",
+    "commercial_use": true,
+    "notes": "Selected after visual review. No identifiable individual is the subject."
+  }
+]

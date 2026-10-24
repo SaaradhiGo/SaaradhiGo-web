@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/sg/Button';
 import { ArrowRight } from '@/components/sg/icons';
-import { Place, placeToPoint, searchPlaces } from '@/lib/booking';
+import { LatLng, Place, placeToPoint, searchPlaces } from '@/lib/booking';
+import { fetchServiceAreas, primaryArea } from '@/lib/serviceAreas';
 import { useT } from '@/i18n/LocaleProvider';
 
 /**
@@ -31,6 +32,14 @@ import { useT } from '@/i18n/LocaleProvider';
  * would be a control that cannot do what it says, so the state is shown as
  * what it is and the menu is omitted.
  *
+ * THE SEARCH IS BIASED TOWARDS A CITY WE SERVE. Unbiased, the provider
+ * searches the world: typing "Banjara" returned a regency in Indonesia and
+ * not Banjara Hills. The bias is the rider's own location once they have
+ * shared it, and otherwise the first live service area from
+ * `/pricing/zones/` -- the server's list, not a hardcoded city. If the zones
+ * call fails there is simply no bias, which is the old behaviour rather than
+ * a broken one.
+ *
  * WHAT IS HANDED OVER. `/book` already reads `pickup`, `dest` and `q` from
  * the query string, so a resolved place travels as coordinates and typed
  * text travels as text. That is the existing contract; this adds nothing
@@ -53,7 +62,28 @@ export function HeroBooking() {
   const [locating, setLocating] = useState(false);
   /** A reason the suggestion list is empty, when there is one worth saying. */
   const [searchNote, setSearchNote] = useState<string | null>(null);
+  // Where to bias the place search. Starts as the first live service area
+  // and is replaced by the rider's own position the moment they share it.
+  const [searchNear, setSearchNear] = useState<LatLng | null>(null);
   const t = useT();
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchServiceAreas()
+      .then((areas) => {
+        const area = primaryArea(areas);
+        if (!cancelled && area?.centre) {
+          // Only as a default: an explicit location wins, and is set below.
+          setSearchNear((current) => current ?? area.centre);
+        }
+      })
+      .catch(() => {
+        /* No bias is worse than a wrong one, so this stays silent. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Debounced lookup, and only for the field being typed in.
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -66,7 +96,7 @@ export function HeroBooking() {
     }
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      searchPlaces(text)
+      searchPlaces(text, searchNear)
         .then((places) => {
           setSuggestions(places);
           setSearchNote(null);
@@ -87,8 +117,10 @@ export function HeroBooking() {
     };
     // `t` is in the deps because the throttle note is a translated string:
     // without it, switching language mid-search would leave the previous
-    // language's message on screen.
-  }, [active, pickupText, destText, t.validation.searchThrottled]);
+    // language's message on screen. `searchNear` is here so that sharing a
+    // location re-runs the search around the rider rather than leaving the
+    // city-centre results on screen.
+  }, [active, pickupText, destText, searchNear, t.validation.searchThrottled]);
 
   function choose(place: Place) {
     if (active === 'pickup') {
@@ -152,6 +184,8 @@ export function HeroBooking() {
         setPickupText(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
         setPickupPlace(null);
         setPickupPoint({ lat: latitude, lng: longitude });
+        // From here on, search around the rider rather than the city.
+        setSearchNear({ lat: latitude, lng: longitude });
         setErrors((p) => ({ ...p, pickup: undefined }));
         setLocating(false);
       },
@@ -226,13 +260,6 @@ export function HeroBooking() {
 
   return (
     <div className="hp-hero__form">
-      {/* Pickup now is the only timing the platform supports, so it is shown
-          as a state rather than as a menu with one item. */}
-      <div className="hp-when" aria-label={t.hero.pickupNow}>
-        <ClockIcon />
-        {t.hero.pickupNow}
-      </div>
-
       {field('pickup', t.hero.pickupLabel, t.hero.pickupPlaceholder, pickupText, setPickupText, () => {
         setPickupPlace(null);
         setPickupPoint(null);
@@ -258,15 +285,6 @@ export function HeroBooking() {
         </Button>
       </div>
     </div>
-  );
-}
-
-function ClockIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
-    </svg>
   );
 }
 

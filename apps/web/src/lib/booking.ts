@@ -93,10 +93,21 @@ export type Place = { description: string; place_id: string };
  * deployment that has not had the key provisioned -- not a bug to hide. The
  * caller surfaces it rather than falling back to invented places.
  */
-export async function searchPlaces(query: string): Promise<Place[]> {
+export async function searchPlaces(
+  query: string,
+  near?: LatLng | null,
+): Promise<Place[]> {
+  // BIAS THE SEARCH, OR GET THE WRONG HEMISPHERE. Unbiased, the autocomplete
+  // is worldwide: "Banjara" typed by a rider in Hyderabad returned
+  // "Banjaran, Bandung Regency, West Java, Indonesia" as its first result,
+  // with Banjara Hills nowhere in the list. The server already accepts a
+  // `location` bias and passes it to the provider; it simply was not being
+  // sent.
   const data = await api.post<{ predictions?: Place[]; results?: Place[] }>(
     '/ride/maps/geocode',
-    { input: query },
+    near
+      ? { input: query, location: `${near.lat},${near.lng}` }
+      : { input: query },
     readRiderToken(),
   );
   return data?.predictions ?? data?.results ?? [];

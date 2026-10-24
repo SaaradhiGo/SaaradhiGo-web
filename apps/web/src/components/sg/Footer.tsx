@@ -3,22 +3,23 @@
 import Link from 'next/link';
 import { Logo } from './Logo';
 import { useT } from '@/i18n/LocaleProvider';
+import { PhotoCredits } from './PhotoCredits';
 
 /**
  * The public footer: the lockup, the same navigation as the header, and the
  * two legal documents.
  *
  * EVERY LINK RESOLVES TO A ROUTE THAT EXISTS. No invented contact details,
- * no social accounts, no app-store badges, no `href="#"`. Safety and About
- * address the homepage sections that hold that content until those pages
- * exist, which is the same rule the header follows.
+ * no social accounts, no app-store badges, no `href="#"`. The navigation is
+ * the header's, so a visitor who scrolls past the fold finds the same five
+ * pages rather than a longer list of links that only exist in a footer.
  */
 const NAV = [
-  { key: 'ride', href: '/book' },
+  { key: 'ride', href: '/ride' },
   { key: 'drive', href: '/drive' },
-  { key: 'safety', href: '/#safety' },
-  { key: 'about', href: '/#how-it-works' },
-  { key: 'help', href: '/contact' },
+  { key: 'safety', href: '/safety' },
+  { key: 'about', href: '/about' },
+  { key: 'help', href: '/help' },
   { key: 'contact', href: '/contact' },
 ] as const;
 
@@ -42,6 +43,8 @@ export function Footer() {
             ))}
           </nav>
         </div>
+
+        <PhotoCredits />
 
         <div className="hp-footer__base">
           <span>© {new Date().getFullYear()} SaaradhiGo</span>

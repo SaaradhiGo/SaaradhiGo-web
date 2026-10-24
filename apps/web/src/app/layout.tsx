@@ -21,22 +21,15 @@ export const metadata: Metadata = {
 // the nav rather than flashing white above it.
 export const viewport: Viewport = {
   themeColor: '#090708',
-  colorScheme: 'dark light',
+  colorScheme: 'dark',
 };
 
-/**
- * Applied before first paint, in the <head>, deliberately.
- *
- * `data-theme="dark"` is the default and is already on the <html> element, so
- * a visitor who has never chosen gets the dark theme with no script at all.
- * This exists only for the one who HAS chosen light: without it the page
- * paints dark and then flips, which is worse than either theme.
- *
- * It touches one attribute and reads one key. A `try` because Safari in
- * private browsing throws on `localStorage` rather than returning null.
- */
-const applyStoredTheme = `try{var t=localStorage.getItem('sg-theme');if(t==='light'||t==='dark'){document.documentElement.dataset.theme=t}}catch(e){}`;
-
+// THEME SWITCHING IS GONE FROM THE PUBLIC SITE. `data-theme="dark"` on
+// <html> is now the whole story: there is no stored preference to read back
+// and so no inline script in the <head> at all. The light theme's tokens
+// stay in the stylesheet because the console sets `data-theme` itself, but
+// the approved public experience is one surface, finished, rather than two
+// where only one is.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning>
@@ -59,7 +52,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             + '&display=swap'
           }
         />
-        <script dangerouslySetInnerHTML={{ __html: applyStoredTheme }} />
       </head>
       {/* `sg` scopes the design system's box-sizing, family and colour. */}
       <body className="sg">{children}</body>
