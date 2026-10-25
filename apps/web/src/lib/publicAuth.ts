@@ -66,6 +66,22 @@ export function readRiderToken(): string | null {
   }
 }
 
+/**
+ * Fired in THIS tab when the rider signs in or out.
+ *
+ * The browser's own `storage` event only reaches OTHER tabs, so a component
+ * that renders the session -- the nav -- had no way to learn about a sign-in
+ * that happened beside it. The result was a rider who had just signed in
+ * still being offered "Log in" and "Sign up" in the header, on the very page
+ * their sign-in had returned them to.
+ */
+export const SESSION_EVENT = 'saaradhi:session';
+
+function announceSession() {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new Event(SESSION_EVENT));
+}
+
 export function writeRiderTokens(access: string, refresh?: string) {
   try {
     window.localStorage.setItem(RIDER_TOKEN_KEY, access);
@@ -73,6 +89,7 @@ export function writeRiderTokens(access: string, refresh?: string) {
   } catch {
     /* private mode: the session simply does not persist */
   }
+  announceSession();
 }
 
 export function clearRiderTokens() {
@@ -82,6 +99,7 @@ export function clearRiderTokens() {
   } catch {
     /* nothing to clear */
   }
+  announceSession();
 }
 
 // ---------------------------------------------------------------------------

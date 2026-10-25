@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button, ButtonLink } from '@/components/sg/Button';
-import { clearRiderTokens, readRiderToken } from '@/lib/publicAuth';
+import { SESSION_EVENT, clearRiderTokens, readRiderToken } from '@/lib/publicAuth';
 import { useT } from '@/i18n/LocaleProvider';
 
 /**
@@ -27,12 +27,37 @@ import { useT } from '@/i18n/LocaleProvider';
  */
 export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
   const router = useRouter();
+  const pathname = usePathname();
   const t = useT();
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
-  useEffect(() => {
+  // IT READ THE SESSION ONCE AND NEVER AGAIN.
+  //
+  // This component lives in the layout, which survives client-side
+  // navigation, so the mount effect ran on the first page a visitor opened
+  // and never after. A rider who signed in and was returned to their booking
+  // was still shown "Log in" and "Sign up" in the header -- on the page the
+  // sign-in had just succeeded into.
+  //
+  // Three triggers now, because there are three ways the answer changes:
+  // a route change, a sign-in or sign-out in this tab (`SESSION_EVENT`), and
+  // the same in another tab (the browser's own `storage` event).
+  const refresh = useCallback(() => {
     setSignedIn(Boolean(readRiderToken()));
   }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh, pathname]);
+
+  useEffect(() => {
+    window.addEventListener(SESSION_EVENT, refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener(SESSION_EVENT, refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, [refresh]);
 
   if (signedIn === null) {
     return <div className="h-sg-7" aria-hidden="true" />;
