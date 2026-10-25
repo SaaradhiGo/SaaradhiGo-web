@@ -112,14 +112,21 @@ export function clearRiderTokens() {
  * The caller must NOT say "account created": see the note at the top.
  */
 export async function registerAccount(input: RegisterInput) {
-  return api.post<{ message?: string }>('/auth/email/register/', {
+  // `verification_required` is a property of the DEPLOYMENT, not of this
+  // address -- it is the same for every caller, so it reveals nothing about
+  // whether a particular address was already registered. It is false where
+  // the server cannot send mail, in which case the account is ready to use
+  // and telling someone to check an inbox would be a lie.
+  return api.post<{ message?: string; verification_required?: boolean }>(
+    '/auth/email/register/', {
     full_name: input.fullName.trim(),
     phone_number: normalisePhone(input.phone),
     email: input.email.trim(),
     password: input.password,
     confirm_password: input.confirmPassword,
     role: input.role,
-  });
+    },
+  );
 }
 
 // ---------------------------------------------------------------------------

@@ -73,6 +73,10 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  // Whether this deployment can actually send the verification link. False
+  // where it cannot, in which case the account is already usable and the
+  // screen must not send someone to an inbox for a mail that is not coming.
+  const [mustVerify, setMustVerify] = useState(true);
 
   // Preselect whatever the server says the default market is, once known.
   // Defaulting to a country before the answer arrives is the India-only
@@ -144,7 +148,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
     setErrors({});
     setBusy(true);
     try {
-      await registerAccount({
+      const created = await registerAccount({
         fullName,
         phone: toE164(market, national),
         email,
@@ -152,6 +156,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
         confirmPassword,
         role,
       });
+      setMustVerify(created?.verification_required !== false);
       setSent(true);
     } catch (err) {
       setFormError(
@@ -187,10 +192,24 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
   if (sent) {
     return (
       <div className="space-y-4">
-        <Alert kind="success">
-          Check your inbox at <strong>{email}</strong>. Open the link we sent to
-          confirm your address, then you can sign in.
-        </Alert>
+        {/* TWO DIFFERENT TRUTHS, AND THE SCREEN TELLS WHICHEVER ONE HOLDS.
+            It used to say "check your inbox" unconditionally. On a
+            deployment with no mail backend nothing was ever sent, sign-in
+            then refused the unverified address, and the account was
+            unusable for good -- which is exactly what QA reported as
+            "creating an account is not working". */}
+        {mustVerify ? (
+          <Alert kind="success">
+            Check your inbox at <strong>{email}</strong>. Open the link we sent
+            to confirm your address, then you can sign in.
+          </Alert>
+        ) : (
+          <Alert kind="success">
+            Your account is ready. This environment does not send email, so
+            there is nothing to confirm — sign in with{' '}
+            <strong>{email}</strong> and your password.
+          </Alert>
+        )}
         <Link
           href={role === 'driver' ? '/driver/sign-in' : '/sign-in'}
           className="btn-secondary w-full"

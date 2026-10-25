@@ -95,6 +95,36 @@ export default function MapSurface({
     };
   }, []);
 
+  // A KEY THAT LOADS AND THEN IS REFUSED IS STILL A MISSING MAP.
+  //
+  // `loadGoogleMaps` resolving true only means the script arrived. If the
+  // key is restricted to other referrers -- which is what happens the first
+  // time the site is served from a new hostname -- Google constructs the
+  // map, fails authorisation, and paints its OWN error inside our container:
+  // a white panel reading "Oops! Something went wrong" on a black page,
+  // telling a rider to open the JavaScript console.
+  //
+  // `gm_authFailure` is the documented hook for exactly this. Treating it as
+  // "not live" hands the surface back to our own fallback, which says the
+  // map is unavailable and that booking still works -- which is true, and is
+  // what a passenger needs to know.
+  useEffect(() => {
+    const w = window as typeof window & { gm_authFailure?: () => void };
+    const previous = w.gm_authFailure;
+    w.gm_authFailure = () => {
+      // eslint-disable-next-line no-console
+      console.error(
+        'Google Maps refused this key for this host. Add the site origin to '
+        + 'the browser key’s HTTP referrer restrictions.',
+      );
+      setLive(false);
+      previous?.();
+    };
+    return () => {
+      w.gm_authFailure = previous;
+    };
+  }, []);
+
   // The map's colours come from CSS custom properties, which a theme switch
   // changes without React knowing. Watching the attribute is what keeps an
   // ivory basemap from staying ivory after the rider goes back to dark.

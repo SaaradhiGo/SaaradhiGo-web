@@ -186,6 +186,13 @@ function BookPageInner() {
 
   const [query, setQuery] = useState('');
   const [places, setPlaces] = useState<Place[]>([]);
+  // The pickup field searches too. It used to accept ONLY "lat, lng": a
+  // rider who typed "forum mall" was told to "Enter the pickup as
+  // latitude, longitude", which is a coordinate prompt on a consumer
+  // booking screen. Coordinates still work, as a fallback, because they
+  // are genuinely useful when a place has no name.
+  const [pickupQuery, setPickupQuery] = useState('');
+  const [pickupPlaces, setPickupPlaces] = useState<Place[]>([]);
   const [mapsDown, setMapsDown] = useState(false);
   const [manualDest, setManualDest] = useState('');
 
@@ -390,10 +397,13 @@ function BookPageInner() {
     const p = parse(params.get('pickup'));
     if (p) {
       setPickup(p);
-      setPickupLabel(pickupWords || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`);
+      const label = pickupWords || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`;
+      setPickupLabel(label);
+      setPickupQuery(label);
       void loadServiceability(p);
     } else if (pickupWords) {
       setPickupLabel(pickupWords);
+      setPickupQuery(pickupWords);
     }
     const d = parse(params.get('dest'));
     if (d) {
@@ -436,17 +446,71 @@ function BookPageInner() {
     );
   }
 
-  function setManualPickup(value: string) {
-    const [latS, lngS] = value.split(',').map((s) => s.trim());
+  /** A pair of numbers, when someone pastes coordinates. Otherwise null. */
+  function asCoordinates(value: string) {
+    const [latS, lngS] = value.split(',').map((part) => part.trim());
     const lat = Number(latS);
     const lng = Number(lngS);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      setError('Enter the pickup as "latitude, longitude".');
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+    return { lat, lng };
+  }
+
+  async function searchPickup(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setPickupPlaces([]);
+    const typed = pickupQuery.trim();
+    if (!typed) return;
+
+    // Coordinates first: "17.4169, 78.4387" is an address, just not a
+    // searchable one, and sending it to a place search would return nothing.
+    const point = asCoordinates(typed);
+    if (point) {
+      setPickup(point);
+      setPickupLabel(`${point.lat}, ${point.lng}`);
+      void loadServiceability(point);
       return;
     }
-    const p = { lat, lng };
+
+    setBusy(true);
+    try {
+      const found = await searchPlaces(typed);
+      setPickupPlaces(found);
+      if (found.length === 0) setNotice('No places matched that search.');
+    } catch (err) {
+      setError(messageFor(err, 'We could not search just now. Please try again.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function choosePickup(place: Place) {
+    setPickupPlaces([]);
+    setBusy(true);
+    try {
+      const point = await placeToPoint(place.place_id);
+      if (!point) {
+        setError('We could not use that place. Please pick another.');
+        return;
+      }
+      setPickup(point);
+      setPickupLabel(place.description);
+      setPickupQuery(place.description);
+      void loadServiceability(point);
+    } catch (err) {
+      setError(messageFor(err, 'We could not use that place. Please pick another.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function setManualPickup(value: string) {
+    const point = asCoordinates(value);
+    if (!point) return; // typing a place name is not an error; it is a search
+    const p = point;
     setPickup(p);
-    setPickupLabel(`${lat}, ${lng}`);
+    setPickupLabel(`${p.lat}, ${p.lng}`);
     void loadServiceability(p);
   }
 
@@ -907,8 +971,18 @@ function BookPageInner() {
                   kind="pickup"
                   label="Pickup"
                   placeholder="Where are you?"
-                  defaultValue={pickupLabel}
+                  value={pickupQuery}
                   autoComplete="off"
+                  onChange={(e) => {
+                    setPickupQuery(e.target.value);
+                    setPickupPlaces([]);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      void searchPickup(e as unknown as React.FormEvent);
+                    }
+                  }}
                   onBlur={(e) => e.target.value && setManualPickup(e.target.value)}
                   action={<LocateAction onClick={useMyLocation} busy={busy} />}
                 />
@@ -1004,6 +1078,32 @@ function BookPageInner() {
                   </div>
                 </details>
               </>
+            )}
+
+            {pickupPlaces.length > 0 && (
+              <div>
+                {pickupPlaces.map((p) => (
+                  <button
+                    key={`pickup-${p.place_id}`}
+                    type="button"
+                    className="sg-place w-full text-left"
+                    onClick={() => choosePickup(p)}
+                  >
+                    <span className="sg-place__icon" aria-hidden="true">
+                      <Clock />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="sg-place__name block truncate">
+                        {p.description.split(',')[0]}
+                      </span>
+                      <span className="sg-place__addr block truncate">
+                        {p.description.split(',').slice(1).join(',').trim()}
+                      </span>
+                    </span>
+                    <span />
+                  </button>
+                ))}
+              </div>
             )}
 
             {places.length > 0 && (
