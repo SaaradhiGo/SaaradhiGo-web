@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { ButtonLink } from '@/components/sg/Button';
 import { HeroBooking } from '@/components/home/HeroBooking';
@@ -47,7 +48,7 @@ export function HomeContent() {
           typography it sits beside, and nothing available under a free
           licence was. So the hero is the headline and the one thing this
           page is for: the two fields and the button. */}
-      <section className="hp" aria-labelledby="hero-title">
+      <section className="hp hp-hero-band" aria-labelledby="hero-title">
         <div className="hp-hero">
           <h1 id="hero-title" className="hp-hero__title">
             {t.hero.titleTop}
@@ -56,6 +57,26 @@ export function HomeContent() {
           <p className="hp-hero__sub">{t.hero.subtitle}</p>
           <HeroBooking />
         </div>
+
+        {/* The chariot the brand is named for. It is DECORATION, so it is
+            marked as such and carries no alt text: a screen reader that
+            announced "a charioteer driving two horses" before the pickup
+            field would be reading out the wallpaper. It sits behind the
+            column and is hidden on a phone, where there is no room beside
+            the form and it would only sit under the text. */}
+        <Image
+          className="hp-hero__mark"
+          src="/brand/chariot.png"
+          alt=""
+          aria-hidden="true"
+          width={516}
+          height={360}
+          // 460px is the widest it is ever drawn; `sizes` keeps the
+          // optimiser from shipping a larger variant than the CSS uses.
+          sizes="(max-width: 1023px) 0px, 460px"
+          draggable={false}
+          priority
+        />
       </section>
 
       {/* 2 — Choose your ride -------------------------------------------- */}

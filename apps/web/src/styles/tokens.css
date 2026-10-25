@@ -103,15 +103,15 @@
    The serif also had no Telugu or Devanagari coverage at all, so a te-IN or
    hi-IN heading fell back to Noto Serif and looked different again. Manrope
    carries the Noto fallbacks the token stack already names. */
-.display-xl { font-family: var(--font-sans); font-size: 72px; line-height: 1.02; font-weight: 800; letter-spacing: -0.03em; }
-.display-lg { font-family: var(--font-sans); font-size: 44px; line-height: 1.08; font-weight: 700; letter-spacing: -0.02em; }
+.display-xl { font-family: var(--font-sans); font-size: 44px; line-height: 1.08; font-weight: 800; letter-spacing: -0.025em; }
+.display-lg { font-family: var(--font-sans); font-size: 30px; line-height: 1.15; font-weight: 700; letter-spacing: -0.02em; }
 .brand-name { font-family: var(--font-brand); font-size: 20px; line-height: 24px; font-weight: 600; letter-spacing: 0.06em; }
 .eyebrow { font-family: var(--font-brand); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.24em; }
-.heading { font-family: var(--font-sans); font-size: 26px; line-height: 32px; font-weight: 700; letter-spacing: -0.01em; }
+.heading { font-family: var(--font-sans); font-size: 21px; line-height: 28px; font-weight: 700; letter-spacing: -0.01em; }
 .title { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 700; }
-.body-lg { font-family: var(--font-sans); font-size: 17px; line-height: 26px; font-weight: 500; }
+.body-lg { font-family: var(--font-sans); font-size: 16px; line-height: 25px; font-weight: 500; }
 .body { font-family: var(--font-sans); font-size: 15px; line-height: 22px; font-weight: 500; }
 .caption { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 500; }
 .label { font-family: var(--font-sans); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 0.12em; }
-.fare-xl { font-family: var(--font-sans); font-size: 40px; line-height: 44px; font-weight: 800; letter-spacing: -0.02em; }
+.fare-xl { font-family: var(--font-sans); font-size: 30px; line-height: 36px; font-weight: 800; letter-spacing: -0.02em; }
 .fare { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 800; }

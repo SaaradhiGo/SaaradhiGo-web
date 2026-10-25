@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Alert, Field, SubmitButton } from '@/components/form';
 import {
   FareQuote,
@@ -23,7 +23,6 @@ import {
   serviceabilityAt,
 } from '@/lib/booking';
 import MapSurface from '@/components/MapSurface';
-import { GuestBooking } from '@/components/booking/GuestBooking';
 import { messageFor, readRiderToken } from '@/lib/publicAuth';
 import { formatDistance, formatFare } from '@/lib/money';
 import { publicRideName, vehicleClassLabel } from '@/lib/vehicles';
@@ -170,6 +169,7 @@ const TRIP_IS_OVER = ['completed', 'cancelled'];
 
 function BookPageInner() {
   const params = useSearchParams();
+  const router = useRouter();
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
   const [pickup, setPickup] = useState<LatLng | null>(null);
@@ -404,6 +404,11 @@ function BookPageInner() {
     }
     const q = params.get('q');
     if (q) setQuery(q);
+    // The vehicle class survives a sign-in round trip, so a rider who
+    // pressed "Sign in to confirm Sedan" comes back to Sedan selected
+    // rather than to the cheapest class.
+    const chosen = params.get('class');
+    if (chosen) setVehicleType(chosen);
   }, [params, loadServiceability]);
 
   function useMyLocation() {
@@ -566,8 +571,30 @@ function BookPageInner() {
 
   // --- request -----------------------------------------------------------
 
+  /** The booking as a URL, so signing in can come straight back to it. */
+  function bookingUrl() {
+    const next = new URLSearchParams(params.toString());
+    if (pickup) next.set('pickup', `${pickup.lat},${pickup.lng}`);
+    if (destination) next.set('dest', `${destination.lat},${destination.lng}`);
+    if (pickupLabel) next.set('pickup_label', pickupLabel);
+    if (destinationLabel) next.set('dest_label', destinationLabel);
+    if (vehicleType) next.set('class', vehicleType);
+    return `/book?${next.toString()}`;
+  }
+
   function requestRide() {
     if (!pickup || !destination || !vehicleType) return;
+
+    // THE ONE PLACE A SESSION IS REQUIRED. A trip belongs to a person: the
+    // driver is told who to collect, the PIN is checked against an account,
+    // and the trip has to appear in someone's history. Everything before
+    // this point -- searching, comparing classes, seeing the fare -- works
+    // without one.
+    if (!readRiderToken()) {
+      router.push(`/sign-in?next=${encodeURIComponent(bookingUrl())}`);
+      return;
+    }
+
     setError(null);
     setStage('requesting');
 
@@ -738,21 +765,14 @@ function BookPageInner() {
     );
   }
 
-  if (!signedIn) {
-    // The whole query string travels into the sign-in link, so the rider
-    // lands back on this page with their trip rather than on the homepage
-    // with an empty form.
-    const qs = params.toString();
-    return (
-      <GuestBooking
-        pickupLabel={pickupLabel}
-        destinationLabel={destinationLabel}
-        service={service}
-        checking={Boolean(pickup)}
-        returnTo={qs ? `/book?${qs}` : '/book'}
-      />
-    );
-  }
+  // NO SIGNED-OUT GATE. A visitor who has not signed in gets the real
+  // booking workspace: the map, the fields, the vehicle classes and the
+  // FARES. Asking someone to create an account before telling them what a
+  // ride costs asks them to commit before they know the price, which is the
+  // one number they came for.
+  //
+  // Sign-in happens at CONFIRM -- see `requestRide` -- because that is the
+  // point where a trip is actually created against a person.
 
   // --- presentation ------------------------------------------------------
 
@@ -1093,7 +1113,9 @@ function BookPageInner() {
                   onClick={requestRide}
                   disabled={busy}
                 >
-                  Confirm {vehicleClassLabel(vehicleType)}
+                  {signedIn
+                    ? `Confirm ${vehicleClassLabel(vehicleType)}`
+                    : `Sign in to confirm ${vehicleClassLabel(vehicleType)}`}
                   {fare ? ` · ${fare}` : ''}
                   <ArrowRight />
                 </Button>

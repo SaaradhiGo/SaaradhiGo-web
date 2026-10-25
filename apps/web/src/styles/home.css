@@ -38,17 +38,17 @@
 .hp-h2 {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 36px;
+  font-size: 30px;
   line-height: 1.15;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--ink);
 }
 .hp-lead {
-  margin: 16px 0 0;
-  max-width: 60ch;
+  margin: 14px 0 0;
+  max-width: 62ch;
   font-family: var(--font-sans);
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.6;
   color: var(--ink-muted);
 }
@@ -123,8 +123,8 @@
 .hp-hero__title {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 64px;
-  line-height: 1.04;
+  font-size: 44px;
+  line-height: 1.08;
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--ink);
@@ -254,7 +254,7 @@
 
 @media (max-width: 1024px) {
   .hp-hero { padding: 48px 0 8px; }
-  .hp-hero__title { font-size: 48px; }
+  .hp-hero__title { font-size: 40px; }
   .hp-steps { gap: 32px; }
 }
 
@@ -271,12 +271,12 @@
   .hp-section + .hp-section { padding-top: 0; }
   .hp-closing { padding: 64px 0; }
   .hp-steps { grid-template-columns: 1fr; gap: 32px; }
-  .hp-h2 { font-size: 28px; }
+  .hp-h2 { font-size: 24px; }
 }
 
 @media (max-width: 480px) {
-  .hp-hero__title { font-size: 40px; }
-  .hp-hero__sub { font-size: 16px; }
+  .hp-hero__title { font-size: 34px; }
+  .hp-hero__sub { font-size: 15px; }
   /* Two across still reads at 390; one across wastes the fold. */
   .hp-rides { grid-template-columns: repeat(2, 1fr); gap: 16px; }
   .hp-ride__art { height: 88px; }
@@ -287,7 +287,7 @@
    rather than squeezing two cards into 140px each. */
 @media (max-width: 360px) {
   .hp-rides { grid-template-columns: 1fr; }
-  .hp-hero__title { font-size: 34px; }
+  .hp-hero__title { font-size: 30px; }
 }
 
 /* --- language + country picker ------------------------------------------ */
@@ -396,14 +396,14 @@
 .hp-h1 {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 48px;
-  line-height: 1.08;
+  font-size: 34px;
+  line-height: 1.15;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   color: var(--ink);
-  max-width: 24ch;
+  max-width: 28ch;
 }
-.hp-masthead .hp-lead { font-size: 19px; max-width: 64ch; margin-top: 20px; }
+.hp-masthead .hp-lead { font-size: 17px; max-width: 66ch; margin-top: 16px; }
 
 .hp-blocks { margin: 0; padding: 0; list-style: none; display: grid; gap: 48px; }
 
@@ -422,7 +422,7 @@
 .hp-block h2 {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 24px;
+  font-size: 19px;
   line-height: 1.25;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -431,8 +431,8 @@
 .hp-block p {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 17px;
-  line-height: 1.65;
+  font-size: 16px;
+  line-height: 1.6;
   color: var(--ink-muted);
   max-width: 62ch;
 }
@@ -495,7 +495,7 @@
    band rather than a hero competing with the page's own title. */
 
 @media (max-width: 1023px) {
-  .hp-h1 { font-size: 40px; }
+  .hp-h1 { font-size: 32px; }
   .hp-block { grid-template-columns: 1fr; }
   .hp-block h2 { margin-bottom: 12px; }
   .hp-blocks--numbered .hp-block { grid-template-columns: 56px minmax(0, 1fr); }
@@ -504,14 +504,14 @@
 
 @media (max-width: 768px) {
   .hp-masthead { padding-top: 48px; }
-  .hp-h1 { font-size: 34px; }
-  .hp-masthead .hp-lead { font-size: 17px; }
+  .hp-h1 { font-size: 28px; }
+  .hp-masthead .hp-lead { font-size: 16px; }
   .hp-blocks { gap: 40px; }
   .hp-topics { columns: 1; }
   }
 
 @media (max-width: 480px) {
-  .hp-h1 { font-size: 30px; }
+  .hp-h1 { font-size: 26px; }
   .hp-blocks--numbered .hp-block { grid-template-columns: 36px minmax(0, 1fr); gap: 0 12px; }
   .hp-caveat { padding: 20px; }
 }
@@ -637,3 +637,34 @@
    Capped rather than full width: a line of body text running 1200px is not
    a layout, it is a wall. */
 .bk-single { max-width: 680px; }
+
+/* --- the chariot -------------------------------------------------------
+   The mark the brand is named for, sitting in the space to the right of the
+   hero column. Behind the content, never over it: `z-index: 0` with the
+   column above, so a long headline in Telugu or Hindi overlaps the mark
+   rather than the mark covering the words.
+
+   Dimmed rather than full strength. At full gold it competes with the one
+   control on the page that matters, which is the yellow button directly
+   beneath the fields. */
+.hp-hero-band { position: relative; overflow: hidden; }
+.hp-hero-band > .hp-hero { position: relative; z-index: 1; }
+
+.hp-hero__mark {
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(42vw, 460px);
+  height: auto;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+/* Under 1024px the hero column already uses the full width, so the mark
+   would sit behind the pickup and destination fields. It goes. */
+@media (max-width: 1023px) {
+  .hp-hero__mark { display: none; }
+}

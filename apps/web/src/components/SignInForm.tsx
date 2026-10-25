@@ -36,7 +36,12 @@ import {
 export default function SignInForm({ role }: { role: PublicRole }) {
   const router = useRouter();
   const search = useSearchParams();
-  const [mode, setMode] = useState<'email' | 'phone'>('email');
+  // `?method=mobile` opens on the code route. /forgot-password sends a
+  // rider here after telling them their account has no password; landing
+  // them back on the email form would be the same dead end again.
+  const [mode, setMode] = useState<'email' | 'phone'>(
+    search.get('method') === 'mobile' ? 'phone' : 'email',
+  );
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
