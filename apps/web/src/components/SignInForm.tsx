@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Alert, Field, SubmitButton } from '@/components/form';
 import PhoneField, { usePhoneMarkets } from '@/components/PhoneField';
 import { nationalLooksValid, toE164 } from '@/lib/markets';
+import { safeReturnTo } from '@/lib/returnTo';
 import {
   PublicRole,
   isUnverified,
@@ -34,6 +35,7 @@ import {
  */
 export default function SignInForm({ role }: { role: PublicRole }) {
   const router = useRouter();
+  const search = useSearchParams();
   const [mode, setMode] = useState<'email' | 'phone'>('email');
 
   const [email, setEmail] = useState('');
@@ -65,9 +67,19 @@ export default function SignInForm({ role }: { role: PublicRole }) {
 
   const market = markets?.countries.find((m) => m.code === country);
   const phone = toE164(market, national);
+  // Whether THIS number can be sent a code here, not merely whether the
+  // feature exists.
+  const canSendCode = phoneAllowedForOtp(phone);
 
   function done() {
-    router.replace(role === 'driver' ? '/drive' : '/');
+    // BACK TO WHATEVER THEY WERE DOING. A rider who pressed "See ride
+    // options", was asked to sign in and then landed on the homepage with an
+    // empty form has been made to do the work twice. `next` carries the
+    // booking URL, and `safeReturnTo` refuses anything that is not a path on
+    // this site.
+    router.replace(
+      safeReturnTo(search.get('next'), role === 'driver' ? '/drive' : '/'),
+    );
   }
 
   async function submitEmail(e: React.FormEvent) {
@@ -227,9 +239,21 @@ export default function SignInForm({ role }: { role: PublicRole }) {
                 : 'Approved QA test numbers receive a fixed code without an SMS being sent.'
             }
           />
-          <SubmitButton busy={busy} busyLabel="Sending…">
+          {/* The button is disabled rather than merely failing on press.
+              It used to be live for every number on an environment that
+              texts nobody, so a tester typed a real number, pressed Send
+              code and got an error that looked like a product fault. Now
+              the control states the rule before it is used. */}
+          <SubmitButton busy={busy} busyLabel="Sending…" disabled={!canSendCode}>
             Send code
           </SubmitButton>
+          {!canSendCode && national.trim() !== '' && (
+            <p className="caption text-ink-subtle">
+              {testPhones.length > 0
+                ? 'That number is not an approved QA test number on this environment. Sign in with your email and password instead.'
+                : 'This environment cannot text anyone. Sign in with your email and password instead.'}
+            </p>
+          )}
         </form>
       ) : (
         <form onSubmit={submitCode} className="space-y-4" noValidate>

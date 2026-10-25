@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { Masthead } from './PageShell';
 import { usePages } from '@/i18n/usePages';
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/support';
@@ -50,15 +49,12 @@ export function ContactContent() {
           ))}
         </ul>
 
-        <div className="hp-caveat">
-          <h2>{p.operatorHeading}</h2>
-          <p>{p.operatorBody}</p>
-          <div className="hp-actions">
-            <Link href="/login" className="sg-link">
-              {p.operatorCta}
-            </Link>
-          </div>
-        </div>
+        {/* NO OPERATOR SIGN-IN HERE.
+            The console is internal. Promoting its entrance on the page a
+            rider reaches when something has gone wrong with their trip
+            advertises a door they cannot open, and puts staff navigation in
+            front of customers. `/login` still exists and still works for the
+            people who need it; it is simply not sold to riders. */}
       </section>
     </>
   );

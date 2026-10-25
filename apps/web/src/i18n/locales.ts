@@ -43,6 +43,46 @@ export function localesForMarket(market: Market): Locale[] {
   return LOCALES.filter((l) => LOCALE_INFO[l].market === market);
 }
 
+/**
+ * The languages a visitor actually picks from, which is NOT the list of
+ * locales.
+ *
+ * `en-IN` and `en-US` are both "English". Offering both in a menu asks
+ * someone to choose a country in order to choose a language, which is the
+ * country/language configuration panel this control had and the owner
+ * rejected. So the menu lists each LANGUAGE once, and the country is derived:
+ * the current market's locale for that language where one exists, otherwise
+ * the language's own market. Picking Espanol moves the site to the US market
+ * because that is the only market offering it -- the visitor chose a
+ * language, not a country, and never had to think about the difference.
+ */
+export type LanguageChoice = { base: string; label: string };
+
+export const LANGUAGE_CHOICES: LanguageChoice[] = (() => {
+  const seen = new Set<string>();
+  const out: LanguageChoice[] = [];
+  for (const l of LOCALES) {
+    const base = l.split('-')[0];
+    if (seen.has(base)) continue;
+    seen.add(base);
+    out.push({ base, label: LOCALE_INFO[l].label });
+  }
+  return out;
+})();
+
+/** The locale to use for a language, preferring the market already in use. */
+export function localeForLanguage(base: string, market: Market): Locale {
+  const inMarket = localesForMarket(market).find((l) => l.split('-')[0] === base);
+  if (inMarket) return inMarket;
+  const anywhere = LOCALES.find((l) => l.split('-')[0] === base);
+  return anywhere ?? DEFAULT_LOCALE;
+}
+
+/** The language a locale is in, for marking the current menu entry. */
+export function languageOf(locale: Locale): string {
+  return locale.split('-')[0];
+}
+
 export function isLocale(value: unknown): value is Locale {
   return typeof value === 'string' && (LOCALES as readonly string[]).includes(value);
 }

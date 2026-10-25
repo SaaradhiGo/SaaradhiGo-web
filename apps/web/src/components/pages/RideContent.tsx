@@ -32,7 +32,12 @@ export function RideContent() {
 
       <section className="hp hp-section">
         <div className="hp-band">
-          <Photo src="/photography/ride-sedan.jpg" alt={p.photoAlt ?? ''} sizes="100vw" />
+          <Photo
+            src="/photography/ride-sedan.jpg"
+            alt={p.photoAlt ?? ''}
+            sizes="100vw"
+            position="50% 62%"
+          />
         </div>
       </section>
     </>

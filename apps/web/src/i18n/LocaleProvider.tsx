@@ -11,12 +11,10 @@ import {
 import {
   DEFAULT_LOCALE,
   LOCALE_INFO,
-  MARKET_INFO,
   type Locale,
   type Market,
   isLocale,
   isMarket,
-  localesForMarket,
   resolveLocale,
 } from './locales';
 import { MESSAGES, type Messages } from './messages';
@@ -29,7 +27,6 @@ type Ctx = {
   market: Market;
   t: Messages;
   setLocale: (l: Locale) => void;
-  setMarket: (m: Market) => void;
   /** False until the stored preference has been read, to avoid a flash. */
   ready: boolean;
 };
@@ -94,17 +91,10 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const setMarket = useCallback(
-    (next: Market) => {
-      // Keep the language if that market offers it, so switching country
-      // does not throw away a deliberate language choice.
-      const available = localesForMarket(next);
-      const base = locale.split('-')[0];
-      const kept = available.find((l) => l.split('-')[0] === base);
-      setLocale(kept ?? MARKET_INFO[next].defaultLocale);
-    },
-    [locale, setLocale],
-  );
+  // There is no `setMarket`. The header's menu offers LANGUAGES, and the
+  // market follows from the one chosen -- see `localeForLanguage`. A
+  // separate country control was the configuration panel this product does
+  // not want, so the only way the market moves is through a language.
 
   const value = useMemo<Ctx>(
     () => ({
@@ -112,10 +102,9 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       market: LOCALE_INFO[locale].market,
       t: MESSAGES[locale],
       setLocale,
-      setMarket,
       ready,
     }),
-    [locale, setLocale, setMarket, ready],
+    [locale, setLocale, ready],
   );
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;

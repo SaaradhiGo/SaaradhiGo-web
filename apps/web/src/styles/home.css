@@ -105,13 +105,20 @@
 
 /* --- hero --------------------------------------------------------------- */
 
+/* NO `min-height`. It reserved 520px whether the hero needed it or not, and
+   the column does not: title, subtitle and the two fields come to about
+   340px, so the rest was empty black above a section that then added its own
+   96px. That reserved emptiness is most of what made the page feel sparse.
+   The hero is now as tall as its contents, and the photograph beside it sets
+   the floor. */
 .hp-hero {
   display: grid;
   grid-template-columns: 45fr 55fr;
   gap: 48px;
   align-items: center;
-  min-height: 520px;
-  padding: 64px 0;
+  /* No bottom padding: the next section brings its own 96px, and the two
+     together left a gap you could park in. */
+  padding: 56px 0 0;
 }
 .hp-hero__title {
   margin: 0;
@@ -131,9 +138,11 @@
 }
 .hp-hero__form { margin-top: 32px; display: grid; gap: 12px; max-width: 460px; }
 
+/* 3:2, not 4:3. The photographs are wide -- better than 2:1 -- and the
+   squarer box threw most of each one away. */
 .hp-hero__media {
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 3 / 2;
   border-radius: 12px;
   overflow: hidden;
   background: var(--bg-100);
@@ -599,4 +608,95 @@
 @media (max-width: 1120px) {
   .hp-nav { gap: 16px; }
   .hp-nav__link { padding: 8px 8px; }
+}
+
+/* A band that can carry more of a wide street scene than 3:1 allows. */
+.hp-band--tall { aspect-ratio: 21 / 9; }
+
+/* Questions in two columns. Four short answers stacked in one column left
+   half the page empty beside them -- the same unused space the photograph
+   had, just moved. They flow like the help topics do, so the columns end
+   level rather than leaving a hole under the shorter one. */
+.hp-qa--split { columns: 2; column-gap: 48px; }
+.hp-qa--split > div { break-inside: avoid; border-top: 1px solid var(--line); }
+.hp-qa--split > div:last-child { border-bottom: none; }
+
+@media (max-width: 768px) {
+  .hp-band--tall { aspect-ratio: 16 / 9; }
+  .hp-qa--split { columns: 1; }
+  .hp-qa--split > div:last-child { border-bottom: 1px solid var(--line); }
+}
+
+/* --- the signed-out booking screen -------------------------------------
+   The trip a visitor built on the homepage, repeated back to them before
+   they are asked to sign in. It is the first thing on the page because it
+   is the thing they already did: the screen is a receipt for their effort,
+   not a gate in front of it. */
+
+.bk-trip {
+  margin: 32px 0 0;
+  max-width: 560px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-100);
+  padding: 4px 20px;
+}
+.bk-trip__row {
+  display: grid;
+  grid-template-columns: 10px 56px 1fr;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+  padding: 16px 0;
+  font-family: var(--font-sans); font-size: 16px; line-height: 1.4;
+}
+.bk-trip__row + .bk-trip__row { border-top: 1px solid var(--line); }
+.bk-trip__row .hp-field__marker { align-self: center; }
+.bk-trip__label {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-subtle);
+}
+.bk-trip__row strong { font-weight: 600; color: var(--ink); }
+
+/* What is really available at this pickup, from the pricing service. No
+   fares: the quote endpoint is authenticated, so there is nothing honest to
+   put here until they sign in, and a blank where a price goes is worse than
+   a sentence saying why. */
+.bk-available { margin: 40px 0 0; }
+.bk-available h2 {
+  margin: 0 0 16px;
+  font-family: var(--font-sans); font-size: 13px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-subtle);
+}
+.bk-available ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.bk-available li {
+  padding: 8px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans); font-size: 15px; font-weight: 600; color: var(--ink);
+}
+.bk-available .hp-hint { margin-top: 12px; }
+
+@media (max-width: 480px) {
+  .bk-trip__row { grid-template-columns: 10px 1fr; row-gap: 4px; }
+  .bk-trip__row .bk-trip__label { grid-column: 2; }
+  .bk-trip__row strong { grid-column: 2; }
+}
+
+/* The signed-out booking screen: the trip and its actions on the left, a
+   photograph holding the right. Single column under 1024px, where the
+   photograph goes under the actions rather than squeezing them. */
+.bk-layout { display: grid; grid-template-columns: 55fr 45fr; gap: 64px; align-items: start; margin-top: 8px; }
+.bk-layout__media {
+  position: relative; aspect-ratio: 4 / 3; margin-top: 32px;
+  border-radius: 12px; overflow: hidden;
+  background: var(--bg-100); border: 1px solid var(--line);
+}
+.bk-layout__media img { display: block; }
+@media (max-width: 1024px) {
+  .bk-layout { grid-template-columns: 1fr; gap: 40px; }
+  .bk-layout__media { aspect-ratio: 16 / 9; }
 }

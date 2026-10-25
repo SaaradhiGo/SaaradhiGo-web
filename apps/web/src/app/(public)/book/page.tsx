@@ -23,6 +23,7 @@ import {
   serviceabilityAt,
 } from '@/lib/booking';
 import MapSurface from '@/components/MapSurface';
+import { GuestBooking } from '@/components/booking/GuestBooking';
 import { messageFor, readRiderToken } from '@/lib/publicAuth';
 import { formatDistance, formatFare } from '@/lib/money';
 import { publicRideName, vehicleClassLabel } from '@/lib/vehicles';
@@ -380,16 +381,26 @@ function BookPageInner() {
       const [a, b] = v.split(',').map((s) => Number(s.trim()));
       return Number.isFinite(a) && Number.isFinite(b) ? { lat: a, lng: b } : null;
     };
+    // The homepage sends the text the rider typed alongside the resolved
+    // point. Coordinates are the fallback, not the first choice: a rider who
+    // typed "Banjara Hills" should not be shown "17.38500, 78.48670" back.
+    const pickupWords = params.get('pickup_label');
+    const destWords = params.get('dest_label');
+
     const p = parse(params.get('pickup'));
     if (p) {
       setPickup(p);
-      setPickupLabel(`${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`);
+      setPickupLabel(pickupWords || `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`);
       void loadServiceability(p);
+    } else if (pickupWords) {
+      setPickupLabel(pickupWords);
     }
     const d = parse(params.get('dest'));
     if (d) {
       setDestination(d);
-      setDestinationLabel(`${d.lat.toFixed(5)}, ${d.lng.toFixed(5)}`);
+      setDestinationLabel(destWords || `${d.lat.toFixed(5)}, ${d.lng.toFixed(5)}`);
+    } else if (destWords) {
+      setDestinationLabel(destWords);
     }
     const q = params.get('q');
     if (q) setQuery(q);
@@ -728,19 +739,18 @@ function BookPageInner() {
   }
 
   if (!signedIn) {
+    // The whole query string travels into the sign-in link, so the rider
+    // lands back on this page with their trip rather than on the homepage
+    // with an empty form.
+    const qs = params.toString();
     return (
-      <div className="sg-page max-w-md">
-        <GlassPanel glass={false} title="Book a ride">
-          <Alert kind="info">Sign in to book a ride.</Alert>
-          {/* One primary action: signing in is the thing this view is for. */}
-          <ButtonLink href="/sign-in" variant="primary" size="lg" block>
-            Sign in
-          </ButtonLink>
-          <ButtonLink href="/sign-up" variant="secondary" block>
-            Create an account
-          </ButtonLink>
-        </GlassPanel>
-      </div>
+      <GuestBooking
+        pickupLabel={pickupLabel}
+        destinationLabel={destinationLabel}
+        service={service}
+        checking={Boolean(pickup)}
+        returnTo={qs ? `/book?${qs}` : '/book'}
+      />
     );
   }
 

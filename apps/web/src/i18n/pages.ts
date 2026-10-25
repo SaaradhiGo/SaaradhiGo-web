@@ -55,7 +55,7 @@ const en: PagesCopy = {
     title: 'Riding with SaaradhiGo',
     metaDescription:
       'How booking works on SaaradhiGo: set a pickup and destination, compare fares across vehicle classes, and track your trip with a ride PIN.',
-    photoAlt: 'A silver saloon car parked on a driveway.',
+    photoAlt: 'A saloon car parked on a driveway, seen from the front.',
     lead: 'You agree the fare before the trip starts, and that is the fare you pay. Here is what happens from the moment you open the booking page.',
     sections: [
       {
@@ -256,7 +256,7 @@ const hi: PagesCopy = {
   ride: {
     title: 'SaaradhiGo के साथ सवारी',
     metaDescription: 'SaaradhiGo पर बुकिंग कैसे काम करती है: पिकअप और गंतव्य चुनें, श्रेणियों के किराए की तुलना करें, और राइड पिन के साथ अपनी यात्रा ट्रैक करें।',
-    photoAlt: 'एक चाँदी रंग की सेडान कार ड्राइववे पर खड़ी है।',
+    photoAlt: 'ड्राइववे पर खड़ी एक सेडान कार, सामने से।',
     lead: 'यात्रा शुरू होने से पहले किराया तय हो जाता है, और वही किराया आप देते हैं। बुकिंग पेज खोलने के बाद क्या होता है, यह रहा।',
     sections: [
       { h: 'बताएं आप कहाँ हैं और कहाँ जाना है', p: 'पिकअप और गंतव्य टाइप करें, या अपना वर्तमान स्थान उपयोग करें। आगे बढ़ने से पहले हम जाँचते हैं कि आपका पिकअप सेवा क्षेत्र में है या नहीं, ताकि आपको कार चुनने के बाद नहीं, तुरंत पता चले।' },
@@ -345,7 +345,7 @@ const te: PagesCopy = {
   ride: {
     title: 'SaaradhiGoతో ప్రయాణం',
     metaDescription: 'SaaradhiGoలో బుకింగ్ ఎలా పనిచేస్తుంది: పికప్ మరియు గమ్యం ఎంచుకోండి, తరగతుల ధరలను పోల్చండి, రైడ్ పిన్‌తో మీ ప్రయాణాన్ని ట్రాక్ చేయండి.',
-    photoAlt: 'డ్రైవ్‌వేలో నిలిపిన వెండి రంగు సెడాన్ కారు.',
+    photoAlt: 'డ్రైవ్‌వేలో నిలిపిన సెడాన్ కారు, ముందు నుంచి.',
     lead: 'ప్రయాణం మొదలయ్యే ముందే ధర ఖరారవుతుంది, అదే మీరు చెల్లిస్తారు. బుకింగ్ పేజీ తెరిచిన క్షణం నుంచి ఏం జరుగుతుందో ఇది.',
     sections: [
       { h: 'మీరు ఎక్కడ ఉన్నారో, ఎక్కడికి వెళ్తున్నారో చెప్పండి', p: 'పికప్ మరియు గమ్యాన్ని టైప్ చేయండి, లేదా మీ ప్రస్తుత ప్రదేశాన్ని ఉపయోగించండి. ముందుకు వెళ్లే ముందు మీ పికప్ సేవా ప్రాంతంలో ఉందా అని తనిఖీ చేస్తాం, తద్వారా కారు ఎంచుకున్న తర్వాత కాకుండా వెంటనే తెలుస్తుంది.' },
@@ -434,7 +434,7 @@ const es: PagesCopy = {
   ride: {
     title: 'Viajar con SaaradhiGo',
     metaDescription: 'Cómo funcionan las reservas en SaaradhiGo: indica recogida y destino, compara tarifas entre categorías y sigue tu viaje con un PIN.',
-    photoAlt: 'Un coche sedán plateado aparcado en una entrada.',
+    photoAlt: 'Un coche sedán aparcado en una entrada, visto de frente.',
     lead: 'La tarifa se acuerda antes de empezar el viaje, y esa es la que pagas. Esto es lo que ocurre desde que abres la página de reserva.',
     sections: [
       { h: 'Indica dónde estás y a dónde vas', p: 'Escribe la recogida y el destino, o usa tu ubicación actual. Comprobamos que la recogida esté dentro de una zona de servicio antes de seguir, para que lo sepas de inmediato y no después de elegir coche.' },

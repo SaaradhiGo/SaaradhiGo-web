@@ -4,12 +4,15 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Alert, Field, SubmitButton } from '@/components/form';
 import PhoneField, { usePhoneMarkets } from '@/components/PhoneField';
+import { useSearchParams } from 'next/navigation';
 import { nationalLooksValid, toE164 } from '@/lib/markets';
+import { safeReturnTo } from '@/lib/returnTo';
 import {
   PublicRole,
   looksLikeEmail,
   messageFor,
   otpSendingEnabled,
+  phoneAllowedForOtp,
   qaTestPhones,
   registerAccount,
   sendPublicOtp,
@@ -47,6 +50,7 @@ type Tab = 'email' | 'mobile';
  * to discover who holds an account -- so this never says "account created".
  */
 export default function RegisterForm({ role }: { role: PublicRole }) {
+  const search = useSearchParams();
   const { markets, failed: marketsFailed } = usePhoneMarkets();
   const smsToAnyone = otpSendingEnabled();
   const testPhones = qaTestPhones();
@@ -166,7 +170,11 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
     setBusy(true);
     try {
       await verifyPublicOtp(toE164(market, national), otp, role);
-      window.location.assign(role === 'driver' ? '/drive' : '/');
+      // Same rule as signing in: back to the booking they came from, and
+      // only ever to a path on this site.
+      window.location.assign(
+        safeReturnTo(search.get('next'), role === 'driver' ? '/drive' : '/'),
+      );
     } catch (err) {
       setFormError(messageFor(err, 'That code did not work.'));
     } finally {
@@ -362,9 +370,23 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
                 : 'Approved QA test numbers receive a fixed code without an SMS being sent.'
             }
           />
-          <SubmitButton busy={busy} busyLabel="Sending…">
+          {/* Disabled rather than failing on press: a tester typing a real
+              number into an environment that texts nobody used to get an
+              error that read like a broken product. */}
+          <SubmitButton
+            busy={busy}
+            busyLabel="Sending…"
+            disabled={!phoneAllowedForOtp(toE164(market, national))}
+          >
             Send code
           </SubmitButton>
+          {!phoneAllowedForOtp(toE164(market, national)) && national.trim() !== '' && (
+            <p className="help">
+              {testPhones.length > 0
+                ? 'That number is not an approved QA test number on this environment. Sign up with your email instead.'
+                : 'This environment cannot text anyone. Sign up with your email instead.'}
+            </p>
+          )}
           <p className="help">
             You can add an email address later from your profile.
           </p>

@@ -86,16 +86,23 @@ export function SubmitButton({
   busy,
   children,
   busyLabel = 'Working…',
+  disabled,
   ...props
 }: {
   busy?: boolean;
   busyLabel?: string;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  // `disabled` is pulled OUT of the spread deliberately. It used to be
+  // computed as `busy || props.disabled` and then `{...props}` was spread
+  // afterwards, so a caller passing `disabled={false}` re-enabled the button
+  // while a submission was still in flight -- a double-submit waiting for the
+  // first caller to pass the prop at all. Now the two reasons to be disabled
+  // are combined once and nothing can overwrite the result.
   return (
     <button
       type="submit"
       className="btn-primary w-full"
-      disabled={busy || props.disabled}
+      disabled={Boolean(busy) || Boolean(disabled)}
       aria-busy={busy || undefined}
       {...props}
     >

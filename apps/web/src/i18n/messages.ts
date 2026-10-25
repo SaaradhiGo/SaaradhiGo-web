@@ -18,7 +18,7 @@ import type { Locale } from './locales';
  * a brand is not localisation.
  */
 const en: {
-  nav: Record<'ride' | 'drive' | 'safety' | 'about' | 'help' | 'contact' | 'login' | 'signup' | 'menuOpen' | 'menuClose' | 'language' | 'country', string>;
+  nav: Record<'ride' | 'drive' | 'safety' | 'about' | 'help' | 'contact' | 'login' | 'signup' | 'menuOpen' | 'menuClose' | 'language', string>;
   hero: Record<'titleTop' | 'titleBottom' | 'subtitle' | 'pickupLabel' | 'pickupPlaceholder' | 'destLabel' | 'destPlaceholder' | 'cta' | 'useLocation' | 'locating' | 'photoAlt', string>;
   validation: Record<'pickupRequired' | 'destRequired' | 'geoDenied' | 'geoUnsupported' | 'searchFailed' | 'searchThrottled', string>;
   rides: Record<'heading' | 'lead' | 'loading' | 'failed' | 'empty', string>;
@@ -29,8 +29,10 @@ const en: {
   safety: Record<'heading' | 'lead' | 'pinT' | 'pinB' | 'trackT' | 'trackB' | 'alertT' | 'alertB', string>;
   apps: Record<'heading' | 'lead' | 'rider' | 'driver' | 'comingSoon', string>;
   closing: Record<'heading' | 'body' | 'cta' | 'support', string>;
+  guest: Record<'heading' | 'from' | 'to' | 'unset' | 'checking' | 'availableHere'
+    | 'inZone' | 'fareAfterSignIn' | 'signInContinue' | 'createAccount'
+    | 'tripKept' | 'outsideArea' | 'changePickup' | 'howItWorks', string>;
   footer: Record<'privacy' | 'terms' | 'rights', string>;
-  market: Record<'note', string>;
 } = {
   nav: {
     ride: 'Ride',
@@ -44,7 +46,6 @@ const en: {
     menuOpen: 'Open menu',
     menuClose: 'Close menu',
     language: 'Language',
-    country: 'Country',
   },
   hero: {
     titleTop: 'Your city.',
@@ -57,7 +58,7 @@ const en: {
     cta: 'See ride options',
     useLocation: 'Use my current location',
     locating: 'Finding your location…',
-    photoAlt: 'Yellow taxis waiting at a junction on a city street in Kolkata, India.',
+    photoAlt: 'A wide seafront road in Visakhapatnam, India, with the city skyline behind it at dusk.',
   },
   validation: {
     pickupRequired: 'Enter a pickup location.',
@@ -94,7 +95,7 @@ const en: {
     heading: 'Drive with SaaradhiGo',
     body: 'Interested in driving? Learn how to get started with SaaradhiGo.',
     cta: 'Become a driver',
-    photoAlt: 'Yellow auto-rickshaws on a busy street in Hyderabad, India.',
+    photoAlt: 'A yellow auto-rickshaw on a city street in Warangal, Telangana.',
   },
   safety: {
     heading: 'Safety',
@@ -119,13 +120,26 @@ const en: {
     cta: 'Book a ride',
     support: 'Contact support',
   },
+  guest: {
+    heading: 'Your trip',
+    from: 'From',
+    to: 'To',
+    unset: 'Not set yet',
+    checking: 'Checking this pickup point…',
+    availableHere: 'Available at this pickup',
+    inZone: 'Service area:',
+    fareAfterSignIn: 'Sign in to see the fare for this trip. We price your exact journey before you book, and the price you agree is the price you pay.',
+    signInContinue: 'Sign in and continue',
+    createAccount: 'Create an account',
+    tripKept: 'Your pickup and destination are kept — you will come straight back here.',
+    outsideArea: 'We do not operate at that pickup point yet. Try a pickup inside one of our service areas.',
+    changePickup: 'Change pickup',
+    howItWorks: 'How booking works',
+  },
   footer: {
     privacy: 'Privacy Policy',
     terms: 'Terms of Service',
     rights: 'SaaradhiGo',
-  },
-  market: {
-    note: 'Changing country changes the language and formatting of this site. Ride availability is set by our service areas.',
   },
 };
 
@@ -144,7 +158,6 @@ const hi: Messages = {
     menuOpen: 'मेनू खोलें',
     menuClose: 'मेनू बंद करें',
     language: 'भाषा',
-    country: 'देश',
   },
   hero: {
     titleTop: 'आपका शहर।',
@@ -157,7 +170,7 @@ const hi: Messages = {
     cta: 'सवारी विकल्प देखें',
     useLocation: 'मेरा वर्तमान स्थान उपयोग करें',
     locating: 'आपका स्थान खोजा जा रहा है…',
-    photoAlt: 'कोलकाता, भारत में एक शहर की सड़क पर चौराहे पर खड़ी पीली टैक्सियाँ।',
+    photoAlt: 'विशाखापत्तनम, भारत में समुद्र के किनारे की चौड़ी सड़क, पीछे शाम के समय शहर की इमारतें।',
   },
   validation: {
     pickupRequired: 'पिकअप स्थान दर्ज करें।',
@@ -194,7 +207,7 @@ const hi: Messages = {
     heading: 'SaaradhiGo के साथ ड्राइव करें',
     body: 'ड्राइविंग में रुचि है? जानें कि SaaradhiGo के साथ शुरुआत कैसे करें।',
     cta: 'ड्राइवर बनें',
-    photoAlt: 'हैदराबाद, भारत की एक व्यस्त सड़क पर पीले ऑटो-रिक्शा।',
+    photoAlt: 'वरंगल, तेलंगाना की एक सड़क पर पीला ऑटो-रिक्शा।',
   },
   safety: {
     heading: 'सुरक्षा',
@@ -219,10 +232,23 @@ const hi: Messages = {
     cta: 'सवारी बुक करें',
     support: 'सहायता से संपर्क करें',
   },
-  footer: { privacy: 'गोपनीयता नीति', terms: 'सेवा की शर्तें', rights: 'SaaradhiGo' },
-  market: {
-    note: 'देश बदलने से इस साइट की भाषा और प्रारूप बदलते हैं। सवारी की उपलब्धता हमारे सेवा क्षेत्रों से तय होती है।',
+  guest: {
+    heading: 'आपकी यात्रा',
+    from: 'कहाँ से',
+    to: 'कहाँ तक',
+    unset: 'अभी तय नहीं',
+    checking: 'यह पिकअप पॉइंट जाँचा जा रहा है…',
+    availableHere: 'इस पिकअप पर उपलब्ध',
+    inZone: 'सेवा क्षेत्र:',
+    fareAfterSignIn: 'इस यात्रा का किराया देखने के लिए साइन इन करें। बुकिंग से पहले हम आपकी पूरी यात्रा का किराया तय करते हैं, और जो किराया आप मानते हैं वही आप देते हैं।',
+    signInContinue: 'साइन इन करके आगे बढ़ें',
+    createAccount: 'खाता बनाएं',
+    tripKept: 'आपका पिकअप और गंतव्य सुरक्षित हैं — आप सीधे यहीं लौट आएंगे।',
+    outsideArea: 'हम अभी उस पिकअप पॉइंट पर सेवा नहीं देते। हमारे किसी सेवा क्षेत्र के भीतर का पिकअप चुनें।',
+    changePickup: 'पिकअप बदलें',
+    howItWorks: 'बुकिंग कैसे काम करती है',
   },
+  footer: { privacy: 'गोपनीयता नीति', terms: 'सेवा की शर्तें', rights: 'SaaradhiGo' },
 };
 
 const te: Messages = {
@@ -238,7 +264,6 @@ const te: Messages = {
     menuOpen: 'మెనూ తెరవండి',
     menuClose: 'మెనూ మూసివేయండి',
     language: 'భాష',
-    country: 'దేశం',
   },
   hero: {
     titleTop: 'మీ నగరం.',
@@ -251,7 +276,7 @@ const te: Messages = {
     cta: 'ప్రయాణ ఎంపికలు చూడండి',
     useLocation: 'నా ప్రస్తుత ప్రదేశాన్ని ఉపయోగించండి',
     locating: 'మీ ప్రదేశాన్ని కనుగొంటున్నాం…',
-    photoAlt: 'భారతదేశంలోని కోల్‌కతా నగర వీధిలో కూడలి వద్ద ఆగి ఉన్న పసుపు టాక్సీలు.',
+    photoAlt: 'విశాఖపట్నంలో సముద్ర తీరం వెంట వేసిన వెడల్పాటి రహదారి, వెనుక సంధ్యా సమయంలో నగర దృశ్యం.',
   },
   validation: {
     pickupRequired: 'పికప్ ప్రదేశాన్ని నమోదు చేయండి.',
@@ -288,7 +313,7 @@ const te: Messages = {
     heading: 'SaaradhiGoతో డ్రైవ్ చేయండి',
     body: 'డ్రైవింగ్‌పై ఆసక్తి ఉందా? SaaradhiGoతో ఎలా ప్రారంభించాలో తెలుసుకోండి.',
     cta: 'డ్రైవర్ కండి',
-    photoAlt: 'భారతదేశంలోని హైదరాబాద్‌లో రద్దీగా ఉన్న వీధిలో పసుపు ఆటోలు.',
+    photoAlt: 'వరంగల్, తెలంగాణలోని ఒక నగర వీధిలో పసుపు రంగు ఆటో.',
   },
   safety: {
     heading: 'భద్రత',
@@ -313,10 +338,23 @@ const te: Messages = {
     cta: 'ప్రయాణం బుక్ చేయండి',
     support: 'సహాయాన్ని సంప్రదించండి',
   },
-  footer: { privacy: 'గోప్యతా విధానం', terms: 'సేవా నిబంధనలు', rights: 'SaaradhiGo' },
-  market: {
-    note: 'దేశాన్ని మార్చడం ఈ సైట్ భాష మరియు ఫార్మాటింగ్‌ను మారుస్తుంది. ప్రయాణ లభ్యత మా సేవా ప్రాంతాల ద్వారా నిర్ణయించబడుతుంది.',
+  guest: {
+    heading: 'మీ ప్రయాణం',
+    from: 'ఎక్కడి నుంచి',
+    to: 'ఎక్కడికి',
+    unset: 'ఇంకా ఎంచుకోలేదు',
+    checking: 'ఈ పికప్ పాయింట్‌ను తనిఖీ చేస్తున్నాం…',
+    availableHere: 'ఈ పికప్ వద్ద అందుబాటులో',
+    inZone: 'సేవా ప్రాంతం:',
+    fareAfterSignIn: 'ఈ ప్రయాణానికి ధర చూడడానికి సైన్ ఇన్ చేయండి. బుక్ చేసే ముందే మీ ప్రయాణానికి ధర నిర్ణయిస్తాం, మీరు అంగీకరించిన ధరే చెల్లిస్తారు.',
+    signInContinue: 'సైన్ ఇన్ చేసి కొనసాగండి',
+    createAccount: 'ఖాతా సృష్టించండి',
+    tripKept: 'మీ పికప్ మరియు గమ్యం భద్రంగా ఉన్నాయి — మీరు నేరుగా ఇక్కడికే తిరిగి వస్తారు.',
+    outsideArea: 'ఆ పికప్ పాయింట్ వద్ద మేము ఇంకా సేవలు అందించడం లేదు. మా సేవా ప్రాంతాల్లో ఒకదాన్ని ఎంచుకోండి.',
+    changePickup: 'పికప్ మార్చండి',
+    howItWorks: 'బుకింగ్ ఎలా పనిచేస్తుంది',
   },
+  footer: { privacy: 'గోప్యతా విధానం', terms: 'సేవా నిబంధనలు', rights: 'SaaradhiGo' },
 };
 
 const es: Messages = {
@@ -332,7 +370,6 @@ const es: Messages = {
     menuOpen: 'Abrir menú',
     menuClose: 'Cerrar menú',
     language: 'Idioma',
-    country: 'País',
   },
   hero: {
     titleTop: 'Tu ciudad.',
@@ -345,7 +382,7 @@ const es: Messages = {
     cta: 'Ver opciones de viaje',
     useLocation: 'Usar mi ubicación actual',
     locating: 'Buscando tu ubicación…',
-    photoAlt: 'Taxis amarillos esperando en un cruce de una calle de Calcuta, India.'
+    photoAlt: 'Una amplia avenida junto al mar en Visakhapatnam, India, con el perfil de la ciudad al atardecer.'
   },
   validation: {
     pickupRequired: 'Introduce un lugar de recogida.',
@@ -382,7 +419,7 @@ const es: Messages = {
     heading: 'Conduce con SaaradhiGo',
     body: '¿Te interesa conducir? Descubre cómo empezar con SaaradhiGo.',
     cta: 'Hazte conductor',
-    photoAlt: 'Auto-rickshaws amarillos en una calle concurrida de Hyderabad, India.',
+    photoAlt: 'Un auto-rickshaw amarillo en una calle de Warangal, Telangana.',
   },
   safety: {
     heading: 'Seguridad',
@@ -407,10 +444,23 @@ const es: Messages = {
     cta: 'Reservar un viaje',
     support: 'Contactar con soporte',
   },
-  footer: { privacy: 'Política de privacidad', terms: 'Términos del servicio', rights: 'SaaradhiGo' },
-  market: {
-    note: 'Cambiar de país cambia el idioma y el formato de este sitio. La disponibilidad de viajes la definen nuestras zonas de servicio.',
+  guest: {
+    heading: 'Tu viaje',
+    from: 'Desde',
+    to: 'Hasta',
+    unset: 'Sin definir',
+    checking: 'Comprobando este punto de recogida…',
+    availableHere: 'Disponible en esta recogida',
+    inZone: 'Zona de servicio:',
+    fareAfterSignIn: 'Inicia sesión para ver la tarifa de este viaje. Calculamos tu trayecto exacto antes de reservar, y la tarifa que aceptas es la que pagas.',
+    signInContinue: 'Inicia sesión y continúa',
+    createAccount: 'Crear una cuenta',
+    tripKept: 'Guardamos tu recogida y tu destino: volverás directamente aquí.',
+    outsideArea: 'Todavía no operamos en ese punto de recogida. Prueba con una recogida dentro de una de nuestras zonas de servicio.',
+    changePickup: 'Cambiar recogida',
+    howItWorks: 'Cómo funciona la reserva',
   },
+  footer: { privacy: 'Política de privacidad', terms: 'Términos del servicio', rights: 'SaaradhiGo' },
 };
 
 export const MESSAGES: Record<Locale, Messages> = {

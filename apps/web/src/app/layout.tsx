@@ -34,11 +34,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
-        {/* The three families the design system names, and only those:
-            Cormorant Garamond for headlines and promises, Manrope for every
-            number, label and control, Cinzel for the brand name, eyebrows and
-            map labels. `display=swap` so text is readable while they load --
-            a ride-hailing page that hides its fares behind a webfont has
+        {/* TWO FAMILIES, NOT THREE. Manrope sets every heading, number,
+            label and control; Cinzel is the brand lockup and the map labels
+            and nothing else.
+
+            Cormorant Garamond is gone. It set the headings on /book and the
+            auth pages while the public pages used Manrope, so the typeface
+            changed under a visitor mid-journey -- and it has no Telugu or
+            Devanagari coverage, so those locales fell back to a third face
+            again. Dropping it removes the inconsistency and one
+            render-blocking font request with it.
+
+            `display=swap` so text is readable while they load: a
+            ride-hailing page that hides its fares behind a webfont has
             failed at the one thing it is for. */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -46,8 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
           href={
             'https://fonts.googleapis.com/css2'
-            + '?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700'
-            + '&family=Manrope:wght@500;600;700;800'
+            + '?family=Manrope:wght@500;600;700;800'
             + '&family=Cinzel:wght@500;600;700'
             + '&display=swap'
           }

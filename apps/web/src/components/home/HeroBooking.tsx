@@ -165,6 +165,16 @@ export function HeroBooking() {
     }
 
     if (!params.has('dest') && destText.trim()) params.set('q', destText.trim());
+
+    // THE WORDS TRAVEL, NOT JUST THE COORDINATES. `/book` used to receive
+    // only lat/lng, so it showed a rider "17.38500, 78.48670" where they had
+    // typed "Banjara Hills". Sending the label they actually chose lets the
+    // next screen repeat their trip back to them in their own words, which
+    // matters most to a signed-out visitor who has to sign in before going
+    // any further.
+    if (pickupText.trim()) params.set('pickup_label', pickupText.trim());
+    if (destText.trim()) params.set('dest_label', destText.trim());
+
     setBusy(false);
     router.push(params.toString() ? `/book?${params.toString()}` : '/book');
   }

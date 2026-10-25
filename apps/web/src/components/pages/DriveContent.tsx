@@ -39,24 +39,33 @@ export function DriveContent() {
         </div>
       </section>
 
-      <section className="hp hp-section">
-        <div className="hp-split">
-          <dl className="hp-qa hp-qa--flush">
-            {p.faq.map((q) => (
-              <div key={q.h}>
-                <dt>{q.h}</dt>
-                <dd>{q.p}</dd>
-              </div>
-            ))}
-          </dl>
-          <div className="hp-split__media">
-            <Photo
-              src="/photography/drive-autos.jpg"
-              alt={t.drive.photoAlt}
-              sizes="(max-width: 1024px) 100vw, 50vw"
-            />
-          </div>
+      {/* THE PHOTOGRAPH IS A BAND, NOT A COLUMN.
+          It used to sit beside the questions in a half-width box, which left
+          a tall empty column above and below it and shrank an already-wide
+          street scene to the size of a stamp. Full width, it is the vehicle
+          at the size a driver page should show it, and the questions get the
+          whole column underneath. */}
+      <section className="hp hp-section--tight">
+        <div className="hp-band hp-band--tall">
+          <Photo
+            src="/photography/drive-autos.jpg"
+            alt={t.drive.photoAlt}
+            sizes="100vw"
+            // Keep the auto in frame at every width.
+            position="28% 55%"
+          />
         </div>
+      </section>
+
+      <section className="hp hp-section--tight">
+        <dl className="hp-qa hp-qa--split">
+          {p.faq.map((q) => (
+            <div key={q.h}>
+              <dt>{q.h}</dt>
+              <dd>{q.p}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
     </>
   );
