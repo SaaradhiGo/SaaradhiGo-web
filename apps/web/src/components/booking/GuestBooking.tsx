@@ -135,8 +135,6 @@ export function GuestBooking({
             src="/photography/ride-sedan.jpg"
             alt={ridePage.photoAlt ?? ''}
             sizes="(max-width: 1024px) 100vw, 45vw"
-            // Down a little: the car, not the shopfront above it.
-            position="50% 62%"
           />
         </div>
       </div>

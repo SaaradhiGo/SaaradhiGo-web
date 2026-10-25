@@ -36,7 +36,6 @@ export function RideContent() {
             src="/photography/ride-sedan.jpg"
             alt={p.photoAlt ?? ''}
             sizes="100vw"
-            position="50% 62%"
           />
         </div>
       </section>

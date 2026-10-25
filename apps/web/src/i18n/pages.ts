@@ -55,7 +55,7 @@ const en: PagesCopy = {
     title: 'Riding with SaaradhiGo',
     metaDescription:
       'How booking works on SaaradhiGo: set a pickup and destination, compare fares across vehicle classes, and track your trip with a ride PIN.',
-    photoAlt: 'A saloon car parked on a driveway, seen from the front.',
+    photoAlt: 'A silver Suzuki S-Presso hatchback parked on a street.',
     lead: 'You agree the fare before the trip starts, and that is the fare you pay. Here is what happens from the moment you open the booking page.',
     sections: [
       {
@@ -126,6 +126,7 @@ const en: PagesCopy = {
     metaDescription:
       'The safety features running on SaaradhiGo today: a server-verified ride PIN, live trip tracking, and safety alerts that reach our operations team.',
     lead: 'These are features running on the platform today. We have deliberately not listed anything that is planned but not built.',
+    photoAlt: 'The inside of a modern right-hand-drive car: the steering wheel, the dashboard controls and pale leather seats.',
     sections: [
       {
         h: 'A PIN starts every ride',
@@ -150,6 +151,7 @@ const en: PagesCopy = {
     metaDescription:
       'SaaradhiGo is a ride-hailing service built for Indian cities, where the fare is agreed before the trip begins.',
     lead: 'SaaradhiGo is a ride-hailing service built for Indian cities.',
+    photoAlt: 'The Charkaman gateway beside Charminar in Hyderabad, India, with a street full of yellow auto-rickshaws below it.',
     sections: [
       {
         h: 'The fare is agreed before you travel',
@@ -256,7 +258,7 @@ const hi: PagesCopy = {
   ride: {
     title: 'SaaradhiGo के साथ सवारी',
     metaDescription: 'SaaradhiGo पर बुकिंग कैसे काम करती है: पिकअप और गंतव्य चुनें, श्रेणियों के किराए की तुलना करें, और राइड पिन के साथ अपनी यात्रा ट्रैक करें।',
-    photoAlt: 'ड्राइववे पर खड़ी एक सेडान कार, सामने से।',
+    photoAlt: 'सड़क किनारे खड़ी चाँदी रंग की सुज़ुकी एस-प्रेसो हैचबैक कार।',
     lead: 'यात्रा शुरू होने से पहले किराया तय हो जाता है, और वही किराया आप देते हैं। बुकिंग पेज खोलने के बाद क्या होता है, यह रहा।',
     sections: [
       { h: 'बताएं आप कहाँ हैं और कहाँ जाना है', p: 'पिकअप और गंतव्य टाइप करें, या अपना वर्तमान स्थान उपयोग करें। आगे बढ़ने से पहले हम जाँचते हैं कि आपका पिकअप सेवा क्षेत्र में है या नहीं, ताकि आपको कार चुनने के बाद नहीं, तुरंत पता चले।' },
@@ -289,6 +291,7 @@ const hi: PagesCopy = {
     title: 'SaaradhiGo पर सुरक्षा',
     metaDescription: 'SaaradhiGo पर आज चल रही सुरक्षा सुविधाएँ: सर्वर पर जाँचा जाने वाला राइड पिन, लाइव ट्रिप ट्रैकिंग, और संचालन टीम तक पहुँचने वाले सुरक्षा अलर्ट।',
     lead: 'ये सुविधाएँ आज प्लेटफ़ॉर्म पर चल रही हैं। जो योजना में है पर बना नहीं, उसे हमने जानबूझकर नहीं गिनाया।',
+    photoAlt: 'एक आधुनिक राइट-हैंड ड्राइव कार का भीतरी हिस्सा — स्टियरिंग, डैशबोर्ड के नियंत्रण और हल्के रंग की लेदर सीटें।',
     sections: [
       { h: 'हर सवारी पिन से शुरू होती है', p: 'ड्राइवर के स्वीकार करते ही आपको चार अंकों का पिन दिखता है। शुरू करने के लिए ड्राइवर को वह डालना पड़ता है, और उसकी जाँच ऐप में नहीं, हमारे सर्वर पर होती है — यानी आपके बिना यात्रा शुरू नहीं हो सकती।' },
       { h: 'यात्रा के दौरान ट्रैकिंग', p: 'पूरी यात्रा में ड्राइवर की स्थिति आपके मानचित्र पर अपडेट होती है और जो रास्ता तय हो रहा है वह खींचा जाता है। अगर गाड़ी अपेक्षा से अलग चल रही हो, आप देख सकते हैं।' },
@@ -300,6 +303,7 @@ const hi: PagesCopy = {
     title: 'SaaradhiGo के बारे में',
     metaDescription: 'SaaradhiGo भारतीय शहरों के लिए बनी राइड-हेलिंग सेवा है, जहाँ यात्रा शुरू होने से पहले किराया तय हो जाता है।',
     lead: 'SaaradhiGo भारतीय शहरों के लिए बनी एक राइड-हेलिंग सेवा है।',
+    photoAlt: 'हैदराबाद में चारमीनार के पास चारकमान द्वार, नीचे पीले ऑटो-रिक्शाओं से भरी सड़क।',
     sections: [
       { h: 'यात्रा से पहले किराया तय', p: 'यात्रा के बाद कीमत तय करना सवार को कमज़ोर स्थिति में और ड्राइवर को बहस में डालता है। हम पहले किराया तय करते हैं, दोनों को दिखाते हैं, और उसी पर हिसाब होता है।' },
       { h: 'उन्हीं शहरों के लिए जहाँ हम हैं', p: 'हमने हर जगह एक साथ नहीं, तेलंगाना और आंध्र प्रदेश से शुरुआत की। वाहन श्रेणियाँ, क़ीमतें और ऐप का व्यवहार इन्हीं शहरों की यात्रा के तरीक़ों पर आधारित हैं।' },
@@ -345,7 +349,7 @@ const te: PagesCopy = {
   ride: {
     title: 'SaaradhiGoతో ప్రయాణం',
     metaDescription: 'SaaradhiGoలో బుకింగ్ ఎలా పనిచేస్తుంది: పికప్ మరియు గమ్యం ఎంచుకోండి, తరగతుల ధరలను పోల్చండి, రైడ్ పిన్‌తో మీ ప్రయాణాన్ని ట్రాక్ చేయండి.',
-    photoAlt: 'డ్రైవ్‌వేలో నిలిపిన సెడాన్ కారు, ముందు నుంచి.',
+    photoAlt: 'వీధి పక్కన నిలిపి ఉన్న వెండి రంగు సుజుకీ ఎస్-ప్రెస్సో హాచ్‌బ్యాక్ కారు.',
     lead: 'ప్రయాణం మొదలయ్యే ముందే ధర ఖరారవుతుంది, అదే మీరు చెల్లిస్తారు. బుకింగ్ పేజీ తెరిచిన క్షణం నుంచి ఏం జరుగుతుందో ఇది.',
     sections: [
       { h: 'మీరు ఎక్కడ ఉన్నారో, ఎక్కడికి వెళ్తున్నారో చెప్పండి', p: 'పికప్ మరియు గమ్యాన్ని టైప్ చేయండి, లేదా మీ ప్రస్తుత ప్రదేశాన్ని ఉపయోగించండి. ముందుకు వెళ్లే ముందు మీ పికప్ సేవా ప్రాంతంలో ఉందా అని తనిఖీ చేస్తాం, తద్వారా కారు ఎంచుకున్న తర్వాత కాకుండా వెంటనే తెలుస్తుంది.' },
@@ -378,6 +382,7 @@ const te: PagesCopy = {
     title: 'SaaradhiGoలో భద్రత',
     metaDescription: 'SaaradhiGoలో ఈరోజు పనిచేస్తున్న భద్రతా సదుపాయాలు: సర్వర్‌లో ధృవీకరించే రైడ్ పిన్, ప్రత్యక్ష ప్రయాణ ట్రాకింగ్, ఆపరేషన్స్ బృందానికి చేరే భద్రతా హెచ్చరికలు.',
     lead: 'ఇవి ఈరోజు ప్లాట్‌ఫామ్‌లో పనిచేస్తున్న సదుపాయాలు. ప్రణాళికలో ఉండి ఇంకా నిర్మించనిదాన్ని ఉద్దేశపూర్వకంగా చేర్చలేదు.',
+    photoAlt: 'ఆధునిక రైట్-హ్యాండ్ డ్రైవ్ కారు లోపలి భాగం — స్టీరింగ్, డాష్‌బోర్డ్ నియంత్రణలు మరియు లేత రంగు లెదర్ సీట్లు.',
     sections: [
       { h: 'ప్రతి ప్రయాణం పిన్‌తో మొదలవుతుంది', p: 'డ్రైవర్ అంగీకరించగానే మీకు నాలుగు అంకెల పిన్ కనిపిస్తుంది. మొదలుపెట్టడానికి డ్రైవర్ దాన్ని నమోదు చేయాలి, అది యాప్‌లో కాదు మా సర్వర్‌లలో తనిఖీ అవుతుంది — అంటే మీరు లేకుండా ప్రయాణం మొదలవ్వదు.' },
       { h: 'ప్రయాణం జరుగుతుండగా ట్రాకింగ్', p: 'ప్రయాణం పొడవునా డ్రైవర్ స్థానం మీ మ్యాప్‌లో నవీకరించబడుతుంది, ప్రయాణిస్తున్న రహదారి గీయబడుతుంది. కారు మీరు ఊహించిన విధంగా వెళ్లకపోతే మీరు చూడగలరు.' },
@@ -389,6 +394,7 @@ const te: PagesCopy = {
     title: 'SaaradhiGo గురించి',
     metaDescription: 'SaaradhiGo భారతీయ నగరాల కోసం నిర్మించిన రైడ్-హెయిలింగ్ సేవ, ఇక్కడ ప్రయాణం మొదలయ్యే ముందే ధర ఖరారవుతుంది.',
     lead: 'SaaradhiGo భారతీయ నగరాల కోసం నిర్మించిన రైడ్-హెయిలింగ్ సేవ.',
+    photoAlt: 'హైదరాబాద్‌లో చార్మినార్ పక్కనే ఉన్న చార్కమాన్ ద్వారం, కింద పసుపు ఆటోలతో నిండిన వీధి.',
     sections: [
       { h: 'ప్రయాణానికి ముందే ధర ఖరారు', p: 'ప్రయాణం జరిగాక ధర నిర్ణయించడం ప్రయాణికుడిని బలహీన స్థితిలో, డ్రైవర్‌ను వాదనలో పెడుతుంది. మేము ముందే ధర నిర్ణయించి, ఇద్దరికీ చూపించి, దానిపైనే లెక్క చేస్తాం.' },
       { h: 'మేము నిజంగా సేవలందించే నగరాల కోసం', p: 'అన్నిచోట్లా ఒకేసారి కాకుండా తెలంగాణ, ఆంధ్రప్రదేశ్‌తో మొదలుపెట్టాం. వాహన తరగతులు, ధరలు, యాప్ ప్రవర్తన ఆ నగరాల్లో ప్రజలు ప్రయాణించే తీరును అనుసరిస్తాయి.' },
@@ -434,7 +440,7 @@ const es: PagesCopy = {
   ride: {
     title: 'Viajar con SaaradhiGo',
     metaDescription: 'Cómo funcionan las reservas en SaaradhiGo: indica recogida y destino, compara tarifas entre categorías y sigue tu viaje con un PIN.',
-    photoAlt: 'Un coche sedán aparcado en una entrada, visto de frente.',
+    photoAlt: 'Un Suzuki S-Presso plateado aparcado en la calle.',
     lead: 'La tarifa se acuerda antes de empezar el viaje, y esa es la que pagas. Esto es lo que ocurre desde que abres la página de reserva.',
     sections: [
       { h: 'Indica dónde estás y a dónde vas', p: 'Escribe la recogida y el destino, o usa tu ubicación actual. Comprobamos que la recogida esté dentro de una zona de servicio antes de seguir, para que lo sepas de inmediato y no después de elegir coche.' },
@@ -467,6 +473,7 @@ const es: PagesCopy = {
     title: 'Seguridad en SaaradhiGo',
     metaDescription: 'Las funciones de seguridad activas hoy en SaaradhiGo: un PIN verificado en el servidor, seguimiento del viaje en directo y alertas que llegan a operaciones.',
     lead: 'Estas funciones están activas hoy en la plataforma. Hemos dejado fuera a propósito todo lo que está planeado pero no construido.',
+    photoAlt: 'El interior de un coche moderno con volante a la derecha: el volante, los mandos del salpicadero y asientos de cuero claro.',
     sections: [
       { h: 'Un PIN inicia cada viaje', p: 'Cuando un conductor acepta tu viaje ves un PIN de cuatro dígitos. El conductor tiene que introducirlo para empezar, y se comprueba en nuestros servidores y no dentro de la aplicación, así que el viaje no puede comenzar sin ti.' },
       { h: 'El viaje se sigue mientras ocurre', p: 'La posición del conductor se actualiza en tu mapa durante todo el trayecto y la vía recorrida se dibuja sobre la marcha. Si el coche no va como esperas, puedes verlo.' },
@@ -478,6 +485,7 @@ const es: PagesCopy = {
     title: 'Sobre SaaradhiGo',
     metaDescription: 'SaaradhiGo es un servicio de transporte con conductor creado para ciudades de la India, donde la tarifa se acuerda antes de empezar el viaje.',
     lead: 'SaaradhiGo es un servicio de transporte con conductor creado para ciudades de la India.',
+    photoAlt: 'La puerta de Charkaman junto a Charminar en Hyderabad, India, con una calle llena de auto-rickshaws amarillos.',
     sections: [
       { h: 'La tarifa se acuerda antes de viajar', p: 'Poner precio a un viaje después de hacerlo deja al pasajero en desventaja y al conductor en una discusión. Nosotros tarificamos primero, lo mostramos a ambas partes y liquidamos con esa cifra.' },
       { h: 'Hecho para las ciudades en las que operamos', p: 'Empezamos en Telangana y Andhra Pradesh, no en todas partes a la vez. Las categorías, los precios y el comportamiento de la aplicación siguen cómo se viaja en esas ciudades.' },

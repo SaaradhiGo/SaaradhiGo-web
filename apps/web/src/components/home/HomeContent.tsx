@@ -58,9 +58,6 @@ export function HomeContent() {
               src="/photography/hero-city.jpg"
               alt={t.hero.photoAlt}
               priority
-              // Left of centre: the road and the skyline it runs
-              // towards. Centred, the slot kept the kerb.
-              position="32% 45%"
             />
           </div>
         </div>
@@ -106,8 +103,6 @@ export function HomeContent() {
               src="/photography/drive-autos.jpg"
               alt={t.drive.photoAlt}
               sizes="(max-width: 1024px) 100vw, 50vw"
-              // Keep the auto-rickshaw in frame; it is the subject.
-              position="30% 60%"
             />
           </div>
         </div>

@@ -58,7 +58,7 @@ const en: {
     cta: 'See ride options',
     useLocation: 'Use my current location',
     locating: 'Finding your location…',
-    photoAlt: 'A wide seafront road in Visakhapatnam, India, with the city skyline behind it at dusk.',
+    photoAlt: 'A street near Hitec City in Hyderabad, India, with auto-rickshaws and motorcycles in daylight traffic.',
   },
   validation: {
     pickupRequired: 'Enter a pickup location.',
@@ -95,7 +95,7 @@ const en: {
     heading: 'Drive with SaaradhiGo',
     body: 'Interested in driving? Learn how to get started with SaaradhiGo.',
     cta: 'Become a driver',
-    photoAlt: 'A yellow auto-rickshaw on a city street in Warangal, Telangana.',
+    photoAlt: 'A green and yellow auto-rickshaw being driven along a tree-lined road in India.',
   },
   safety: {
     heading: 'Safety',
@@ -170,7 +170,7 @@ const hi: Messages = {
     cta: 'सवारी विकल्प देखें',
     useLocation: 'मेरा वर्तमान स्थान उपयोग करें',
     locating: 'आपका स्थान खोजा जा रहा है…',
-    photoAlt: 'विशाखापत्तनम, भारत में समुद्र के किनारे की चौड़ी सड़क, पीछे शाम के समय शहर की इमारतें।',
+    photoAlt: 'हैदराबाद के हाइटेक सिटी के पास एक सड़क, दिन के उजाले में ऑटो-रिक्शा और मोटरसाइकिलें।',
   },
   validation: {
     pickupRequired: 'पिकअप स्थान दर्ज करें।',
@@ -207,7 +207,7 @@ const hi: Messages = {
     heading: 'SaaradhiGo के साथ ड्राइव करें',
     body: 'ड्राइविंग में रुचि है? जानें कि SaaradhiGo के साथ शुरुआत कैसे करें।',
     cta: 'ड्राइवर बनें',
-    photoAlt: 'वरंगल, तेलंगाना की एक सड़क पर पीला ऑटो-रिक्शा।',
+    photoAlt: 'भारत में पेड़ों से घिरी सड़क पर चलता हरा-पीला ऑटो-रिक्शा।',
   },
   safety: {
     heading: 'सुरक्षा',
@@ -276,7 +276,7 @@ const te: Messages = {
     cta: 'ప్రయాణ ఎంపికలు చూడండి',
     useLocation: 'నా ప్రస్తుత ప్రదేశాన్ని ఉపయోగించండి',
     locating: 'మీ ప్రదేశాన్ని కనుగొంటున్నాం…',
-    photoAlt: 'విశాఖపట్నంలో సముద్ర తీరం వెంట వేసిన వెడల్పాటి రహదారి, వెనుక సంధ్యా సమయంలో నగర దృశ్యం.',
+    photoAlt: 'హైదరాబాద్‌లోని హైటెక్ సిటీ సమీపంలోని వీధి, పగటి వెలుతురులో ఆటోలు మరియు మోటార్ సైకిళ్లు.',
   },
   validation: {
     pickupRequired: 'పికప్ ప్రదేశాన్ని నమోదు చేయండి.',
@@ -313,7 +313,7 @@ const te: Messages = {
     heading: 'SaaradhiGoతో డ్రైవ్ చేయండి',
     body: 'డ్రైవింగ్‌పై ఆసక్తి ఉందా? SaaradhiGoతో ఎలా ప్రారంభించాలో తెలుసుకోండి.',
     cta: 'డ్రైవర్ కండి',
-    photoAlt: 'వరంగల్, తెలంగాణలోని ఒక నగర వీధిలో పసుపు రంగు ఆటో.',
+    photoAlt: 'భారతదేశంలో చెట్ల వరసలో ఉన్న రహదారిపై వెళుతున్న పచ్చ-పసుపు ఆటో.',
   },
   safety: {
     heading: 'భద్రత',
@@ -382,7 +382,7 @@ const es: Messages = {
     cta: 'Ver opciones de viaje',
     useLocation: 'Usar mi ubicación actual',
     locating: 'Buscando tu ubicación…',
-    photoAlt: 'Una amplia avenida junto al mar en Visakhapatnam, India, con el perfil de la ciudad al atardecer.'
+    photoAlt: 'Una calle cerca de Hitec City en Hyderabad, India, con auto-rickshaws y motocicletas a la luz del día.'
   },
   validation: {
     pickupRequired: 'Introduce un lugar de recogida.',
@@ -419,7 +419,7 @@ const es: Messages = {
     heading: 'Conduce con SaaradhiGo',
     body: '¿Te interesa conducir? Descubre cómo empezar con SaaradhiGo.',
     cta: 'Hazte conductor',
-    photoAlt: 'Un auto-rickshaw amarillo en una calle de Warangal, Telangana.',
+    photoAlt: 'Un auto-rickshaw verde y amarillo circulando por una carretera arbolada en India.',
   },
   safety: {
     heading: 'Seguridad',

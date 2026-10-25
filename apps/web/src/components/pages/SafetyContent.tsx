@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Photo } from '@/components/home/Photo';
 import { Blocks, Masthead } from './PageShell';
 import { usePages } from '@/i18n/usePages';
 import { useT } from '@/i18n/LocaleProvider';
@@ -30,7 +31,13 @@ export function SafetyContent() {
     <>
       <Masthead title={p.title} lead={p.lead} />
 
-      <section className="hp hp-section">
+      <section className="hp hp-section--tight">
+        <div className="hp-band hp-band--tall">
+          <Photo src="/photography/safety-seat.jpg" alt={p.photoAlt ?? ''} sizes="100vw" />
+        </div>
+      </section>
+
+      <section className="hp hp-section--tight">
         <Blocks blocks={blocks} />
 
         <div className="hp-caveat">

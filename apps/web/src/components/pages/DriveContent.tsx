@@ -51,8 +51,6 @@ export function DriveContent() {
             src="/photography/drive-autos.jpg"
             alt={t.drive.photoAlt}
             sizes="100vw"
-            // Keep the auto in frame at every width.
-            position="28% 55%"
           />
         </div>
       </section>
