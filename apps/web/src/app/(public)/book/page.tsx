@@ -194,6 +194,9 @@ function BookPageInner() {
   // are genuinely useful when a place has no name.
   const [pickupQuery, setPickupQuery] = useState('');
   const [pickupPlaces, setPickupPlaces] = useState<Place[]>([]);
+  // WHICH FIELD IS BEING TYPED IN, so only that one searches. Without it
+  // both fields would fire on every keystroke in either of them.
+  const [activeField, setActiveField] = useState<'pickup' | 'dest' | null>(null);
   const [mapsDown, setMapsDown] = useState(false);
   const [manualDest, setManualDest] = useState('');
 
@@ -490,6 +493,10 @@ function BookPageInner() {
   }
 
   async function choosePickup(place: Place) {
+    // Stop searching before the text is replaced with the chosen place, or
+    // the debounce fires again for the full description and the list the
+    // rider just picked from reappears under their choice.
+    setActiveField(null);
     setPickupPlaces([]);
     setBusy(true);
     try {
@@ -517,6 +524,57 @@ function BookPageInner() {
     setPickupLabel(`${p.lat}, ${p.lng}`);
     void loadServiceability(p);
   }
+
+  /**
+   * Search as you type, in whichever field is being typed in.
+   *
+   * THE FIELDS USED TO WAIT FOR THE ENTER KEY. The homepage's two boxes
+   * suggest places as you type; the booking page's did not, so a rider who
+   * typed "forum mall" into the pickup and then looked at the screen was
+   * shown nothing at all -- no results, no error, no spinner. Nothing was
+   * broken and nothing was happening, which is the hardest state to read.
+   * It is also the first screen a rider reaches from a shared link, so
+   * "book ride is not working" is an entirely fair description of it.
+   *
+   * Three characters and 350ms, matching the homepage, so this is not a
+   * request per keystroke. Pressing Enter still works.
+   */
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!activeField) return;
+    const typed = (activeField === 'pickup' ? pickupQuery : query).trim();
+
+    if (typed.length < 3) {
+      if (activeField === 'pickup') setPickupPlaces([]);
+      else setPlaces([]);
+      return;
+    }
+    // "17.4169, 78.4387" is an address, just not a searchable one. Sending
+    // it to a place search returns nothing; `searchPickup` resolves it.
+    if (activeField === 'pickup' && asCoordinates(typed)) return;
+
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      searchPlaces(typed)
+        .then((found) => {
+          if (activeField === 'pickup') setPickupPlaces(found);
+          else setPlaces(found);
+        })
+        .catch((err) => {
+          // A failed suggestion lookup is not an error the rider has to
+          // dismiss -- they are still typing. The destination field keeps
+          // its "search is unavailable" branch, which offers a way through.
+          if (isMapsUnavailable(err)) {
+            logMapsFailure('suggestions', err);
+            setMapsDown(true);
+          }
+        });
+    }, 350);
+
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [activeField, pickupQuery, query]);
 
   // --- destination -------------------------------------------------------
 
@@ -547,6 +605,7 @@ function BookPageInner() {
   }
 
   async function choosePlace(place: Place) {
+    setActiveField(null);
     setBusy(true);
     setError(null);
     try {
@@ -1027,9 +1086,10 @@ function BookPageInner() {
                   placeholder="Where are you?"
                   value={pickupQuery}
                   autoComplete="off"
+                  onFocus={() => setActiveField('pickup')}
                   onChange={(e) => {
+                    setActiveField('pickup');
                     setPickupQuery(e.target.value);
-                    setPickupPlaces([]);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -1048,7 +1108,11 @@ function BookPageInner() {
                   value={query}
                   autoComplete="off"
                   disabled={!service?.serviceable}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onFocus={() => setActiveField('dest')}
+                  onChange={(e) => {
+                    setActiveField('dest');
+                    setQuery(e.target.value);
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -1065,7 +1129,8 @@ function BookPageInner() {
                 they are mentioned last, as the fallback they are. */}
             {!bothEndsSet && !pickup && (
               <p className="caption text-ink-subtle">
-                Search for a place, use your location, or paste coordinates.
+                Start typing a place and pick it from the list, use your
+                location, or paste coordinates.
               </p>
             )}
 
@@ -1076,11 +1141,6 @@ function BookPageInner() {
               </Alert>
             )}
 
-            {!bothEndsSet && service?.serviceable && !mapsDown && (
-              <Button variant="secondary" onClick={runSearch} disabled={busy}>
-                {busy ? 'Searching…' : 'Search destination'}
-              </Button>
-            )}
 
             {/* Customer-facing copy.
                 This used to read "This deployment has no map provider

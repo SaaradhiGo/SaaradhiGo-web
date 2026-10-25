@@ -101,7 +101,16 @@
   color: var(--on-noir-muted); text-decoration: none;
 }
 .hp-drawer a[aria-current="page"] { color: var(--on-noir); }
-.hp-drawer__session { display: flex; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line); margin-top: 8px; }
+/* A COLUMN, NOT A ROW. This was a flex row carrying two controls, which
+   fitted while they were "Log in" and "Sign up". A signed-in person has a
+   role link AND an account chip, and the chip opens a 260px menu: at 390px
+   the row pushed that menu to x=102 and 62px off the right edge of the
+   screen. Stacked, each control owns the width it needs. */
+.hp-drawer__session {
+  display: flex; flex-direction: column; align-items: stretch; gap: 12px;
+  padding-top: 16px; border-top: 1px solid var(--line); margin-top: 8px;
+}
+.hp-drawer__session > .sg-btn { width: 100%; }
 
 /* --- hero --------------------------------------------------------------- */
 
