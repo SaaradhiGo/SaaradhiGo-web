@@ -1,7 +1,6 @@
 'use client';
 
 import { ButtonLink } from '@/components/sg/Button';
-import { Photo } from '@/components/home/Photo';
 import { Blocks, Masthead } from './PageShell';
 import { usePages } from '@/i18n/usePages';
 
@@ -22,11 +21,6 @@ export function AboutContent() {
     <>
       <Masthead title={p.title} lead={p.lead} />
 
-      <section className="hp hp-section--tight">
-        <div className="hp-band hp-band--tall">
-          <Photo src="/photography/about-city.jpg" alt={p.photoAlt ?? ''} sizes="100vw" />
-        </div>
-      </section>
 
       <section className="hp hp-section--tight">
         <Blocks blocks={p.sections} />

@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { Logo } from './Logo';
 import { useT } from '@/i18n/LocaleProvider';
-import { PhotoCredits } from './PhotoCredits';
 
 /**
  * The public footer: the lockup, the same navigation as the header, and the
@@ -44,7 +43,6 @@ export function Footer() {
           </nav>
         </div>
 
-        <PhotoCredits />
 
         <div className="hp-footer__base">
           <span>© {new Date().getFullYear()} SaaradhiGo</span>

@@ -34,16 +34,15 @@ export const metadata: Metadata = {
       'Book a ride in Hyderabad, Vijayawada, Visakhapatnam and Warangal. '
       + 'The fare is agreed before the trip starts.',
     locale: 'en_IN',
-    // The homepage hero, which is a licensed photograph of a city we serve.
-    // No invented brand artwork and no text baked into an image.
-    images: [{ url: '/photography/hero-city.jpg', width: 2000, height: 900,
-      alt: 'A wide seafront road in Visakhapatnam, India.' }],
+    // NO og:image. There was one, pointing at the homepage photograph, and
+    // the photographs are gone. A link preview with a broken image is worse
+    // than a link preview with none: one looks unfinished, the other looks
+    // broken. This comes back when there is a picture worth sharing.
   },
   twitter: {
     card: 'summary_large_image',
     title: 'SaaradhiGo',
     description: 'Book a ride. The fare is agreed before the trip starts.',
-    images: ['/photography/hero-city.jpg'],
   },
 };
 

@@ -2,11 +2,9 @@
 
 import Link from 'next/link';
 import { ButtonLink } from '@/components/sg/Button';
-import { Photo } from '@/components/home/Photo';
 import { Serviceability } from '@/lib/booking';
 import { publicRideName } from '@/lib/vehicles';
 import { useT } from '@/i18n/LocaleProvider';
-import { usePages } from '@/i18n/usePages';
 
 /**
  * What a signed-out visitor sees after pressing "See ride options".
@@ -49,7 +47,6 @@ export function GuestBooking({
 }) {
   const t = useT();
   const g = t.guest;
-  const ridePage = usePages().ride;
   const hasTrip = Boolean(pickupLabel || destinationLabel);
   const outsideArea = service != null && !service.serviceable;
 
@@ -59,11 +56,12 @@ export function GuestBooking({
     <div className="hp hp-masthead">
       <h1 className="hp-h1">{g.heading}</h1>
 
-      {/* Two columns on a desktop. One column of text against half a screen
-          of black was the same unused space the drive page had. */}
-      <div className="bk-layout">
-        <div>
-
+      {/* One column. It was two, with a photograph holding the right half,
+          and the photograph was a Dubai-registered car -- on the screen a
+          rider in Hyderabad reaches after typing a Hyderabad pickup. The
+          column is capped so the text has a readable measure rather than
+          running the full width of a desktop. */}
+      <div className="bk-single">
         {hasTrip && (
           <div className="bk-trip">
             <p className="bk-trip__row">
@@ -123,20 +121,11 @@ export function GuestBooking({
           </>
         )}
 
-          <p className="hp-hint">
-            <Link href="/ride" className="sg-link">
-              {g.howItWorks}
-            </Link>
-          </p>
-        </div>
-
-        <div className="bk-layout__media">
-          <Photo
-            src="/photography/ride-sedan.jpg"
-            alt={ridePage.photoAlt ?? ''}
-            sizes="(max-width: 1024px) 100vw, 45vw"
-          />
-        </div>
+        <p className="hp-hint">
+          <Link href="/ride" className="sg-link">
+            {g.howItWorks}
+          </Link>
+        </p>
       </div>
     </div>
   );

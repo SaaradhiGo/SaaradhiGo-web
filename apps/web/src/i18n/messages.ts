@@ -19,13 +19,13 @@ import type { Language } from './locales';
  */
 const en: {
   nav: Record<'ride' | 'drive' | 'safety' | 'about' | 'help' | 'contact' | 'login' | 'signup' | 'menuOpen' | 'menuClose' | 'language', string>;
-  hero: Record<'titleTop' | 'titleBottom' | 'subtitle' | 'pickupLabel' | 'pickupPlaceholder' | 'destLabel' | 'destPlaceholder' | 'cta' | 'useLocation' | 'locating' | 'photoAlt', string>;
+  hero: Record<'titleTop' | 'titleBottom' | 'subtitle' | 'pickupLabel' | 'pickupPlaceholder' | 'destLabel' | 'destPlaceholder' | 'cta' | 'useLocation' | 'locating', string>;
   validation: Record<'pickupRequired' | 'destRequired' | 'geoDenied' | 'geoUnsupported' | 'searchFailed' | 'searchThrottled', string>;
   rides: Record<'heading' | 'lead' | 'loading' | 'failed' | 'empty', string>;
   rideNames: Record<'auto' | 'mini' | 'sedan' | 'suv', string>;
   rideBlurbs: Record<'auto' | 'mini' | 'sedan' | 'suv', string>;
   steps: Record<'heading' | 's1t' | 's1b' | 's2t' | 's2b' | 's3t' | 's3b', string>;
-  drive: Record<'heading' | 'body' | 'cta' | 'photoAlt', string>;
+  drive: Record<'heading' | 'body' | 'cta', string>;
   safety: Record<'heading' | 'lead' | 'pinT' | 'pinB' | 'trackT' | 'trackB' | 'alertT' | 'alertB', string>;
   apps: Record<'heading' | 'lead' | 'rider' | 'driver' | 'comingSoon', string>;
   closing: Record<'heading' | 'body' | 'cta' | 'support', string>;
@@ -58,7 +58,6 @@ const en: {
     cta: 'See ride options',
     useLocation: 'Use my current location',
     locating: 'Finding your location…',
-    photoAlt: 'A street near Hitec City in Hyderabad, India, with auto-rickshaws and motorcycles in daylight traffic.',
   },
   validation: {
     pickupRequired: 'Enter a pickup location.',
@@ -95,7 +94,6 @@ const en: {
     heading: 'Drive with SaaradhiGo',
     body: 'Interested in driving? Learn how to get started with SaaradhiGo.',
     cta: 'Become a driver',
-    photoAlt: 'A green and yellow auto-rickshaw being driven along a tree-lined road in India.',
   },
   safety: {
     heading: 'Safety',
@@ -170,7 +168,6 @@ const hi: Messages = {
     cta: 'सवारी विकल्प देखें',
     useLocation: 'मेरा वर्तमान स्थान उपयोग करें',
     locating: 'आपका स्थान खोजा जा रहा है…',
-    photoAlt: 'हैदराबाद के हाइटेक सिटी के पास एक सड़क, दिन के उजाले में ऑटो-रिक्शा और मोटरसाइकिलें।',
   },
   validation: {
     pickupRequired: 'पिकअप स्थान दर्ज करें।',
@@ -207,7 +204,6 @@ const hi: Messages = {
     heading: 'SaaradhiGo के साथ ड्राइव करें',
     body: 'ड्राइविंग में रुचि है? जानें कि SaaradhiGo के साथ शुरुआत कैसे करें।',
     cta: 'ड्राइवर बनें',
-    photoAlt: 'भारत में पेड़ों से घिरी सड़क पर चलता हरा-पीला ऑटो-रिक्शा।',
   },
   safety: {
     heading: 'सुरक्षा',
@@ -276,7 +272,6 @@ const te: Messages = {
     cta: 'ప్రయాణ ఎంపికలు చూడండి',
     useLocation: 'నా ప్రస్తుత ప్రదేశాన్ని ఉపయోగించండి',
     locating: 'మీ ప్రదేశాన్ని కనుగొంటున్నాం…',
-    photoAlt: 'హైదరాబాద్‌లోని హైటెక్ సిటీ సమీపంలోని వీధి, పగటి వెలుతురులో ఆటోలు మరియు మోటార్ సైకిళ్లు.',
   },
   validation: {
     pickupRequired: 'పికప్ ప్రదేశాన్ని నమోదు చేయండి.',
@@ -313,7 +308,6 @@ const te: Messages = {
     heading: 'SaaradhiGoతో డ్రైవ్ చేయండి',
     body: 'డ్రైవింగ్‌పై ఆసక్తి ఉందా? SaaradhiGoతో ఎలా ప్రారంభించాలో తెలుసుకోండి.',
     cta: 'డ్రైవర్ కండి',
-    photoAlt: 'భారతదేశంలో చెట్ల వరసలో ఉన్న రహదారిపై వెళుతున్న పచ్చ-పసుపు ఆటో.',
   },
   safety: {
     heading: 'భద్రత',
@@ -382,7 +376,6 @@ const es: Messages = {
     cta: 'Ver opciones de viaje',
     useLocation: 'Usar mi ubicación actual',
     locating: 'Buscando tu ubicación…',
-    photoAlt: 'Una calle cerca de Hitec City en Hyderabad, India, con auto-rickshaws y motocicletas a la luz del día.'
   },
   validation: {
     pickupRequired: 'Introduce un lugar de recogida.',
@@ -419,7 +412,6 @@ const es: Messages = {
     heading: 'Conduce con SaaradhiGo',
     body: '¿Te interesa conducir? Descubre cómo empezar con SaaradhiGo.',
     cta: 'Hazte conductor',
-    photoAlt: 'Un auto-rickshaw verde y amarillo circulando por una carretera arbolada en India.',
   },
   safety: {
     heading: 'Seguridad',

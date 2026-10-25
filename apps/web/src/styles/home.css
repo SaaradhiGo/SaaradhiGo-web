@@ -111,14 +111,14 @@
    96px. That reserved emptiness is most of what made the page feel sparse.
    The hero is now as tall as its contents, and the photograph beside it sets
    the floor. */
+/* ONE COLUMN. It was 45/55 with a photograph in the right-hand slot, and
+   the photograph was a phone snapshot of two men standing in a road. The
+   hero is now the headline, the subtitle and the booking fields, which is
+   what the page is for; the measure is capped so the headline does not run
+   the full width of a desktop. */
 .hp-hero {
-  display: grid;
-  grid-template-columns: 45fr 55fr;
-  gap: 48px;
-  align-items: center;
-  /* No bottom padding: the next section brings its own 96px, and the two
-     together left a gap you could park in. */
-  padding: 56px 0 0;
+  max-width: 720px;
+  padding: 72px 0 8px;
 }
 .hp-hero__title {
   margin: 0;
@@ -138,17 +138,6 @@
 }
 .hp-hero__form { margin-top: 32px; display: grid; gap: 12px; max-width: 460px; }
 
-/* 3:2, not 4:3. The photographs are wide -- better than 2:1 -- and the
-   squarer box threw most of each one away. */
-.hp-hero__media {
-  width: 100%;
-  aspect-ratio: 3 / 2;
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--bg-100);
-  border: 1px solid var(--line);
-}
-.hp-hero__media img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 /* The slot a licensed photograph goes into. It states what is missing
    instead of standing in for it with a decorative graphic. */
@@ -223,9 +212,6 @@
 
 /* --- split section (drive) ---------------------------------------------- */
 
-.hp-split { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
-.hp-split__media { aspect-ratio: 3 / 2; border-radius: 12px; overflow: hidden; background: var(--bg-100); border: 1px solid var(--line); }
-.hp-split__media img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 /* --- safety: a factual list, not marketing cards ------------------------ */
 
@@ -267,9 +253,8 @@
    Checked at 320, 390, 768, 1024 and 1440. */
 
 @media (max-width: 1024px) {
-  .hp-hero { grid-template-columns: 1fr; gap: 40px; min-height: 0; padding: 48px 0; }
+  .hp-hero { padding: 48px 0 8px; }
   .hp-hero__title { font-size: 48px; }
-  .hp-split { grid-template-columns: 1fr; gap: 32px; }
   .hp-steps { gap: 32px; }
 }
 
@@ -393,45 +378,6 @@
   .hp-lang__button { padding: 0 10px; }
 }
 
-/* --- photography ---------------------------------------------------------
-
-   EVERY PHOTO SLOT ESTABLISHES A CONTAINING BLOCK, and they are listed here
-   together rather than each remembering for itself.
-
-   `<Photo>` renders a `fill` image, which is `position: absolute`. A slot
-   without `position: relative` therefore hands the photograph the page as
-   its containing block -- and because the containing block is then OUTSIDE
-   the slot, `overflow: hidden` does not clip it either. That is not a
-   subtle misalignment: `.hp-split__media` was missing this line, so the
-   drive photograph stretched from the top of the homepage down over the
-   hero, the ride classes and the three steps, hiding all three. Caught in a
-   screenshot, not by the type checker, the linter or the build, none of
-   which can see a painted page. */
-
-.hp-hero__media, .hp-split__media, .hp-band { position: relative; }
-.hp-hero__media img, .hp-split__media img, .hp-band img { display: block; }
-
-/* Credits. Required by CC BY, so this is licence compliance rather than
-   decoration: collapsed by default because it is reference material, but
-   always present. */
-.hp-credits { margin-top: 32px; }
-.hp-credits summary {
-  cursor: pointer; font-family: var(--font-sans); font-size: 13px;
-  color: var(--on-noir-muted); list-style: none;
-}
-.hp-credits summary::-webkit-details-marker { display: none; }
-.hp-credits summary::before { content: "+ "; }
-.hp-credits[open] summary::before { content: "– "; }
-.hp-credits summary:hover { color: var(--on-noir); }
-.hp-credits ul {
-  margin: 12px 0 0; padding: 0; list-style: none;
-  display: grid; gap: 6px;
-  font-family: var(--font-sans); font-size: 12px; line-height: 1.6;
-  color: var(--on-noir-muted);
-}
-.hp-credits a { color: var(--on-noir-muted); text-decoration: underline; }
-.hp-credits a:hover { color: var(--gold-500); }
-
 /* --- interior public pages ----------------------------------------------
    /ride, /drive, /safety, /about and /help share one shell, so the site
    reads as one site rather than five pages that each invented a layout.
@@ -547,8 +493,6 @@
 
 /* A full-width photograph closing a page. 3:1 on desktop so it reads as a
    band rather than a hero competing with the page's own title. */
-.hp-band { aspect-ratio: 3 / 1; border-radius: 12px; overflow: hidden; background: var(--bg-100); border: 1px solid var(--line); }
-.hp-band img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 @media (max-width: 1023px) {
   .hp-h1 { font-size: 40px; }
@@ -564,8 +508,7 @@
   .hp-masthead .hp-lead { font-size: 17px; }
   .hp-blocks { gap: 40px; }
   .hp-topics { columns: 1; }
-  .hp-band { aspect-ratio: 16 / 9; }
-}
+  }
 
 @media (max-width: 480px) {
   .hp-h1 { font-size: 30px; }
@@ -611,7 +554,6 @@
 }
 
 /* A band that can carry more of a wide street scene than 3:1 allows. */
-.hp-band--tall { aspect-ratio: 21 / 9; }
 
 /* Questions in two columns. Four short answers stacked in one column left
    half the page empty beside them -- the same unused space the photograph
@@ -622,8 +564,7 @@
 .hp-qa--split > div:last-child { border-bottom: none; }
 
 @media (max-width: 768px) {
-  .hp-band--tall { aspect-ratio: 16 / 9; }
-  .hp-qa--split { columns: 1; }
+    .hp-qa--split { columns: 1; }
   .hp-qa--split > div:last-child { border-bottom: 1px solid var(--line); }
 }
 
@@ -689,14 +630,10 @@
 /* The signed-out booking screen: the trip and its actions on the left, a
    photograph holding the right. Single column under 1024px, where the
    photograph goes under the actions rather than squeezing them. */
-.bk-layout { display: grid; grid-template-columns: 55fr 45fr; gap: 64px; align-items: start; margin-top: 8px; }
-.bk-layout__media {
-  position: relative; aspect-ratio: 4 / 3; margin-top: 32px;
-  border-radius: 12px; overflow: hidden;
-  background: var(--bg-100); border: 1px solid var(--line);
-}
-.bk-layout__media img { display: block; }
 @media (max-width: 1024px) {
-  .bk-layout { grid-template-columns: 1fr; gap: 40px; }
-  .bk-layout__media { aspect-ratio: 16 / 9; }
-}
+    }
+
+/* The signed-out booking screen, now that the photograph beside it is gone.
+   Capped rather than full width: a line of body text running 1200px is not
+   a layout, it is a wall. */
+.bk-single { max-width: 680px; }

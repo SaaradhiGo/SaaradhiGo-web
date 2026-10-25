@@ -1,7 +1,6 @@
 'use client';
 
 import { ButtonLink } from '@/components/sg/Button';
-import { Photo } from '@/components/home/Photo';
 import { Blocks, Masthead } from './PageShell';
 import { usePages } from '@/i18n/usePages';
 import { useT } from '@/i18n/LocaleProvider';
@@ -39,21 +38,6 @@ export function DriveContent() {
         </div>
       </section>
 
-      {/* THE PHOTOGRAPH IS A BAND, NOT A COLUMN.
-          It used to sit beside the questions in a half-width box, which left
-          a tall empty column above and below it and shrank an already-wide
-          street scene to the size of a stamp. Full width, it is the vehicle
-          at the size a driver page should show it, and the questions get the
-          whole column underneath. */}
-      <section className="hp hp-section--tight">
-        <div className="hp-band hp-band--tall">
-          <Photo
-            src="/photography/drive-autos.jpg"
-            alt={t.drive.photoAlt}
-            sizes="100vw"
-          />
-        </div>
-      </section>
 
       <section className="hp hp-section--tight">
         <dl className="hp-qa hp-qa--split">

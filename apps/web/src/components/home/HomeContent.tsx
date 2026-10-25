@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { ButtonLink } from '@/components/sg/Button';
 import { HeroBooking } from '@/components/home/HeroBooking';
-import { Photo } from '@/components/home/Photo';
 import { RideCategories } from '@/components/home/RideCategories';
 import { Lock, Phone, Shield } from '@/components/sg/icons';
 import { useT } from '@/i18n/LocaleProvider';
@@ -42,24 +41,20 @@ export function HomeContent() {
   return (
     <>
       {/* 1 — Hero ------------------------------------------------------- */}
+      {/* 1 — Hero -------------------------------------------------------
+          NO PHOTOGRAPH. There was one, and it was a phone snapshot of two
+          men standing in a road. A hero image has to be better than the
+          typography it sits beside, and nothing available under a free
+          licence was. So the hero is the headline and the one thing this
+          page is for: the two fields and the button. */}
       <section className="hp" aria-labelledby="hero-title">
         <div className="hp-hero">
-          <div>
-            <h1 id="hero-title" className="hp-hero__title">
-              {t.hero.titleTop}
-              <span>{t.hero.titleBottom}</span>
-            </h1>
-            <p className="hp-hero__sub">{t.hero.subtitle}</p>
-            <HeroBooking />
-          </div>
-
-          <div className="hp-hero__media">
-            <Photo
-              src="/photography/hero-city.jpg"
-              alt={t.hero.photoAlt}
-              priority
-            />
-          </div>
+          <h1 id="hero-title" className="hp-hero__title">
+            {t.hero.titleTop}
+            <span>{t.hero.titleBottom}</span>
+          </h1>
+          <p className="hp-hero__sub">{t.hero.subtitle}</p>
+          <HeroBooking />
         </div>
       </section>
 
@@ -84,7 +79,7 @@ export function HomeContent() {
 
       {/* 4 — Drive with SaaradhiGo --------------------------------------- */}
       <section className="hp hp-section" id="drive" aria-labelledby="drive-h">
-        <div className="hp-split">
+        <div>
           <div>
             <h2 id="drive-h" className="hp-h2">
               {t.drive.heading}
@@ -97,13 +92,6 @@ export function HomeContent() {
                 {t.drive.cta}
               </ButtonLink>
             </div>
-          </div>
-          <div className="hp-split__media">
-            <Photo
-              src="/photography/drive-autos.jpg"
-              alt={t.drive.photoAlt}
-              sizes="(max-width: 1024px) 100vw, 50vw"
-            />
           </div>
         </div>
       </section>

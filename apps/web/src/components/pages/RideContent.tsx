@@ -1,7 +1,6 @@
 'use client';
 
 import { ButtonLink } from '@/components/sg/Button';
-import { Photo } from '@/components/home/Photo';
 import { Blocks, Masthead } from './PageShell';
 import { usePages } from '@/i18n/usePages';
 
@@ -27,16 +26,6 @@ export function RideContent() {
           <ButtonLink href="/book" variant="primary" size="lg">
             {p.cta}
           </ButtonLink>
-        </div>
-      </section>
-
-      <section className="hp hp-section">
-        <div className="hp-band">
-          <Photo
-            src="/photography/ride-sedan.jpg"
-            alt={p.photoAlt ?? ''}
-            sizes="100vw"
-          />
         </div>
       </section>
     </>
