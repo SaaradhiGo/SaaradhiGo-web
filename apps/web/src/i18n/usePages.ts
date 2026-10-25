@@ -11,5 +11,5 @@ import { PAGES, type PagesCopy } from './pages';
  * can never disagree about which language the visitor chose.
  */
 export function usePages(): PagesCopy {
-  return PAGES[useLocale().locale];
+  return PAGES[useLocale().language];
 }

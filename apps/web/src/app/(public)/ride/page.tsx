@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   description:
     'How booking works on SaaradhiGo: set a pickup and destination, compare '
     + 'fares across vehicle classes, and track your trip with a ride PIN.',
+  alternates: { canonical: '/ride' },
 };
 
 export default function RidePage() {

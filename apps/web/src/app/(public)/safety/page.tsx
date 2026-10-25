@@ -7,6 +7,7 @@ export const metadata: Metadata = {
     'The safety features running on SaaradhiGo today: a server-verified ride '
     + 'PIN, live trip tracking, and safety alerts that reach our operations '
     + 'team.',
+  alternates: { canonical: '/safety' },
 };
 
 export default function SafetyPage() {

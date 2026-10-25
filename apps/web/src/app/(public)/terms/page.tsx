@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import { SUPPORT_EMAIL } from '@/lib/support';
 
 export const metadata: Metadata = {
   title: 'Terms of service — SaaradhiGo',
   description: 'The terms on which you use SaaradhiGo as a rider or a driver.',
+  alternates: { canonical: '/terms' },
 };
 
 // Same standing as the privacy page: written from how the platform actually
@@ -67,7 +69,7 @@ const sections = [
     h: 'Law and contact',
     p: [
       'These terms are governed by the laws of India.',
-      'Questions: support@saaradhigo.in',
+      `Questions: ${SUPPORT_EMAIL}`,
     ],
   },
 ];

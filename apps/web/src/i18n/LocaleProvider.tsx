@@ -9,67 +9,103 @@ import {
   useState,
 } from 'react';
 import {
-  DEFAULT_LOCALE,
-  LOCALE_INFO,
+  DEFAULT_LANGUAGE,
+  DEFAULT_MARKET,
+  LANGUAGE_INFO,
+  type Language,
   type Locale,
   type Market,
-  isLocale,
-  isMarket,
-  resolveLocale,
+  languageFromStored,
+  localeFor,
+  marketFromStored,
+  resolveLanguage,
+  resolveMarket,
 } from './locales';
 import { MESSAGES, type Messages } from './messages';
 
-const LOCALE_KEY = 'sg-locale';
+const LANGUAGE_KEY = 'sg-language';
 const MARKET_KEY = 'sg-market';
+/** What builds before the language/market split wrote, e.g. "te-IN". */
+const LEGACY_LOCALE_KEY = 'sg-locale';
+
+/**
+ * The market this build serves.
+ *
+ * It is a build-time value rather than something guessed in the browser: a
+ * deployment knows which market it is for, and a browser does not. A US
+ * deployment sets this to `US`.
+ */
+const DEPLOYMENT_MARKET: Market =
+  (process.env.NEXT_PUBLIC_MARKET as Market) || DEFAULT_MARKET;
 
 type Ctx = {
-  locale: Locale;
+  /** What the copy is written in. */
+  language: Language;
+  /** Where we are serving: currency, phone and date formatting. */
   market: Market;
+  /** The two joined, for `<html lang>` and `Intl`. */
+  locale: Locale;
   t: Messages;
-  setLocale: (l: Locale) => void;
-  /** False until the stored preference has been read, to avoid a flash. */
+  /** Changes the language ONLY. The market is untouched and stays stored. */
+  setLanguage: (l: Language) => void;
+  /** Changes the market ONLY. The language is untouched. */
+  setMarket: (m: Market) => void;
+  /** False until the stored preferences have been read, to avoid a flash. */
   ready: boolean;
 };
 
 const LocaleContext = createContext<Ctx | null>(null);
 
 /**
- * Holds the visitor's market and language, and keeps them.
+ * Holds the visitor's language and market, separately, and keeps both.
  *
- * THE SERVER RENDERS THE DEFAULT, THE CLIENT CORRECTS IT. The preference
- * lives in `localStorage`, which no server render can see, so the first
- * paint is the deployment default and an effect switches it. `ready` lets a
- * control that would otherwise flash the wrong flag wait one tick; the page
- * copy does not bother, because showing English for one frame is better than
+ * TWO KEYS, NOT ONE. They used to be a single stored locale, which meant
+ * every language carried a country on its back: picking Spanish moved an
+ * Indian visitor to the US market and its currency formatting. They are now
+ * independent, each with its own storage key and its own setter, so a
+ * Spanish speaker in India reads Spanish copy with Indian formatting.
+ *
+ * THE SERVER RENDERS THE DEFAULT, THE CLIENT CORRECTS IT. Preferences live
+ * in `localStorage`, which no server render can see, so the first paint is
+ * the deployment default and an effect switches it. `ready` lets a control
+ * that would otherwise flash the wrong value wait one tick; the page copy
+ * does not bother, because showing English for one frame is better than
  * showing nothing.
  *
  * A MANUAL CHOICE IS NEVER SILENTLY RESET. Once someone picks a language it
  * is stored and wins over every other signal, including the browser's, on
- * every later visit. Picking a market moves the language only if the current
- * one is not offered in that market -- choosing "United States" while
- * reading Spanish keeps Spanish, because es-US exists.
+ * every later visit.
  */
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
+  const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
+  const [market, setMarketState] = useState<Market>(DEPLOYMENT_MARKET);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    let savedLocale: string | null = null;
+    let savedLanguage: string | null = null;
     let savedMarket: string | null = null;
+    let legacy: string | null = null;
     try {
-      savedLocale = localStorage.getItem(LOCALE_KEY);
+      savedLanguage = localStorage.getItem(LANGUAGE_KEY);
       savedMarket = localStorage.getItem(MARKET_KEY);
+      legacy = localStorage.getItem(LEGACY_LOCALE_KEY);
     } catch {
-      // Private browsing refuses storage. The default below still applies.
+      // Private browsing refuses storage. The defaults below still apply.
     }
-    setLocaleState(
-      resolveLocale({
-        savedLocale,
-        savedMarket,
-        deploymentMarket: 'IN',
-        browserLanguages: typeof navigator === 'undefined' ? [] : navigator.languages ?? [],
-      }),
-    );
+
+    // A visitor who chose Telugu before the storage format changed keeps
+    // Telugu. Migrating beats resetting them to English for our convenience.
+    const language = resolveLanguage({
+      savedLanguage: savedLanguage ?? languageFromStored(legacy),
+      browserLanguages: typeof navigator === 'undefined' ? [] : navigator.languages ?? [],
+    });
+    const market = resolveMarket({
+      savedMarket: savedMarket ?? marketFromStored(legacy),
+      deploymentMarket: DEPLOYMENT_MARKET,
+    });
+
+    setLanguageState(language);
+    setMarketState(market);
     setReady(true);
   }, []);
 
@@ -77,34 +113,39 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   // anything that hyphenates or speaks the page.
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    document.documentElement.lang = LOCALE_INFO[locale].tag;
-    document.documentElement.dir = LOCALE_INFO[locale].dir;
-  }, [locale]);
+    document.documentElement.lang = localeFor(language, market);
+    document.documentElement.dir = LANGUAGE_INFO[language].dir;
+  }, [language, market]);
 
-  const setLocale = useCallback((next: Locale) => {
-    setLocaleState(next);
+  const setLanguage = useCallback((next: Language) => {
+    setLanguageState(next);
     try {
-      localStorage.setItem(LOCALE_KEY, next);
-      localStorage.setItem(MARKET_KEY, LOCALE_INFO[next].market);
+      localStorage.setItem(LANGUAGE_KEY, next);
     } catch {
       /* preference is not remembered; the session still works */
     }
   }, []);
 
-  // There is no `setMarket`. The header's menu offers LANGUAGES, and the
-  // market follows from the one chosen -- see `localeForLanguage`. A
-  // separate country control was the configuration panel this product does
-  // not want, so the only way the market moves is through a language.
+  const setMarket = useCallback((next: Market) => {
+    setMarketState(next);
+    try {
+      localStorage.setItem(MARKET_KEY, next);
+    } catch {
+      /* preference is not remembered; the session still works */
+    }
+  }, []);
 
   const value = useMemo<Ctx>(
     () => ({
-      locale,
-      market: LOCALE_INFO[locale].market,
-      t: MESSAGES[locale],
-      setLocale,
+      language,
+      market,
+      locale: localeFor(language, market),
+      t: MESSAGES[language],
+      setLanguage,
+      setMarket,
       ready,
     }),
-    [locale, setLocale, ready],
+    [language, market, setLanguage, setMarket, ready],
   );
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
@@ -122,5 +163,3 @@ export function useLocale(): Ctx {
 export function useT(): Messages {
   return useLocale().t;
 }
-
-export { isLocale, isMarket };

@@ -1,4 +1,4 @@
-import type { Locale } from './locales';
+import type { Language } from './locales';
 
 /**
  * Every string the public homepage shows, in all five locales.
@@ -463,10 +463,8 @@ const es: Messages = {
   footer: { privacy: 'Política de privacidad', terms: 'Términos del servicio', rights: 'SaaradhiGo' },
 };
 
-export const MESSAGES: Record<Locale, Messages> = {
-  'en-IN': en,
-  'en-US': en,
-  'te-IN': te,
-  'hi-IN': hi,
-  'es-US': es,
-};
+/* KEYED BY LANGUAGE. `en-IN` and `en-US` were two keys for one dictionary,
+   which is what made the market look like part of the language. The copy is
+   the same English wherever it is read; what differs by market is currency
+   and phone formatting, and that is the market's job, not the dictionary's. */
+export const MESSAGES: Record<Language, Messages> = { en, te, hi, es };

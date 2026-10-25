@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { SITE_URL } from '@/lib/support';
 import './globals.css';
 
 // The root layout now serves BOTH the public site and the ops console, so
@@ -7,6 +8,14 @@ import './globals.css';
 // themselves. Leaving 'Ops Console' here put an internal tool's name in the
 // browser tab and in search results for every public page.
 export const metadata: Metadata = {
+  // `metadataBase` is what makes every relative canonical, Open Graph and
+  // Twitter URL below resolve to an absolute one. Without it Next emits
+  // relative og:url values, which crawlers and link unfurlers ignore.
+  //
+  // It comes from NEXT_PUBLIC_SITE_URL so QA describes itself as QA. A QA
+  // deployment that claimed `https://saaradhigo.com` as its canonical would
+  // be asking search engines to treat a test database as the real site.
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'SaaradhiGo',
     template: '%s',
@@ -15,6 +24,27 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   applicationName: 'Saaradhi Go',
   appleWebApp: { title: 'Saaradhi Go', capable: true, statusBarStyle: 'black-translucent' },
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    siteName: 'SaaradhiGo',
+    url: '/',
+    title: 'SaaradhiGo',
+    description:
+      'Book a ride in Hyderabad, Vijayawada, Visakhapatnam and Warangal. '
+      + 'The fare is agreed before the trip starts.',
+    locale: 'en_IN',
+    // The homepage hero, which is a licensed photograph of a city we serve.
+    // No invented brand artwork and no text baked into an image.
+    images: [{ url: '/photography/hero-city.jpg', width: 2000, height: 900,
+      alt: 'A wide seafront road in Visakhapatnam, India.' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SaaradhiGo',
+    description: 'Book a ride. The fare is agreed before the trip starts.',
+    images: ['/photography/hero-city.jpg'],
+  },
 };
 
 // `noir`, so the browser chrome and the area behind a rubber-band scroll match

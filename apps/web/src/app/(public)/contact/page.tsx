@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description:
     'Get help with a ride, a payment or a driver application. Reach the '
     + 'SaaradhiGo support team.',
+  alternates: { canonical: '/contact' },
 };
 
 export default function ContactPage() {

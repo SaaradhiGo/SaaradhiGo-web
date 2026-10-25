@@ -2,35 +2,28 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
-import {
-  LANGUAGE_CHOICES,
-  LOCALE_INFO,
-  languageOf,
-  localeForLanguage,
-} from '@/i18n/locales';
+import { LANGUAGES, LANGUAGE_INFO } from '@/i18n/locales';
 
 /**
  * Language. That is the whole control.
  *
  * IT USED TO ASK FOR A COUNTRY FIRST. A row of country chips sat above the
- * language list, with a paragraph explaining that changing country changes
+ * language list with a paragraph explaining that changing country changes
  * formatting but not where cars are available -- a configuration panel in a
- * header, in a product whose other buttons say "See ride options". It was
- * rejected twice. This is the menu a consumer app has: four languages, each
- * written in itself, with a tick on the current one.
+ * header, in a product whose other buttons say "See ride options".
  *
- * THE COUNTRY IS DERIVED, NOT ASKED. `en-IN` and `en-US` are both "English",
- * so they appear once; picking a language keeps the market already in use
- * where that language is offered there, and otherwise moves to the market
- * that does offer it. Nobody has to know what a market is.
+ * AND THEN IT MOVED THE COUNTRY ANYWAY. The version after that listed
+ * languages and derived the market from the one picked, so choosing Spanish
+ * relocated an Indian visitor to the United States. Language and market are
+ * separate values now (see `i18n/locales.ts`); this control sets the
+ * language and does not touch the market at all.
  *
- * LOCATION-AWARE BY DEFAULT. The visitor never has to open this at all: the
- * deployment's market decides the country, and the browser's languages pick
- * which of that market's languages to open in. This menu exists to override
- * that, and the override is remembered.
+ * The market is the deployment's, remembered if the visitor ever overrides
+ * it. It is not in this menu because a rider choosing how to read the site
+ * is not telling us where they are.
  */
 export function LanguagePicker({ compact = false }: { compact?: boolean }) {
-  const { locale, market, t, setLocale, ready } = useLocale();
+  const { language, t, setLanguage, ready } = useLocale();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement | null>(null);
 
@@ -52,8 +45,6 @@ export function LanguagePicker({ compact = false }: { compact?: boolean }) {
     };
   }, [open]);
 
-  const current = languageOf(locale);
-
   return (
     <div className="hp-lang" ref={root}>
       <button
@@ -63,39 +54,35 @@ export function LanguagePicker({ compact = false }: { compact?: boolean }) {
         aria-haspopup="true"
         onClick={() => setOpen((v) => !v)}
         // The label names the control; the value is announced as its content.
-        aria-label={`${t.nav.language}: ${LOCALE_INFO[locale].label}`}
+        aria-label={`${t.nav.language}: ${LANGUAGE_INFO[language].label}`}
       >
         <GlobeIcon />
         {/* Suppressed until the stored preference is read, so the button does
             not flash the default language at someone who chose another. */}
         <span className={compact ? 'sr-only' : undefined}>
-          {ready ? LOCALE_INFO[locale].label : ' '}
+          {ready ? LANGUAGE_INFO[language].label : ' '}
         </span>
       </button>
 
       {open && (
         <div className="hp-lang__panel" role="group" aria-label={t.nav.language}>
           <div className="hp-lang__list">
-            {LANGUAGE_CHOICES.map((choice) => {
-              const target = localeForLanguage(choice.base, market);
-              const selected = current === choice.base;
-              return (
-                <button
-                  key={choice.base}
-                  type="button"
-                  className="hp-lang__item"
-                  aria-pressed={selected}
-                  lang={choice.base}
-                  onClick={() => {
-                    setLocale(target);
-                    setOpen(false);
-                  }}
-                >
-                  {choice.label}
-                  {selected && <CheckIcon />}
-                </button>
-              );
-            })}
+            {LANGUAGES.map((code) => (
+              <button
+                key={code}
+                type="button"
+                className="hp-lang__item"
+                aria-pressed={language === code}
+                lang={code}
+                onClick={() => {
+                  setLanguage(code);
+                  setOpen(false);
+                }}
+              >
+                {LANGUAGE_INFO[code].label}
+                {language === code && <CheckIcon />}
+              </button>
+            ))}
           </div>
         </div>
       )}

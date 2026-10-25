@@ -1,4 +1,4 @@
-import type { Locale } from './locales';
+import type { Language } from './locales';
 
 /**
  * Body copy for the public pages beyond the homepage.
@@ -520,10 +520,4 @@ const es: PagesCopy = {
   },
 };
 
-export const PAGES: Record<Locale, PagesCopy> = {
-  'en-IN': en,
-  'en-US': en,
-  'hi-IN': hi,
-  'te-IN': te,
-  'es-US': es,
-};
+export const PAGES: Record<Language, PagesCopy> = { en, hi, te, es };

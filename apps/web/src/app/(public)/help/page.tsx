@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description:
     'Get help with a SaaradhiGo ride, your account, payments, safety, or '
     + 'driving with us.',
+  alternates: { canonical: '/help' },
 };
 
 export default function HelpPage() {

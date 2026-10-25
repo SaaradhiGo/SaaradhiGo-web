@@ -12,8 +12,12 @@ const nextConfig = {
   // set the variable produced a site that looked configured and silently
   // failed every request against a dead host. Falling back to the local
   // backend makes that mistake obvious on the machine that made it, and
-  // matches what `src/lib/api.ts` already defaults to. The QA and
-  // production services set the variable, so neither is affected.
+  // matches what `src/lib/api.ts` already defaults to.
+  //
+  // The production target is https://api.saaradhigo.com/api/v1. It is NOT
+  // the default here, and must not become one until that hostname exists:
+  // a default pointing at a host that does not resolve is the same trap in
+  // a new domain. QA and production both set the variable explicitly.
   env: {
     NEXT_PUBLIC_API_BASE_URL:
       process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',

@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description:
     'SaaradhiGo is a ride-hailing service built for Indian cities, where the '
     + 'fare is agreed before the trip begins.',
+  alternates: { canonical: '/about' },
 };
 
 export default function AboutPage() {

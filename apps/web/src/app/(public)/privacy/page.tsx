@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
+import { SUPPORT_EMAIL } from '@/lib/support';
 
 export const metadata: Metadata = {
   title: 'Privacy policy — SaaradhiGo',
   description:
     'What personal data SaaradhiGo collects, why, how long it is kept, and '
     + 'the rights you have over it.',
+  alternates: { canonical: '/privacy' },
 };
 
 // DRAFT, AND SAID SO ON THE PAGE.
@@ -66,7 +68,7 @@ const sections = [
       'You can ask us to delete your account.',
       'You can ask us to correct anything that is wrong — most of it you can edit yourself in the app.',
       'You can withdraw consent for things that are not essential to providing a ride.',
-      'To exercise any of these, email support@saaradhigo.in from your registered address or number.',
+      `To exercise any of these, email ${SUPPORT_EMAIL} from your registered address or number.`,
     ],
   },
   {
@@ -86,7 +88,7 @@ const sections = [
     h: 'Changes and contact',
     p: [
       'If we change this policy we will post the new version here and, for significant changes, tell you in the app.',
-      'Questions about this policy: support@saaradhigo.in',
+      `Questions about this policy: ${SUPPORT_EMAIL}`,
     ],
   },
 ];
