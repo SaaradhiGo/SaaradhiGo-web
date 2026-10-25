@@ -571,7 +571,7 @@ function BookPageInner() {
     const lat = Number(latS);
     const lng = Number(lngS);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      setError('Enter the destination as "latitude, longitude".');
+      setError('Search for a destination, or paste it as "latitude, longitude".');
       return;
     }
     setDestination({ lat, lng });
@@ -1005,12 +1005,13 @@ function BookPageInner() {
               </RouteFields>
             )}
 
-            {/* Pickup is entered as coordinates on this deployment, and that
-                is said once, quietly, rather than discovered through a failed
-                parse. */}
+            {/* The hint used to read "type a pickup as latitude, longitude",
+                which was accurate when the field only parsed coordinates and
+                is now simply wrong: it searches. Coordinates still work, so
+                they are mentioned last, as the fallback they are. */}
             {!bothEndsSet && !pickup && (
               <p className="caption text-ink-subtle">
-                Use your location, or type a pickup as “latitude, longitude”.
+                Search for a place, use your location, or paste coordinates.
               </p>
             )}
 
