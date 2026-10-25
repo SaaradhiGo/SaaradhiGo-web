@@ -73,7 +73,7 @@ export function HomeContent() {
           height={360}
           // 460px is the widest it is ever drawn; `sizes` keeps the
           // optimiser from shipping a larger variant than the CSS uses.
-          sizes="(max-width: 1023px) 0px, 460px"
+          sizes="(max-width: 1023px) 0px, 440px"
           draggable={false}
           priority
         />

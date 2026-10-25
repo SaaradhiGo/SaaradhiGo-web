@@ -23,6 +23,10 @@ export function writeTokens({ access, refresh }: { access: string; refresh?: str
 export function clearTokens() {
   window.localStorage.removeItem(TOKEN_KEY);
   window.localStorage.removeItem(REFRESH_KEY);
+  // The operator's own record goes with the session it belonged to. Leaving
+  // it behind would have the console greeting the previous operator by name
+  // on the sign-in screen.
+  window.localStorage.removeItem('saaradhi_admin_user');
 }
 
 export class ApiError extends Error {
@@ -40,6 +44,16 @@ export class ApiError extends Error {
     public code: string,
     message: string,
     public fromServer: boolean = false,
+    /**
+     * Which input the server blamed, when it named one.
+     *
+     * Without this a field error could only be shown as a banner at the top
+     * of the form. "Enter a valid email address." then appeared on whatever
+     * step the person happened to be on -- on the driver sign-up it landed
+     * on the contact-number step, pointing at a field that was fine, while
+     * the email box it was about was on a screen they had already left.
+     */
+    public field: string | null = null,
   ) {
     super(message);
   }
@@ -87,6 +101,7 @@ async function call<T>(
       err.code ?? 'UNKNOWN_ERROR',
       authored ? err.message : `HTTP ${resp.status}`,
       authored,
+      typeof err.field === 'string' && err.field !== 'general' ? err.field : null,
     );
   }
   // Standard backend envelope: {status, data} for success
@@ -140,6 +155,82 @@ export async function loginWithOtp(phone: string, otp: string) {
       'AUTH_NO_TOKEN',
       'Signed in but the server returned no token.',
     );
+  }
+  return data;
+}
+
+export const ADMIN_USER_KEY = 'saaradhi_admin_user';
+
+export type OperatorUser = {
+  id?: number | string;
+  full_name?: string | null;
+  email?: string | null;
+  phone_number?: string | null;
+  role?: string | null;
+};
+
+export function readOperator(): OperatorUser | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(ADMIN_USER_KEY);
+    return raw ? (JSON.parse(raw) as OperatorUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sign an operator in with an email address (or phone) and a password.
+ *
+ * THE CONSOLE HAD NO PASSWORD DOOR. Its only sign-in was phone + one-time
+ * code, the same OTP route the rider apps use. An operator account created
+ * with an email address and a password -- which is how `admin@saaradhigo.com`
+ * exists -- had nothing it could sign in to: the code route is keyed on a
+ * phone number, and `/auth/admin/login/` only accepted a phone number too.
+ *
+ * `/auth/admin/login/` now takes either identifier. It is the right endpoint
+ * rather than `/auth/email/login/` because it is the one that enforces
+ * `is_operator` BEFORE minting a token, so a token from it always represents
+ * an account allowed to operate the platform.
+ */
+export async function adminLoginWithPassword(
+  identifier: string,
+  password: string,
+  mfaCode?: string,
+) {
+  const looksLikeEmail = identifier.includes('@');
+  type LoginResp = {
+    token?: string;
+    refresh_token?: string;
+    user?: OperatorUser;
+  };
+  const data = await api.post<LoginResp>(
+    '/auth/admin/login/',
+    {
+      ...(looksLikeEmail
+        ? { email: identifier.trim() }
+        : { phone_number: identifier.trim() }),
+      password,
+      ...(mfaCode ? { mfa_code: mfaCode } : {}),
+    },
+    // Explicitly no token: a stale, expired console session in localStorage
+    // would otherwise be sent on the request that is meant to replace it.
+    null,
+  );
+  if (!data?.token) {
+    throw new ApiError(
+      200,
+      'AUTH_NO_TOKEN',
+      'Signed in but the server returned no token.',
+    );
+  }
+  writeTokens({ access: data.token, refresh: data.refresh_token });
+  try {
+    if (data.user) {
+      window.localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(data.user));
+    }
+  } catch {
+    /* private mode: the console still works, it just cannot greet by name */
   }
   return data;
 }

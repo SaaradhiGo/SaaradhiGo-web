@@ -1,69 +1,85 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button, ButtonLink } from '@/components/sg/Button';
-import { SESSION_EVENT, clearRiderTokens, readRiderToken } from '@/lib/publicAuth';
+import { clearRiderTokens } from '@/lib/publicAuth';
+import { useSession } from '@/lib/useSession';
 import { useT } from '@/i18n/LocaleProvider';
 
 /**
  * The right-hand side of the nav.
  *
- * It existed as two static links, so a signed-in rider was still invited to
- * "Sign in" and "Sign up" — controls that did nothing useful and implied the
- * session had not worked. Now it reflects the session: your trips and a sign
- * out when you have one, the two invitations when you do not.
+ * IT USED TO KNOW ONLY THAT A TOKEN EXISTED.
  *
- * Rendered as a spacer until the session is known, because localStorage is
- * not readable during server rendering and flashing "Sign in" at someone who
- * is already signed in is the same wrong message, just briefly. The spacer is
- * the height of the controls it will become, so the nav does not reflow when
- * it resolves.
+ * So there was exactly one signed-in header, and it was the rider's: a
+ * driver who signed in correctly was offered "My trips", landed on the rider
+ * homepage, and could not see their own name, number, role or anything a
+ * driver does. The sign-in worked; nothing downstream ever asked who it was
+ * for. `useSession` answers that now, and this is the first thing to use it.
+ *
+ * Three signed-in shapes, because there are three kinds of account:
+ *
+ *   rider   -> My trips, and the account menu
+ *   driver  -> Driver, and the account menu
+ *   admin   -> Operations console (a separate session; see below)
+ *
+ * An operator signing in here is a wrong turn rather than an error: the
+ * console holds its own session under its own keys. The menu says so and
+ * points at it instead of pretending this header can serve them.
  *
  * "Sign up" is the nav's primary action and the only gold fill on the bar.
  * On a page whose own primary is "See fares" or "Confirm Sedan", the nav's
  * primary is suppressed with `quiet` -- one gold button per view means per
  * view, and the nav is part of the view.
  */
+function initialsFor(name: string | null | undefined, fallback: string) {
+  const words = String(name ?? '').trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return fallback;
+  return (words[0][0] + (words.length > 1 ? words[words.length - 1][0] : ''))
+    .toUpperCase();
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  rider: 'Rider',
+  driver: 'Driver',
+  admin: 'Operator',
+};
+
 export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
   const router = useRouter();
-  const pathname = usePathname();
   const t = useT();
-  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+  const session = useSession();
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement | null>(null);
 
-  // IT READ THE SESSION ONCE AND NEVER AGAIN.
-  //
-  // This component lives in the layout, which survives client-side
-  // navigation, so the mount effect ran on the first page a visitor opened
-  // and never after. A rider who signed in and was returned to their booking
-  // was still shown "Log in" and "Sign up" in the header -- on the page the
-  // sign-in had just succeeded into.
-  //
-  // Three triggers now, because there are three ways the answer changes:
-  // a route change, a sign-in or sign-out in this tab (`SESSION_EVENT`), and
-  // the same in another tab (the browser's own `storage` event).
-  const refresh = useCallback(() => {
-    setSignedIn(Boolean(readRiderToken()));
-  }, []);
-
+  // A menu that stays open after you click past it is a menu you have to
+  // fight. Escape and an outside click both close it.
   useEffect(() => {
-    refresh();
-  }, [refresh, pathname]);
-
-  useEffect(() => {
-    window.addEventListener(SESSION_EVENT, refresh);
-    window.addEventListener('storage', refresh);
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (wrap.current && !wrap.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
     return () => {
-      window.removeEventListener(SESSION_EVENT, refresh);
-      window.removeEventListener('storage', refresh);
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
     };
-  }, [refresh]);
+  }, [open]);
 
-  if (signedIn === null) {
+  // Rendered as a spacer until the session is known, because localStorage is
+  // not readable during server rendering and flashing "Sign in" at someone
+  // who is already signed in is the same wrong message, just briefly.
+  if (session.status === 'loading') {
     return <div className="h-sg-7" aria-hidden="true" />;
   }
 
-  if (!signedIn) {
+  if (session.status === 'out') {
     return (
       <>
         <ButtonLink href="/sign-in" variant="ghost" size="sm">
@@ -76,22 +92,89 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
     );
   }
 
+  const { user, role } = session;
+  const name = user?.full_name?.trim() || null;
+  const contact = user?.email || user?.phone_number || null;
+  const firstName = name ? name.split(/\s+/)[0] : null;
+
+  function signOut() {
+    clearRiderTokens();
+    setOpen(false);
+    router.replace('/');
+  }
+
   return (
     <>
-      <ButtonLink href="/my-trips" variant="ghost" size="sm">
-        My trips
-      </ButtonLink>
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={() => {
-          clearRiderTokens();
-          setSignedIn(false);
-          router.replace('/');
-        }}
-      >
-        Sign out
-      </Button>
+      {role === 'driver' && (
+        <ButtonLink href="/driver/home" variant="ghost" size="sm">
+          Driver
+        </ButtonLink>
+      )}
+      {role === 'rider' && (
+        <ButtonLink href="/my-trips" variant="ghost" size="sm">
+          My trips
+        </ButtonLink>
+      )}
+
+      <div className="sg-account" ref={wrap}>
+        <button
+          type="button"
+          className="sg-account__chip"
+          aria-expanded={open}
+          aria-haspopup="menu"
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span className="sg-account__avatar" aria-hidden="true">
+            {initialsFor(name, (role[0] ?? 'S').toUpperCase())}
+          </span>
+          <span className="sg-account__who">
+            {firstName ?? ROLE_LABEL[role] ?? 'Account'}
+          </span>
+        </button>
+
+        {open && (
+          <div className="sg-account__menu" role="menu">
+            <div className="sg-account__head">
+              <strong>{name || 'Your account'}</strong>
+              {contact && <span>{contact}</span>}
+              <span className="sg-account__role">{ROLE_LABEL[role] ?? role}</span>
+            </div>
+
+            {role === 'admin' ? (
+              <>
+                <p className="sg-account__note">
+                  Operator accounts sign in to the operations console, which
+                  keeps its own session.
+                </p>
+                <Link href="/login" role="menuitem" onClick={() => setOpen(false)}>
+                  Open the console
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/account" role="menuitem" onClick={() => setOpen(false)}>
+                  Profile and details
+                </Link>
+                {role === 'driver' ? (
+                  <Link href="/driver/home" role="menuitem" onClick={() => setOpen(false)}>
+                    Driver home
+                  </Link>
+                ) : (
+                  <Link href="/my-trips" role="menuitem" onClick={() => setOpen(false)}>
+                    My trips
+                  </Link>
+                )}
+              </>
+            )}
+
+            <div className="sg-account__foot">
+              <Button variant="secondary" size="sm" block onClick={signOut}>
+                Sign out
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 }

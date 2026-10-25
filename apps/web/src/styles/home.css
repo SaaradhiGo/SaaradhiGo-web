@@ -650,12 +650,18 @@
 .hp-hero-band { position: relative; overflow: hidden; }
 .hp-hero-band > .hp-hero { position: relative; z-index: 1; }
 
+/* THE WHOLE CHARIOT, NOT MOST OF IT.
+   This used to be `right: -40px`, bleeding the artwork off the edge of the
+   section. The horse's head is the right-most thing in the image and there
+   are only ~12px of transparent padding past it, so the bleed cut the head
+   off -- on a landing page for a company named after the charioteer. The
+   mark now sits fully inside the viewport with a margin of its own. */
 .hp-hero__mark {
   position: absolute;
-  right: -40px;
+  right: clamp(16px, 3vw, 48px);
   top: 50%;
   transform: translateY(-50%);
-  width: min(42vw, 460px);
+  width: min(38vw, 440px);
   height: auto;
   opacity: 0.5;
   pointer-events: none;

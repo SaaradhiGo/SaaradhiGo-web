@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { KeepNextLink } from '@/components/KeepNextLink';
 import { AuthShell } from '@/components/form';
 import SignInForm from '@/components/SignInForm';
 
@@ -25,15 +25,15 @@ export default function Page() {
         <>
           <p>
             New to SaaradhiGo?{' '}
-            <Link href="/sign-up" className="sg-link">
-              Create an account
-            </Link>
+            <Suspense fallback={null}>
+              <KeepNextLink href="/sign-up">Create an account</KeepNextLink>
+            </Suspense>
           </p>
           <p>
             Driver?{' '}
-            <Link href="/driver/sign-in" className="sg-link">
-              Sign in as a driver
-            </Link>
+            <Suspense fallback={null}>
+              <KeepNextLink href="/driver/sign-in">Sign in as a driver</KeepNextLink>
+            </Suspense>
           </p>
         </>
       }

@@ -23,6 +23,7 @@ import {
   serviceabilityAt,
 } from '@/lib/booking';
 import MapSurface from '@/components/MapSurface';
+import { GuestCheckout } from '@/components/booking/GuestCheckout';
 import { messageFor, readRiderToken } from '@/lib/publicAuth';
 import { formatDistance, formatFare } from '@/lib/money';
 import { publicRideName, vehicleClassLabel } from '@/lib/vehicles';
@@ -197,6 +198,9 @@ function BookPageInner() {
   const [manualDest, setManualDest] = useState('');
 
   const [stage, setStage] = useState<Stage>('where');
+  // Pressed Confirm without a session: choose between signing in and
+  // booking as a guest. See `requestRide`.
+  const [identify, setIdentify] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -626,12 +630,54 @@ function BookPageInner() {
       const cheapest = priced.reduce((a, b) =>
         Number(a[1]!.estimated_fare) <= Number(b[1]!.estimated_fare) ? a : b,
       );
-      setVehicleType((current) => current || cheapest[0]);
-      setQuote((current) => current ?? cheapest[1]);
+      // THE FARE SHOWN MUST BE THE FARE OF THE CLASS THAT IS SELECTED.
+      //
+      // This used to set the vehicle to whatever was already chosen and the
+      // quote to `current ?? cheapest`, independently. A rider returning
+      // from sign-in with `?class=sedan` therefore kept Sedan selected and
+      // was shown the AUTO fare beside it, because the quote was still null
+      // and the cheapest one filled the gap. The button read "Confirm Sedan
+      // · <auto's price>".
+      const chosen = vehicleType && next[vehicleType] ? vehicleType : cheapest[0];
+      setVehicleType(chosen);
+      setQuote(next[chosen] ?? cheapest[1]);
       setStage('choose');
     }
     setBusy(false);
-  }, [pickup, destination, service]);
+  }, [pickup, destination, service, vehicleType]);
+
+  /**
+   * Price the trip the moment both ends are known. No button.
+   *
+   * THIS USED TO BE BEHIND "SHOW FARES", and the reasoning was cost: each
+   * quote makes the server fetch a route from a paid provider for every
+   * vehicle class, so the page asked before spending it. That reasoning put
+   * the operator's bill ahead of the one question the visitor came with.
+   * Someone who has typed a pickup and a destination has asked what it
+   * costs; making them ask again is an extra press for a screen that exists
+   * to answer exactly that.
+   *
+   * The spend is bounded rather than unmetered: `signature` is the trip, so
+   * a given pickup-destination-zone triple is priced ONCE per visit however
+   * many times this effect re-runs, a failure is not retried in a loop, and
+   * the server still caches each route for five minutes and throttles per
+   * caller. Changing the destination is a new trip and a new quote, which is
+   * correct -- it is a different question.
+   */
+  const pricedSignature = useRef<string>('');
+  useEffect(() => {
+    if (!pickup || !destination) return;
+    if (!service?.serviceable || !service?.vehicle_types?.length) return;
+
+    const r = (n: number) => n.toFixed(4);
+    const signature =
+      `${r(pickup.lat)},${r(pickup.lng)}->${r(destination.lat)},${r(destination.lng)}`
+      + `@${service.zone?.name ?? ''}`;
+    if (signature === pricedSignature.current) return;
+    pricedSignature.current = signature;
+
+    void quoteAll();
+  }, [pickup, destination, service, quoteAll]);
 
   // --- request -----------------------------------------------------------
 
@@ -654,10 +700,18 @@ function BookPageInner() {
     // and the trip has to appear in someone's history. Everything before
     // this point -- searching, comparing classes, seeing the fare -- works
     // without one.
+    //
+    // IT USED TO SEND THEM STRAIGHT TO /sign-in, which is a demand to
+    // register from someone who has already chosen their ride and seen the
+    // price. Now it offers the choice it should have offered: book as a
+    // guest -- name, number, a code, no password -- or sign in to an
+    // account they already have. Neither leaves this page, so the trip is
+    // not handed off and re-read from a URL to get back here.
     if (!readRiderToken()) {
-      router.push(`/sign-in?next=${encodeURIComponent(bookingUrl())}`);
+      setIdentify(true);
       return;
     }
+    setIdentify(false);
 
     setError(null);
     setStage('requesting');
@@ -1145,10 +1199,30 @@ function BookPageInner() {
                       chooses, so this is a comparison rather than a guess
                       followed by a reveal. A category the server could not
                       price says so; nothing here interpolates a fare. */}
+                  {/* NO "SHOW FARES" BUTTON. The prices arrive with the
+                      list, because a visitor who has entered both ends of a
+                      journey has already asked the question that button was
+                      making them ask twice. While they are on their way the
+                      row says so; it never shows a placeholder number. */}
                   {Object.keys(quotes).length === 0 && (
-                    <Button variant="secondary" block onClick={quoteAll} disabled={busy}>
-                      {busy ? 'Pricing…' : 'Show fares'}
-                    </Button>
+                    <p className="caption text-ink-muted" role="status">
+                      {busy ? 'Pricing your trip…' : 'Getting fares…'}
+                    </p>
+                  )}
+                  {Object.keys(quotes).length > 0 && (
+                    <div className="flex items-center justify-between gap-sg-3">
+                      <span className="caption text-ink-subtle">
+                        Fares for this trip
+                      </span>
+                      <button
+                        type="button"
+                        className="sg-link"
+                        onClick={quoteAll}
+                        disabled={busy}
+                      >
+                        {busy ? 'Refreshing…' : 'Refresh'}
+                      </button>
+                    </div>
                   )}
 
                   <VehicleList>
@@ -1204,9 +1278,35 @@ function BookPageInner() {
               </div>
             )}
 
+            {/* ---------------- who is booking ---------------- */}
+            {identify && stage !== 'requesting' && (
+              <div className="border-t border-line pt-sg-4">
+                <h2 className="text-lg font-semibold mt-0 mb-sg-3">
+                  Book as a guest
+                </h2>
+                <GuestCheckout
+                  fareLabel={fare}
+                  onSignedIn={() => {
+                    setIdentify(false);
+                    setSignedIn(true);
+                    requestRide();
+                  }}
+                  onSignIn={() =>
+                    router.push(`/sign-in?next=${encodeURIComponent(bookingUrl())}`)
+                  }
+                  onCancel={() => setIdentify(false)}
+                />
+              </div>
+            )}
+
             {/* ---------------- confirm ---------------- */}
-            {quote && stage !== 'requesting' && (
+            {quote && !identify && stage !== 'requesting' && (
               <div className="sg-ws__primary">
+                {/* The label says what the button DOES, for everyone.
+                    It used to read "Sign in to confirm Sedan" for a
+                    signed-out visitor, which named a step rather than the
+                    outcome and made an account look compulsory before the
+                    alternative had been offered. */}
                 <Button
                   variant="primary"
                   size="lg"
@@ -1214,13 +1314,16 @@ function BookPageInner() {
                   onClick={requestRide}
                   disabled={busy}
                 >
-                  {signedIn
-                    ? `Confirm ${vehicleClassLabel(vehicleType)}`
-                    : `Sign in to confirm ${vehicleClassLabel(vehicleType)}`}
+                  {`Confirm ${vehicleClassLabel(vehicleType)}`}
                   {fare ? ` · ${fare}` : ''}
                   <ArrowRight />
                 </Button>
                 <FareLock>Fare locked. No surge after you book.</FareLock>
+                {signedIn === false && (
+                  <p className="caption text-ink-subtle mt-sg-2">
+                    You can book as a guest — no password needed.
+                  </p>
+                )}
               </div>
             )}
 

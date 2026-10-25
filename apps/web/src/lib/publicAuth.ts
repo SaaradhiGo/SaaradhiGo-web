@@ -28,8 +28,77 @@ import { ApiError, api } from './api';
 
 export const RIDER_TOKEN_KEY = 'saaradhi_rider_access_token';
 export const RIDER_REFRESH_KEY = 'saaradhi_rider_refresh_token';
+export const RIDER_USER_KEY = 'saaradhi_rider_user';
 
 export type PublicRole = 'rider' | 'driver';
+
+/**
+ * WHO is signed in, not merely THAT someone is.
+ *
+ * The session used to be a token and nothing else. Every screen that asked
+ * "are we signed in?" got a yes or a no and had no way to ask anything
+ * further, so the site had exactly one signed-in appearance -- the rider's.
+ * A driver who signed in correctly was shown "My trips" in the header and
+ * the rider homepage underneath it, with no driver screen anywhere and no
+ * name, number or role on display. The sign-in had worked; the product
+ * simply never looked at its own answer.
+ *
+ * The login response already carries the account. It is kept here, beside
+ * the token it came with, so the role is available the moment the page
+ * renders rather than after a round trip -- and refreshed from
+ * `/auth/profile/` so a stale copy cannot outlive a change.
+ */
+export type SessionUser = {
+  id?: number | string;
+  full_name?: string | null;
+  email?: string | null;
+  phone_number?: string | null;
+  role?: string | null;
+  avatar?: string | null;
+  city?: string | null;
+  created_at?: string | null;
+};
+
+export function readSessionUser(): SessionUser | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(RIDER_USER_KEY);
+    return raw ? (JSON.parse(raw) as SessionUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionUser(user: SessionUser | null) {
+  try {
+    if (user) window.localStorage.setItem(RIDER_USER_KEY, JSON.stringify(user));
+    else window.localStorage.removeItem(RIDER_USER_KEY);
+  } catch {
+    /* private mode: the session simply does not persist */
+  }
+}
+
+/** The account as the server currently has it. Also refreshes the copy. */
+export async function fetchProfile(): Promise<SessionUser | null> {
+  const token = readRiderToken();
+  if (!token) return null;
+  const user = await api.get<SessionUser>('/auth/profile/', token);
+  writeSessionUser(user);
+  announceSession();
+  return user;
+}
+
+/** Update the name or email on the signed-in account. */
+export async function updateProfile(patch: {
+  full_name?: string;
+  email?: string;
+}): Promise<SessionUser> {
+  const token = readRiderToken();
+  const user = await api.patch<SessionUser>('/auth/update/', patch, token);
+  writeSessionUser(user);
+  announceSession();
+  return user;
+}
 
 export type RegisterInput = {
   fullName: string;
@@ -82,13 +151,18 @@ function announceSession() {
   window.dispatchEvent(new Event(SESSION_EVENT));
 }
 
-export function writeRiderTokens(access: string, refresh?: string) {
+export function writeRiderTokens(
+  access: string,
+  refresh?: string,
+  user?: SessionUser | null,
+) {
   try {
     window.localStorage.setItem(RIDER_TOKEN_KEY, access);
     if (refresh) window.localStorage.setItem(RIDER_REFRESH_KEY, refresh);
   } catch {
     /* private mode: the session simply does not persist */
   }
+  if (user !== undefined) writeSessionUser(user);
   announceSession();
 }
 
@@ -96,6 +170,7 @@ export function clearRiderTokens() {
   try {
     window.localStorage.removeItem(RIDER_TOKEN_KEY);
     window.localStorage.removeItem(RIDER_REFRESH_KEY);
+    window.localStorage.removeItem(RIDER_USER_KEY);
   } catch {
     /* nothing to clear */
   }
@@ -133,7 +208,7 @@ export async function registerAccount(input: RegisterInput) {
 // Sign in
 // ---------------------------------------------------------------------------
 
-type LoginResp = { token?: string; refresh_token?: string; user?: unknown };
+type LoginResp = { token?: string; refresh_token?: string; user?: SessionUser };
 
 /** The envelope really is `token` / `refresh_token`, not `access` / `refresh`. */
 function storeSession(data: LoginResp) {
@@ -144,7 +219,10 @@ function storeSession(data: LoginResp) {
       'Signed in, but the server returned no token. Please try again.',
     );
   }
-  writeRiderTokens(data.token, data.refresh_token);
+  // The account travels WITH the token. Every signed-in screen then knows
+  // whose session this is without a second request -- which is what lets the
+  // header greet a driver as a driver instead of showing them a rider's nav.
+  writeRiderTokens(data.token, data.refresh_token, data.user ?? null);
   return data;
 }
 
@@ -161,17 +239,19 @@ function storeSession(data: LoginResp) {
  * token behind.
  */
 function requireRole(data: LoginResp, expected: PublicRole) {
-  const actual = (data?.user as { role?: string } | undefined)?.role;
+  const actual = data?.user?.role;
   if (actual && actual !== expected) {
     clearRiderTokens();
-    const other = actual === 'driver' ? 'driver' : actual === 'admin' ? 'staff' : 'rider';
-    throw new ApiError(
-      403,
-      'AUTH_WRONG_ROLE',
-      expected === 'driver'
-        ? `That is a ${other} account. Use the rider sign-in instead.`
-        : `That is a ${other} account. Use the driver sign-in instead.`,
-    );
+    // Name the door they should have used, rather than the role they are.
+    // "That is a staff account" told an operator what they already knew and
+    // nothing about where to go.
+    const elsewhere =
+      actual === 'driver'
+        ? 'This is a driver account — use the driver sign-in.'
+        : actual === 'rider'
+          ? 'This is a rider account — use the rider sign-in.'
+          : 'This is an operator account — sign in to the operations console.';
+    throw new ApiError(403, 'AUTH_WRONG_ROLE', elsewhere, true);
   }
   return data;
 }

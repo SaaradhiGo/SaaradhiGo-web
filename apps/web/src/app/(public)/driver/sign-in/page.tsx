@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { KeepNextLink } from '@/components/KeepNextLink';
 import { AuthShell } from '@/components/form';
 import SignInForm from '@/components/SignInForm';
 
@@ -25,15 +25,15 @@ export default function Page() {
         <>
           <p>
             Not signed up yet?{' '}
-            <Link href="/driver/sign-up" className="sg-link">
-              Apply to drive
-            </Link>
+            <Suspense fallback={null}>
+              <KeepNextLink href="/driver/sign-up">Apply to drive</KeepNextLink>
+            </Suspense>
           </p>
           <p>
             Looking for a ride?{' '}
-            <Link href="/sign-in" className="sg-link">
-              Rider sign in
-            </Link>
+            <Suspense fallback={null}>
+              <KeepNextLink href="/sign-in">Rider sign in</KeepNextLink>
+            </Suspense>
           </p>
         </>
       }

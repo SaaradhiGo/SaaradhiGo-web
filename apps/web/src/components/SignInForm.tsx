@@ -82,8 +82,15 @@ export default function SignInForm({ role }: { role: PublicRole }) {
     // empty form has been made to do the work twice. `next` carries the
     // booking URL, and `safeReturnTo` refuses anything that is not a path on
     // this site.
+    // A DRIVER LANDS ON A DRIVER SCREEN.
+    //
+    // This used to send them to `/drive`, which is the marketing page that
+    // invites people to apply -- so a driver who had just signed in was
+    // shown "Apply to drive" and a rider's header, with nothing of their own
+    // anywhere. `/driver/home` is their account: approval state, vehicles,
+    // earnings and recent trips.
     router.replace(
-      safeReturnTo(search.get('next'), role === 'driver' ? '/drive' : '/'),
+      safeReturnTo(search.get('next'), role === 'driver' ? '/driver/home' : '/'),
     );
   }
 
