@@ -585,3 +585,71 @@
 .hp-drawer .sg-account__chip { width: 100%; justify-content: flex-start; }
 .hp-drawer .sg-account__menu { position: static; width: 100%; margin-top: var(--space-2); box-shadow: none; }
 .hp-drawer .sg-account__who { max-width: none; }
+
+/* ---------------------------------------------------------------------------
+   The driver's document checklist.
+
+   One row per document the driver's COUNTRY requires, with its own state and
+   its own control. There is deliberately no "submit everything" button: a
+   driver photographing documents on a phone should not lose four uploads
+   because the fifth failed, and should not have to remember which ones went
+   through. Every row is independent and the tick is the server's answer, not
+   an optimistic one.
+--------------------------------------------------------------------------- */
+.sg-doc-list { display: grid; gap: 0; padding: 0; margin: 0; list-style: none; }
+
+.sg-doc {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--line);
+}
+.sg-doc:first-child { padding-top: 0; }
+.sg-doc:last-child { border-bottom: 0; padding-bottom: 0; }
+
+.sg-doc__tick {
+  width: 28px; height: 28px; border-radius: var(--radius-pill);
+  border: 1px solid var(--line-strong);
+  display: grid; place-items: center;
+  color: var(--on-gold);
+}
+.sg-doc__tick.is-done { background: var(--gold-500); border-color: var(--gold-500); }
+.sg-doc__tick svg { width: 16px; height: 16px; }
+
+.sg-doc__text { display: grid; gap: 2px; min-width: 0; }
+.sg-doc__text strong { font: 700 15px/20px var(--font-sans); color: var(--ink); }
+.sg-doc__text span { font: 500 13px/18px var(--font-sans); color: var(--ink-muted); }
+.sg-doc__warn { color: var(--danger, #f87171) !important; }
+
+.sg-doc__action { justify-self: end; }
+
+/* Under 520px the control drops below the text rather than squeezing the
+   label into two characters. */
+@media (max-width: 520px) {
+  .sg-doc { grid-template-columns: 28px minmax(0, 1fr); }
+  .sg-doc__action { grid-column: 2; justify-self: stretch; }
+  .sg-doc__action .sg-btn { width: 100%; }
+}
+
+/* How far through onboarding this driver is. A number AND a bar: the bar is
+   read at a glance, the number is what they quote to support. */
+.sg-meter {
+  height: 8px; border-radius: var(--radius-pill);
+  background: var(--bg-300); overflow: hidden;
+}
+.sg-meter > i {
+  display: block; height: 100%; background: var(--gold-500);
+  border-radius: inherit; transition: width 240ms ease;
+}
+
+/* The one thing a driver should do next, given where they are in
+   onboarding. It replaces the three empty metric cards that used to lead
+   this page: a driver with no trips does not need "₹0" three times. */
+.sg-next {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-5); flex-wrap: wrap;
+  border-color: var(--gold-500);
+}
+.sg-next__text { display: grid; gap: var(--space-2); min-width: 16rem; flex: 1 1 20rem; }

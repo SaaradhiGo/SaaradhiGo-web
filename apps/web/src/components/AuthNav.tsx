@@ -34,11 +34,45 @@ import { useT } from '@/i18n/LocaleProvider';
  * primary is suppressed with `quiet` -- one gold button per view means per
  * view, and the nav is part of the view.
  */
-function initialsFor(name: string | null | undefined, fallback: string) {
-  const words = String(name ?? '').trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return fallback;
-  return (words[0][0] + (words.length > 1 ? words[words.length - 1][0] : ''))
-    .toUpperCase();
+/**
+ * What to call this person in the header.
+ *
+ * NEVER THEIR ROLE. The chip used to fall back to "Rider" when the account
+ * had no name on it, so the header greeted a person with the category they
+ * belong to -- which is not a greeting, it is a label, and it told them
+ * nothing they did not know. An account with no name still has an address
+ * or a number, and either of those is theirs.
+ *
+ * The order is how a person would introduce themselves: their name, then
+ * the address they sign in with, then the number we call. "Account" is the
+ * last resort and is at least honest about knowing nothing.
+ */
+function displayNameFor(user: {
+  full_name?: string | null;
+  email?: string | null;
+  phone_number?: string | null;
+} | null) {
+  const name = user?.full_name?.trim();
+  if (name) return name.split(/\s+/)[0];
+
+  const email = user?.email?.trim();
+  if (email && email.includes('@')) return email.split('@')[0];
+
+  const phone = user?.phone_number?.trim();
+  if (phone && phone.length >= 4) return `…${phone.slice(-4)}`;
+
+  return 'Account';
+}
+
+function initialsFor(user: { full_name?: string | null; email?: string | null } | null) {
+  const words = String(user?.full_name ?? '').trim().split(/\s+/).filter(Boolean);
+  if (words.length > 0) {
+    return (words[0][0] + (words.length > 1 ? words[words.length - 1][0] : ''))
+      .toUpperCase();
+  }
+  const email = user?.email?.trim();
+  if (email) return email[0].toUpperCase();
+  return '·';
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -95,7 +129,7 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
   const { user, role } = session;
   const name = user?.full_name?.trim() || null;
   const contact = user?.email || user?.phone_number || null;
-  const firstName = name ? name.split(/\s+/)[0] : null;
+  const shownName = displayNameFor(user);
 
   function signOut() {
     clearRiderTokens();
@@ -125,11 +159,9 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
           onClick={() => setOpen((v) => !v)}
         >
           <span className="sg-account__avatar" aria-hidden="true">
-            {initialsFor(name, (role[0] ?? 'S').toUpperCase())}
+            {initialsFor(user)}
           </span>
-          <span className="sg-account__who">
-            {firstName ?? ROLE_LABEL[role] ?? 'Account'}
-          </span>
+          <span className="sg-account__who">{shownName}</span>
         </button>
 
         {open && (
@@ -139,6 +171,17 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
               {contact && <span>{contact}</span>}
               <span className="sg-account__role">{ROLE_LABEL[role] ?? role}</span>
             </div>
+
+            {/* An account with no name on it gets the fix offered, rather
+                than being labelled by its category forever. */}
+            {!name && role !== 'admin' && (
+              <p className="sg-account__note">
+                <Link href="/account" onClick={() => setOpen(false)}>
+                  Add your name
+                </Link>{' '}
+                so your driver knows who to look for.
+              </p>
+            )}
 
             {role === 'admin' ? (
               <>
