@@ -1,119 +1,179 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
+import { Empty, PageHeader, Panel, Pill, Table } from '@/components/console/ui';
 
+/**
+ * The fleet, and who is waiting on a decision.
+ *
+ * WHAT CHANGED
+ * It read page one and stopped — the backend paginates at 10, so an
+ * eleventh driver was invisible with nothing on screen to say so. It also
+ * offered an inline "Approve" button that approved a driver from a list
+ * row, without the operator having seen a single document. That is the
+ * action this product most needs somebody to think before taking, so it is
+ * gone: the decision lives on the driver's own page, next to the evidence.
+ *
+ * The filter is in the URL so the dashboard can link straight to the
+ * queue that matters — `/drivers?approved=false`.
+ */
 type Driver = {
   id: number;
-  user_id?: { phone_number?: string; full_name?: string } | number;
+  user_id?: { phone_number?: string; full_name?: string; email?: string } | number;
   status?: string;
   approved?: boolean;
+  doc_status?: string | null;
   ratings?: string | number;
   total_trips?: number;
   fatigue_lockout_until?: string | null;
 };
 
-export default function DriversPage() {
-  const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+type Page = { count?: number; next?: string | null; results?: Driver[] };
 
-  async function load() {
-    setLoading(true);
+const FILTERS = [
+  { key: '', label: 'All' },
+  { key: 'false', label: 'Awaiting review' },
+  { key: 'true', label: 'Approved' },
+] as const;
+
+function who(d: Driver) {
+  const u = typeof d.user_id === 'object' && d.user_id ? d.user_id : null;
+  return {
+    name: u?.full_name?.trim() || null,
+    phone: u?.phone_number || null,
+    email: u?.email || null,
+  };
+}
+
+function DriversInner() {
+  const router = useRouter();
+  const search = useSearchParams();
+  const approved = search.get('approved') ?? '';
+
+  const [drivers, setDrivers] = useState<Driver[] | null>(null);
+  const [total, setTotal] = useState<number | null>(null);
+  const [more, setMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setDrivers(null);
     setError(null);
     try {
-      // '/driver/admin/', not '/driver/admin/list/'. The list/ variant does not
-      // exist and returns 404 on the deployed backend, so this page -- the one an
-      // operator uses to see and approve drivers -- showed 'Could not load
-      // drivers' and nothing else. Verified against QA: /driver/admin/ answers
-      // 401 (exists, protected) while /driver/admin/list/ answers 404.
-      //
-      // Note: this reads page 1 only, and the backend paginates at 10. Fine for a
-      // pilot cohort, not for a real fleet.
-      const r = await api.get<any>('/driver/admin/');
-      const list = (r?.results ?? r?.data ?? r) as Driver[];
-      setDrivers(Array.isArray(list) ? list : []);
+      const query = new URLSearchParams({ page_size: '50' });
+      if (approved) query.set('approved', approved);
+      const page = await api.get<Page>(`/driver/admin/?${query}`);
+      const list = Array.isArray(page?.results) ? page.results
+        : (Array.isArray(page) ? (page as unknown as Driver[]) : []);
+      setDrivers(list);
+      setTotal(typeof page?.count === 'number' ? page.count : null);
+      // Said out loud rather than silently truncating, which is what the
+      // previous version did at ten rows.
+      setMore(Boolean(page?.next));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not load drivers');
-    } finally {
-      setLoading(false);
+      setError(err instanceof ApiError && err.fromServer
+        ? err.message : 'We could not load the drivers.');
+      setDrivers([]);
     }
-  }
+  }, [approved]);
 
-  useEffect(() => {
-    load();
-  }, []);
-
-  async function approve(id: number) {
-    try {
-      await api.patch(`/driver/admin/${id}/update-kyc/`, { approved: true });
-      await load();
-    } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'Approve failed';
-      alert(msg);
-    }
-  }
+  useEffect(() => { void load(); }, [load]);
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold mb-4">Drivers</h1>
-      {loading && <p className="text-white/60">Loading...</p>}
-      {error && <p className="text-red-400 text-sm">{error}</p>}
-      {!loading && !error && (
-        <div className="card overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-left text-white/60">
-              <tr>
-                <th className="pb-3">#</th>
-                <th className="pb-3">Phone</th>
-                <th className="pb-3">Name</th>
-                <th className="pb-3">Status</th>
-                <th className="pb-3">Approved</th>
-                <th className="pb-3">Rating</th>
-                <th className="pb-3">Trips</th>
-                <th className="pb-3">Lockout</th>
-                <th className="pb-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {drivers.map((d) => {
-                const u = typeof d.user_id === 'object' ? d.user_id : undefined;
-                const lockedUntil = d.fatigue_lockout_until ? new Date(d.fatigue_lockout_until) : null;
-                const locked = lockedUntil && lockedUntil > new Date();
-                return (
-                  <tr key={d.id} className="table-row hover:bg-white/5">
-                    <td className="py-2">
-                      <Link href={`/drivers/${d.id}`} className="sg-link">#{d.id}</Link>
-                    </td>
-                    <td className="py-2">{u?.phone_number ?? '—'}</td>
-                    <td className="py-2">{u?.full_name ?? '—'}</td>
-                    <td className="py-2">
-                      <span className="tag border-white/20">{d.status ?? '—'}</span>
-                    </td>
-                    <td className="py-2">{d.approved ? 'Yes' : 'No'}</td>
-                    <td className="py-2">{d.ratings ?? '—'}</td>
-                    <td className="py-2">{d.total_trips ?? 0}</td>
-                    <td className="py-2">{locked ? (
-                      <span className="tag border-red-500/40 text-red-300">until {lockedUntil!.toLocaleString()}</span>
-                    ) : '—'}</td>
-                    <td className="py-2">
-                      {!d.approved && (
-                        <button className="btn-ghost text-gold-text text-xs" onClick={() => approve(d.id)}>
-                          Approve
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {drivers.length === 0 && (
-                <tr><td colSpan={9} className="py-4 text-white/50">No drivers.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+    <>
+      <PageHeader
+        title="Drivers"
+        subtitle={total !== null
+          ? `${total} ${approved === 'false' ? 'awaiting review' : approved === 'true' ? 'approved' : 'on file'}`
+          : undefined}
+        actions={FILTERS.map((f) => (
+          <button
+            key={f.key}
+            className={f.key === approved ? 'btn-secondary' : 'btn-ghost'}
+            onClick={() => router.push(f.key ? `/drivers?approved=${f.key}` : '/drivers')}
+          >
+            {f.label}
+          </button>
+        ))}
+      />
+
+      {error && <div className="alert-error mb-5" role="alert">{error}</div>}
+
+      <Panel flush>
+        {drivers === null ? (
+          <Empty title="Loading…" />
+        ) : drivers.length === 0 ? (
+          <Empty
+            error={Boolean(error)}
+            title={error ? 'The list could not be loaded' : 'No drivers here'}
+            detail={error
+              ? 'This is not the same as there being none.'
+              : approved === 'false'
+                ? 'Nothing is waiting on a decision.'
+                : undefined}
+          />
+        ) : (
+          <Table head={<>
+            <th>Driver</th>
+            <th>Contact</th>
+            <th>Review</th>
+            <th>State</th>
+            <th className="num">Trips</th>
+            <th className="num">Rating</th>
+          </>}>
+            {drivers.map((d) => {
+              const person = who(d);
+              const locked = Boolean(d.fatigue_lockout_until
+                && new Date(d.fatigue_lockout_until).getTime() > Date.now());
+              return (
+                <tr key={d.id}>
+                  <td>
+                    <Link href={`/drivers/${d.id}`}>
+                      {person.name || `Driver #${d.id}`}
+                    </Link>
+                  </td>
+                  <td>{person.phone || person.email || '—'}</td>
+                  <td>
+                    {d.approved
+                      ? <Pill tone="good">Approved</Pill>
+                      : d.doc_status === 'rejected'
+                        ? <Pill tone="bad">Sent back</Pill>
+                        : <Pill tone="wait">Awaiting review</Pill>}
+                  </td>
+                  <td>
+                    {locked
+                      ? <Pill tone="bad">Rest period</Pill>
+                      : <Pill tone={d.status === 'online' ? 'good' : 'neutral'}>
+                          {d.status || 'off'}
+                        </Pill>}
+                  </td>
+                  <td className="num">{d.total_trips ?? 0}</td>
+                  <td className="num">
+                    {Number(d.ratings ?? 0) > 0 ? Number(d.ratings).toFixed(2) : '—'}
+                  </td>
+                </tr>
+              );
+            })}
+          </Table>
+        )}
+      </Panel>
+
+      {more && (
+        <p className="help mt-3">
+          Showing the first 50. Narrow the list with the filters above —
+          this page does not yet page through a larger fleet.
+        </p>
       )}
-    </div>
+    </>
+  );
+}
+
+export default function DriversPage() {
+  return (
+    <Suspense fallback={<p className="text-ink-subtle">Loading…</p>}>
+      <DriversInner />
+    </Suspense>
   );
 }

@@ -2,68 +2,153 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { clearTokens, readToken } from '@/lib/api';
+import { useCallback, useEffect, useState } from 'react';
+import { api, clearTokens, readOperator, readToken } from '@/lib/api';
+import { Logo } from '@/components/sg/Logo';
+import '@/styles/console.css';
 
-const NAV = [
-  { href: '/dashboard', label: 'Dashboard' },
-  // SOS sits directly under the dashboard: it is the only screen with a
-  // zero error budget, and on-call should never have to hunt for it.
-  { href: '/sos', label: 'SOS' },
-  { href: '/trips', label: 'Trips' },
-  { href: '/drivers', label: 'Drivers' },
-  { href: '/withdrawals', label: 'Withdrawals' },
-  { href: '/support', label: 'Support' },
-  { href: '/zones', label: 'Zones' },
-];
+/**
+ * The console shell.
+ *
+ * IT USED TO BE SEVEN FLAT LINKS with no sense of what the app is for and
+ * no sign of where the work was. An operator had to open each page to
+ * discover whether anything was waiting on them, which is the opposite of
+ * what a console is for.
+ *
+ * Now the nav is grouped the way a shift is shaped — what is happening
+ * now, the money, the people — and each item carries the number of things
+ * waiting, fetched once here rather than by every page.
+ *
+ * THE COUNTS ARE ALLOWED TO BE UNKNOWN. A failed count renders as nothing
+ * at all, never as a zero: "0 drivers awaiting review" is a sentence an
+ * operator acts on, and it must never be the way a broken request looks.
+ */
+const GROUPS = [
+  {
+    label: 'Live',
+    items: [
+      { href: '/dashboard', label: 'Dashboard' },
+      { href: '/sos', label: 'SOS', key: 'sos', urgent: true },
+      { href: '/trips', label: 'Trips' },
+    ],
+  },
+  {
+    label: 'People',
+    items: [
+      { href: '/drivers', label: 'Drivers', key: 'drivers' },
+      { href: '/support', label: 'Support', key: 'support' },
+    ],
+  },
+  {
+    label: 'Money',
+    items: [
+      { href: '/withdrawals', label: 'Withdrawals', key: 'withdrawals' },
+      { href: '/zones', label: 'Zones & fares' },
+    ],
+  },
+] as const;
+
+type Counts = Partial<Record<'sos' | 'drivers' | 'support' | 'withdrawals', number>>;
 
 export default function ConsoleLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [counts, setCounts] = useState<Counts>({});
+  const [operator, setOperator] = useState(readOperator());
 
   useEffect(() => {
     if (!readToken()) router.replace('/login');
-  }, [router]);
+    else setOperator(readOperator());
+  }, [router, pathname]);
+
+  /**
+   * How much is waiting. Each is independent: one failing leaves the
+   * others alone and leaves its own badge absent rather than zero.
+   */
+  const loadCounts = useCallback(() => {
+    if (!readToken()) return;
+
+    const take = (key: keyof Counts) => (value: unknown) => {
+      const n = (value as { count?: number })?.count;
+      if (typeof n === 'number') setCounts((c) => ({ ...c, [key]: n }));
+    };
+
+    api.get('/driver/admin/?approved=false&page_size=1').then(take('drivers')).catch(() => {});
+    api.get('/driver/admin/withdrawals/?status=pending&page_size=1').then(take('withdrawals')).catch(() => {});
+    api.get('/support/admin/tickets/?status=open&page_size=1').then(take('support')).catch(() => {});
+    api.get('/sos/admin/?status=open&page_size=1').then(take('sos')).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    loadCounts();
+    // An operator leaves this open all day; a queue that only updates on
+    // reload is a queue they stop trusting.
+    const tick = setInterval(loadCounts, 60000);
+    return () => clearInterval(tick);
+  }, [loadCounts, pathname]);
 
   function signOut() {
     clearTokens();
     router.replace('/login');
   }
 
-  // The console is pinned to the dark theme.
-  //
-  // The rider site lets a visitor choose, and that choice is stored on <html>
-  // where it would reach these pages too. The console is built on `text-white`
-  // at various opacities -- it predates the token palette -- and white text on
-  // the light theme's ivory surfaces is unreadable. `data-theme` here
-  // redefines the tokens for this subtree only, so an operator who switched
-  // the public site to light still gets a working console.
+  const isCurrent = (href: string) =>
+    pathname === href || pathname?.startsWith(href + '/');
+
   return (
-    <div data-theme="dark" className="min-h-screen grid grid-cols-[220px_1fr] bg-bg-000 text-ink">
-      <aside className="bg-bg-100 border-r border-line p-4 flex flex-col">
-        <div className="text-gold-text font-bold text-lg tracking-wider">SaaradhiGo</div>
-        <div className="text-white/40 text-xs uppercase tracking-widest mb-6">Ops</div>
-        <nav className="flex-1 space-y-1">
-          {NAV.map((item) => {
-            const active = pathname === item.href || pathname?.startsWith(item.href + '/');
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`block px-3 py-2 rounded-lg text-sm transition ${
-                  active ? 'bg-brand text-black font-semibold' : 'text-white/80 hover:bg-white/5'
-                }`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+    // Pinned dark. The console is built on this palette and an operator who
+    // switched the rider site to light must still get a readable console.
+    <div data-theme="dark" className="ops">
+      <aside className="ops__side">
+        <div className="ops__brand">
+          <Logo variant="emblem" />
+          <div>
+            <b>SaaradhiGo</b>
+            <span>Operations</span>
+          </div>
+        </div>
+
+        <nav aria-label="Console">
+          {GROUPS.map((group) => (
+            <div className="ops__group" key={group.label}>
+              <div className="ops__group-label">{group.label}</div>
+              {group.items.map((item) => {
+                const key = 'key' in item ? (item.key as keyof Counts) : undefined;
+                const count = key ? counts[key] : undefined;
+                const urgent = 'urgent' in item && item.urgent;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="ops__link"
+                    aria-current={isCurrent(item.href) ? 'page' : undefined}
+                  >
+                    {item.label}
+                    {typeof count === 'number' && count > 0 && (
+                      <span
+                        className={`ops__count ${urgent ? 'ops__count--urgent' : ''}`}
+                        aria-label={`${count} waiting`}
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
-        <button onClick={signOut} className="btn-ghost text-left text-sm mt-6">
-          Sign out
-        </button>
+
+        <div className="ops__who">
+          <b>{operator?.full_name?.trim() || 'Operator'}</b>
+          <span>{operator?.email || operator?.phone_number || ''}</span>
+          <button onClick={signOut} className="btn-ghost text-left mt-2">
+            Sign out
+          </button>
+        </div>
       </aside>
-      <main className="p-6">{children}</main>
+
+      <main className="ops__main">{children}</main>
     </div>
   );
 }

@@ -1,0 +1,335 @@
+/* ===========================================================================
+   The operations console.
+
+   WHAT WAS WRONG WITH IT
+
+   Everything rendered and nothing was designed. The dashboard was seven
+   identical boxes in a ragged 4+3 grid above two thirds of empty black;
+   "TRIPS TOTAL 3" carried the same weight as the money figure beside it,
+   and none of it told an operator what to DO. The driver review screen put
+   "Approve KYC" -- the decision that lets someone carry paying passengers
+   -- in the corner as a text link the size of a breadcrumb, beside four
+   em-dashes where the documents should have been.
+
+   So this is not a repaint. The console is a place of WORK, and these
+   styles are built around three ideas:
+
+     1. The thing to do comes before the thing to know. Queues above
+        metrics; the decision above the evidence.
+     2. Numbers are for comparing. Tabular figures, right-aligned, one
+        size for money and one for counts.
+     3. Density is a feature. An operator scanning a payout queue wants
+        rows close enough to compare, not cards with 20px of air each.
+
+   Scoped under `.ops` so none of it can reach the rider site, which has
+   its own system and different goals.
+   =========================================================================== */
+
+/* --- shell ---------------------------------------------------------------- */
+
+.ops {
+  display: grid;
+  grid-template-columns: 244px minmax(0, 1fr);
+  min-height: 100vh;
+  background: var(--bg-000);
+  color: var(--ink);
+}
+
+.ops__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-4);
+  background: var(--bg-100);
+  border-right: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.ops__brand { display: flex; align-items: center; gap: 10px; }
+.ops__brand svg, .ops__brand img { width: 30px; height: 30px; }
+.ops__brand b {
+  font: 800 15px/1.1 var(--font-sans);
+  letter-spacing: 0.02em;
+  color: var(--gold-text);
+  display: block;
+}
+.ops__brand span {
+  font: 700 10px/1.2 var(--font-sans);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+}
+
+/* Grouped, because seven flat links give no sense of what this app is for.
+   An operator's day has shapes: live incidents, money, people. */
+.ops__group { display: grid; gap: 2px; }
+.ops__group + .ops__group { margin-top: var(--space-4); }
+.ops__group-label {
+  font: 700 10px/1.4 var(--font-sans);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+  padding: 0 10px var(--space-2);
+}
+
+.ops__link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  font: 600 14px/1.2 var(--font-sans);
+  color: var(--ink-muted);
+  text-decoration: none;
+  transition: background 120ms ease, color 120ms ease;
+}
+.ops__link:hover { background: var(--bg-200); color: var(--ink); }
+.ops__link[aria-current='page'] {
+  background: var(--gold-soft);
+  color: var(--gold-text);
+  box-shadow: inset 2px 0 0 var(--gold-500);
+}
+/* A count of things waiting. The point of the nav is to show where the
+   work is before you click. */
+.ops__count {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-300);
+  color: var(--ink);
+  font: 700 11px/18px var(--font-sans);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.ops__link[aria-current='page'] .ops__count { background: var(--gold-500); color: var(--on-gold); }
+.ops__count--urgent { background: var(--danger); color: #1a0b06; }
+
+.ops__who {
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+  display: grid; gap: 2px;
+}
+.ops__who b { font: 700 13px/1.3 var(--font-sans); color: var(--ink); }
+.ops__who span { font: 500 12px/1.3 var(--font-sans); color: var(--ink-subtle); overflow-wrap: anywhere; }
+
+.ops__main { min-width: 0; padding: var(--space-6) var(--space-6) var(--space-8); }
+
+/* --- page header ---------------------------------------------------------- */
+
+.ops-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--space-5); flex-wrap: wrap;
+  margin-bottom: var(--space-5);
+}
+.ops-head h1 { font: 800 26px/1.2 var(--font-sans); margin: 0; letter-spacing: -0.01em; }
+.ops-head p { font: 500 14px/1.4 var(--font-sans); color: var(--ink-muted); margin: 6px 0 0; }
+.ops-head__actions { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+
+/* --- the work queue, which leads the dashboard ---------------------------- */
+
+.ops-queues { display: grid; gap: var(--space-3); }
+
+.ops-queue {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-4);
+  background: var(--bg-100);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.ops-queue:hover { border-color: var(--line-strong); background: var(--bg-200); }
+/* Something is waiting. Gold means "your attention"; red means "now". */
+.ops-queue--waiting { border-color: var(--gold-line); }
+.ops-queue--urgent { border-color: var(--danger); }
+
+.ops-queue__n {
+  width: 44px; height: 44px; border-radius: var(--radius-sm);
+  display: grid; place-items: center;
+  background: var(--bg-300); color: var(--ink);
+  font: 800 17px/1 var(--font-sans); font-variant-numeric: tabular-nums;
+}
+.ops-queue--waiting .ops-queue__n { background: var(--gold-500); color: var(--on-gold); }
+.ops-queue--urgent .ops-queue__n { background: var(--danger); color: #1a0b06; }
+
+.ops-queue__text { display: grid; gap: 2px; min-width: 0; }
+.ops-queue__text b { font: 700 15px/1.3 var(--font-sans); }
+.ops-queue__text span { font: 500 13px/1.4 var(--font-sans); color: var(--ink-muted); }
+.ops-queue__go { color: var(--ink-subtle); font: 600 13px/1 var(--font-sans); }
+
+/* --- the metric strip, which follows it ----------------------------------- */
+/* Deliberately quieter and smaller than the queues: these are for knowing,
+   not for doing, and they used to be the loudest thing on the page. */
+
+.ops-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.ops-stat { background: var(--bg-100); padding: var(--space-4); display: grid; gap: 4px; }
+.ops-stat__label {
+  font: 700 10px/1.3 var(--font-sans);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-subtle);
+}
+.ops-stat__value {
+  font: 800 22px/1.15 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.ops-stat__value--money { color: var(--gold-text); }
+.ops-stat__note { font: 500 12px/1.3 var(--font-sans); color: var(--ink-muted); }
+.ops-stat__value--unknown { font-size: 15px; color: var(--ink-subtle); font-weight: 600; }
+
+/* --- panels and tables ---------------------------------------------------- */
+
+.ops-panel {
+  background: var(--bg-100);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.ops-panel__head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-4); flex-wrap: wrap;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--line);
+}
+.ops-panel__head h2 { font: 700 15px/1.3 var(--font-sans); margin: 0; }
+.ops-panel__body { padding: var(--space-5); }
+
+.ops-table { width: 100%; border-collapse: collapse; }
+.ops-table th {
+  text-align: left;
+  padding: 10px var(--space-5);
+  font: 700 10px/1.4 var(--font-sans);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-subtle);
+  background: var(--bg-200);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.ops-table td {
+  padding: 12px var(--space-5);
+  font: 500 14px/1.4 var(--font-sans);
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.ops-table tbody tr:last-child td { border-bottom: 0; }
+.ops-table tbody tr:hover { background: var(--bg-200); }
+/* Money and counts line up so they can be compared down the column. */
+.ops-table .num, .ops-num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.ops-table a { color: var(--gold-text); text-decoration: none; font-weight: 600; }
+.ops-table a:hover { text-decoration: underline; }
+
+/* --- status --------------------------------------------------------------- */
+
+.ops-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-strong);
+  font: 700 11px/1.5 var(--font-sans);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--ink-muted);
+}
+/* A word in every one of them: colour supports the meaning, never carries
+   it alone. */
+.ops-pill--good { border-color: var(--success); color: var(--success); }
+.ops-pill--bad { border-color: var(--danger); color: var(--danger); }
+.ops-pill--wait { border-color: var(--gold-line); color: var(--gold-text); }
+
+/* --- empty states --------------------------------------------------------- */
+/* An empty table and a failed request look identical on screen. These say
+   which, because an operator acting on "no payouts pending" when the
+   request failed is the expensive mistake. */
+
+.ops-empty { padding: var(--space-7) var(--space-5); text-align: center; display: grid; gap: 6px; }
+.ops-empty b { font: 700 15px/1.3 var(--font-sans); color: var(--ink); }
+.ops-empty span { font: 500 13px/1.5 var(--font-sans); color: var(--ink-muted); }
+
+/* --- the review screen ---------------------------------------------------- */
+
+.ops-review { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--space-5); align-items: start; }
+@media (max-width: 1180px) { .ops-review { grid-template-columns: minmax(0, 1fr); } }
+
+/* The decision, and it is not a text link in the corner. */
+.ops-decide {
+  position: sticky; top: var(--space-5);
+  background: var(--bg-100);
+  border: 1px solid var(--gold-line);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  display: grid; gap: var(--space-4);
+}
+.ops-decide h2 { font: 700 15px/1.3 var(--font-sans); margin: 0; }
+.ops-decide__why { font: 500 13px/1.5 var(--font-sans); color: var(--ink-muted); margin: 0; }
+.ops-decide__actions { display: grid; gap: var(--space-2); }
+
+/* One document, with a way to open it. */
+.ops-doc {
+  display: grid; grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: var(--space-3); align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ops-doc:last-child { border-bottom: 0; }
+.ops-doc__tick {
+  width: 22px; height: 22px; border-radius: var(--radius-pill);
+  border: 1px solid var(--line-strong);
+  display: grid; place-items: center;
+  font: 800 12px/1 var(--font-sans);
+  color: var(--ink-subtle);
+}
+.ops-doc__tick.is-on { background: var(--success); border-color: var(--success); color: #06241a; }
+.ops-doc__tick.is-off { border-color: var(--danger); color: var(--danger); }
+.ops-doc__text { display: grid; gap: 1px; min-width: 0; }
+.ops-doc__text b { font: 600 14px/1.3 var(--font-sans); }
+.ops-doc__text span { font: 500 12px/1.4 var(--font-sans); color: var(--ink-subtle); }
+.ops-doc__open {
+  font: 700 12px/1 var(--font-sans);
+  color: var(--gold-text); text-decoration: none;
+  border: 1px solid var(--gold-line); border-radius: var(--radius-sm);
+  padding: 7px 11px; white-space: nowrap;
+}
+.ops-doc__open:hover { background: var(--gold-soft); }
+.ops-doc__missing { font: 600 12px/1 var(--font-sans); color: var(--ink-subtle); white-space: nowrap; }
+
+/* --- definition rows ------------------------------------------------------ */
+/* Label beside value, not above it: the old screen stacked them and turned
+   six facts into twelve lines. */
+
+.ops-facts { display: grid; gap: 0; }
+.ops-fact {
+  display: grid; grid-template-columns: 130px minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  font: 500 14px/1.4 var(--font-sans);
+}
+.ops-fact:last-child { border-bottom: 0; }
+.ops-fact dt { color: var(--ink-subtle); }
+.ops-fact dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+
+@media (max-width: 900px) {
+  .ops { grid-template-columns: minmax(0, 1fr); }
+  .ops__side { position: static; height: auto; }
+  .ops__main { padding: var(--space-5) var(--space-4) var(--space-7); }
+  .ops-fact { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}
