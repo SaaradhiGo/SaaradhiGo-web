@@ -12,11 +12,14 @@ import {
   createVehicle,
   driverOnboarding,
   patchDriverProfile,
-  patchVehicle,
   setActiveVehicle,
 } from '@/lib/driver';
 import { messageFor } from '@/lib/publicAuth';
-import { DOCUMENT_ACCEPT, uploadDocument } from '@/lib/uploads';
+import {
+  DOCUMENT_ACCEPT,
+  uploadDriverDocument,
+  uploadVehicleDocument,
+} from '@/lib/uploads';
 import { useSession } from '@/lib/useSession';
 
 /**
@@ -155,19 +158,17 @@ export default function DriverDocumentsPage() {
     setNotice(null);
     setUploading(doc.key);
     try {
-      const key = await uploadDocument(doc.upload_kind, file);
-
-      // The KEY goes to whichever record owns the document. The server told
-      // us which; this page does not infer it from the name.
+      // The file goes to whichever record owns the document. The server
+      // told us which; this page does not infer it from the name.
       if (doc.target === 'vehicle') {
         const vehicleId = data?.vehicle?.id;
         if (!vehicleId) {
           setError('Add your vehicle first, then upload its documents.');
           return;
         }
-        await patchVehicle(vehicleId, { [doc.upload_kind]: key });
+        await uploadVehicleDocument(vehicleId, doc.upload_kind, file);
       } else {
-        await patchDriverProfile({ [doc.upload_kind]: key });
+        await uploadDriverDocument(doc.upload_kind, file);
       }
 
       setNotice(`${doc.label} uploaded.`);

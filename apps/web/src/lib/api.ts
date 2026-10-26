@@ -109,6 +109,64 @@ async function call<T>(
   return (json?.data ?? json) as T;
 }
 
+/**
+ * Send a file (and fields) as multipart, through OUR API.
+ *
+ * WHY NOT THE PRESIGNED DIRECT-TO-S3 PUT, which exists and is the better
+ * shape on paper: a browser will not make that PUT unless the BUCKET
+ * publishes a CORS rule allowing the origin, and the Railway-managed bucket
+ * does not. Its storage API also refuses `PutBucketCORS` with the
+ * credentials the deployment holds, so the rule cannot be added from the
+ * application side at all. Measured, not assumed: the PUT fails in the
+ * browser with `net::ERR_FAILED` before it leaves.
+ *
+ * The Android apps never hit this because a native HTTP client does not
+ * enforce CORS, which is why the presign path has always looked fine.
+ *
+ * So the web sends the bytes to Django, which writes them to S3 with server
+ * credentials. That costs a worker for the length of the upload, which for
+ * a driver's documents -- a few megabytes, a handful of times, once -- is a
+ * trade worth making to remove a dependency on a bucket setting nobody can
+ * verify. It is also STRICTER: the server validates the real bytes with
+ * `validate_document_file` instead of validating a key and trusting what is
+ * behind it.
+ *
+ * `Content-Type` is deliberately NOT set. The browser must write it itself
+ * so the multipart boundary matches the body; setting it by hand is the
+ * classic way to produce a request Django cannot parse.
+ */
+async function callForm<T>(
+  method: string,
+  path: string,
+  form: FormData,
+  authToken?: string | null,
+): Promise<T> {
+  const token = authToken !== undefined ? authToken : readToken();
+  const resp = await fetch(`${BASE}${path}`, {
+    method,
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: form,
+  });
+  let json: any = null;
+  try {
+    json = await resp.json();
+  } catch {
+    /* empty response is fine */
+  }
+  if (!resp.ok) {
+    const err = json?.error ?? {};
+    const authored = typeof err.message === 'string' && err.message.trim() !== '';
+    throw new ApiError(
+      resp.status,
+      err.code ?? 'UNKNOWN_ERROR',
+      authored ? err.message : `HTTP ${resp.status}`,
+      authored,
+      typeof err.field === 'string' && err.field !== 'general' ? err.field : null,
+    );
+  }
+  return (json?.data ?? json) as T;
+}
+
 export const api = {
   get: <T,>(path: string, authToken?: string | null) =>
     call<T>('GET', path, undefined, authToken),
@@ -118,6 +176,10 @@ export const api = {
     call<T>('PATCH', path, body, authToken),
   delete: <T,>(path: string, authToken?: string | null) =>
     call<T>('DELETE', path, undefined, authToken),
+  patchForm: <T,>(path: string, form: FormData, authToken?: string | null) =>
+    callForm<T>('PATCH', path, form, authToken),
+  postForm: <T,>(path: string, form: FormData, authToken?: string | null) =>
+    callForm<T>('POST', path, form, authToken),
 };
 
 // ---- Auth helpers ----
