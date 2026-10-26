@@ -39,11 +39,22 @@ serves the same build.
 `verify:hosts` fails, the other results are not about the site people are
 using.
 
+## Confirming a deploy landed
+
+```
+EXPECT_REVISION=<sha> npm run verify:hosts
+```
+
+The backend publishes its own revision at `/version`. Ask it. I twice
+answered "is the deploy live?" by grepping the page HTML for a string that
+only exists in a JS chunk, and twice reported a successful deploy as not
+landed.
+
 ## What each one covers
 
 | Script | Proves |
 |---|---|
-| `verify:hosts` | every public hostname resolves, is served, is trusted, and is allowed by the API |
+| `verify:hosts` | every public hostname resolves, is served, is trusted, and is allowed by the API; and which backend revision is live |
 | `verify:auth` | sign-up on one screen, sign-in for rider/driver/operator, the account menu and `/account`, a rider refused at the operator console |
 | `verify:booking` | place search, fares appearing unprompted, confirm without an account, guest booking end to end |
 | `verify:driver-docs` | a new driver uploads a real file and the server's own checklist changes as a result |

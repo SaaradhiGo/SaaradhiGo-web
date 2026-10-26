@@ -172,6 +172,28 @@ if (builds.size < 2) {
     [...builds.entries()].map(([h, b]) => `${new URL(h).hostname}=${b.slice(0, 12)}`).join(' | '));
 }
 
+/* 7 -- which backend revision is actually serving? -------------------- */
+//
+// WRITTEN AFTER GETTING THIS WRONG TWICE. "Is the deploy live?" was
+// answered both times by grepping the HTML for a string that only exists
+// in a JS chunk, which reported a successful deploy as not landed. The
+// backend publishes its own revision; ask it rather than inferring.
+console.log('\n=== deployed revision ===');
+try {
+  const response = await fetch(API.replace(/\/api\/v1\/?$/, '') + '/version');
+  const body = await response.json();
+  const revision = body.revision_short || body.revision || '(absent)';
+  const expected = process.env.EXPECT_REVISION;
+  if (expected && !String(revision).startsWith(expected.slice(0, 7))) {
+    fail(HOSTS[0], 'backend revision',
+      `serving ${revision}, expected ${expected.slice(0, 7)} — the deploy has not landed`);
+  } else {
+    pass(HOSTS[0], 'backend revision', `${revision}${expected ? ' (as expected)' : ''}`);
+  }
+} catch (err) {
+  fail(HOSTS[0], 'backend revision', `could not read /version: ${String(err.message || err).slice(0, 80)}`);
+}
+
 const failed = results.filter((r) => r.s === 'FAIL');
 console.log('\n================= HOSTS =================');
 console.log(`checked: ${HOSTS.join(', ')}`);
