@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
+import { PageHeader, Pill } from '@/components/console/ui';
 
 // SOS triage queue.
 //
@@ -41,10 +42,10 @@ type SosEvent = {
 const POLL_MS = 15_000;
 
 const STATUS_STYLES: Record<string, string> = {
-  open: 'border-red-500/60 text-red-300',
-  acknowledged: 'border-amber-500/40 text-amber-300',
-  resolved: 'border-emerald-500/40 text-emerald-300',
-  false_alarm: 'border-white/20 text-white/50',
+  open: 'ops-pill ops-pill--bad',
+  acknowledged: 'ops-pill ops-pill--wait',
+  resolved: 'ops-pill ops-pill--good',
+  false_alarm: 'ops-pill',
 };
 
 function minutesSince(iso: string) {
@@ -106,26 +107,22 @@ export default function SosPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold">SOS</h1>
-          {openCount > 0 && (
-            <span className="tag border-red-500/60 text-red-300 animate-pulse">
-              {openCount} open
-            </span>
-          )}
-        </div>
-        <span className="text-white/40 text-xs">auto-refreshing every {POLL_MS / 1000}s</span>
-      </div>
+      <PageHeader
+        title="SOS"
+        subtitle={
+          openCount > 0
+            ? `${openCount} open — refreshing every ${POLL_MS / 1000}s`
+            : `Nothing open — refreshing every ${POLL_MS / 1000}s`
+        }
+        actions={openCount > 0 ? <Pill tone="bad">{openCount} open</Pill> : null}
+      />
 
       <div className="flex items-center gap-2 mb-4">
         {['', 'open', 'acknowledged', 'resolved', 'false_alarm'].map((s) => (
           <button
             key={s || 'all'}
             onClick={() => setStatusFilter(s)}
-            className={`tag capitalize ${
-              s === statusFilter ? 'border-brand text-gold-text' : 'border-white/20 text-white/60'
-            }`}
+            className={s === statusFilter ? 'btn-secondary' : 'btn-ghost'}
           >
             {s ? s.replace('_', ' ') : 'all'}
           </button>
@@ -151,7 +148,7 @@ export default function SosPage() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-semibold">SOS #{ev.id}</span>
-                      <span className={`tag capitalize ${STATUS_STYLES[ev.status]}`}>
+                      <span className={`capitalize ${STATUS_STYLES[ev.status]}`}>
                         {ev.status.replace('_', ' ')}
                       </span>
                       <span className="tag border-white/20 capitalize">

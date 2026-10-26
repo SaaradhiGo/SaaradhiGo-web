@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
+import { EMPTY_COUNTS, QueueCounts, fetchQueueCounts } from '@/lib/consoleQueues';
 import {
   Empty,
   PageHeader,
@@ -43,24 +44,12 @@ type DashData = {
   receipts: { issued_today: number; send_failures_today: number };
 };
 
-type Counts = {
-  driversAwaiting: number | null;
-  withdrawalsPending: number | null;
-  supportOpen: number | null;
-  sosOpen: number | null;
-};
-
 export default function DashboardPage() {
   const [data, setData] = useState<DashData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   // null means "we could not find out", which is never shown as zero.
-  const [counts, setCounts] = useState<Counts>({
-    driversAwaiting: null,
-    withdrawalsPending: null,
-    supportOpen: null,
-    sosOpen: null,
-  });
+  const [counts, setCounts] = useState<QueueCounts>(EMPTY_COUNTS);
 
   const load = useCallback(async () => {
     try {
@@ -73,24 +62,10 @@ export default function DashboardPage() {
       setLoading(false);
     }
 
-    // Each queue count is independent: one failing must not blank the
-    // others, and a failure leaves that count unknown rather than zero.
-    const count = async (path: string) => {
-      try {
-        const page = await api.get<{ count?: number }>(path);
-        return typeof page?.count === 'number' ? page.count : null;
-      } catch {
-        return null;
-      }
-    };
-
-    const [driversAwaiting, withdrawalsPending, supportOpen, sosOpen] = await Promise.all([
-      count('/driver/admin/?approved=false&page_size=1'),
-      count('/driver/admin/withdrawals/?status=pending&page_size=1'),
-      count('/support/admin/tickets/?status=open&page_size=1'),
-      count('/sos/admin/?status=open&page_size=1'),
-    ]);
-    setCounts({ driversAwaiting, withdrawalsPending, supportOpen, sosOpen });
+    // Shared with the sidebar. See lib/consoleQueues.ts: the three
+    // endpoints disagree about the case of their status values, and
+    // support silently returns a confident 0 when it is wrong.
+    setCounts(await fetchQueueCounts());
   }, []);
 
   useEffect(() => { void load(); }, [load]);

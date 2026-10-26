@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { api, clearTokens, readOperator, readToken } from '@/lib/api';
+import { clearTokens, readOperator, readToken } from '@/lib/api';
+import { fetchQueueCounts } from '@/lib/consoleQueues';
 import { Logo } from '@/components/sg/Logo';
 import '@/styles/console.css';
 
@@ -68,15 +69,15 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
   const loadCounts = useCallback(() => {
     if (!readToken()) return;
 
-    const take = (key: keyof Counts) => (value: unknown) => {
-      const n = (value as { count?: number })?.count;
-      if (typeof n === 'number') setCounts((c) => ({ ...c, [key]: n }));
-    };
-
-    api.get('/driver/admin/?approved=false&page_size=1').then(take('drivers')).catch(() => {});
-    api.get('/driver/admin/withdrawals/?status=pending&page_size=1').then(take('withdrawals')).catch(() => {});
-    api.get('/support/admin/tickets/?status=open&page_size=1').then(take('support')).catch(() => {});
-    api.get('/sos/admin/?status=open&page_size=1').then(take('sos')).catch(() => {});
+    // The queries live in lib/consoleQueues.ts, because the three endpoints
+    // disagree about the CASE of their status values and support silently
+    // matches nothing when it is wrong.
+    void fetchQueueCounts().then((c) => setCounts({
+      drivers: c.driversAwaiting ?? undefined,
+      withdrawals: c.withdrawalsPending ?? undefined,
+      support: c.supportOpen ?? undefined,
+      sos: c.sosOpen ?? undefined,
+    }));
   }, []);
 
   useEffect(() => {

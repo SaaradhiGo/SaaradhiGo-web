@@ -1,17 +1,29 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
+import { Empty, PageHeader, Panel, Pill, Stat, StatStrip, Table } from '@/components/console/ui';
 
-// Driver payout approval queue.
-//
-// The backend has had maker-checker approve/reject endpoints since Phase-0,
-// but no screen: the only way to release a driver's money was to POST to
-// /driver/admin/withdrawals/<id>/approve/ by hand. This is the screen that
-// makes the control real — an approver can see who they are paying, to
-// which UPI handle, and whether that driver's KYC actually passed.
-
+/**
+ * Releasing a driver's money.
+ *
+ * The control itself was already right — read the amount and the payee
+ * back before it goes, and require a reason to reject, because the driver
+ * reads it. What it did with `window.confirm` and `window.prompt` it now
+ * does in the page, where the approver can see the KYC state and the UPI
+ * handle at the same time as the amount.
+ *
+ * TWO THINGS THIS SCREEN WILL NOT DO
+ *
+ * It does not add amounts across currencies. The total is per currency,
+ * because a payout's currency comes from the driver's own wallet and a
+ * single "pending total" across markets would be a made-up number.
+ *
+ * It does not let an unapproved driver be paid without saying so. The
+ * server enforces it; the row says it too, so nobody learns it from a
+ * failure.
+ */
 type Withdrawal = {
   id: number;
   driver: number;
@@ -20,6 +32,7 @@ type Withdrawal = {
   driver_upi_id?: string;
   driver_kyc_approved?: boolean;
   amount: string;
+  currency?: string | null;
   status: string;
   requested_at: string;
   processed_at?: string | null;
@@ -27,187 +40,176 @@ type Withdrawal = {
   payout_reference_id?: string | null;
 };
 
-const STATUSES = ['pending', 'approved', 'processing', 'completed', 'failed', 'rejected'] as const;
+type Page = { count?: number; results?: Withdrawal[] };
 
-const STATUS_STYLES: Record<string, string> = {
-  pending: 'border-amber-500/40 text-amber-300',
-  approved: 'border-sky-500/40 text-sky-300',
-  processing: 'border-sky-500/40 text-sky-300',
-  completed: 'border-emerald-500/40 text-emerald-300',
-  failed: 'border-red-500/40 text-red-300',
-  rejected: 'border-white/20 text-white/60',
+const FILTERS = ['pending', 'approved', 'processing', 'completed', 'failed', 'rejected'] as const;
+
+const TONE: Record<string, 'good' | 'bad' | 'wait' | 'neutral'> = {
+  completed: 'good',
+  approved: 'wait',
+  processing: 'wait',
+  pending: 'wait',
+  failed: 'bad',
+  rejected: 'neutral',
 };
 
+const when = (s?: string | null) => (s ? s.replace('T', ' ').slice(0, 16) : '—');
+
+/** Amount with its own currency, never a symbol this page chose. */
+function money(w: Withdrawal) {
+  const amount = Number(w.amount || 0).toLocaleString('en-IN', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
+  });
+  return w.currency ? `${w.currency} ${amount}` : amount;
+}
+
 export default function WithdrawalsPage() {
-  const [rows, setRows] = useState<Withdrawal[]>([]);
-  const [statusFilter, setStatusFilter] = useState<string>('pending');
+  const [rows, setRows] = useState<Withdrawal[] | null>(null);
+  const [status, setStatus] = useState<string>('pending');
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [acting, setActing] = useState<{ id: number; kind: 'approve' | 'reject' } | null>(null);
+  const [note, setNote] = useState('');
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    setRows(null);
     setError(null);
     try {
-      const qs = statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : '';
-      const r = await api.get<any>(`/driver/admin/withdrawals/${qs}`);
-      const list = (r?.results ?? r?.data?.results ?? r) as Withdrawal[];
-      setRows(Array.isArray(list) ? list : []);
+      const page = await api.get<Page>(
+        `/driver/admin/withdrawals/?status=${encodeURIComponent(status)}&page_size=100`);
+      const list = Array.isArray(page?.results) ? page.results
+        : (Array.isArray(page) ? (page as unknown as Withdrawal[]) : []);
+      setRows(list);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not load withdrawals');
-    } finally {
-      setLoading(false);
+      setError(err instanceof ApiError && err.fromServer
+        ? err.message : 'We could not load the payout queue.');
+      setRows([]);
     }
-  }, [statusFilter]);
+  }, [status]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
-  async function approve(w: Withdrawal) {
-    // Releasing money is irreversible once Cashfree accepts the payout, so
-    // make the approver read the amount and payee back before it goes.
-    const ok = window.confirm(
-      `Release ₹${w.amount} to ${w.driver_name || `driver #${w.driver}`}` +
-        `${w.driver_upi_id ? ` (UPI: ${w.driver_upi_id})` : ''}?\n\n` +
-        'This dispatches a real payout and cannot be undone from this console.',
-    );
-    if (!ok) return;
-
-    const note = window.prompt('Approval note (recorded in the audit log):', '') ?? '';
+  async function send(w: Withdrawal, kind: 'approve' | 'reject') {
     setBusyId(w.id);
+    setActionError(null);
     try {
-      await api.post(`/driver/admin/withdrawals/${w.id}/approve/`, { admin_notes: note });
+      await api.post(`/driver/admin/withdrawals/${w.id}/${kind}/`,
+        { admin_notes: note.trim() });
+      setActing(null);
+      setNote('');
       await load();
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : 'Approve failed');
+      setActionError(err instanceof ApiError && err.fromServer
+        ? err.message : `The ${kind} did not go through.`);
     } finally {
       setBusyId(null);
     }
   }
 
-  async function reject(w: Withdrawal) {
-    const reason = window.prompt(
-      `Reject ₹${w.amount} for ${w.driver_name || `driver #${w.driver}`}?\nReason (shown to the driver):`,
-    );
-    if (reason === null) return;
-    if (!reason.trim()) {
-      alert('A reason is required — the driver sees it.');
-      return;
-    }
-    setBusyId(w.id);
-    try {
-      await api.post(`/driver/admin/withdrawals/${w.id}/reject/`, { admin_notes: reason });
-      await load();
-    } catch (err) {
-      alert(err instanceof ApiError ? err.message : 'Reject failed');
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  const pendingTotal = rows
+  // One total per currency. Adding rupees to dollars would be a made-up
+  // number on a screen about releasing money.
+  const totals = (rows ?? [])
     .filter((r) => r.status === 'pending')
-    .reduce((sum, r) => sum + Number(r.amount || 0), 0);
+    .reduce<Record<string, number>>((acc, r) => {
+      const key = r.currency || 'unknown';
+      acc[key] = (acc[key] ?? 0) + Number(r.amount || 0);
+      return acc;
+    }, {});
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Withdrawals</h1>
-        <button className="btn-ghost text-sm" onClick={load} disabled={loading}>
-          Refresh
-        </button>
-      </div>
-
-      <div className="flex items-center gap-2 mb-4">
-        {STATUSES.map((s) => (
+    <>
+      <PageHeader
+        title="Withdrawals"
+        subtitle="Money leaving the platform. Approving dispatches a real payout."
+        actions={FILTERS.map((f) => (
           <button
-            key={s}
-            onClick={() => setStatusFilter(s === statusFilter ? '' : s)}
-            className={`tag capitalize ${
-              s === statusFilter ? 'border-brand text-gold-text' : 'border-white/20 text-white/60'
-            }`}
+            key={f}
+            className={f === status ? 'btn-secondary' : 'btn-ghost'}
+            onClick={() => setStatus(f)}
           >
-            {s}
+            {f}
           </button>
         ))}
-      </div>
+      />
 
-      {statusFilter === 'pending' && rows.length > 0 && (
-        <p className="text-white/60 text-sm mb-3">
-          {rows.length} pending · ₹{pendingTotal.toFixed(2)} awaiting release
-        </p>
+      {error && <div className="alert-error mb-5" role="alert">{error}</div>}
+      {actionError && <div className="alert-error mb-5" role="alert">{actionError}</div>}
+
+      {status === 'pending' && Object.keys(totals).length > 0 && (
+        <div className="mb-5">
+          <StatStrip>
+            {Object.entries(totals).map(([currency, amount]) => (
+              <Stat
+                key={currency}
+                money
+                label={`Pending · ${currency === 'unknown' ? 'currency not set' : currency}`}
+                value={amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                note={`${(rows ?? []).filter((r) => r.status === 'pending'
+                  && (r.currency || 'unknown') === currency).length} request(s)`}
+              />
+            ))}
+          </StatStrip>
+        </div>
       )}
 
-      {loading && <p className="text-white/60">Loading...</p>}
-      {error && <p className="text-red-400 text-sm">{error}</p>}
-
-      {!loading && !error && (
-        <div className="card overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-left text-white/60">
-              <tr>
-                <th className="pb-3">#</th>
-                <th className="pb-3">Driver</th>
-                <th className="pb-3">Phone</th>
-                <th className="pb-3">UPI</th>
-                <th className="pb-3">KYC</th>
-                <th className="pb-3">Amount</th>
-                <th className="pb-3">Status</th>
-                <th className="pb-3">Requested</th>
-                <th className="pb-3">Payout ref</th>
-                <th className="pb-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((w) => (
-                <tr key={w.id} className="table-row hover:bg-white/5">
-                  <td className="py-2">#{w.id}</td>
-                  <td className="py-2">
-                    <Link href={`/drivers/${w.driver}`} className="sg-link">
-                      {w.driver_name || `#${w.driver}`}
+      <Panel flush>
+        {rows === null ? (
+          <Empty title="Loading…" />
+        ) : rows.length === 0 ? (
+          <Empty
+            error={Boolean(error)}
+            title={error ? 'The queue could not be loaded' : `Nothing ${status}`}
+            detail={error
+              ? 'This is not the same as there being nothing to pay.'
+              : undefined}
+          />
+        ) : (
+          <Table head={<>
+            <th>Driver</th><th>Payee</th><th>KYC</th>
+            <th className="num">Amount</th><th>Status</th>
+            <th>Requested</th><th />
+          </>}>
+            {rows.map((w) => (
+              // A keyed Fragment, not `<>`: a bare fragment cannot take a
+              // key, so React would lose track of which row is which and
+              // the confirmation panel could reattach to the wrong payout.
+              <Fragment key={w.id}>
+                <tr>
+                  <td>
+                    <Link href={`/drivers/${w.driver}`}>
+                      {w.driver_name?.trim() || `Driver #${w.driver}`}
                     </Link>
+                    {w.driver_phone ? (
+                      <div className="text-ink-subtle text-xs">{w.driver_phone}</div>
+                    ) : null}
                   </td>
-                  <td className="py-2">{w.driver_phone || '—'}</td>
-                  <td className="py-2 font-mono text-xs">{w.driver_upi_id || '—'}</td>
-                  <td className="py-2">
-                    {w.driver_kyc_approved ? (
-                      <span className="tag border-emerald-500/40 text-emerald-300">ok</span>
-                    ) : (
-                      <span className="tag border-red-500/40 text-red-300">not approved</span>
-                    )}
+                  <td>
+                    {w.driver_upi_id || <span className="text-ink-subtle">No UPI on file</span>}
                   </td>
-                  <td className="py-2 font-semibold">₹{w.amount}</td>
-                  <td className="py-2">
-                    <span className={`tag capitalize ${STATUS_STYLES[w.status] ?? 'border-white/20'}`}>
-                      {w.status}
-                    </span>
+                  <td>
+                    {w.driver_kyc_approved
+                      ? <Pill tone="good">Approved</Pill>
+                      : <Pill tone="bad">Not approved</Pill>}
                   </td>
-                  <td className="py-2 text-white/60">
-                    {w.requested_at ? new Date(w.requested_at).toLocaleString() : '—'}
-                  </td>
-                  <td className="py-2 font-mono text-xs text-white/50">
-                    {w.payout_reference_id || '—'}
-                  </td>
-                  <td className="py-2 whitespace-nowrap">
-                    {w.status === 'pending' && (
+                  <td className="num">{money(w)}</td>
+                  <td><Pill tone={TONE[w.status] ?? 'neutral'}>{w.status}</Pill></td>
+                  <td>{when(w.requested_at)}</td>
+                  <td className="num">
+                    {w.status === 'pending' && acting?.id !== w.id && (
                       <>
                         <button
-                          className="btn-ghost text-gold-text text-xs disabled:opacity-40"
-                          disabled={busyId === w.id || !w.driver_kyc_approved}
-                          title={
-                            w.driver_kyc_approved
-                              ? 'Approve and dispatch payout'
-                              : 'Driver KYC is not approved — cannot pay out'
-                          }
-                          onClick={() => approve(w)}
+                          className="btn-ghost"
+                          disabled={busyId !== null}
+                          onClick={() => { setActing({ id: w.id, kind: 'approve' }); setNote(''); }}
                         >
-                          Approve
+                          Release
                         </button>
+                        {' · '}
                         <button
-                          className="btn-ghost text-red-300 text-xs ml-2 disabled:opacity-40"
-                          disabled={busyId === w.id}
-                          onClick={() => reject(w)}
+                          className="btn-ghost"
+                          disabled={busyId !== null}
+                          onClick={() => { setActing({ id: w.id, kind: 'reject' }); setNote(''); }}
                         >
                           Reject
                         </button>
@@ -215,18 +217,70 @@ export default function WithdrawalsPage() {
                     )}
                   </td>
                 </tr>
-              ))}
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={10} className="py-4 text-white/50">
-                    No {statusFilter || ''} withdrawals.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+
+                {/* The confirmation, in the page rather than a browser
+                    dialog, so the amount and the payee stay visible while
+                    the approver reads them back. */}
+                {acting?.id === w.id && (
+                  <tr>
+                    <td colSpan={7} style={{ background: 'var(--bg-200)' }}>
+                      <div className="grid gap-3" style={{ maxWidth: '44rem' }}>
+                        <b>
+                          {acting.kind === 'approve'
+                            ? `Release ${money(w)} to ${w.driver_name?.trim() || `driver #${w.driver}`}`
+                            : `Reject ${money(w)} for ${w.driver_name?.trim() || `driver #${w.driver}`}`}
+                        </b>
+                        <span className="text-ink-muted text-sm">
+                          {acting.kind === 'approve' ? (
+                            <>
+                              This dispatches a real payout
+                              {w.driver_upi_id ? ` to ${w.driver_upi_id}` : ''} and
+                              cannot be undone from this console.
+                              {!w.driver_kyc_approved && (
+                                <strong style={{ color: 'var(--danger)' }}>
+                                  {' '}This driver&rsquo;s KYC is not approved.
+                                </strong>
+                              )}
+                            </>
+                          ) : (
+                            'The reason you write is shown to the driver.'
+                          )}
+                        </span>
+                        <textarea
+                          className="input"
+                          rows={2}
+                          value={note}
+                          onChange={(e) => setNote(e.target.value)}
+                          placeholder={acting.kind === 'approve'
+                            ? 'Note for the audit log (optional)'
+                            : 'Why is this being rejected?'}
+                        />
+                        <div className="flex gap-3">
+                          <button
+                            className="btn-primary"
+                            disabled={busyId === w.id
+                              || (acting.kind === 'reject' && note.trim().length < 5)}
+                            onClick={() => send(w, acting.kind)}
+                          >
+                            {busyId === w.id ? 'Working…'
+                              : acting.kind === 'approve' ? 'Release the payout' : 'Reject'}
+                          </button>
+                          <button
+                            className="btn-ghost"
+                            onClick={() => { setActing(null); setNote(''); }}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            ))}
+          </Table>
+        )}
+      </Panel>
+    </>
   );
 }
