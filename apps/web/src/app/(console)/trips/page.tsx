@@ -26,6 +26,7 @@ type Trip = {
   destination_address?: string;
   estimated_fare?: string;
   final_fare?: string;
+  currency?: string | null;
   requested_at?: string;
 };
 
@@ -124,6 +125,7 @@ export default function TripsPage() {
                     {t.destination_address || '—'}
                   </td>
                   <td className="num">
+                    {t.currency ? `${t.currency} ` : ''}
                     {charged ? t.final_fare : t.estimated_fare ?? '—'}
                     {!charged && t.estimated_fare ? (
                       <span className="text-ink-subtle"> est.</span>

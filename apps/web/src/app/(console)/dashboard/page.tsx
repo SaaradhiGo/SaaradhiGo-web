@@ -42,7 +42,11 @@ type DashData = {
   drivers: { online_now: number; online_24h: number };
   riders: { active_24h: number };
   cancellations: { driver_24h: number };
-  withdrawals: { pending: number; completed_today_amount: string };
+  withdrawals: {
+    pending: number;
+    completed_today_amount: string | null;
+    completed_today_display?: string;
+  };
   receipts: { issued_today: number; send_failures_today: number };
 };
 
@@ -54,8 +58,23 @@ type Trip = {
   destination_address?: string;
   final_fare?: string;
   estimated_fare?: string;
+  currency?: string | null;
   requested_at?: string;
 };
+
+/**
+ * A fare with the currency the TRIP was priced in.
+ *
+ * Three money treatments on one screen -- a symbol in the hero, a bare
+ * number in the strip, a bare number in the table -- is the detail that
+ * makes a screen look unfinished. The trip stamps its own currency; this
+ * uses it rather than choosing a symbol.
+ */
+function fare(t: Trip) {
+  const amount = t.final_fare ?? t.estimated_fare;
+  if (amount === undefined || amount === null || amount === '') return '—';
+  return t.currency ? `${t.currency} ${amount}` : amount;
+}
 
 const TONE: Record<string, 'good' | 'bad' | 'wait' | 'neutral'> = {
   completed: 'good',
@@ -162,7 +181,8 @@ export default function DashboardPage() {
             <Stat label="Completed" value={data.trips.completed} />
             <Stat label="Drivers 24h" value={data.drivers.online_24h} />
             <Stat label="Paid out today" money
-                  value={data.withdrawals.completed_today_amount} />
+                  value={data.withdrawals.completed_today_display
+                    || data.withdrawals.completed_today_amount} />
             <Stat label="Receipts" value={data.receipts.issued_today}
                   note={data.receipts.send_failures_today > 0
                     ? `${data.receipts.send_failures_today} failed`
@@ -209,7 +229,7 @@ export default function DashboardPage() {
                   <td className="max-w-[18rem] truncate" title={t.destination_address}>
                     {t.destination_address || '—'}
                   </td>
-                  <td className="num">{t.final_fare ?? t.estimated_fare ?? '—'}</td>
+                  <td className="num">{fare(t)}</td>
                   <td className="num">{clock(t.requested_at)}</td>
                 </tr>
               );
