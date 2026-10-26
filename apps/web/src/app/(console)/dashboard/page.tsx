@@ -1,42 +1,44 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { EMPTY_COUNTS, QueueCounts, fetchQueueCounts } from '@/lib/consoleQueues';
 import {
   Empty,
+  Hero,
   PageHeader,
   Panel,
+  Pill,
   Queue,
   Stat,
   StatStrip,
+  Table,
 } from '@/components/console/ui';
 
 /**
- * What an operator should do first, and then what they should know.
+ * What an operator should do first, what they should know, and what is
+ * happening right now.
  *
- * IT USED TO BE SEVEN IDENTICAL BOXES above two thirds of empty black.
- * "TRIPS TOTAL 3" carried the same weight as the money beside it, nothing
- * was clickable, and nothing said what needed doing — which is the only
- * question somebody opening an operations console actually has.
+ * THE SECOND PASS. The first one fixed the ordering — work above metrics —
+ * but left half a viewport of black below the fold, which is most of why
+ * the console still read as a wireframe. A console with nothing under the
+ * content looks unfinished however good the top is.
  *
- * Queues first, because they are work. Metrics second and quieter, because
- * they are context. Every queue is a link to the screen where that work is
- * done.
+ * So the page now has three bands, and they are in the order an operator
+ * reads them:
  *
- * ON THE MONEY FIGURE
- * The server returns `gmv_display`, already formatted per currency, and
- * `gmv` which is deliberately NULL when the day spans more than one market
- * — adding rupees to dollars would be a lie. This page used to render
- * `Rs ${data.gmv}`, which hardcoded one symbol and would have printed
- * "Rs null" the day a second market opened. It reads `gmv_display`.
+ *   1. TODAY'S MONEY, at a size that says it is the headline.
+ *   2. WHAT IS WAITING, as queues that link to where the work is done.
+ *   3. WHAT IS HAPPENING, a live list of the most recent trips — which is
+ *      both the thing an operator glances at all day and the content that
+ *      makes this a page rather than a header.
  */
 type DashData = {
   date: string;
   trips: { requested: number; accepted: number; completed: number; cancelled: number; total: number };
   gmv: string | null;
   gmv_display?: string;
-  gmv_by_currency?: Record<string, string>;
   drivers: { online_now: number; online_24h: number };
   riders: { active_24h: number };
   cancellations: { driver_24h: number };
@@ -44,12 +46,33 @@ type DashData = {
   receipts: { issued_today: number; send_failures_today: number };
 };
 
+type Trip = {
+  id: number;
+  status?: string;
+  status_id?: { status_code?: string };
+  pickup_address?: string;
+  destination_address?: string;
+  final_fare?: string;
+  estimated_fare?: string;
+  requested_at?: string;
+};
+
+const TONE: Record<string, 'good' | 'bad' | 'wait' | 'neutral'> = {
+  completed: 'good',
+  cancelled: 'bad',
+  requested: 'wait',
+  accepted: 'wait',
+  in_progress: 'wait',
+};
+
+const clock = (s?: string) => (s ? s.slice(11, 16) : '—');
+
 export default function DashboardPage() {
   const [data, setData] = useState<DashData | null>(null);
+  const [trips, setTrips] = useState<Trip[] | null>(null);
+  const [counts, setCounts] = useState<QueueCounts>(EMPTY_COUNTS);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  // null means "we could not find out", which is never shown as zero.
-  const [counts, setCounts] = useState<QueueCounts>(EMPTY_COUNTS);
 
   const load = useCallback(async () => {
     try {
@@ -57,15 +80,22 @@ export default function DashboardPage() {
       setError(null);
     } catch (err) {
       setError(err instanceof ApiError && err.fromServer
-        ? err.message : 'We could not load the dashboard.');
+        ? err.message : 'We could not load today’s figures.');
     } finally {
       setLoading(false);
     }
 
-    // Shared with the sidebar. See lib/consoleQueues.ts: the three
-    // endpoints disagree about the case of their status values, and
-    // support silently returns a confident 0 when it is wrong.
+    // Shared with the sidebar. See lib/consoleQueues.ts: the endpoints
+    // disagree about the case of their status values, and support returns
+    // a confident 0 when it is wrong.
     setCounts(await fetchQueueCounts());
+
+    try {
+      const page = await api.get<{ results?: Trip[] }>('/ride/admin/trips/?page_size=8');
+      setTrips(Array.isArray(page?.results) ? page.results : []);
+    } catch {
+      setTrips([]);
+    }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
@@ -80,85 +110,113 @@ export default function DashboardPage() {
       <PageHeader
         title="Today"
         subtitle={data?.date
-          ? `${data.date}${waiting ? ` · ${waiting} item${waiting === 1 ? '' : 's'} waiting on you` : ' · nothing waiting'}`
+          ? `${data.date} · ${waiting ? `${waiting} item${waiting === 1 ? '' : 's'} waiting on you` : 'nothing waiting'}`
           : undefined}
       />
 
-      {error && (
-        <div className="alert-error mb-5" role="alert">{error}</div>
-      )}
+      {error && <div className="alert-error mb-4" role="alert">{error}</div>}
 
-      {/* ---- what to do -------------------------------------------------- */}
-      <section className="ops-queues mb-6">
+      {/* ---- 1. the headline ------------------------------------------- */}
+      <Hero
+        label="Collected today"
+        value={data ? (data.gmv_display || data.gmv) : null}
+        note={data
+          ? `${data.trips.completed} completed of ${data.trips.total} trips`
+          : 'The queues below are fetched separately and may still be accurate.'}
+        facts={data ? [
+          { label: 'Online now', value: data.drivers.online_now },
+          { label: 'Riders 24h', value: data.riders.active_24h },
+          { label: 'Cancelled 24h', value: data.cancellations.driver_24h },
+        ] : undefined}
+      />
+
+      {/* ---- 2. what is waiting ---------------------------------------- */}
+      <section className="ops-queues mb-4">
         <Queue
-          href="/sos"
-          count={counts.sosOpen}
-          urgent
+          href="/sos" count={counts.sosOpen} urgent
           title="SOS alerts open"
           detail="A rider or driver has raised an alarm during a trip."
         />
         <Queue
-          href="/drivers?approved=false"
-          count={counts.driversAwaiting}
+          href="/drivers?approved=false" count={counts.driversAwaiting}
           title="Drivers awaiting review"
-          detail="Documents uploaded and waiting on a decision before they can be dispatched."
+          detail="Documents uploaded, waiting on a decision."
         />
         <Queue
-          href="/withdrawals"
-          count={counts.withdrawalsPending}
+          href="/withdrawals" count={counts.withdrawalsPending}
           title="Withdrawals pending"
           detail="Drivers waiting to be paid out."
         />
         <Queue
-          href="/support"
-          count={counts.supportOpen}
+          href="/support" count={counts.supportOpen}
           title="Support tickets open"
           detail="Riders and drivers waiting for an answer."
         />
       </section>
 
-      {/* ---- what to know ------------------------------------------------ */}
-      {data ? (
-        <>
+      {data && (
+        <div className="mb-4">
           <StatStrip>
-            <Stat
-              label="Collected today"
-              money
-              value={data.gmv_display || (data.gmv ?? null)}
-              note={`${data.trips.completed} completed`}
-            />
             <Stat label="Trips today" value={data.trips.total}
                   note={`${data.trips.requested} requested`} />
-            <Stat label="Cancelled 24h" value={data.cancellations.driver_24h}
-                  note="by drivers" />
-            <Stat label="Drivers online" value={data.drivers.online_now}
-                  note={`${data.drivers.online_24h} in 24h`} />
-            <Stat label="Riders 24h" value={data.riders.active_24h} />
-            <Stat label="Receipts today" value={data.receipts.issued_today}
+            <Stat label="Completed" value={data.trips.completed} />
+            <Stat label="Drivers 24h" value={data.drivers.online_24h} />
+            <Stat label="Paid out today" money
+                  value={data.withdrawals.completed_today_amount} />
+            <Stat label="Receipts" value={data.receipts.issued_today}
                   note={data.receipts.send_failures_today > 0
-                    ? `${data.receipts.send_failures_today} failed to send`
+                    ? `${data.receipts.send_failures_today} failed`
                     : 'none failed'} />
           </StatStrip>
-
-          {/* Receipts that never reached anybody are a quiet failure: the
-              trip looks finished and the rider has nothing. */}
-          {data.receipts.send_failures_today > 0 && (
-            <div className="alert-error mt-5" role="alert">
-              {data.receipts.send_failures_today} receipt
-              {data.receipts.send_failures_today === 1 ? '' : 's'} could not be
-              sent today. Those riders have no record of their trip.
-            </div>
-          )}
-        </>
-      ) : (
-        <Panel>
-          <Empty
-            error
-            title="Today's figures are unavailable"
-            detail="The queues above are fetched separately and may still be accurate."
-          />
-        </Panel>
+        </div>
       )}
+
+      {/* Receipts that never reached anybody are a quiet failure: the trip
+          looks finished and the rider has nothing. */}
+      {data && data.receipts.send_failures_today > 0 && (
+        <div className="alert-error mb-4" role="alert">
+          {data.receipts.send_failures_today} receipt
+          {data.receipts.send_failures_today === 1 ? '' : 's'} could not be sent
+          today. Those riders have no record of their trip.
+        </div>
+      )}
+
+      {/* ---- 3. what is happening -------------------------------------- */}
+      <Panel
+        title="Latest trips"
+        action={<Link href="/trips" className="sg-link text-sm">All trips</Link>}
+        flush
+      >
+        {trips === null ? (
+          <Empty title="Loading…" />
+        ) : trips.length === 0 ? (
+          <Empty title="No trips yet today"
+                 detail="Rides appear here as they are requested." />
+        ) : (
+          <Table head={<>
+            <th>Trip</th><th>Status</th><th>Pickup</th><th>Drop</th>
+            <th className="num">Fare</th><th className="num">Time</th>
+          </>}>
+            {trips.map((t) => {
+              const state = t.status || t.status_id?.status_code || 'unknown';
+              return (
+                <tr key={t.id}>
+                  <td><Link href={`/trips/${t.id}`}>#{t.id}</Link></td>
+                  <td><Pill tone={TONE[state] ?? 'neutral'}>{state.replace(/_/g, ' ')}</Pill></td>
+                  <td className="max-w-[18rem] truncate" title={t.pickup_address}>
+                    {t.pickup_address || '—'}
+                  </td>
+                  <td className="max-w-[18rem] truncate" title={t.destination_address}>
+                    {t.destination_address || '—'}
+                  </td>
+                  <td className="num">{t.final_fare ?? t.estimated_fare ?? '—'}</td>
+                  <td className="num">{clock(t.requested_at)}</td>
+                </tr>
+              );
+            })}
+          </Table>
+        )}
+      </Panel>
     </>
   );
 }

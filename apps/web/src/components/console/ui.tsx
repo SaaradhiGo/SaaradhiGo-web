@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { Chevron } from '@/components/console/icons';
 
 /**
  * The console's shared parts.
@@ -80,6 +81,80 @@ export function StatStrip({ children }: { children: ReactNode }) {
 }
 
 /**
+ * The one figure worth leading with, at a size that says so.
+ *
+ * The dashboard had no such place: its money carried exactly the weight of
+ * the word above it, which is how a page ends up with nowhere to look
+ * first. `value` of null renders as "Unavailable", same rule as `Stat`.
+ */
+export function Hero({
+  label,
+  value,
+  note,
+  facts,
+}: {
+  label: string;
+  value: string | null | undefined;
+  note?: ReactNode;
+  facts?: Array<{ label: string; value: ReactNode }>;
+}) {
+  const missing = value === null || value === undefined || value === '';
+  return (
+    <section className="ops-hero">
+      <div>
+        <span className="ops-hero__label">{label}</span>
+        <div className={`ops-hero__value ${missing ? 'ops-hero__value--unknown' : ''}`}>
+          {missing ? 'Unavailable' : value}
+        </div>
+        {note ? <div className="ops-hero__note">{note}</div> : null}
+      </div>
+      {facts?.length ? (
+        <div className="ops-hero__side">
+          {facts.map((f) => (
+            <div className="ops-hero__fact" key={f.label}>
+              <b>{f.value}</b>
+              <span>{f.label}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+/**
+ * A row of filters is navigation, not a row of buttons.
+ *
+ * Segmented so the set reads as one control, and `aria-pressed` so the
+ * chosen one is announced rather than only coloured.
+ */
+export function Filters<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: ReadonlyArray<{ key: T; label: string }>;
+  onChange: (key: T) => void;
+}) {
+  return (
+    <div className="ops-filters" role="group" aria-label="Filter">
+      {options.map((o) => (
+        <button
+          key={o.key || 'all'}
+          type="button"
+          className="ops-filter"
+          aria-pressed={o.key === value}
+          onClick={() => onChange(o.key)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
  * A pile of work, as a link to where it is done.
  *
  * `count` drives the urgency: nothing waiting is quiet, something waiting
@@ -108,7 +183,7 @@ export function Queue({
         <b>{title}</b>
         <span>{detail}</span>
       </span>
-      <span className="ops-queue__go" aria-hidden="true">View →</span>
+      <span className="ops-queue__go" aria-hidden="true"><Chevron /></span>
     </Link>
   );
 }

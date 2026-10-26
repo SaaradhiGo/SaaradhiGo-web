@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { Empty, PageHeader, Panel, Pill, Table } from '@/components/console/ui';
+import { Empty, PageHeader, Panel, Pill, Table, Filters } from '@/components/console/ui';
 
 /**
  * Riders and drivers waiting for an answer.
@@ -61,7 +61,7 @@ function raisedBy(t: Ticket) {
 
 export default function SupportPage() {
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
-  const [status, setStatus] = useState('OPEN');
+  const [status, setStatus] = useState<(typeof FILTERS)[number]['key']>('OPEN');
   const [total, setTotal] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,15 +90,7 @@ export default function SupportPage() {
       <PageHeader
         title="Support"
         subtitle={total !== null ? `${total} ticket${total === 1 ? '' : 's'}` : undefined}
-        actions={FILTERS.map((f) => (
-          <button
-            key={f.key || 'all'}
-            className={f.key === status ? 'btn-secondary' : 'btn-ghost'}
-            onClick={() => setStatus(f.key)}
-          >
-            {f.label}
-          </button>
-        ))}
+        actions={<Filters value={status} options={FILTERS} onChange={setStatus} />}
       />
 
       {error && <div className="alert-error mb-5" role="alert">{error}</div>}

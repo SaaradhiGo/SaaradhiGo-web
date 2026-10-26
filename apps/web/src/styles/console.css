@@ -1,46 +1,56 @@
 /* ===========================================================================
    The operations console.
 
-   WHAT WAS WRONG WITH IT
+   THE FIRST PASS FIXED WHAT WAS BROKEN; THIS ONE IS ABOUT CRAFT.
 
-   Everything rendered and nothing was designed. The dashboard was seven
-   identical boxes in a ragged 4+3 grid above two thirds of empty black;
-   "TRIPS TOTAL 3" carried the same weight as the money figure beside it,
-   and none of it told an operator what to DO. The driver review screen put
-   "Approve KYC" -- the decision that lets someone carry paying passengers
-   -- in the corner as a text link the size of a breadcrumb, beside four
-   em-dashes where the documents should have been.
+   What it still read as, honestly: a wireframe. Four faults, and none of
+   them were about colour:
 
-   So this is not a repaint. The console is a place of WORK, and these
-   styles are built around three ideas:
+     1. NOTHING FILLED THE PAGE. Four queues and six figures, then half a
+        screen of black. A console with nothing below the fold looks
+        unfinished however good the top is.
+     2. EVERY SURFACE WAS THE SAME. One flat `bg-100` on `bg-000` with a
+        1px line — no sense of anything sitting on anything.
+     3. THE TYPE SCALE WAS FLAT. Almost everything between 13 and 15px, so
+        a money figure carried the same weight as the word beside it and
+        the eye had nowhere to land.
+     4. SPACING WAS UNIFORM. Identical padding everywhere means nothing
+        groups, and grouping is most of what makes a dense screen readable.
 
-     1. The thing to do comes before the thing to know. Queues above
-        metrics; the decision above the evidence.
-     2. Numbers are for comparing. Tabular figures, right-aligned, one
-        size for money and one for counts.
-     3. Density is a feature. An operator scanning a payout queue wants
-        rows close enough to compare, not cards with 20px of air each.
+   So: a real scale, surfaces that sit at different heights, rhythm that
+   varies with meaning, and enough content to fill a viewport.
 
-   Scoped under `.ops` so none of it can reach the rider site, which has
-   its own system and different goals.
+   Scoped under `.ops` so none of it reaches the rider site.
    =========================================================================== */
 
-/* --- shell ---------------------------------------------------------------- */
-
 .ops {
+  --ops-gutter: 28px;
+  --ops-radius: 14px;
+  /* One elevation ramp. Panels are a hair lighter than the page and carry
+     a top inner highlight, which is what reads as "surface" rather than
+     "rectangle" on a near-black background. */
+  --ops-surface: linear-gradient(180deg, #181818 0%, #121212 100%);
+  --ops-surface-hi: linear-gradient(180deg, #1f1f1f 0%, #161616 100%);
+  --ops-edge: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  --ops-lift: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.35);
+
   display: grid;
-  grid-template-columns: 244px minmax(0, 1fr);
+  grid-template-columns: 236px minmax(0, 1fr);
   min-height: 100vh;
-  background: var(--bg-000);
+  background:
+    radial-gradient(1100px 560px at 76% -12%, rgba(255, 215, 0, 0.05), transparent 62%),
+    var(--bg-000);
   color: var(--ink);
 }
+
+/* --- sidebar -------------------------------------------------------------- */
 
 .ops__side {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  padding: var(--space-5) var(--space-4);
-  background: var(--bg-100);
+  gap: 26px;
+  padding: 22px 14px;
+  background: linear-gradient(180deg, #121212 0%, #0b0b0b 100%);
   border-right: 1px solid var(--line);
   position: sticky;
   top: 0;
@@ -48,288 +58,400 @@
   overflow-y: auto;
 }
 
-.ops__brand { display: flex; align-items: center; gap: 10px; }
-.ops__brand svg, .ops__brand img { width: 30px; height: 30px; }
+.ops__brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; }
+/* The mark is a <span> carrying a CSS mask, not an <img>. Sizing `svg, img`
+   meant it collapsed to zero width and the sidebar showed bare text. */
+.ops__brand .sg-logo { width: 32px; flex: none; }
 .ops__brand b {
   font: 800 15px/1.1 var(--font-sans);
-  letter-spacing: 0.02em;
-  color: var(--gold-text);
+  letter-spacing: 0.01em;
+  color: var(--ink);
   display: block;
 }
 .ops__brand span {
-  font: 700 10px/1.2 var(--font-sans);
-  letter-spacing: 0.18em;
+  font: 700 9px/1.3 var(--font-sans);
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--ink-subtle);
+  color: var(--gold-text);
 }
 
-/* Grouped, because seven flat links give no sense of what this app is for.
-   An operator's day has shapes: live incidents, money, people. */
-.ops__group { display: grid; gap: 2px; }
-.ops__group + .ops__group { margin-top: var(--space-4); }
+.ops__group { display: grid; gap: 1px; }
+.ops__group + .ops__group { margin-top: 20px; }
 .ops__group-label {
-  font: 700 10px/1.4 var(--font-sans);
-  letter-spacing: 0.16em;
+  font: 700 9px/1.4 var(--font-sans);
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--ink-subtle);
-  padding: 0 10px var(--space-2);
+  color: #5d6675;
+  padding: 0 10px 8px;
 }
 
 .ops__link {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 11px;
   padding: 9px 10px;
-  border-radius: var(--radius-sm);
-  font: 600 14px/1.2 var(--font-sans);
-  color: var(--ink-muted);
+  border-radius: 9px;
+  font: 600 13.5px/1.2 var(--font-sans);
+  color: #9aa6b6;
   text-decoration: none;
-  transition: background 120ms ease, color 120ms ease;
+  position: relative;
+  transition: background 140ms ease, color 140ms ease;
 }
-.ops__link:hover { background: var(--bg-200); color: var(--ink); }
+.ops__link svg { flex: none; opacity: 0.75; }
+.ops__link:hover { background: rgba(255, 255, 255, 0.04); color: var(--ink); }
+.ops__link:hover svg { opacity: 1; }
 .ops__link[aria-current='page'] {
-  background: var(--gold-soft);
-  color: var(--gold-text);
-  box-shadow: inset 2px 0 0 var(--gold-500);
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.14), rgba(255, 215, 0, 0.03));
+  color: #ffe98a;
 }
-/* A count of things waiting. The point of the nav is to show where the
-   work is before you click. */
+.ops__link[aria-current='page'] svg { opacity: 1; color: var(--gold-500); }
+/* The active marker is a bar in the gutter, not a border on the pill:
+   it lines up down the whole nav regardless of each item's height. */
+.ops__link[aria-current='page']::before {
+  content: '';
+  position: absolute; left: -14px; top: 7px; bottom: 7px;
+  width: 3px; border-radius: 0 3px 3px 0;
+  background: var(--gold-500);
+}
+
 .ops__count {
   margin-left: auto;
-  min-width: 20px;
-  padding: 0 6px;
-  border-radius: var(--radius-pill);
-  background: var(--bg-300);
+  min-width: 19px; padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
   color: var(--ink);
-  font: 700 11px/18px var(--font-sans);
+  font: 700 10.5px/18px var(--font-sans);
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
 .ops__link[aria-current='page'] .ops__count { background: var(--gold-500); color: var(--on-gold); }
-.ops__count--urgent { background: var(--danger); color: #1a0b06; }
+.ops__count--urgent { background: var(--danger); color: #27100a; }
 
 .ops__who {
   margin-top: auto;
-  padding-top: var(--space-4);
+  padding: 14px 10px 0;
   border-top: 1px solid var(--line);
-  display: grid; gap: 2px;
+  display: grid; gap: 1px;
 }
-.ops__who b { font: 700 13px/1.3 var(--font-sans); color: var(--ink); }
-.ops__who span { font: 500 12px/1.3 var(--font-sans); color: var(--ink-subtle); overflow-wrap: anywhere; }
+.ops__who b { font: 700 12.5px/1.4 var(--font-sans); color: var(--ink); }
+.ops__who span {
+  font: 500 11.5px/1.4 var(--font-sans); color: #6b7585; overflow-wrap: anywhere;
+}
 
-.ops__main { min-width: 0; padding: var(--space-6) var(--space-6) var(--space-8); }
+.ops__main { min-width: 0; padding: 26px var(--ops-gutter) 56px; }
 
 /* --- page header ---------------------------------------------------------- */
 
 .ops-head {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  gap: var(--space-5); flex-wrap: wrap;
-  margin-bottom: var(--space-5);
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 24px; flex-wrap: wrap;
+  margin-bottom: 22px;
 }
-.ops-head h1 { font: 800 26px/1.2 var(--font-sans); margin: 0; letter-spacing: -0.01em; }
-.ops-head p { font: 500 14px/1.4 var(--font-sans); color: var(--ink-muted); margin: 6px 0 0; }
-.ops-head__actions { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+/* 30px against a 13px body is the contrast that was missing. */
+.ops-head h1 {
+  font: 800 30px/1.1 var(--font-sans);
+  letter-spacing: -0.022em;
+  margin: 0;
+}
+.ops-head p {
+  font: 500 13.5px/1.4 var(--font-sans);
+  color: #8e99a8; margin: 7px 0 0;
+}
+.ops-head__actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-/* --- the work queue, which leads the dashboard ---------------------------- */
+/* --- the hero figure ------------------------------------------------------ */
+/* The one number worth leading with. It had the same weight as its own
+   label, which is how a dashboard ends up with nowhere to look first. */
 
-.ops-queues { display: grid; gap: var(--space-3); }
+.ops-hero {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px; align-items: center;
+  padding: 24px 26px;
+  background: var(--ops-surface-hi);
+  border: 1px solid var(--line);
+  border-radius: var(--ops-radius);
+  box-shadow: var(--ops-edge), var(--ops-lift);
+  margin-bottom: 16px;
+}
+.ops-hero__label {
+  font: 700 10px/1.3 var(--font-sans);
+  letter-spacing: 0.17em; text-transform: uppercase; color: #6b7585;
+}
+.ops-hero__value {
+  font: 800 42px/1.05 var(--font-sans);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold-500);
+  margin-top: 6px;
+}
+.ops-hero__value--unknown { font-size: 20px; color: #6b7585; letter-spacing: 0; }
+.ops-hero__note { font: 500 13px/1.4 var(--font-sans); color: #8e99a8; margin-top: 6px; }
+.ops-hero__side { display: flex; gap: 30px; flex-wrap: wrap; }
+.ops-hero__fact { display: grid; gap: 3px; }
+.ops-hero__fact b {
+  font: 800 20px/1.1 var(--font-sans); font-variant-numeric: tabular-nums;
+}
+.ops-hero__fact span {
+  font: 600 10px/1.3 var(--font-sans);
+  letter-spacing: 0.14em; text-transform: uppercase; color: #6b7585;
+}
+
+/* --- queues --------------------------------------------------------------- */
+
+.ops-queues {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 12px;
+}
 
 .ops-queue {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
-  gap: var(--space-4);
+  grid-template-columns: 40px minmax(0, 1fr) 16px;
+  gap: 14px;
   align-items: center;
-  padding: var(--space-4);
-  background: var(--bg-100);
+  padding: 16px 18px;
+  background: var(--ops-surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border-radius: 12px;
+  box-shadow: var(--ops-edge);
   text-decoration: none;
   color: inherit;
-  transition: border-color 120ms ease, background 120ms ease;
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
-.ops-queue:hover { border-color: var(--line-strong); background: var(--bg-200); }
-/* Something is waiting. Gold means "your attention"; red means "now". */
-.ops-queue--waiting { border-color: var(--gold-line); }
-.ops-queue--urgent { border-color: var(--danger); }
+.ops-queue:hover {
+  transform: translateY(-1px);
+  border-color: #3a3a40;
+  box-shadow: var(--ops-edge), var(--ops-lift);
+}
+.ops-queue--waiting { border-color: rgba(255, 215, 0, 0.3); }
+.ops-queue--urgent { border-color: rgba(255, 138, 107, 0.45); }
 
 .ops-queue__n {
-  width: 44px; height: 44px; border-radius: var(--radius-sm);
+  width: 40px; height: 40px; border-radius: 11px;
   display: grid; place-items: center;
-  background: var(--bg-300); color: var(--ink);
-  font: 800 17px/1 var(--font-sans); font-variant-numeric: tabular-nums;
+  background: rgba(255, 255, 255, 0.055);
+  color: #8e99a8;
+  font: 800 16px/1 var(--font-sans); font-variant-numeric: tabular-nums;
 }
-.ops-queue--waiting .ops-queue__n { background: var(--gold-500); color: var(--on-gold); }
-.ops-queue--urgent .ops-queue__n { background: var(--danger); color: #1a0b06; }
+.ops-queue--waiting .ops-queue__n {
+  background: var(--gold-500); color: var(--on-gold);
+  box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.1);
+}
+.ops-queue--urgent .ops-queue__n {
+  background: var(--danger); color: #27100a;
+  box-shadow: 0 0 0 4px rgba(255, 138, 107, 0.12);
+}
 
-.ops-queue__text { display: grid; gap: 2px; min-width: 0; }
-.ops-queue__text b { font: 700 15px/1.3 var(--font-sans); }
-.ops-queue__text span { font: 500 13px/1.4 var(--font-sans); color: var(--ink-muted); }
-.ops-queue__go { color: var(--ink-subtle); font: 600 13px/1 var(--font-sans); }
+.ops-queue__text { display: grid; gap: 3px; min-width: 0; }
+.ops-queue__text b { font: 700 14px/1.3 var(--font-sans); }
+.ops-queue__text span { font: 500 12.5px/1.45 var(--font-sans); color: #7d8795; }
+.ops-queue__go { color: #4f5765; display: grid; place-items: center; }
+.ops-queue:hover .ops-queue__go { color: var(--gold-500); }
 
-/* --- the metric strip, which follows it ----------------------------------- */
-/* Deliberately quieter and smaller than the queues: these are for knowing,
-   not for doing, and they used to be the loudest thing on the page. */
+/* --- metric strip --------------------------------------------------------- */
 
 .ops-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1px;
   background: var(--line);
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: var(--ops-edge);
 }
-.ops-stat { background: var(--bg-100); padding: var(--space-4); display: grid; gap: 4px; }
+.ops-stat { background: #121212; padding: 15px 17px; display: grid; gap: 5px; }
 .ops-stat__label {
-  font: 700 10px/1.3 var(--font-sans);
-  letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--ink-subtle);
+  font: 700 9.5px/1.3 var(--font-sans);
+  letter-spacing: 0.16em; text-transform: uppercase; color: #6b7585;
 }
 .ops-stat__value {
-  font: 800 22px/1.15 var(--font-sans);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+  font: 800 21px/1.1 var(--font-sans);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
 }
 .ops-stat__value--money { color: var(--gold-text); }
-.ops-stat__note { font: 500 12px/1.3 var(--font-sans); color: var(--ink-muted); }
-.ops-stat__value--unknown { font-size: 15px; color: var(--ink-subtle); font-weight: 600; }
+.ops-stat__value--unknown { font-size: 13px; color: #6b7585; font-weight: 600; letter-spacing: 0; }
+.ops-stat__note { font: 500 11.5px/1.3 var(--font-sans); color: #7d8795; }
 
 /* --- panels and tables ---------------------------------------------------- */
 
 .ops-panel {
-  background: var(--bg-100);
+  background: var(--ops-surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
+  border-radius: var(--ops-radius);
+  box-shadow: var(--ops-edge);
   overflow: hidden;
 }
 .ops-panel__head {
   display: flex; align-items: center; justify-content: space-between;
-  gap: var(--space-4); flex-wrap: wrap;
-  padding: var(--space-4) var(--space-5);
+  gap: 16px; flex-wrap: wrap;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.016);
 }
-.ops-panel__head h2 { font: 700 15px/1.3 var(--font-sans); margin: 0; }
-.ops-panel__body { padding: var(--space-5); }
+.ops-panel__head h2 {
+  font: 700 13px/1.3 var(--font-sans);
+  letter-spacing: 0.04em; margin: 0;
+}
+.ops-panel__body { padding: 18px; }
 
 .ops-table { width: 100%; border-collapse: collapse; }
 .ops-table th {
   text-align: left;
-  padding: 10px var(--space-5);
-  font: 700 10px/1.4 var(--font-sans);
-  letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--ink-subtle);
-  background: var(--bg-200);
+  padding: 9px 18px;
+  font: 700 9.5px/1.4 var(--font-sans);
+  letter-spacing: 0.15em; text-transform: uppercase; color: #6b7585;
   border-bottom: 1px solid var(--line);
   white-space: nowrap;
 }
 .ops-table td {
-  padding: 12px var(--space-5);
-  font: 500 14px/1.4 var(--font-sans);
-  border-bottom: 1px solid var(--line);
+  padding: 11px 18px;
+  font: 500 13.5px/1.45 var(--font-sans);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
   vertical-align: middle;
 }
 .ops-table tbody tr:last-child td { border-bottom: 0; }
-.ops-table tbody tr:hover { background: var(--bg-200); }
-/* Money and counts line up so they can be compared down the column. */
+.ops-table tbody tr { transition: background 120ms ease; }
+.ops-table tbody tr:hover { background: rgba(255, 255, 255, 0.028); }
 .ops-table .num, .ops-num {
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-  white-space: nowrap;
+  font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap;
 }
-.ops-table a { color: var(--gold-text); text-decoration: none; font-weight: 600; }
-.ops-table a:hover { text-decoration: underline; }
+.ops-table a { color: #ffe98a; text-decoration: none; font-weight: 600; }
+.ops-table a:hover { color: var(--gold-500); text-decoration: underline; }
 
 /* --- status --------------------------------------------------------------- */
 
 .ops-pill {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 5px;
   padding: 3px 9px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--line-strong);
-  font: 700 11px/1.5 var(--font-sans);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  color: var(--ink-muted);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.04);
+  font: 700 10.5px/1.6 var(--font-sans);
+  letter-spacing: 0.04em; text-transform: capitalize; white-space: nowrap;
+  color: #9aa6b6;
 }
-/* A word in every one of them: colour supports the meaning, never carries
-   it alone. */
-.ops-pill--good { border-color: var(--success); color: var(--success); }
-.ops-pill--bad { border-color: var(--danger); color: var(--danger); }
-.ops-pill--wait { border-color: var(--gold-line); color: var(--gold-text); }
+.ops-pill--good {
+  border-color: rgba(70, 201, 139, 0.4); color: #7fdcb0;
+  background: rgba(70, 201, 139, 0.09);
+}
+.ops-pill--bad {
+  border-color: rgba(255, 138, 107, 0.42); color: #ffa98f;
+  background: rgba(255, 138, 107, 0.09);
+}
+.ops-pill--wait {
+  border-color: rgba(255, 215, 0, 0.32); color: #ffe07a;
+  background: rgba(255, 215, 0, 0.07);
+}
 
 /* --- empty states --------------------------------------------------------- */
-/* An empty table and a failed request look identical on screen. These say
-   which, because an operator acting on "no payouts pending" when the
-   request failed is the expensive mistake. */
 
-.ops-empty { padding: var(--space-7) var(--space-5); text-align: center; display: grid; gap: 6px; }
-.ops-empty b { font: 700 15px/1.3 var(--font-sans); color: var(--ink); }
-.ops-empty span { font: 500 13px/1.5 var(--font-sans); color: var(--ink-muted); }
+.ops-empty { padding: 44px 20px; text-align: center; display: grid; gap: 6px; }
+.ops-empty b { font: 700 14px/1.3 var(--font-sans); color: #c6cedb; }
+.ops-empty span { font: 500 12.5px/1.5 var(--font-sans); color: #6b7585; }
 
 /* --- the review screen ---------------------------------------------------- */
 
-.ops-review { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--space-5); align-items: start; }
+.ops-review {
+  display: grid; grid-template-columns: minmax(0, 1fr) 338px;
+  gap: 16px; align-items: start;
+}
 @media (max-width: 1180px) { .ops-review { grid-template-columns: minmax(0, 1fr); } }
 
-/* The decision, and it is not a text link in the corner. */
 .ops-decide {
-  position: sticky; top: var(--space-5);
-  background: var(--bg-100);
-  border: 1px solid var(--gold-line);
-  border-radius: var(--radius-md);
-  padding: var(--space-5);
-  display: grid; gap: var(--space-4);
+  position: sticky; top: 18px;
+  background: var(--ops-surface-hi);
+  border: 1px solid rgba(255, 215, 0, 0.26);
+  border-radius: var(--ops-radius);
+  box-shadow: var(--ops-edge), var(--ops-lift);
+  padding: 18px;
+  display: grid; gap: 14px;
 }
-.ops-decide h2 { font: 700 15px/1.3 var(--font-sans); margin: 0; }
-.ops-decide__why { font: 500 13px/1.5 var(--font-sans); color: var(--ink-muted); margin: 0; }
-.ops-decide__actions { display: grid; gap: var(--space-2); }
+.ops-decide h2 { font: 700 13px/1.3 var(--font-sans); letter-spacing: 0.04em; margin: 0; }
+.ops-decide__why { font: 500 12.5px/1.55 var(--font-sans); color: #8e99a8; margin: 0; }
+.ops-decide__actions { display: grid; gap: 8px; }
 
-/* One document, with a way to open it. */
+/* A DISABLED PRIMARY MUST NOT LOOK BROKEN. `opacity: .45` on gold renders
+   as olive mud, which reads as a rendering fault rather than a deliberate
+   state. Disabled is a flat, quiet surface with a clear label instead. */
+.ops-decide .btn-primary:disabled,
+.ops-decide .btn-primary[disabled] {
+  background: rgba(255, 255, 255, 0.055);
+  color: #6b7585;
+  opacity: 1;
+  border: 1px solid var(--line);
+}
+
 .ops-doc {
-  display: grid; grid-template-columns: 24px minmax(0, 1fr) auto;
-  gap: var(--space-3); align-items: center;
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 12px; align-items: center;
   padding: 11px 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
 }
-.ops-doc:last-child { border-bottom: 0; }
+.ops-doc:last-child { border-bottom: 0; padding-bottom: 0; }
+.ops-doc:first-child { padding-top: 0; }
 .ops-doc__tick {
-  width: 22px; height: 22px; border-radius: var(--radius-pill);
-  border: 1px solid var(--line-strong);
+  width: 20px; height: 20px; border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   display: grid; place-items: center;
-  font: 800 12px/1 var(--font-sans);
-  color: var(--ink-subtle);
+  font: 800 11px/1 var(--font-sans); color: #5d6675;
 }
-.ops-doc__tick.is-on { background: var(--success); border-color: var(--success); color: #06241a; }
-.ops-doc__tick.is-off { border-color: var(--danger); color: var(--danger); }
+.ops-doc__tick.is-on {
+  background: rgba(70, 201, 139, 0.16); border-color: rgba(70, 201, 139, 0.5); color: #7fdcb0;
+}
+.ops-doc__tick.is-off { border-color: rgba(255, 138, 107, 0.4); color: #ffa98f; }
 .ops-doc__text { display: grid; gap: 1px; min-width: 0; }
-.ops-doc__text b { font: 600 14px/1.3 var(--font-sans); }
-.ops-doc__text span { font: 500 12px/1.4 var(--font-sans); color: var(--ink-subtle); }
+.ops-doc__text b { font: 600 13.5px/1.35 var(--font-sans); }
+.ops-doc__text span { font: 500 11.5px/1.45 var(--font-sans); color: #6b7585; }
 .ops-doc__open {
-  font: 700 12px/1 var(--font-sans);
-  color: var(--gold-text); text-decoration: none;
-  border: 1px solid var(--gold-line); border-radius: var(--radius-sm);
+  font: 700 11.5px/1 var(--font-sans);
+  color: #ffe98a; text-decoration: none;
+  border: 1px solid rgba(255, 215, 0, 0.26); border-radius: 8px;
   padding: 7px 11px; white-space: nowrap;
+  transition: background 140ms ease;
 }
-.ops-doc__open:hover { background: var(--gold-soft); }
-.ops-doc__missing { font: 600 12px/1 var(--font-sans); color: var(--ink-subtle); white-space: nowrap; }
+.ops-doc__open:hover { background: rgba(255, 215, 0, 0.1); }
+.ops-doc__missing { font: 600 11.5px/1 var(--font-sans); color: #5d6675; white-space: nowrap; }
 
 /* --- definition rows ------------------------------------------------------ */
-/* Label beside value, not above it: the old screen stacked them and turned
-   six facts into twelve lines. */
 
 .ops-facts { display: grid; gap: 0; }
 .ops-fact {
-  display: grid; grid-template-columns: 130px minmax(0, 1fr);
-  gap: var(--space-4);
+  display: grid; grid-template-columns: 124px minmax(0, 1fr);
+  gap: 14px;
   padding: 9px 0;
-  border-bottom: 1px solid var(--line);
-  font: 500 14px/1.4 var(--font-sans);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+  font: 500 13.5px/1.45 var(--font-sans);
 }
-.ops-fact:last-child { border-bottom: 0; }
-.ops-fact dt { color: var(--ink-subtle); }
+.ops-fact:last-child { border-bottom: 0; padding-bottom: 0; }
+.ops-fact:first-child { padding-top: 0; }
+.ops-fact dt { color: #6b7585; }
 .ops-fact dd { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+
+/* --- filters -------------------------------------------------------------- */
+/* A row of filters is navigation, not a row of buttons. Segmented, so the
+   set reads as one control and the chosen one is obvious. */
+
+.ops-filters {
+  display: inline-flex; padding: 3px; gap: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.ops-filter {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  padding: 6px 12px; border-radius: 7px;
+  font: 600 12.5px/1.2 var(--font-sans);
+  color: #8e99a8; text-transform: capitalize;
+  transition: background 130ms ease, color 130ms ease;
+}
+.ops-filter:hover { color: var(--ink); }
+.ops-filter[aria-pressed='true'] { background: rgba(255, 255, 255, 0.1); color: var(--ink); }
 
 @media (max-width: 900px) {
   .ops { grid-template-columns: minmax(0, 1fr); }
   .ops__side { position: static; height: auto; }
-  .ops__main { padding: var(--space-5) var(--space-4) var(--space-7); }
+  .ops__main { padding: 20px 16px 48px; }
+  .ops-head h1 { font-size: 24px; }
+  .ops-hero { grid-template-columns: minmax(0, 1fr); }
+  .ops-hero__value { font-size: 34px; }
   .ops-fact { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }

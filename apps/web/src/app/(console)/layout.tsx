@@ -6,6 +6,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { clearTokens, readOperator, readToken } from '@/lib/api';
 import { fetchQueueCounts } from '@/lib/consoleQueues';
 import { Logo } from '@/components/sg/Logo';
+import {
+  Gauge, LifeBuoy, MapPin, Route, Siren, Users, Wallet,
+} from '@/components/console/icons';
 import '@/styles/console.css';
 
 /**
@@ -28,23 +31,23 @@ const GROUPS = [
   {
     label: 'Live',
     items: [
-      { href: '/dashboard', label: 'Dashboard' },
-      { href: '/sos', label: 'SOS', key: 'sos', urgent: true },
-      { href: '/trips', label: 'Trips' },
+      { href: '/dashboard', label: 'Dashboard', Icon: Gauge },
+      { href: '/sos', label: 'SOS', key: 'sos', urgent: true, Icon: Siren },
+      { href: '/trips', label: 'Trips', Icon: Route },
     ],
   },
   {
     label: 'People',
     items: [
-      { href: '/drivers', label: 'Drivers', key: 'drivers' },
-      { href: '/support', label: 'Support', key: 'support' },
+      { href: '/drivers', label: 'Drivers', key: 'drivers', Icon: Users },
+      { href: '/support', label: 'Support', key: 'support', Icon: LifeBuoy },
     ],
   },
   {
     label: 'Money',
     items: [
-      { href: '/withdrawals', label: 'Withdrawals', key: 'withdrawals' },
-      { href: '/zones', label: 'Zones & fares' },
+      { href: '/withdrawals', label: 'Withdrawals', key: 'withdrawals', Icon: Wallet },
+      { href: '/zones', label: 'Zones & fares', Icon: MapPin },
     ],
   },
 ] as const;
@@ -129,6 +132,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
                     className="ops__link"
                     aria-current={isCurrent(item.href) ? 'page' : undefined}
                   >
+                    <item.Icon />
                     {item.label}
                     {typeof count === 'number' && count > 0 && (
                       <span

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { Empty, PageHeader, Panel, Pill, Table } from '@/components/console/ui';
+import { Empty, PageHeader, Panel, Pill, Table, Filters } from '@/components/console/ui';
 
 /**
  * Trips, for looking one up.
@@ -58,7 +58,7 @@ function rider(t: Trip) {
 
 export default function TripsPage() {
   const [trips, setTrips] = useState<Trip[] | null>(null);
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState<(typeof FILTERS)[number]['key']>('');
   const [total, setTotal] = useState<number | null>(null);
   const [more, setMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,15 +89,7 @@ export default function TripsPage() {
       <PageHeader
         title="Trips"
         subtitle={total !== null ? `${total} matching` : undefined}
-        actions={FILTERS.map((f) => (
-          <button
-            key={f.key || 'all'}
-            className={f.key === status ? 'btn-secondary' : 'btn-ghost'}
-            onClick={() => setStatus(f.key)}
-          >
-            {f.label}
-          </button>
-        ))}
+        actions={<Filters value={status} options={FILTERS} onChange={setStatus} />}
       />
 
       {error && <div className="alert-error mb-5" role="alert">{error}</div>}

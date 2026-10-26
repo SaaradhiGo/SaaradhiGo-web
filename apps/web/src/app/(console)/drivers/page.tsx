@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { Empty, PageHeader, Panel, Pill, Table } from '@/components/console/ui';
+import { Empty, PageHeader, Panel, Pill, Table, Filters } from '@/components/console/ui';
 
 /**
  * The fleet, and who is waiting on a decision.
@@ -88,15 +88,13 @@ function DriversInner() {
         subtitle={total !== null
           ? `${total} ${approved === 'false' ? 'awaiting review' : approved === 'true' ? 'approved' : 'on file'}`
           : undefined}
-        actions={FILTERS.map((f) => (
-          <button
-            key={f.key}
-            className={f.key === approved ? 'btn-secondary' : 'btn-ghost'}
-            onClick={() => router.push(f.key ? `/drivers?approved=${f.key}` : '/drivers')}
-          >
-            {f.label}
-          </button>
-        ))}
+        actions={
+          <Filters
+            value={approved as (typeof FILTERS)[number]['key']}
+            options={FILTERS}
+            onChange={(key) => router.push(key ? `/drivers?approved=${key}` : '/drivers')}
+          />
+        }
       />
 
       {error && <div className="alert-error mb-5" role="alert">{error}</div>}
