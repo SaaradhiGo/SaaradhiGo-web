@@ -128,8 +128,14 @@ for (const entry of PAGES) {
     continue;
   }
 
-  const tableRows = await page.$$eval('table tbody tr', (els) => els.length).catch(() => 0);
-  const cards = await page.$$eval('.card', (els) => els.length).catch(() => 0);
+  // Counted across the console's own parts as well as the legacy ones, so
+  // a redesign does not make a working page look empty. The first version
+  // of this check looked only for `.card` and reported the rebuilt
+  // dashboard -- four queues and six metrics -- as rendering nothing.
+  const tableRows = await page
+    .$$eval('.ops-table tbody tr, table tbody tr', (els) => els.length).catch(() => 0);
+  const cards = await page
+    .$$eval('.ops-queue, .ops-stat, .ops-panel, .card', (els) => els.length).catch(() => 0);
 
   if (!entry.wants.test(text)) {
     log('FAIL', entry.path, `nothing recognisable rendered: ${text.slice(0, 120)}`);
@@ -163,11 +169,15 @@ if (!firstDriver) {
     .catch(() => {});
   if (apiFailures.length) {
     log('FAIL', '/drivers/[id]', [...new Set(apiFailures)].join(' | ').slice(0, 170));
-  } else if (/approve kyc|revoke|approved|unapproved/i.test(text)) {
-    const hasDocs = /licence|license|document|rc |insurance/i.test(text);
-    log(hasDocs ? 'PASS' : 'EMPTY', '/drivers/[id]',
-      hasDocs ? 'KYC controls and documents present'
-        : 'KYC controls present but no documents shown to review');
+  } else if (/approve to drive|send back|decision|revoke approval/i.test(text)) {
+    // The point of this screen: the decision AND the evidence for it. A
+    // decision with nothing to read is the defect it was built to fix.
+    const hasDocs = /licence|license|registration certificate|insurance/i.test(text);
+    const hasOutcome = /outstanding|everything this driver/i.test(text);
+    log(hasDocs && hasOutcome ? 'PASS' : 'EMPTY', '/drivers/[id]',
+      hasDocs && hasOutcome
+        ? 'decision, checklist and documents all present'
+        : `decision present but evidence thin (docs=${hasDocs} checklist=${hasOutcome})`);
   } else {
     log('FAIL', '/drivers/[id]', `no KYC controls: ${text.slice(0, 120)}`);
   }
