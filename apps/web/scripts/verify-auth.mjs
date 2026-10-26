@@ -254,15 +254,25 @@ console.log('\n=== 3. a new driver gets a driver screen ===');
     // answer, or this card says nothing. A missing `Driver` row made it 500.
     await page.waitForTimeout(3000);
     body = (await text(page)).replace(/\s+/g, ' ');
-    if (/Account status/i.test(body) && /Document review/i.test(body)) {
-      pass('the driver profile loaded (document review state is shown)');
+
+    // ASSERTED ON MEANING, NOT WORDING. The first version of this check
+    // matched the headings "Account status" and "Document review" from the
+    // original driver home, so rebuilding that page around what the driver
+    // must do next made a working screen look broken.
+    const state = body.match(
+      /can receive trips|not yet approved|changes needed|approved, not dispatching/i);
+    if (state) {
+      pass('the driver home states where they stand', state[0]);
     } else {
-      fail('the driver profile did not load', body.slice(0, 200));
+      fail('the driver home does not state the approval state', body.slice(0, 200));
     }
-    if (/Awaiting review|Approved/i.test(body)) {
-      pass('approval state is stated', body.match(/Awaiting review|Approved/i)[0]);
+
+    // And what is outstanding, which is the point of the screen for a
+    // driver who is not yet approved.
+    if (/items? (?:is|are) still needed|documents are with an operator|nothing further is needed/i.test(body)) {
+      pass('the driver home names the outstanding work');
     } else {
-      fail('no approval state on the driver home', body.slice(0, 160));
+      fail('the driver home does not say what is outstanding', body.slice(0, 200));
     }
     await shot(page, '4-new-driver-home.png');
     await ctx.close();
