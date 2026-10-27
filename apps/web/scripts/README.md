@@ -63,6 +63,15 @@ landed.
 | `shoot:console` | photographs the console's sign-in states, shell and first pages in both themes at 1440 and 1024 |
 | `a11y:console` | Lighthouse accessibility on sign-in and the Command Centre, both themes (needs `LIGHTHOUSE_DIR`) |
 
+## Build-time guards (run by CI, no browser)
+
+| Script | Fails when |
+|---|---|
+| `npm test` | a unit test fails. `node:test`, TypeScript through Node's type stripping. Today: the environment badge must come out PRODUCTION whenever it cannot be certain. |
+| `check-tokens` | a colour literal appears outside `src/styles/tokens.css` |
+| `check-css` | a stylesheet does not parse; tokens.css declares a custom property anywhere but `:root`/`[data-theme]`; the light theme lacks a token the dark theme has; any `var(--x)` names a token nobody declares. Proven by planting each error and gating on the exit code. |
+| `check-no-preview` | the built output contains the sign-in preview strip. Run after `next build`. CI builds without `NEXT_PUBLIC_CONSOLE_PREVIEW`, so it must find nothing; `EXPECT_PREVIEW=1` inverts it for a QA build, which is how it proves it can see the thing it guards. |
+
 ## They create real data
 
 `verify:auth` and `verify:driver-docs` register accounts. `verify:booking`

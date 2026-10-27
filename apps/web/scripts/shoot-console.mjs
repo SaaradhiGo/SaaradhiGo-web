@@ -114,6 +114,57 @@ for (const theme of THEMES) {
     await page.waitForTimeout(800);
     await shot(page, `${tag}-trips`);
 
+    // --- the rest of the console, one frame each, plus the drawers that
+    //     carry a consequential action -------------------------------------
+    const openFirstRow = async () => {
+      const r = page.locator('tbody tr.ops-row').first();
+      if (await r.count()) { await r.click(); await page.waitForTimeout(350); return true; }
+      return false;
+    };
+    for (const [name, url] of [
+      ['sos', '/sos'],
+      ['support', '/support?status=all'],
+      ['withdrawals', '/withdrawals'],
+      ['zones', '/zones'],
+    ]) {
+      await page.goto(`${APP}${url}`, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(800);
+      await shot(page, `${tag}-${name}`);
+      if (name === 'sos') {
+        const ack = page.locator('.ops-sos__actions button').first();
+        if (await ack.count()) { await ack.click(); await page.waitForTimeout(350); await shot(page, `${tag}-sos-action`); await page.keyboard.press('Escape'); }
+      } else if (await openFirstRow()) {
+        await shot(page, `${tag}-${name}-drawer`);
+        if (name === 'withdrawals') {
+          const release = page.locator('.ops-drawer__foot button', { hasText: 'Release' }).first();
+          if (await release.count()) { await release.click(); await page.waitForTimeout(250); await shot(page, `${tag}-withdrawals-release`); }
+        }
+        await page.keyboard.press('Escape');
+      }
+    }
+
+    // Detail pages: the first trip, the first driver, the first ticket.
+    const firstHref = async (url, selector) => {
+      await page.goto(`${APP}${url}`, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(600);
+      return page.locator(selector).first().getAttribute('href').catch(() => null);
+    };
+    for (const [name, list, selector] of [
+      ['trip-detail', '/trips?status=completed', 'tbody a[href^="/trips/"]'],
+      ['driver-detail', '/drivers', 'tbody a[href^="/drivers/"]'],
+      ['ticket-detail', '/support?status=all', 'tbody a[href^="/support/"]'],
+    ]) {
+      const href = await firstHref(list, selector);
+      if (!href) { console.log(`  (no ${name}: nothing listed)`); continue; }
+      await page.goto(`${APP}${href}`, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(800);
+      await shot(page, `${tag}-${name}`);
+      if (name === 'trip-detail') {
+        const refund = page.locator('button', { hasText: 'Refund' }).first();
+        if (await refund.count()) { await refund.click(); await page.waitForTimeout(300); await shot(page, `${tag}-trip-refund`); await page.keyboard.press('Escape'); }
+      }
+    }
+
     if (errors.length) {
       console.log(`  browser errors (${errors.length}):`);
       for (const e of [...new Set(errors)].slice(0, 6)) console.log(`    ${e}`);

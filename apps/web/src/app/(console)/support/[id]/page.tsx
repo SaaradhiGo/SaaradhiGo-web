@@ -4,7 +4,28 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
+import { currentScope, getCachedAccess } from '@/lib/adminScope';
+import { stamp, timeZoneFor } from '@/lib/consoleTime';
+import { ButtonLink } from '@/components/sg/Button';
+import {
+  Empty,
+  ErrorState,
+  Fact,
+  Facts,
+  PageHeader,
+  Panel,
+  Pill,
+  Skeleton,
+} from '@/components/console/ui';
 
+/**
+ * One ticket: what they said, what has been said back, and the reply.
+ *
+ * The thread reads like a conversation -- theirs on the left, ours on the
+ * right in the gold wash, the system's in the middle -- because that is
+ * how the person on the other end sees it. The reply box is the one gold
+ * action on the page; assigning is a quieter, secondary thing.
+ */
 type Message = {
   id: number;
   author: number | null;
@@ -28,9 +49,24 @@ type Ticket = {
   messages: Message[];
 };
 
-const STATUS_OPTIONS: Ticket['status'][] = ['OPEN', 'IN_PROGRESS', 'WAITING_USER', 'CLOSED'];
+const STATUSES: Array<[Ticket['status'], string]> = [
+  ['OPEN', 'Open'],
+  ['IN_PROGRESS', 'In progress'],
+  ['WAITING_USER', 'Waiting on them'],
+  ['CLOSED', 'Closed'],
+];
 
-const fmt = (s: string | null | undefined) => (s ? s.replace('T', ' ').slice(0, 19) : '—');
+const TONE: Record<Ticket['status'], 'good' | 'bad' | 'wait' | 'neutral'> = {
+  OPEN: 'bad', IN_PROGRESS: 'wait', WAITING_USER: 'neutral', CLOSED: 'good',
+};
+
+const words = (s: string) => s.replace(/_/g, ' ').toLowerCase();
+
+function raisedBy(t: Ticket) {
+  const u = typeof t.user_id === 'object' && t.user_id ? t.user_id : null;
+  return u?.full_name?.trim() || u?.phone_number
+    || (typeof t.user_id === 'number' ? `User #${t.user_id}` : '—');
+}
 
 export default function SupportTicketDetailPage() {
   const params = useParams<{ id: string }>();
@@ -42,181 +78,211 @@ export default function SupportTicketDetailPage() {
   const [replyStatus, setReplyStatus] = useState<Ticket['status'] | ''>('');
   const [assignTo, setAssignTo] = useState('');
   const [busy, setBusy] = useState(false);
-  const [actionMsg, setActionMsg] = useState<string | null>(null);
-  const [actionErr, setActionErr] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const tz = timeZoneFor(currentScope(getCachedAccess())?.code);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // Admin uses the user-side detail endpoint; backend already
-      // grants access when request.user.is_staff (see ticket_detail
-      // in servers/support/views.py).
-      const t = await api.get<Ticket>(`/support/tickets/${id}/`);
-      setTicket(t);
+      // Admin uses the user-side detail endpoint; the backend grants access
+      // when request.user.is_staff (ticket_detail in servers/support/views.py).
+      setTicket(await api.get<Ticket>(`/support/tickets/${id}/`));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not load ticket');
+      setError(err instanceof ApiError && err.fromServer ? err.message : 'We could not load this ticket.');
     } finally {
       setLoading(false);
     }
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
-  async function postReply() {
+  async function postReply(e: React.FormEvent) {
+    e.preventDefault();
     if (!reply.trim()) return;
-    setBusy(true); setActionMsg(null); setActionErr(null);
+    setBusy(true); setNotice(null); setActionError(null);
     try {
       const body: { body: string; status?: string } = { body: reply.trim() };
       if (replyStatus) body.status = replyStatus;
       await api.post(`/support/admin/tickets/${id}/reply/`, body);
       setReply('');
       setReplyStatus('');
-      setActionMsg('Reply posted.');
-      load();
+      setNotice('Reply posted. They will see it in the app.');
+      await load();
     } catch (err) {
-      setActionErr(err instanceof ApiError ? err.message : 'Reply failed');
+      setActionError(err instanceof ApiError && err.fromServer ? err.message : 'The reply did not go through.');
     } finally {
       setBusy(false);
     }
   }
 
-  async function assign() {
+  async function assign(e: React.FormEvent) {
+    e.preventDefault();
     if (!assignTo) return;
-    setBusy(true); setActionMsg(null); setActionErr(null);
+    setBusy(true); setNotice(null); setActionError(null);
     try {
-      await api.post(`/support/admin/tickets/${id}/assign/`, {
-        assigned_to: Number(assignTo),
-      });
+      await api.post(`/support/admin/tickets/${id}/assign/`, { assigned_to: Number(assignTo) });
       setAssignTo('');
-      setActionMsg('Assigned.');
-      load();
+      setNotice('Assigned.');
+      await load();
     } catch (err) {
-      setActionErr(err instanceof ApiError ? err.message : 'Assign failed');
+      setActionError(err instanceof ApiError && err.fromServer ? err.message : 'The assignment did not go through.');
     } finally {
       setBusy(false);
     }
   }
 
-  if (loading) return <p className="text-white/60">Loading...</p>;
-  if (error) return <p className="text-red-400">{error}</p>;
-  if (!ticket) return null;
+  if (loading) {
+    return (
+      <div aria-busy="true" aria-live="polite">
+        <span className="sr-only">Loading the ticket</span>
+        <PageHeader title={`Ticket #${id}`} />
+        <div className="ops-review">
+          <Skeleton kind="block" />
+          <Skeleton kind="block" />
+        </div>
+      </div>
+    );
+  }
+  if (error || !ticket) {
+    return (
+      <>
+        <PageHeader title={`Ticket #${id}`} actions={<ButtonLink href="/support" variant="ghost" size="sm">All tickets</ButtonLink>} />
+        <ErrorState title="This ticket could not be loaded" detail={error ?? undefined} onRetry={() => void load()} />
+      </>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link href="/support" className="btn-ghost text-xs">&larr; Back to tickets</Link>
-        <h1 className="text-2xl font-semibold mt-1">
-          Ticket #{ticket.id} &mdash; {ticket.issue_type}
-          <span className="ml-3 tag border-white/20 text-sm">{ticket.status}</span>
-        </h1>
-        <p className="text-white/50 text-sm mt-1">
-          Opened {fmt(ticket.created_at)} &middot; last updated {fmt(ticket.updated_at)}
-          {ticket.resolved_at && <> &middot; resolved {fmt(ticket.resolved_at)}</>}
-          {ticket.trip_id && (
-            <> &middot; <Link href={`/trips/${ticket.trip_id}`} className="sg-link">Trip #{ticket.trip_id}</Link></>
-          )}
-        </p>
-      </div>
-      {actionMsg && <p className="text-emerald-400 text-sm">{actionMsg}</p>}
-      {actionErr && <p className="text-red-400 text-sm">{actionErr}</p>}
+    <>
+      <PageHeader
+        title={`Ticket #${ticket.id}`}
+        subtitle={
+          <>
+            <span className="capitalize">{words(ticket.issue_type)}</span>
+            {' · raised by '}{raisedBy(ticket)}
+            {' · opened '}{stamp(ticket.created_at, tz)}
+            {ticket.trip_id ? <> · <Link href={`/trips/${ticket.trip_id}`} className="sg-link">Trip #{ticket.trip_id}</Link></> : null}
+          </>
+        }
+        actions={
+          <>
+            <Pill tone={TONE[ticket.status]}>{words(ticket.status)}</Pill>
+            <ButtonLink href="/support" variant="ghost" size="sm">All tickets</ButtonLink>
+          </>
+        }
+      />
 
-      {/* Description */}
-      {ticket.description && (
-        <div className="card">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-white/70 mb-2">Description</h2>
-          <p className="text-sm whitespace-pre-wrap">{ticket.description}</p>
-        </div>
-      )}
+      {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
+      {actionError && <div className="alert-error mb-4" role="alert">{actionError}</div>}
 
-      {/* Thread */}
-      <div className="card">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-white/70 mb-3">
-          Thread ({ticket.messages.length} messages)
-        </h2>
-        <div className="space-y-3">
-          {ticket.messages.map((m) => {
-            const isSupport = m.author_role === 'support';
-            const isSystem = m.author_role === 'system';
-            return (
-              <div key={m.id} className={`text-sm rounded-lg p-3 ${
-                isSystem ? 'bg-white/5 italic text-white/60 text-center text-xs'
-                : isSupport ? 'bg-gold-soft border border-gold-line'
-                : 'bg-bg-100 border border-line'
-              }`}>
-                <div className="flex justify-between items-baseline">
-                  <span className={`text-xs uppercase tracking-widest ${isSupport ? 'text-gold-text' : 'text-white/50'}`}>
-                    {isSupport ? 'Support' : isSystem ? 'System' : (m.author_name || 'User')}
-                  </span>
-                  <span className="text-xs text-white/40">{fmt(m.created_at)}</span>
+      <div className="ops-review">
+        <div className="grid gap-4">
+          <Panel title={`Conversation · ${ticket.messages.length} message${ticket.messages.length === 1 ? '' : 's'}`}>
+            {ticket.description ? (
+              <div className="ops-msg mb-3">
+                <div className="ops-msg__meta">
+                  <span>{raisedBy(ticket)} · opened the ticket</span>
+                  <time dateTime={ticket.created_at}>{stamp(ticket.created_at, tz)}</time>
                 </div>
-                <div className="mt-1 whitespace-pre-wrap">{m.body}</div>
+                <p className="ops-msg__body">{ticket.description}</p>
               </div>
-            );
-          })}
-          {ticket.messages.length === 0 && (
-            <p className="text-white/50 text-sm">No messages yet.</p>
+            ) : null}
+            {ticket.messages.length === 0 && !ticket.description ? (
+              <Empty title="Nothing said yet" />
+            ) : (
+              <div className="ops-thread">
+                {ticket.messages.map((m) => {
+                  const kind = m.author_role === 'support' ? 'support' : m.author_role === 'system' ? 'system' : 'user';
+                  return (
+                    <div key={m.id} className={`ops-msg ops-msg--${kind}`}>
+                      <div className="ops-msg__meta">
+                        <span>{kind === 'support' ? 'Support' : kind === 'system' ? 'System' : (m.author_name || raisedBy(ticket))}</span>
+                        <time dateTime={m.created_at}>{stamp(m.created_at, tz)}</time>
+                      </div>
+                      <p className="ops-msg__body">{m.body}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Panel>
+
+          {ticket.status !== 'CLOSED' ? (
+            <Panel title="Reply">
+              <form className="ops-form" onSubmit={postReply}>
+                <label className="sr-only" htmlFor="ticket-reply">Your reply</label>
+                <textarea
+                  id="ticket-reply"
+                  className="input"
+                  rows={4}
+                  value={reply}
+                  onChange={(e) => setReply(e.target.value)}
+                  placeholder="Write to them the way you would want to be written to."
+                />
+                <div className="ops-form__row">
+                  <label className="ops-form__label" htmlFor="ticket-status">Then mark as</label>
+                  <select
+                    id="ticket-status"
+                    className="ops-select"
+                    value={replyStatus}
+                    onChange={(e) => setReplyStatus(e.target.value as Ticket['status'])}
+                  >
+                    <option value="">No change</option>
+                    {STATUSES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                  <span style={{ flex: 1 }} />
+                  <button type="submit" className="sg-btn sg-btn--primary sg-btn--sm" disabled={busy || !reply.trim()}>
+                    {busy ? 'Posting…' : 'Post reply'}
+                  </button>
+                </div>
+              </form>
+            </Panel>
+          ) : (
+            <Panel title="Reply">
+              <p className="help m-0">This ticket is closed. Reopen it by replying with a new status from the list? Not yet — ask the person to raise a new one.</p>
+            </Panel>
           )}
         </div>
-      </div>
 
-      {/* Reply form */}
-      {ticket.status !== 'CLOSED' && (
-        <div className="card">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-white/70 mb-3">Post a reply</h2>
-          <textarea
-            value={reply}
-            onChange={(e) => setReply(e.target.value)}
-            placeholder="Type your reply to the user..."
-            rows={4}
-            className="input w-full resize-y"
-          />
-          <div className="flex items-center gap-3 mt-3 flex-wrap">
-            <label className="text-sm text-white/60">Move to:</label>
-            <select
-              className="input"
-              value={replyStatus}
-              onChange={(e) => setReplyStatus(e.target.value as Ticket['status'])}
-            >
-              <option value="">— no status change —</option>
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-            <button
-              onClick={postReply}
-              disabled={busy || !reply.trim()}
-              className="btn-primary"
-            >
-              {busy ? 'Posting...' : 'Post reply'}
-            </button>
-          </div>
-        </div>
-      )}
+        <div className="grid gap-4">
+          <Panel title="Ticket">
+            <Facts>
+              <Fact label="Status"><Pill tone={TONE[ticket.status]}>{words(ticket.status)}</Pill></Fact>
+              <Fact label="Issue"><span className="capitalize">{words(ticket.issue_type)}</span></Fact>
+              <Fact label="Raised by">{raisedBy(ticket)}</Fact>
+              <Fact label="Opened">{stamp(ticket.created_at, tz)}</Fact>
+              <Fact label="Last update">{stamp(ticket.updated_at, tz)}</Fact>
+              {ticket.resolved_at ? <Fact label="Resolved">{stamp(ticket.resolved_at, tz)}</Fact> : null}
+              <Fact label="Trip">{ticket.trip_id ? <Link href={`/trips/${ticket.trip_id}`}>#{ticket.trip_id}</Link> : 'None attached'}</Fact>
+              <Fact label="Assigned to">{ticket.assigned_to ? `Staff #${ticket.assigned_to}` : 'Nobody yet'}</Fact>
+            </Facts>
+          </Panel>
 
-      {/* Assign */}
-      <div className="card">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-white/70 mb-3">Assign</h2>
-        <p className="text-white/50 text-sm mb-3">
-          {ticket.assigned_to ? `Currently assigned to user #${ticket.assigned_to}.` : 'Unassigned.'}
-        </p>
-        <div className="flex gap-3">
-          <input
-            type="number"
-            value={assignTo}
-            onChange={(e) => setAssignTo(e.target.value)}
-            placeholder="Staff user ID"
-            className="input flex-1 max-w-xs"
-          />
-          <button
-            onClick={assign}
-            disabled={busy || !assignTo}
-            className="btn-primary"
-          >
-            {busy ? 'Assigning...' : 'Assign'}
-          </button>
+          <Panel title="Assign">
+            <form className="ops-form" onSubmit={assign}>
+              <label className="ops-form__label" htmlFor="ticket-assign">Staff user ID</label>
+              <div className="ops-form__row">
+                <input
+                  id="ticket-assign"
+                  type="number"
+                  inputMode="numeric"
+                  className="input"
+                  style={{ maxWidth: '12rem' }}
+                  value={assignTo}
+                  onChange={(e) => setAssignTo(e.target.value)}
+                  placeholder="e.g. 42"
+                />
+                <button type="submit" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy || !assignTo}>
+                  {busy ? 'Assigning…' : 'Assign'}
+                </button>
+              </div>
+              <p className="help m-0">By ID until the console has a staff picker.</p>
+            </form>
+          </Panel>
         </div>
       </div>
-    </div>
+    </>
   );
 }

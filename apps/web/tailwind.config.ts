@@ -4,7 +4,7 @@ import type { Config } from 'tailwindcss';
  * Tailwind reads the design system; it does not restate it.
  *
  * Every colour, shadow, radius, spacing step and family below is a
- * `var(--token)` reference into `src/styles/tokens.css`, which is the only
+ * `var()` reference into a token in `src/styles/tokens.css`, which is the only
  * file in this app allowed to contain a colour literal. Copying the hex
  * values here would have created a second palette to drift against the one
  * the designers ship, and it is what let the old gold literal and the `sand`
@@ -125,9 +125,10 @@ const config: Config = {
       },
 
       fontFamily: {
-        // Cormorant Garamond: headlines and the brand promises, nothing else.
-        display: ['var(--font-display)'],
-        // Manrope: every number, label and control. The default.
+        // No display serif. `font-display` used to map to `--font-display`
+        // (Cormorant Garamond), a token that was removed with the font; the
+        // utility stayed behind and resolved to nothing. The CSS check
+        // caught it. Manrope sets every heading, number, label and control.
         sans: ['var(--font-sans)'],
         // Cinzel: the brand name, eyebrows and map labels. Never body copy.
         brand: ['var(--font-brand)'],

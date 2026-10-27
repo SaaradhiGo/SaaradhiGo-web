@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -9,9 +10,7 @@ import {
   changePassword,
   readToken,
 } from '@/lib/api';
-import {
-  IS_PRODUCTION, LOGIN_LOCK_AFTER, LOGIN_LOCK_MINUTES,
-} from '@/lib/consoleEnv';
+import { LOGIN_LOCK_AFTER, LOGIN_LOCK_MINUTES } from '@/lib/consoleEnv';
 import { useTheme } from '@/lib/consolePrefs';
 import { Logo } from '@/components/sg/Logo';
 import { EnvBadge } from '@/components/console/EnvBadge';
@@ -60,6 +59,20 @@ type Step =
 const PREVIEWABLE: Step[] = ['totp', 'recovery', 'reason', 'password', 'locked'];
 const LOCK_KEY = 'saaradhi_login_lock_until';
 
+/**
+ * The review strip that reaches every state above, and the `?preview=`
+ * handling that drives it, exist ONLY in builds made with
+ * `NEXT_PUBLIC_CONSOLE_PREVIEW=true` (QA, local). The constant is inlined
+ * at build time, so in any other build this branch is dead, the dynamic
+ * import is never emitted, and no preview code path is in the bundle --
+ * which `scripts/check-no-preview.mjs` verifies against the output. A
+ * runtime flag would only have hidden it.
+ */
+const PREVIEW_BUILT_IN = process.env.NEXT_PUBLIC_CONSOLE_PREVIEW === 'true';
+const LoginPreview = PREVIEW_BUILT_IN
+  ? dynamic(() => import('./LoginPreview').then((m) => m.LoginPreview), { ssr: false })
+  : null;
+
 function readLockUntil(): number | null {
   try {
     const raw = window.sessionStorage.getItem(LOCK_KEY);
@@ -86,8 +99,9 @@ function LoginInner() {
 
   const next = search.get('next') || '/dashboard';
   const expired = search.get('reason') === 'expired';
-  const preview = (!IS_PRODUCTION ? search.get('preview') : null) as Step | null;
-  const previewExpired = !IS_PRODUCTION && search.get('preview') === 'expired';
+  const previewParam = PREVIEW_BUILT_IN ? search.get('preview') : null;
+  const preview = previewParam as Step | null;
+  const previewExpired = previewParam === 'expired';
 
   const [step, setStep] = useState<Step>(
     preview && PREVIEWABLE.includes(preview) ? preview : 'credentials',
@@ -596,20 +610,7 @@ function LoginInner() {
         </footer>
       </main>
 
-      {!IS_PRODUCTION && (
-        <nav className="login__preview" aria-label="Preview sign-in states (not shown in production)">
-          {(['credentials', ...PREVIEWABLE, 'expired'] as string[]).map((s) => (
-            <Link
-              key={s}
-              href={s === 'credentials' ? '/login' : `/login?preview=${s}`}
-              aria-current={(s === 'credentials' ? step === 'credentials' && !previewExpired
-                : s === 'expired' ? previewExpired : step === s) ? 'true' : undefined}
-            >
-              {s}
-            </Link>
-          ))}
-        </nav>
-      )}
+      {LoginPreview ? <LoginPreview current={previewExpired ? 'expired' : step} /> : null}
     </div>
   );
 }

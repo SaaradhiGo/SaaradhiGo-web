@@ -6,30 +6,53 @@
  * So the badge is on the sign-in page and in every page's top bar, and
  * production gets a treatment nothing else gets.
  *
- * It is read from `NEXT_PUBLIC_CONSOLE_ENV` when set, and derived from the
- * site URL otherwise -- the QA deployment already describes itself as QA
- * through `NEXT_PUBLIC_SITE_URL`, so nothing needs configuring for the
- * badge to be right there. "Unknown" is never shown: a build that cannot
- * tell is labelled LOCAL, which is wrong in a way somebody will notice.
+ * IT FAILS TOWARDS PRODUCTION. The one unacceptable outcome is the live
+ * platform labelled "QA": somebody believes it and does a test action on
+ * real riders. So anything this cannot classify WITH CERTAINTY is shown as
+ * production -- a missing setting, a hostname it does not recognise, a
+ * value it cannot parse. Local and QA have to earn their labels.
+ *
+ * `NEXT_PUBLIC_CONSOLE_ENV` wins when set to a known value. Otherwise the
+ * hostname of `NEXT_PUBLIC_SITE_URL` is read: `localhost`/`127.0.0.1` is
+ * local; a hostname LABEL of `qa` or `staging` (a whole label between dots
+ * or hyphens, so `web-qa-800c.up.railway.app` and `qa.saaradhigo.com`
+ * count and `qatar.example.com` does not) is that environment; everything
+ * else is production. Tested in tests/console-env.test.ts.
  */
 export type ConsoleEnv = 'production' | 'staging' | 'qa' | 'local';
 
-function derive(): ConsoleEnv {
-  const explicit = (process.env.NEXT_PUBLIC_CONSOLE_ENV || '').trim().toLowerCase();
-  if (explicit === 'production' || explicit === 'prod') return 'production';
-  if (explicit === 'staging') return 'staging';
-  if (explicit === 'qa') return 'qa';
-  if (explicit === 'local' || explicit === 'dev' || explicit === 'development') return 'local';
+export function deriveConsoleEnv(
+  explicit: string | undefined | null,
+  siteUrl: string | undefined | null,
+): ConsoleEnv {
+  const e = (explicit || '').trim().toLowerCase();
+  if (e === 'production' || e === 'prod') return 'production';
+  if (e === 'staging') return 'staging';
+  if (e === 'qa') return 'qa';
+  if (e === 'local' || e === 'dev' || e === 'development') return 'local';
+  // Set, but to something this does not know. Not a guess: production.
+  if (e) return 'production';
 
-  const site = (process.env.NEXT_PUBLIC_SITE_URL || '').toLowerCase();
-  if (!site || site.includes('localhost') || site.includes('127.0.0.1')) return 'local';
-  if (site.includes('staging')) return 'staging';
-  if (site.includes('qa')) return 'qa';
-  // A real public hostname with no environment word in it is production.
+  let host: string;
+  try {
+    host = new URL((siteUrl || '').trim()).hostname.toLowerCase();
+  } catch {
+    return 'production';
+  }
+  if (!host) return 'production';
+  if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host.endsWith('.localhost')) {
+    return 'local';
+  }
+  const labels = host.split(/[.-]/);
+  if (labels.includes('staging')) return 'staging';
+  if (labels.includes('qa')) return 'qa';
   return 'production';
 }
 
-export const CONSOLE_ENV: ConsoleEnv = derive();
+export const CONSOLE_ENV: ConsoleEnv = deriveConsoleEnv(
+  process.env.NEXT_PUBLIC_CONSOLE_ENV,
+  process.env.NEXT_PUBLIC_SITE_URL,
+);
 
 export const ENV_LABEL: Record<ConsoleEnv, string> = {
   production: 'Production',

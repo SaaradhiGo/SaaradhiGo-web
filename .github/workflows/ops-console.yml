@@ -67,8 +67,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          # Next 15.5 supports 18.18+; 20 is the current LTS.
-          node-version: '20'
+          # Next 15.5 supports 18.18+. 22 because the unit tests run TypeScript
+          # through Node's own type stripping (--experimental-strip-types),
+          # which 20 does not have.
+          node-version: '22'
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
 
@@ -83,6 +85,11 @@ jobs:
       - name: Type-check
         run: npm run type-check
 
+      # node:test, no framework. Today: the environment badge must fail
+      # towards PRODUCTION when it cannot tell where it is.
+      - name: Unit tests
+        run: npm test
+
       # The browser requests /favicon.ico whether or not anything links to it.
       # Nothing imports these files, so only a browser (or this step) notices
       # when one goes missing.
@@ -95,5 +102,19 @@ jobs:
       - name: Design tokens
         run: npm run check-tokens
 
+      # Every stylesheet must parse; every `var(--x)` must name a token
+      # that exists; tokens.css may declare custom properties only on the
+      # theme roots; the light theme must define everything the dark one
+      # does. A missing brace once put the whole console ramp inside
+      # `.fare { }` and nothing noticed -- the browser just ignored it.
+      - name: CSS validity and tokens
+        run: npm run check-css
+
       - name: Build
         run: npm run build
+
+      # The sign-in preview strip is compiled out of every build that does
+      # not set NEXT_PUBLIC_CONSOLE_PREVIEW=true; CI builds without it, so
+      # the output must contain no trace of it.
+      - name: No preview code in the production bundle
+        run: npm run check-no-preview

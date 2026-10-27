@@ -44,6 +44,29 @@ const nextConfig = {
     NEXT_PUBLIC_API_BASE_URL:
       process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
   },
+
+  // THE SIGN-IN PREVIEW STRIP IS COMPILED OUT, NOT HIDDEN.
+  //
+  // `app/login/LoginPreview.tsx` lets a reviewer reach every sign-in state
+  // with `?preview=`. A build made without NEXT_PUBLIC_CONSOLE_PREVIEW=true
+  // (production; also CI) must contain no trace of it. A dead `if` around
+  // the import was not enough: the bundler still emitted the chunk and its
+  // stylesheet. So the module itself is swapped for an empty stub at
+  // resolve time, and the real file never enters the graph.
+  // scripts/check-no-preview.mjs searches the output to prove it.
+  webpack(config, { webpack }) {
+    if (process.env.NEXT_PUBLIC_CONSOLE_PREVIEW !== 'true') {
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(
+          /[\/]LoginPreview$/,
+          (resource) => {
+            resource.request = resource.request.replace(/LoginPreview$/, 'LoginPreview.off');
+          },
+        ),
+      );
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig;
