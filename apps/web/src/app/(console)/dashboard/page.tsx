@@ -151,26 +151,26 @@ export default function DashboardPage() {
   const where = scopeLabel(access);
 
   const columns: Column<Trip>[] = [
-    { key: 'id', label: 'Trip', width: '6rem', render: (t) => <Link href={`/trips/${t.id}`}>#{t.id}</Link> },
+    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <Link href={`/trips/${t.id}`}>#{t.id}</Link> },
     {
-      key: 'status', label: 'Status', width: '9rem',
+      key: 'status', label: 'Status', width: '8rem',
       render: (t) => {
         const state = t.status || t.status_id?.status_code || 'unknown';
         return <Pill tone={TONE[state] ?? 'neutral'}>{state.replace(/_/g, ' ')}</Pill>;
       },
     },
-    { key: 'rider', label: 'Rider', hideBelow: 1100, render: (t) => t.user || <span className="muted">—</span> },
-    { key: 'driver', label: 'Driver', hideBelow: 1280, render: (t) => t.driver_name || <span className="muted">unassigned</span> },
+    { key: 'rider', label: 'Rider', width: '10rem', hideBelow: 1100, render: (t) => <span title={t.user ?? undefined}>{t.user || <span className="muted">—</span>}</span> },
+    { key: 'driver', label: 'Driver', width: '11rem', hideBelow: 1280, render: (t) => <span title={t.driver_name ?? undefined}>{t.driver_name || <span className="muted">unassigned</span>}</span> },
     {
       key: 'route', label: 'Pickup → drop',
       render: (t) => (
-        <span className="truncate block max-w-[26rem]" title={`${t.pickup_address ?? ''} → ${t.destination_address ?? ''}`}>
+        <span title={`${t.pickup_address ?? ''} → ${t.destination_address ?? ''}`}>
           {t.pickup_address || '—'} <span className="muted">→</span> {t.destination_address || '—'}
         </span>
       ),
     },
     { key: 'fare', label: 'Fare', num: true, width: '7rem', render: (t) => fare(t) },
-    { key: 'time', label: tzName ? `Time (${tzName})` : 'Time', num: true, width: '7rem', render: (t) => clock(t.requested_at, tz) },
+    { key: 'time', label: tzName ? `Time (${tzName})` : 'Time', num: true, width: '7.5rem', render: (t) => clock(t.requested_at, tz) },
   ];
 
   const header = (

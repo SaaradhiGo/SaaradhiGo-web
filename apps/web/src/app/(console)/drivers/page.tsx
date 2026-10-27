@@ -153,7 +153,7 @@ function DriversInner() {
       render: (d) => <Link href={`/drivers/${d.id}`}>{who(d).name || `Driver #${d.id}`}</Link>,
     },
     {
-      key: 'contact',
+      key: 'contact', width: '12rem',
       label: (
         <>
           Contact
@@ -167,9 +167,9 @@ function DriversInner() {
       ),
       render: (d) => who(d).phone || who(d).email || <span className="muted">—</span>,
     },
-    { key: 'plate', label: 'Vehicle', hideBelow: 1100, render: (d) => plate(d) || <span className="muted">none on file</span> },
+    { key: 'plate', label: 'Vehicle', width: '10rem', hideBelow: 1100, render: (d) => plate(d) || <span className="muted">none on file</span> },
     {
-      key: 'review', label: 'Review', sortValue: (d) => (d.approved ? 2 : d.doc_status === 'rejected' ? 0 : 1),
+      key: 'review', label: 'Review', width: '10rem', sortValue: (d) => (d.approved ? 2 : d.doc_status === 'rejected' ? 0 : 1),
       render: (d) => d.approved
         ? <Pill tone="good">Approved</Pill>
         : d.doc_status === 'rejected'
@@ -177,7 +177,7 @@ function DriversInner() {
           : <Pill tone="wait">Awaiting review</Pill>,
     },
     {
-      key: 'state', label: 'State', sortValue: (d) => d.status ?? '',
+      key: 'state', label: 'State', width: '8rem', sortValue: (d) => d.status ?? '',
       render: (d) => {
         const locked = Boolean(d.fatigue_lockout_until
           && new Date(d.fatigue_lockout_until).getTime() > Date.now());
@@ -186,7 +186,7 @@ function DriversInner() {
           : <Pill tone={d.status === 'online' ? 'good' : 'neutral'}>{d.status || 'off'}</Pill>;
       },
     },
-    { key: 'trips', label: 'Trips', num: true, width: '6rem', sortValue: (d) => d.total_trips ?? 0, render: (d) => d.total_trips ?? 0 },
+    { key: 'trips', label: 'Trips', num: true, width: '5.5rem', sortValue: (d) => d.total_trips ?? 0, render: (d) => d.total_trips ?? 0 },
     {
       key: 'rating', label: 'Rating', num: true, width: '6rem',
       sortValue: (d) => Number(d.ratings ?? 0) || null,

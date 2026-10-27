@@ -131,28 +131,28 @@ function TripsInner() {
   };
 
   const columns: Column<Trip>[] = [
-    { key: 'id', label: 'Trip', width: '6rem', sortValue: (t) => t.id, render: (t) => <Link href={`/trips/${t.id}`}>#{t.id}</Link> },
+    { key: 'id', label: 'Trip', width: '5rem', sortValue: (t) => t.id, render: (t) => <Link href={`/trips/${t.id}`}>#{t.id}</Link> },
     {
-      key: 'status', label: 'Status', width: '9rem', sortValue: stateOf,
+      key: 'status', label: 'Status', width: '8rem', sortValue: stateOf,
       render: (t) => <Pill tone={TONE[stateOf(t)] ?? 'neutral'}>{stateOf(t).replace(/_/g, ' ')}</Pill>,
     },
-    { key: 'rider', label: 'Rider', sortValue: (t) => t.user ?? '', render: (t) => t.user || <span className="muted">—</span> },
-    { key: 'driver', label: 'Driver', hideBelow: 1280, sortValue: (t) => t.driver_name ?? '', render: (t) => t.driver_name || <span className="muted">unassigned</span> },
+    { key: 'rider', label: 'Rider', width: '10rem', sortValue: (t) => t.user ?? '', render: (t) => <span title={t.user ?? undefined}>{t.user || <span className="muted">—</span>}</span> },
+    { key: 'driver', label: 'Driver', width: '11rem', hideBelow: 1280, sortValue: (t) => t.driver_name ?? '', render: (t) => <span title={t.driver_name ?? undefined}>{t.driver_name || <span className="muted">unassigned</span>}</span> },
     {
       key: 'pickup', label: 'Pickup',
-      render: (t) => <span className="truncate block max-w-[14rem]" title={t.pickup_address}>{t.pickup_address || '—'}</span>,
+      render: (t) => <span title={t.pickup_address}>{t.pickup_address || '—'}</span>,
     },
     {
       key: 'drop', label: 'Drop', hideBelow: 1100,
-      render: (t) => <span className="truncate block max-w-[14rem]" title={t.destination_address}>{t.destination_address || '—'}</span>,
+      render: (t) => <span title={t.destination_address}>{t.destination_address || '—'}</span>,
     },
     {
-      key: 'fare', label: 'Fare', num: true, width: '8rem',
+      key: 'fare', label: 'Fare', num: true, width: '7rem',
       sortValue: (t) => Number(t.final_fare ?? t.estimated_fare ?? NaN) || null,
       render: fare,
     },
     {
-      key: 'time', label: tzName ? `Requested (${tzName})` : 'Requested', num: true, width: '9rem',
+      key: 'time', label: tzName ? `Requested (${tzName})` : 'Requested', num: true, width: '9.5rem',
       sortValue: (t) => t.requested_at ?? '',
       render: (t) => stamp(t.requested_at, tz),
     },

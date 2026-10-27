@@ -622,7 +622,11 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .ops-table-wrap { overflow: auto; }
 .ops-table-wrap--tall { max-height: calc(100vh - var(--ops-top-h) - 190px); min-height: 200px; }
 
-.ops-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+/* FIXED LAYOUT. Auto layout sized every column to its content, so once
+   rows were held to one line a trips table was wider than the panel at
+   1440 and clipped its last column. Narrow columns declare a width; the
+   address columns share whatever is left and truncate with an ellipsis. */
+.ops-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
 .ops-table th {
   position: sticky; top: 0; z-index: 2;
   text-align: left;
@@ -640,8 +644,11 @@ a.ops-alert:hover { background: var(--ops-wash); }
   vertical-align: middle;
   color: var(--ink);
   /* One line per row. A name that wraps to three lines in compact mode
-     defeats compact mode; long addresses are truncated by their own span. */
+     defeats compact mode; what does not fit is cut with an ellipsis and
+     the full text is on the cell's title and in the row's drawer. */
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .ops-table--compact td { padding: 6px 18px; font-size: 12.5px; }
 .ops-table--compact th { padding: 7px 18px; }
