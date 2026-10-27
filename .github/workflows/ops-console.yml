@@ -32,6 +32,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  secret-scan:
+    name: secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks over the commits this run introduces
+        # Only NEW commits are scanned; the full history was scanned once by
+        # hand and recorded (internal docs, AUDIT.md section 24.3).
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BASE:-}" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
+            RANGE="$HEAD~1..$HEAD"
+          else
+            RANGE="$BASE..$HEAD"
+          fi
+          echo "scanning $RANGE"
+          docker run --rm -v "$PWD:/repo:ro" ghcr.io/gitleaks/gitleaks:v8.21.2             git /repo --config /repo/.gitleaks.toml --log-opts="$RANGE"             --redact --no-banner --exit-code 1
+
   verify:
     runs-on: ubuntu-latest
     defaults:
