@@ -1,0 +1,14 @@
+# gitleaks configuration for the CI secret scan.
+#
+# Scans only the commits a push or pull request INTRODUCES. The full history
+# was scanned once by hand (clean for this repository) and the result is
+# recorded in the internal docs repository, AUDIT.md §24.3.
+#
+# No allowlist: this repository has no machine-generated artefacts that carry
+# token-shaped strings. Add a path here only for a file a program writes, never
+# for a file a person edits.
+
+title = "SaaradhiGo web"
+
+[extend]
+useDefault = true
