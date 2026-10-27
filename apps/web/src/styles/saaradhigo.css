@@ -621,7 +621,7 @@
 .sg-doc__text { display: grid; gap: 2px; min-width: 0; }
 .sg-doc__text strong { font: 700 15px/20px var(--font-sans); color: var(--ink); }
 .sg-doc__text span { font: 500 13px/18px var(--font-sans); color: var(--ink-muted); }
-.sg-doc__warn { color: var(--danger, #f87171) !important; }
+.sg-doc__warn { color: var(--danger) !important; }
 
 .sg-doc__action { justify-self: end; }
 
