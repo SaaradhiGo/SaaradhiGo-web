@@ -96,6 +96,7 @@ async function call<T>(
   if (!resp.ok) {
     const err = json?.error ?? {};
     const authored = typeof err.message === 'string' && err.message.trim() !== '';
+    noteSessionEnd(resp.status, authToken, token);
     throw new ApiError(
       resp.status,
       err.code ?? 'UNKNOWN_ERROR',
@@ -107,6 +108,24 @@ async function call<T>(
   // Standard backend envelope: {status, data} for success
   // or DRF pagination response (results / next / previous).
   return (json?.data ?? json) as T;
+}
+
+/**
+ * Fired on `window` when a console request is refused for the token it
+ * carried. The shell listens and sends the operator back to sign in with a
+ * message that says the session ENDED -- which is what happened -- rather
+ * than dumping them on a blank sign-in form mid-task with no explanation.
+ */
+export const CONSOLE_SESSION_ENDED = 'saaradhi:console-session-ended';
+
+function noteSessionEnd(status: number, authToken: string | null | undefined, sent: string | null) {
+  // Only the console's own session: a caller that passed its token
+  // explicitly (the public site) handles its own sign-out, and a request
+  // that carried no token at all was never a session.
+  if (status !== 401 || authToken !== undefined || !sent) return;
+  if (typeof window === 'undefined') return;
+  clearTokens();
+  window.dispatchEvent(new Event(CONSOLE_SESSION_ENDED));
 }
 
 /**
@@ -259,6 +278,12 @@ export async function adminLoginWithPassword(
   identifier: string,
   password: string,
   mfaCode?: string,
+  /**
+   * Why the emergency account is being used. The server demands it from a
+   * break-glass account AFTER the password and the second factor, with
+   * `AUTH_BREAK_GLASS_REASON_REQUIRED`; the console asks and resends.
+   */
+  reason?: string,
 ) {
   const looksLikeEmail = identifier.includes('@');
   type LoginResp = {
@@ -274,6 +299,7 @@ export async function adminLoginWithPassword(
         : { phone_number: identifier.trim() }),
       password,
       ...(mfaCode ? { mfa_code: mfaCode } : {}),
+      ...(reason ? { reason } : {}),
     },
     // Explicitly no token: a stale, expired console session in localStorage
     // would otherwise be sent on the request that is meant to replace it.
@@ -295,4 +321,18 @@ export async function adminLoginWithPassword(
     /* private mode: the console still works, it just cannot greet by name */
   }
   return data;
+}
+
+/**
+ * Replace the signed-in operator's password.
+ *
+ * `/auth/password/change/` checks the current password server-side and
+ * applies the same strength rules as sign-up (`AUTH_PASSWORD_WEAK` names
+ * what was wrong). Used by the forced-change screen.
+ */
+export async function changePassword(currentPassword: string, newPassword: string) {
+  return api.post<{ message?: string }>('/auth/password/change/', {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
 }

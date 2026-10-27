@@ -13,7 +13,7 @@ npm install
 npm run dev                      # http://localhost:3000
 ```
 
-Sign in with an admin-role phone number; OTP flow is identical to the mobile clients.
+Sign in with a staff email address and password at `/login`. Phone-and-code sign-in is not offered to staff.
 
 ## Stack
 
@@ -27,8 +27,8 @@ Sign in with an admin-role phone number; OTP flow is identical to the mobile cli
 
 | Path | What it does |
 |---|---|
-| `/login` | OTP login (uses `/auth/otp/` + `/auth/login/`). |
-| `/dashboard` | Daily KPI tiles via `/ride/admin/dashboard/`. |
+| `/login` | Staff sign-in: email + password via `/auth/admin/login/`, then an authenticator code where the environment requires one. |
+| `/dashboard` | The Command Centre: figures, queues, alerts and quick links for the selected region. |
 | `/trips` | Trips list with status filter via `/ride/admin/trips/`. |
 | `/drivers` | Drivers list with KYC approve action. |
 | `/support` | Support tickets list via `/support/admin/tickets/`. |

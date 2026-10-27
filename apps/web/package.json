@@ -16,7 +16,9 @@
     "verify:booking": "node scripts/verify-booking.mjs",
     "verify:driver-docs": "node scripts/verify-driver-docs.mjs",
     "verify:site": "node scripts/site-cert.mjs",
-    "verify:scope": "node scripts/verify-scope.mjs"
+    "verify:scope": "node scripts/verify-scope.mjs",
+    "shoot:console": "node scripts/shoot-console.mjs",
+    "a11y:console": "node scripts/a11y-console.mjs"
   },
   "dependencies": {
     "next": "15.5.26",

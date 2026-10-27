@@ -59,6 +59,9 @@ landed.
 | `verify:booking` | place search, fares appearing unprompted, confirm without an account, guest booking end to end |
 | `verify:driver-docs` | a new driver uploads a real file and the server's own checklist changes as a result |
 | `verify:site` | 9 routes × 5 locales × 5 widths: headings, axe-core, overflow, untranslated strings |
+| `verify:scope` | the console as several operators: region shown, nav drawn, rows listed, contact masking |
+| `shoot:console` | photographs the console's sign-in states, shell and first pages in both themes at 1440 and 1024 |
+| `a11y:console` | Lighthouse accessibility on sign-in and the Command Centre, both themes (needs `LIGHTHOUSE_DIR`) |
 
 ## They create real data
 

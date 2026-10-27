@@ -36,7 +36,7 @@ const OPERATORS = (process.env.ROLE_SET === 'strict' ? [
   {
     email: 'live.cityops@saaradhigo.test', label: 'City Ops Manager @ Hyderabad',
     expectRegion: 'Hyderabad',
-    expectNav: ['Dashboard', 'Trips', 'Drivers'], denyNav: ['Withdrawals'],
+    expectNav: ['Command Centre', 'Trips', 'Drivers'], denyNav: ['Withdrawals'],
     expectDrivers: ['Hyderabad Driver'], denyDrivers: ['Austin Driver'],
   },
   {
@@ -71,7 +71,7 @@ const OPERATORS = (process.env.ROLE_SET === 'strict' ? [
   {
     email: 'live.analyst@saaradhigo.test', label: 'Analyst @ Hyderabad',
     expectRegion: 'Hyderabad',
-    expectNav: ['Dashboard', 'Trips', 'Drivers'],
+    expectNav: ['Command Centre', 'Trips', 'Drivers'],
     denyNav: ['Withdrawals', 'SOS'],
     expectDrivers: ['Hyderabad D.'], denyDrivers: ['Austin'],
     // No pii.view: the contact column must arrive masked.
@@ -101,7 +101,7 @@ const OPERATORS = (process.env.ROLE_SET === 'strict' ? [
     email: 'live.hyd@saaradhigo.test',
     label: 'City Ops Manager @ Hyderabad',
     expectRegion: 'Hyderabad',
-    expectNav: ['Drivers', 'Trips', 'Dashboard'],
+    expectNav: ['Drivers', 'Trips', 'Command Centre'],
     denyNav: ['Withdrawals'],
     expectDrivers: ['Hyderabad Driver'],
     denyDrivers: ['Austin Driver', 'Vijayawada Driver'],
@@ -119,7 +119,7 @@ const OPERATORS = (process.env.ROLE_SET === 'strict' ? [
     email: 'live.analyst@saaradhigo.test',
     label: 'Analyst @ Hyderabad',
     expectRegion: 'Hyderabad',
-    expectNav: ['Dashboard', 'Trips', 'Drivers'],
+    expectNav: ['Command Centre', 'Trips', 'Drivers'],
     // No pii.view, no finance.read, no safety.respond.
     denyNav: ['Withdrawals', 'SOS'],
     expectDrivers: ['Hyderabad Driver'],

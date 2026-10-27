@@ -71,16 +71,45 @@ export type AdminAccess = {
   super_admin_shortfall: number;
 };
 
+// The last answer, for pages that render after the shell has already
+// asked. The shell renders nothing until it knows, so by the time a page
+// runs this is filled in; a page must still cope with `null`.
+let cached: AdminAccess | null = null;
+
 export async function fetchAdminAccess(): Promise<AdminAccess | null> {
   if (!readToken()) return null;
   try {
-    return await api.get<AdminAccess>('/admin-access/me/');
+    cached = await api.get<AdminAccess>('/admin-access/me/');
+    return cached;
   } catch {
     // A failure here must not blank the console. The caller renders
     // without permission hints, which shows more rather than less, and
     // the server still refuses what it should.
+    cached = null;
     return null;
   }
+}
+
+export function getCachedAccess(): AdminAccess | null {
+  return cached;
+}
+
+/**
+ * The scope the operator is looking at, as a node: the selected one, or
+ * the only one they hold, or the shallowest. Null when unknown.
+ */
+export function currentScope(access: AdminAccess | null): AdminScope | null {
+  if (!access || access.access_model === 'legacy_unscoped') return null;
+  const code = readSelectedScope();
+  if (code) {
+    const match = access.scopes.find((s) => s.code === code);
+    if (match) return match;
+  }
+  if (access.scopes.length === 1) return access.scopes[0];
+  return access.scopes.reduce<AdminScope | null>(
+    (best, s) => (!best || s.depth < best.depth ? s : best),
+    null,
+  );
 }
 
 export function readSelectedScope(): string | null {

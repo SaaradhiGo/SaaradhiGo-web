@@ -114,14 +114,25 @@
 .caption { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 500; }
 .label { font-family: var(--font-sans); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 0.12em; }
 .fare-xl { font-family: var(--font-sans); font-size: 30px; line-height: 36px; font-weight: 800; letter-spacing: -0.02em; }
-.fare { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 800;
+.fare { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 800; }
 
-  /* --- Operations console ------------------------------------------------
-     The console is pinned dark and runs a cooler, denser grey ramp than the
-     marketing site, because an operator reads tables of it for a shift. These
-     are the values console.css already used, named so the token guard can see
-     them. They are not a second brand palette: gold and the status colours
-     below stay within the system. ---------------------------------------- */
+/* --- Operations console ----------------------------------------------------
+   A cooler, denser grey ramp than the marketing site, because an operator
+   reads tables of it for a shift. Not a second brand palette: gold and the
+   status colours stay within the system.
+
+   THESE USED TO BE DECLARED INSIDE `.fare { }` -- a missing brace put every
+   `--ops-*` property on the fare figure and nowhere else, so the console's
+   `var(--ops-ink-2)` resolved to nothing and every colour fell back to
+   whatever it inherited. The guard saw tokens; the browser never did.
+
+   Both themes are defined, because the console now has a theme switch. The
+   light values are chosen so every `ops-ink` step from 1 to 6 reads at 4.5:1
+   or better on `ops-bg-100`; step 7 is for hairlines and glyphs only. The
+   `ops-gold-*` steps are TEXT golds and go dark on ivory for the same reason
+   `gold-text` does; fills keep using `gold-500`.
+   ----------------------------------------------------------------------- */
+:root, [data-theme="dark"] {
   --ops-bg-000: #0b0b0b;
   --ops-bg-100: #121212;
   --ops-bg-150: #161616;
@@ -134,8 +145,8 @@
   --ops-ink-3: #8e99a8;
   --ops-ink-3b: #8b95a5;
   --ops-ink-4: #7d8795;
-  --ops-ink-5: #6b7585;
-  --ops-ink-6: #5d6675;
+  --ops-ink-5: #7a8493;
+  --ops-ink-6: #76808f;
   --ops-ink-7: #4f5765;
   --ops-gold-300: #ffe98a;
   --ops-gold-350: #ffe07a;
@@ -144,4 +155,55 @@
   --ops-success: #7fdcb0;
   --ops-danger: #ffa98f;
   --ops-danger-bg: #27100a;
+  /* Translucent overlays: hover washes, hairlines, the scrim behind a drawer.
+     Named because a white wash on ivory is invisible and a black one on noir
+     is, so each theme needs its own. */
+  --ops-wash: rgba(255,255,255,0.045);
+  --ops-wash-strong: rgba(255,255,255,0.09);
+  --ops-hairline: rgba(255,255,255,0.055);
+  --ops-edge-highlight: rgba(255,255,255,0.045);
+  --ops-scrim: rgba(0,0,0,0.6);
+  --ops-lift: 0 1px 2px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.35);
+  --ops-gold-wash: rgba(255,215,0,0.08);
+  --ops-gold-edge: rgba(255,215,0,0.28);
+  --ops-success-wash: rgba(70,201,139,0.1);
+  --ops-success-edge: rgba(70,201,139,0.4);
+  --ops-danger-wash: rgba(255,138,107,0.1);
+  --ops-danger-edge: rgba(255,138,107,0.42);
+}
+[data-theme="light"] {
+  --ops-bg-000: #f4f4f5;
+  --ops-bg-100: #ffffff;
+  --ops-bg-150: #fbfbfc;
+  --ops-bg-200: #ffffff;
+  --ops-bg-300: #f4f4f5;
+  --ops-bg-field: #ffffff;
+  --ops-line-strong: #c4c7cc;
+  --ops-ink-1: #1f2937;
+  --ops-ink-2: #334155;
+  --ops-ink-3: #475569;
+  --ops-ink-3b: #4b5563;
+  --ops-ink-4: #556070;
+  --ops-ink-5: #5f6b7a;
+  --ops-ink-6: #66717f;
+  --ops-ink-7: #9aa3b0;
+  --ops-gold-300: #7a6000;
+  --ops-gold-350: #6e5600;
+  --ops-gold-500: #8a6d00;
+  --ops-gold-700: #5c4a00;
+  --ops-success: #1d7a4e;
+  --ops-danger: #b83a1e;
+  --ops-danger-bg: #fdf0ec;
+  --ops-wash: rgba(10,10,10,0.04);
+  --ops-wash-strong: rgba(10,10,10,0.08);
+  --ops-hairline: rgba(10,10,10,0.07);
+  --ops-edge-highlight: rgba(255,255,255,0.6);
+  --ops-scrim: rgba(10,10,10,0.35);
+  --ops-lift: 0 1px 2px rgba(10,10,10,0.06), 0 8px 24px rgba(10,10,10,0.08);
+  --ops-gold-wash: rgba(122,96,0,0.08);
+  --ops-gold-edge: rgba(122,96,0,0.32);
+  --ops-success-wash: rgba(29,122,78,0.1);
+  --ops-success-edge: rgba(29,122,78,0.4);
+  --ops-danger-wash: rgba(184,58,30,0.08);
+  --ops-danger-edge: rgba(184,58,30,0.4);
 }
