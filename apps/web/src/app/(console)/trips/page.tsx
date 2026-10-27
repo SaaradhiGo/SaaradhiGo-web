@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { withScope } from '@/lib/adminScope';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { Empty, PageHeader, Panel, Pill, Table, Filters } from '@/components/console/ui';
@@ -70,7 +71,7 @@ export default function TripsPage() {
     try {
       const query = new URLSearchParams({ page_size: '50' });
       if (status) query.set('status', status);
-      const page = await api.get<Page>(`/ride/admin/trips/?${query}`);
+      const page = await api.get<Page>(withScope(`/ride/admin/trips/?${query}`));
       const list = Array.isArray(page?.results) ? page.results
         : (Array.isArray(page) ? (page as unknown as Trip[]) : []);
       setTrips(list);

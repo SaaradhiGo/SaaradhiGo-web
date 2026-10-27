@@ -114,4 +114,34 @@
 .caption { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 500; }
 .label { font-family: var(--font-sans); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 0.12em; }
 .fare-xl { font-family: var(--font-sans); font-size: 30px; line-height: 36px; font-weight: 800; letter-spacing: -0.02em; }
-.fare { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 800; }
+.fare { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 800;
+
+  /* --- Operations console ------------------------------------------------
+     The console is pinned dark and runs a cooler, denser grey ramp than the
+     marketing site, because an operator reads tables of it for a shift. These
+     are the values console.css already used, named so the token guard can see
+     them. They are not a second brand palette: gold and the status colours
+     below stay within the system. ---------------------------------------- */
+  --ops-bg-000: #0b0b0b;
+  --ops-bg-100: #121212;
+  --ops-bg-150: #161616;
+  --ops-bg-200: #181818;
+  --ops-bg-300: #1f1f1f;
+  --ops-bg-field: #12141a;
+  --ops-line-strong: #3a3a40;
+  --ops-ink-1: #c6cedb;
+  --ops-ink-2: #9aa6b6;
+  --ops-ink-3: #8e99a8;
+  --ops-ink-3b: #8b95a5;
+  --ops-ink-4: #7d8795;
+  --ops-ink-5: #6b7585;
+  --ops-ink-6: #5d6675;
+  --ops-ink-7: #4f5765;
+  --ops-gold-300: #ffe98a;
+  --ops-gold-350: #ffe07a;
+  --ops-gold-500: #c8a75a;
+  --ops-gold-700: #8a7a4e;
+  --ops-success: #7fdcb0;
+  --ops-danger: #ffa98f;
+  --ops-danger-bg: #27100a;
+}

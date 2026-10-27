@@ -1,0 +1,161 @@
+/**
+ * What this operator holds, and which part of it they are looking at.
+ *
+ * THE CONSOLE USED TO SHOW EVERY NAV ITEM TO EVERYBODY
+ * ----------------------------------------------------
+ * `ops_role` lived in the database and no endpoint returned it, so the
+ * console could not tell a Support Agent from Finance. An operator learned
+ * what they were not allowed to do by clicking it and reading a 403.
+ * `/admin-access/me/` now answers that, and this module is the one place
+ * that reads it.
+ *
+ * NONE OF THIS IS SECURITY
+ * ------------------------
+ * Hiding a button stops an operator wasting a click. It stops nothing
+ * else: every endpoint re-checks the permission and re-filters the
+ * queryset server-side, and this file could be rewritten in a browser
+ * console without gaining access to a single row. So when in doubt, SHOW
+ * the thing and let the server refuse it — a hidden control that should
+ * have been visible is a support ticket, while a visible control that gets
+ * refused is merely a dead end.
+ *
+ * THE SELECTED SCOPE CAN ONLY NARROW
+ * ----------------------------------
+ * It is sent as `?scope=<code>` and the server intersects it with the
+ * caller's assignments, refusing a code they do not hold rather than
+ * falling back to everything. So a stale tab holding a revoked scope gets
+ * an error, never a wider view than the operator chose.
+ */
+
+import { api, readToken } from '@/lib/api';
+
+export const SCOPE_KEY = 'saaradhi_admin_scope';
+
+export type AdminScope = {
+  code: string;
+  name: string;
+  kind: 'global' | 'country' | 'state' | 'city' | string;
+  status: string;
+  depth: number;
+};
+
+export type AdminAccess = {
+  id: number | string;
+  email: string;
+  full_name: string;
+  is_superuser: boolean;
+  is_break_glass: boolean;
+  permissions: string[];
+  roles: {
+    role: string;
+    role_name: string;
+    scope: string;
+    scope_name: string;
+    scope_kind: string;
+  }[];
+  scopes: AdminScope[];
+  /**
+   * Which model answered for this account.
+   *
+   * `legacy_unscoped` means the account has no assignments yet and is
+   * still being served by the pre-migration path — it sees everything.
+   * The console says so out loud rather than drawing a scope picker that
+   * does nothing.
+   */
+  access_model: 'assignments' | 'legacy_unscoped' | 'denied';
+  /**
+   * How many more named Super Admins the platform needs. Non-zero is
+   * shown as a persistent banner to Super Admins and to nobody else --
+   * it is a prompt to act, and everyone else can do nothing about it.
+   */
+  super_admin_shortfall: number;
+};
+
+export async function fetchAdminAccess(): Promise<AdminAccess | null> {
+  if (!readToken()) return null;
+  try {
+    return await api.get<AdminAccess>('/admin-access/me/');
+  } catch {
+    // A failure here must not blank the console. The caller renders
+    // without permission hints, which shows more rather than less, and
+    // the server still refuses what it should.
+    return null;
+  }
+}
+
+export function readSelectedScope(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem(SCOPE_KEY) || null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeSelectedScope(code: string | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (code) window.localStorage.setItem(SCOPE_KEY, code);
+    else window.localStorage.removeItem(SCOPE_KEY);
+  } catch {
+    // Private browsing. The console then shows the full held scope, which
+    // is correct, just not remembered between loads.
+  }
+}
+
+/**
+ * Append the selected scope to a console query.
+ *
+ * Returns the path unchanged when nothing is selected, so a caller can use
+ * it unconditionally.
+ */
+export function withScope(path: string): string {
+  const code = readSelectedScope();
+  if (!code) return path;
+  const separator = path.includes('?') ? '&' : '?';
+  return `${path}${separator}scope=${encodeURIComponent(code)}`;
+}
+
+/**
+ * Does this operator hold this permission anywhere?
+ *
+ * "Anywhere" is the right question for drawing a nav item: an operator who
+ * can approve payouts in one city should see the Withdrawals link. Whether
+ * they may act on a PARTICULAR row is the server's answer, not this one.
+ */
+export function can(access: AdminAccess | null, permission: string): boolean {
+  // Unknown access means we could not ask. Show it; the server decides.
+  if (!access) return true;
+  if (access.access_model === 'legacy_unscoped') return true;
+  return access.permissions.includes(permission);
+}
+
+/** A label for the scope being viewed, for the shell to display. */
+export function scopeLabel(access: AdminAccess | null): string {
+  if (!access) return '';
+  if (access.access_model === 'legacy_unscoped') return 'All regions';
+  const code = readSelectedScope();
+  if (code) {
+    const match = access.scopes.find((s) => s.code === code);
+    if (match) return match.name;
+  }
+  if (access.scopes.length === 1) return access.scopes[0].name;
+  const shallowest = access.scopes.reduce<AdminScope | null>(
+    (best, s) => (!best || s.depth < best.depth ? s : best),
+    null,
+  );
+  return shallowest ? `${shallowest.name} (all)` : '';
+}
+
+
+/**
+ * Is this account shut out entirely?
+ *
+ * True only under strict mode with no assignment. The console renders an
+ * explanation rather than an empty shell: an operator whose access was
+ * just tightened needs to be told that, not left wondering whether the
+ * product is broken.
+ */
+export function isLockedOut(access: AdminAccess | null): boolean {
+  return access?.access_model === 'denied';
+}
