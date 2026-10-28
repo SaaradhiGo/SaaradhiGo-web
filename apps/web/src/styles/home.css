@@ -1,0 +1,685 @@
+/* SaaradhiGo public homepage.
+   ---------------------------------------------------------------------------
+   The homepage's own layout, to the implementation contract's metrics:
+   1200px content column, 72px header, 32px desktop / 20px mobile gutters, and
+   an 8 / 16 / 24 / 32 / 48 / 64 / 96 spacing scale.
+
+   It is a separate file from `saaradhigo.css` on purpose. That file mirrors
+   the design handoff and is shared with the booking and trip screens; this
+   one is the marketing page only, so tuning the homepage cannot move the
+   product UI underneath it.
+
+   Every colour is a token. Deliberately absent, per the contract: gradients,
+   glows, decorative eyebrow rules, italic headline flourishes, and the
+   rounded-card-for-everything habit. Borders are 1px `line`; the only
+   generous radius is on the hero photograph.
+   ------------------------------------------------------------------------- */
+
+:root {
+  --hp-max: 1200px;
+  --hp-gutter: 32px;
+  --hp-header: 72px;
+}
+
+.hp {
+  width: 100%;
+  max-width: var(--hp-max);
+  margin: 0 auto;
+  padding-left: var(--hp-gutter);
+  padding-right: var(--hp-gutter);
+  box-sizing: border-box;
+}
+
+/* 96px between sections, which is the top of the spacing scale. */
+.hp-section { padding: 96px 0; }
+.hp-section--tight { padding: 64px 0; }
+.hp-section + .hp-section { padding-top: 0; }
+
+.hp-h2 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.hp-lead {
+  margin: 14px 0 0;
+  max-width: 62ch;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+}
+
+/* --- header ------------------------------------------------------------- */
+
+.hp-header {
+  position: sticky; top: 0; z-index: 40;
+  background: var(--noir);
+  border-bottom: 1px solid var(--line);
+}
+.hp-nav {
+  height: var(--hp-header);
+  display: flex; align-items: center; gap: 32px;
+}
+.hp-nav__logo { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; flex: none; }
+.hp-nav__logo .sg-logo { width: 40px; }
+.hp-nav__name {
+  font-family: var(--font-brand); font-size: 18px; font-weight: 600;
+  letter-spacing: 0.06em; color: var(--gold-500); white-space: nowrap;
+}
+/* Centre group, so the links sit between the logo and the session controls. */
+.hp-nav__links { display: flex; gap: 4px; margin: 0 auto; }
+.hp-nav__link {
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+  color: var(--on-noir-muted); text-decoration: none;
+  padding: 8px 12px; border-radius: var(--radius-sm);
+  transition: color 140ms ease, background-color 140ms ease;
+}
+.hp-nav__link:hover { color: var(--on-noir); background: var(--bg-200); }
+.hp-nav__link[aria-current="page"] { color: var(--on-noir); }
+.hp-nav__session { display: flex; align-items: center; gap: 8px; flex: none; }
+
+.hp-nav__toggle {
+  display: none; width: 44px; height: 44px; margin-left: auto;
+  align-items: center; justify-content: center;
+  background: none; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  color: var(--on-noir); cursor: pointer;
+}
+.hp-nav__toggle svg { width: 22px; height: 22px; }
+
+.hp-drawer {
+  background: var(--noir);
+  border-bottom: 1px solid var(--line);
+  padding: 8px var(--hp-gutter) 24px;
+}
+.hp-drawer a {
+  display: flex; align-items: center; min-height: 48px;
+  font-family: var(--font-sans); font-size: 16px; font-weight: 600;
+  color: var(--on-noir-muted); text-decoration: none;
+}
+.hp-drawer a[aria-current="page"] { color: var(--on-noir); }
+/* A COLUMN, NOT A ROW. This was a flex row carrying two controls, which
+   fitted while they were "Log in" and "Sign up". A signed-in person has a
+   role link AND an account chip, and the chip opens a 260px menu: at 390px
+   the row pushed that menu to x=102 and 62px off the right edge of the
+   screen. Stacked, each control owns the width it needs. */
+.hp-drawer__session {
+  display: flex; flex-direction: column; align-items: stretch; gap: 12px;
+  padding-top: 16px; border-top: 1px solid var(--line); margin-top: 8px;
+}
+.hp-drawer__session > .sg-btn { width: 100%; }
+
+/* --- hero --------------------------------------------------------------- */
+
+/* NO `min-height`. It reserved 520px whether the hero needed it or not, and
+   the column does not: title, subtitle and the two fields come to about
+   340px, so the rest was empty black above a section that then added its own
+   96px. That reserved emptiness is most of what made the page feel sparse.
+   The hero is now as tall as its contents, and the photograph beside it sets
+   the floor. */
+/* ONE COLUMN. It was 45/55 with a photograph in the right-hand slot, and
+   the photograph was a phone snapshot of two men standing in a road. The
+   hero is now the headline, the subtitle and the booking fields, which is
+   what the page is for; the measure is capped so the headline does not run
+   the full width of a desktop. */
+.hp-hero {
+  max-width: 720px;
+  padding: 72px 0 8px;
+}
+.hp-hero__title {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 44px;
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+/* The second line is the brand moment, and the only one on the page. */
+.hp-hero__title span { display: block; color: var(--gold-text); }
+.hp-hero__sub {
+  margin: 24px 0 0;
+  font-family: var(--font-sans); font-size: 18px; line-height: 1.6;
+  color: var(--ink-muted); max-width: 46ch;
+}
+.hp-hero__form { margin-top: 32px; display: grid; gap: 12px; max-width: 460px; }
+
+
+/* The slot a licensed photograph goes into. It states what is missing
+   instead of standing in for it with a decorative graphic. */
+
+/* --- booking control ---------------------------------------------------- */
+
+.hp-field { position: relative; display: grid; gap: 6px; }
+.hp-field__label {
+  font-family: var(--font-sans); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-subtle);
+}
+.hp-field__box {
+  display: flex; align-items: center; gap: 12px;
+  height: 56px; padding: 0 16px;
+  background: var(--bg-200);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  transition: border-color 140ms ease;
+}
+.hp-field__box:focus-within { border-color: var(--gold-500); }
+.hp-field__box input {
+  all: unset; flex: 1; min-width: 0;
+  font-family: var(--font-sans); font-size: 16px; color: var(--ink);
+}
+.hp-field__box input::placeholder { color: var(--ink-subtle); }
+.hp-field__box[data-invalid="true"] { border-color: var(--danger); }
+.hp-field__marker { width: 10px; height: 10px; flex: none; }
+.hp-field__marker--pickup { border-radius: var(--radius-pill); background: var(--pickup); }
+.hp-field__marker--drop { border-radius: 2px; background: var(--gold-500); }
+
+.hp-suggest {
+  position: absolute; z-index: 20; top: 100%; left: 0; right: 0; margin-top: 4px;
+  background: var(--bg-100); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-panel);
+  max-height: 260px; overflow-y: auto; padding: 4px;
+}
+.hp-suggest button {
+  display: block; width: 100%; text-align: left;
+  padding: 12px; border: 0; background: none; cursor: pointer;
+  font-family: var(--font-sans); font-size: 15px; color: var(--ink);
+  border-radius: var(--radius-sm);
+}
+.hp-suggest button:hover, .hp-suggest button:focus-visible { background: var(--bg-300); }
+
+.hp-error {
+  font-family: var(--font-sans); font-size: 14px; color: var(--danger); margin: 0;
+}
+
+/* --- ride categories ---------------------------------------------------- */
+
+.hp-rides { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 48px; padding: 0; list-style: none; }
+.hp-ride { display: grid; gap: 12px; align-content: start; }
+.hp-ride__art {
+  display: grid; place-items: center;
+  height: 120px; border-radius: var(--radius-sm);
+  background: var(--bg-100); border: 1px solid var(--line);
+  color: var(--gold-text);
+}
+.hp-ride__art svg { width: 64px; height: 64px; }
+.hp-ride h3 { margin: 0; font-family: var(--font-sans); font-size: 18px; font-weight: 700; color: var(--ink); }
+.hp-ride p { margin: 0; font-family: var(--font-sans); font-size: 15px; line-height: 1.5; color: var(--ink-muted); }
+
+/* --- numbered steps ----------------------------------------------------- */
+
+.hp-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; margin: 48px 0 0; padding: 0; list-style: none; }
+.hp-step__n {
+  font-family: var(--font-sans); font-size: 14px; font-weight: 700;
+  letter-spacing: 0.08em; color: var(--gold-text);
+}
+.hp-step h3 { margin: 12px 0 8px; font-family: var(--font-sans); font-size: 20px; font-weight: 700; color: var(--ink); }
+.hp-step p { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--ink-muted); }
+
+/* --- split section (drive) ---------------------------------------------- */
+
+
+/* --- safety: a factual list, not marketing cards ------------------------ */
+
+.hp-facts { margin: 48px 0 0; padding: 0; list-style: none; display: grid; gap: 0; }
+.hp-fact {
+  display: grid; grid-template-columns: 24px 1fr; gap: 20px; align-items: start;
+  padding: 24px 0; border-top: 1px solid var(--line);
+}
+.hp-fact:last-child { border-bottom: 1px solid var(--line); }
+.hp-fact__icon { color: var(--gold-text); margin-top: 2px; }
+.hp-fact__icon svg { width: 24px; height: 24px; }
+.hp-fact h3 { margin: 0 0 6px; font-family: var(--font-sans); font-size: 17px; font-weight: 700; color: var(--ink); }
+.hp-fact p { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--ink-muted); max-width: 70ch; }
+
+/* --- closing ------------------------------------------------------------ */
+
+.hp-closing { padding: 96px 0; border-top: 1px solid var(--line); }
+.hp-closing .hp-lead { margin-left: 0; }
+.hp-closing__actions { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 16px; }
+
+/* --- footer ------------------------------------------------------------- */
+
+.hp-footer { background: var(--noir); border-top: 1px solid var(--line); padding: 64px 0 32px; }
+.hp-footer__top { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; justify-content: space-between; }
+.hp-footer__nav { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.hp-footer__nav a,
+.hp-footer__legal a {
+  font-family: var(--font-sans); font-size: 15px; color: var(--on-noir-muted); text-decoration: none;
+}
+.hp-footer__nav a:hover, .hp-footer__legal a:hover { color: var(--on-noir); }
+.hp-footer__base {
+  margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between;
+  font-family: var(--font-sans); font-size: 14px; color: var(--on-noir-muted);
+}
+.hp-footer__legal { display: flex; gap: 24px; }
+
+/* --- responsive ---------------------------------------------------------
+   Checked at 320, 390, 768, 1024 and 1440. */
+
+@media (max-width: 1024px) {
+  .hp-hero { padding: 48px 0 8px; }
+  .hp-hero__title { font-size: 40px; }
+  .hp-steps { gap: 32px; }
+}
+
+@media (max-width: 1023px) {
+  .hp-rides { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  :root { --hp-gutter: 20px; }
+  .hp-nav__links { display: none; }
+  .hp-nav__session { display: none; }
+  .hp-nav__toggle { display: inline-flex; }
+  .hp-section { padding: 64px 0; }
+  .hp-section + .hp-section { padding-top: 0; }
+  .hp-closing { padding: 64px 0; }
+  .hp-steps { grid-template-columns: 1fr; gap: 32px; }
+  .hp-h2 { font-size: 24px; }
+}
+
+@media (max-width: 480px) {
+  .hp-hero__title { font-size: 34px; }
+  .hp-hero__sub { font-size: 15px; }
+  /* Two across still reads at 390; one across wastes the fold. */
+  .hp-rides { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .hp-ride__art { height: 88px; }
+  .hp-ride__art svg { width: 44px; height: 44px; }
+}
+
+/* 320px is the narrowest supported width: the ride grid goes single column
+   rather than squeezing two cards into 140px each. */
+@media (max-width: 360px) {
+  .hp-rides { grid-template-columns: 1fr; }
+  .hp-hero__title { font-size: 30px; }
+}
+
+/* --- language + country picker ------------------------------------------ */
+
+.hp-lang { position: relative; flex: none; }
+.hp-lang__button {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; padding: 0 12px;
+  background: none; border: 1px solid var(--line); border-radius: var(--radius-pill);
+  color: var(--on-noir-muted); cursor: pointer;
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+}
+.hp-lang__button:hover { color: var(--on-noir); border-color: var(--line-strong); }
+.hp-lang__button svg { width: 18px; height: 18px; flex: none; }
+
+.hp-lang__panel {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 50;
+  width: 260px; padding: 12px;
+  background: var(--bg-100); border: 1px solid var(--line);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-panel);
+}
+.hp-lang__section {
+  font-family: var(--font-sans); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-subtle);
+  margin: 4px 4px 8px;
+}
+.hp-lang__row { display: flex; gap: 8px; margin-bottom: 12px; }
+.hp-lang__chip {
+  flex: 1; height: 36px; border-radius: var(--radius-sm);
+  background: var(--bg-200); border: 1px solid var(--line); cursor: pointer;
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--ink);
+}
+.hp-lang__chip[aria-pressed="true"] { border-color: var(--gold-500); background: var(--gold-soft); }
+.hp-lang__list { display: grid; gap: 2px; }
+.hp-lang__item {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; min-height: 44px; padding: 0 10px;
+  background: none; border: 0; border-radius: var(--radius-sm); cursor: pointer;
+  font-family: var(--font-sans); font-size: 15px; color: var(--ink); text-align: left;
+}
+.hp-lang__item:hover { background: var(--bg-200); }
+.hp-lang__item[aria-pressed="true"] { color: var(--gold-text); font-weight: 700; }
+.hp-lang__item svg { width: 16px; height: 16px; flex: none; }
+.hp-lang__note {
+  margin: 12px 4px 2px; font-family: var(--font-sans); font-size: 12px;
+  line-height: 1.5; color: var(--ink-subtle);
+}
+
+/* The picker stays in the bar on mobile, beside the menu button. */
+@media (max-width: 768px) {
+  .hp-nav__mobile { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .hp-lang__panel { right: 0; width: min(260px, calc(100vw - 40px)); }
+}
+@media (min-width: 769px) { .hp-nav__mobile { display: none; } }
+
+/* --- app section --------------------------------------------------------- */
+
+.hp-apps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 48px; }
+.hp-app {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 24px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--bg-100);
+}
+.hp-app h3 { margin: 0 0 4px; font-family: var(--font-sans); font-size: 17px; font-weight: 700; color: var(--ink); }
+.hp-app span { font-family: var(--font-sans); font-size: 14px; color: var(--ink-muted); }
+@media (max-width: 768px) { .hp-apps { grid-template-columns: 1fr; gap: 16px; } }
+
+/* --- hero booking extras ------------------------------------------------- */
+
+.hp-locate {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: none; border: 0; padding: 0; cursor: pointer; width: fit-content;
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--gold-text);
+}
+.hp-locate:disabled { opacity: 0.6; cursor: default; }
+.hp-locate svg { width: 16px; height: 16px; }
+
+/* 320px is the narrowest supported width and the nav is what breaks there:
+   the emblem, the "Saaradhi Go" wordmark, the language button and the menu
+   button together measured 335px against a 320px viewport. The wordmark is
+   the one piece that is redundant -- the emblem already identifies the
+   brand -- so it goes, and the row tightens. */
+@media (max-width: 400px) {
+  .hp-nav { gap: 12px; }
+  .hp-nav__name { display: none; }
+  .hp-nav__logo .sg-logo { width: 34px; }
+  .hp-nav__mobile { gap: 4px; }
+  .hp-lang__button { padding: 0 10px; }
+}
+
+/* --- interior public pages ----------------------------------------------
+   /ride, /drive, /safety, /about and /help share one shell, so the site
+   reads as one site rather than five pages that each invented a layout.
+
+   The metrics are the homepage's: the same 1200px column via `.hp`, the
+   same 96px section rhythm, the same 8/16/24/32/48/64 steps inside it.
+   Prose is capped at 70ch because a 1200px line of body text is unreadable
+   however wide the screen is.
+
+   NO CARDS. An interior page is a document, and a grid of bordered boxes
+   around three sentences each is the look the owner rejected. Structure
+   comes from type size and vertical space; the only borders are the hairline
+   rules that separate list rows. */
+
+.hp-masthead { padding: 64px 0 0; }
+.hp-h1 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  max-width: 28ch;
+}
+.hp-masthead .hp-lead { font-size: 17px; max-width: 66ch; margin-top: 16px; }
+
+.hp-blocks { margin: 0; padding: 0; list-style: none; display: grid; gap: 48px; }
+
+/* HEADING LEFT, BODY RIGHT, on a wide screen.
+   Stacked, a 70ch paragraph inside a 1200px column leaves the right-hand
+   third of a desktop empty, which reads as a page that ran out rather than
+   one that was composed. Splitting the two across the column uses the width
+   the contract asks for and keeps the measure readable. Under 1024px they
+   stack, because two columns of 300px each is neither. */
+.hp-block {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 0 48px;
+  align-items: start;
+}
+.hp-block h2 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 19px;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.hp-block p {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  max-width: 62ch;
+}
+
+/* Numbered rather than bulleted, for pages that describe a sequence. */
+.hp-blocks--numbered { counter-reset: hp-block; }
+.hp-blocks--numbered .hp-block { grid-template-columns: 56px 280px minmax(0, 1fr); }
+.hp-blocks--numbered .hp-block::before {
+  counter-increment: hp-block;
+  content: counter(hp-block, decimal-leading-zero);
+  font-family: var(--font-sans); font-size: 15px; font-weight: 700;
+  color: var(--gold-text); padding-top: 6px; font-variant-numeric: tabular-nums;
+}
+
+.hp-actions { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+
+/* The honesty block: what a page explicitly does NOT claim. Set apart so a
+   reader skimming the safety page cannot miss it, and deliberately not
+   styled as a warning -- it is a statement of scope, not an alarm. */
+.hp-caveat {
+  margin: 48px 0 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold-500);
+  background: var(--bg-100);
+}
+.hp-caveat h2 { margin: 0 0 8px; font-family: var(--font-sans); font-size: 18px; font-weight: 700; color: var(--ink); }
+.hp-caveat p { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.65; color: var(--ink-muted); max-width: 70ch; }
+
+/* Questions and answers, as rules rather than accordions: four short
+   answers are faster to read than four things to click. */
+.hp-qa { margin: 48px 0 0; padding: 0; list-style: none; }
+.hp-qa > div { padding: 24px 0; border-top: 1px solid var(--line); }
+.hp-qa > div:last-child { border-bottom: 1px solid var(--line); }
+.hp-qa dt { font-family: var(--font-sans); font-size: 17px; font-weight: 700; color: var(--ink); }
+.hp-qa dd { margin: 8px 0 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.65; color: var(--ink-muted); max-width: 70ch; }
+
+/* Help topics: two columns of short answers on desktop, one on a phone. */
+/* COLUMNS, NOT A GRID. Five topics in a two-column grid puts three in the
+   first column and two in the second, leaving an obvious hole under the
+   shorter one. Flowing them balances the two columns by height instead. */
+.hp-topics { margin: 48px 0 0; padding: 0; list-style: none; columns: 2; column-gap: 48px; }
+.hp-topic { break-inside: avoid; margin-bottom: 40px; }
+.hp-topic:last-child { margin-bottom: 0; }
+.hp-topic h2 {
+  margin: 0 0 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
+  font-family: var(--font-sans); font-size: 18px; font-weight: 700; color: var(--ink);
+}
+.hp-topic ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.hp-topic li {
+  font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--ink-muted);
+  padding-left: 18px; position: relative;
+}
+.hp-topic li::before {
+  content: ''; position: absolute; left: 0; top: 10px;
+  width: 6px; height: 6px; border-radius: var(--radius-pill); background: var(--gold-500);
+}
+
+/* A full-width photograph closing a page. 3:1 on desktop so it reads as a
+   band rather than a hero competing with the page's own title. */
+
+@media (max-width: 1023px) {
+  .hp-h1 { font-size: 32px; }
+  .hp-block { grid-template-columns: 1fr; }
+  .hp-block h2 { margin-bottom: 12px; }
+  .hp-blocks--numbered .hp-block { grid-template-columns: 56px minmax(0, 1fr); }
+  .hp-topics { column-gap: 32px; }
+}
+
+@media (max-width: 768px) {
+  .hp-masthead { padding-top: 48px; }
+  .hp-h1 { font-size: 28px; }
+  .hp-masthead .hp-lead { font-size: 16px; }
+  .hp-blocks { gap: 40px; }
+  .hp-topics { columns: 1; }
+  }
+
+@media (max-width: 480px) {
+  .hp-h1 { font-size: 26px; }
+  .hp-blocks--numbered .hp-block { grid-template-columns: 36px minmax(0, 1fr); gap: 0 12px; }
+  .hp-caveat { padding: 20px; }
+}
+
+/* Beside a photograph the question list carries the section's top spacing
+   already, so it does not add its own. */
+.hp-qa--flush { margin-top: 0; }
+
+/* The line under an action that says what to put in the message. Smaller
+   than body text because it is an aside, not a paragraph of the page. */
+.hp-hint {
+  margin: 16px 0 0;
+  font-family: var(--font-sans); font-size: 14px; line-height: 1.6;
+  color: var(--ink-subtle); max-width: 60ch;
+}
+
+/* A topic whose answer is a sentence rather than a list of them. */
+.hp-topic p {
+  margin: 0;
+  font-family: var(--font-sans); font-size: 16px; line-height: 1.6;
+  color: var(--ink-muted); max-width: 60ch;
+}
+
+/* --- the bar between the drawer and a roomy desktop --------------------
+   The header is a three-part row -- logo, links, session controls -- and how
+   wide it is depends on the language. Measured at a 1024px viewport, which
+   leaves 960px of content: English needed 838px, Hindi 853, Telugu 950, and
+   SPANISH 1007, because "Viajar / Conducir / Seguridad / Nosotros / Ayuda"
+   plus "Iniciar sesión" and "Registrarse" are simply longer words. So the
+   bar overflowed by 47px in Spanish at a width it passed in English.
+
+   Tuning it for the one language that broke would leave the next
+   translation to find the same edge, so the row tightens for every language
+   below 1120px: half the gap, narrower link padding. That brings the worst
+   case -- the longest link set with the longest session controls -- to about
+   880px, inside the column with room left. */
+@media (max-width: 1120px) {
+  .hp-nav { gap: 16px; }
+  .hp-nav__link { padding: 8px 8px; }
+}
+
+/* A band that can carry more of a wide street scene than 3:1 allows. */
+
+/* Questions in two columns. Four short answers stacked in one column left
+   half the page empty beside them -- the same unused space the photograph
+   had, just moved. They flow like the help topics do, so the columns end
+   level rather than leaving a hole under the shorter one. */
+.hp-qa--split { columns: 2; column-gap: 48px; }
+.hp-qa--split > div { break-inside: avoid; border-top: 1px solid var(--line); }
+.hp-qa--split > div:last-child { border-bottom: none; }
+
+@media (max-width: 768px) {
+    .hp-qa--split { columns: 1; }
+  .hp-qa--split > div:last-child { border-bottom: 1px solid var(--line); }
+}
+
+/* --- the signed-out booking screen -------------------------------------
+   The trip a visitor built on the homepage, repeated back to them before
+   they are asked to sign in. It is the first thing on the page because it
+   is the thing they already did: the screen is a receipt for their effort,
+   not a gate in front of it. */
+
+.bk-trip {
+  margin: 32px 0 0;
+  max-width: 560px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-100);
+  padding: 4px 20px;
+}
+.bk-trip__row {
+  display: grid;
+  grid-template-columns: 10px 56px 1fr;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+  padding: 16px 0;
+  font-family: var(--font-sans); font-size: 16px; line-height: 1.4;
+}
+.bk-trip__row + .bk-trip__row { border-top: 1px solid var(--line); }
+.bk-trip__row .hp-field__marker { align-self: center; }
+.bk-trip__label {
+  font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-subtle);
+}
+.bk-trip__row strong { font-weight: 600; color: var(--ink); }
+
+/* What is really available at this pickup, from the pricing service. No
+   fares: the quote endpoint is authenticated, so there is nothing honest to
+   put here until they sign in, and a blank where a price goes is worse than
+   a sentence saying why. */
+.bk-available { margin: 40px 0 0; }
+.bk-available h2 {
+  margin: 0 0 16px;
+  font-family: var(--font-sans); font-size: 13px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-subtle);
+}
+.bk-available ul {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.bk-available li {
+  padding: 8px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans); font-size: 15px; font-weight: 600; color: var(--ink);
+}
+.bk-available .hp-hint { margin-top: 12px; }
+
+@media (max-width: 480px) {
+  .bk-trip__row { grid-template-columns: 10px 1fr; row-gap: 4px; }
+  .bk-trip__row .bk-trip__label { grid-column: 2; }
+  .bk-trip__row strong { grid-column: 2; }
+}
+
+/* The signed-out booking screen: the trip and its actions on the left, a
+   photograph holding the right. Single column under 1024px, where the
+   photograph goes under the actions rather than squeezing them. */
+@media (max-width: 1024px) {
+    }
+
+/* The signed-out booking screen, now that the photograph beside it is gone.
+   Capped rather than full width: a line of body text running 1200px is not
+   a layout, it is a wall. */
+.bk-single { max-width: 680px; }
+
+/* --- the chariot -------------------------------------------------------
+   The mark the brand is named for, sitting in the space to the right of the
+   hero column. Behind the content, never over it: `z-index: 0` with the
+   column above, so a long headline in Telugu or Hindi overlaps the mark
+   rather than the mark covering the words.
+
+   Dimmed rather than full strength. At full gold it competes with the one
+   control on the page that matters, which is the yellow button directly
+   beneath the fields. */
+.hp-hero-band { position: relative; overflow: hidden; }
+.hp-hero-band > .hp-hero { position: relative; z-index: 1; }
+
+/* THE WHOLE CHARIOT, NOT MOST OF IT.
+   This used to be `right: -40px`, bleeding the artwork off the edge of the
+   section. The horse's head is the right-most thing in the image and there
+   are only ~12px of transparent padding past it, so the bleed cut the head
+   off -- on a landing page for a company named after the charioteer. The
+   mark now sits fully inside the viewport with a margin of its own. */
+.hp-hero__mark {
+  position: absolute;
+  right: clamp(16px, 3vw, 48px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(38vw, 440px);
+  height: auto;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+/* Under 1024px the hero column already uses the full width, so the mark
+   would sit behind the pickup and destination fields. It goes. */
+@media (max-width: 1023px) {
+  .hp-hero__mark { display: none; }
+}

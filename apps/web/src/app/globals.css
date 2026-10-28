@@ -1,35 +1,195 @@
+/* The design system comes first: `tokens.css` is the only file in this app
+   that may contain a colour literal, and `saaradhigo.css` is the component
+   layer ported from the handoff. Both are imported ahead of Tailwind so that
+   Tailwind's utilities, which are emitted last, can still override a
+   component rule when a page needs to. */
+@import '../styles/tokens.css';
+@import '../styles/saaradhigo.css';
+/* The public homepage's own layout. Marketing only: it does not reach the
+   booking or trip screens. */
+@import '../styles/home.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: dark;
-}
+/* ---------------------------------------------------------------------------
+   SaaradhiGo — application styles
+   ---------------------------------------------------------------------------
+   The visual specification now lives in the design system, not here. What is
+   left in this file is the small set of utilities the operations console and
+   the authentication forms were built on, rebased onto the tokens so that
+   NOTHING in this app carries a colour of its own.
+
+   WHAT CHANGED AND WHY
+   The old file declared its own palette in prose -- a brighter, yellower
+   gold on near-black ink, a warm-fade radial gradient, an Inter stack and a
+   `sand` paper surface for the booking panel -- and that palette had drifted
+   from the brand it was meant to express. All of it is gone:
+
+     * The old gold literal now resolves to `--gold-500`. Every `brand`
+       utility in the app points at the token through `tailwind.config.ts`, so
+       the console moved with it and no page needed editing.
+     * The `warm-fade` background gradient is removed. The design system
+       permits gradients only for map scrims.
+     * `.booking-panel`, `.field-label`, `.field-input`, `.route-rail` and
+       `.btn-gold` are removed: the glass booking panel, the location-field
+       pair and the primary button are `sg-` components now.
+     * `.label` is renamed `.form-label`. The design system defines `.label`
+       as a type class (Manrope 11/16, 700, .12em tracking) and a form label
+       cannot also be that.
+
+   TYPE        Cormorant Garamond for headlines and promises; Manrope for
+               every number, label and control; Cinzel for the brand name,
+               eyebrows and map labels. Nothing else.
+   CONTROLS    48px minimum touch target on mobile. Every control shows a
+               2px `focus-ring` at 2px offset -- never `outline: none`
+               without a replacement, because the ring is the only thing a
+               keyboard user has to see where they are.
+   STATE       Every async surface has four: loading, empty, error, success.
+   MOTION      140ms on hover and press, 240ms on sheets and selection,
+               ease-out. Respects prefers-reduced-motion.
+   --------------------------------------------------------------------------- */
 
 body {
-  @apply bg-ink-900 text-white font-sans antialiased min-h-screen;
+  @apply bg-bg-000 text-ink font-sans antialiased min-h-screen;
+}
+
+/* The themes are not a media query. `data-theme` on <html> is authoritative
+   so a rider can choose, and `color-scheme` follows it so native form
+   controls and scrollbars match the page instead of fighting it. */
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+}
+[data-theme='light'] {
+  color-scheme: light;
+}
+
+/* A visible focus ring everywhere, including for mouse users who then press
+   Tab. Removing it is the single most common accessibility regression. */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Visible only to screen readers; used for live-region announcements. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Keyboard users land here first. */
+.skip-link {
+  @apply sr-only;
+}
+.skip-link:focus {
+  @apply not-sr-only fixed top-3 left-3 z-50 bg-gold-500 text-on-gold font-semibold px-4 py-2 rounded-sg-sm;
 }
 
 .card {
-  @apply bg-ink-700 border border-white/5 rounded-2xl p-4;
+  @apply bg-bg-100 border border-line rounded-sg-lg p-5;
 }
 
+/* --- buttons -------------------------------------------------------------
+   The rider-facing primary button is `sg-btn sg-btn--primary`. These three
+   remain for the console and the authentication forms, and are the same
+   shapes rebased onto tokens. */
+
 .btn-primary {
-  @apply bg-brand text-black font-semibold rounded-xl px-4 py-2 hover:bg-brand-dark transition disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 min-h-[48px] bg-gold-500 text-on-gold font-bold
+         rounded-sg-md px-5 py-2.5 transition-colors duration-press
+         hover:bg-gold-300 disabled:opacity-45 disabled:cursor-not-allowed;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 min-h-[48px] border border-line-strong text-ink
+         font-semibold rounded-sg-md px-5 py-2.5 transition-colors duration-press
+         hover:bg-bg-300 hover:border-gold-500 disabled:opacity-45 disabled:cursor-not-allowed;
 }
 
 .btn-ghost {
-  @apply text-white/80 hover:text-white text-sm transition;
+  @apply text-ink-muted hover:text-ink text-sm transition-colors duration-press;
+}
+
+/* --- forms --------------------------------------------------------------- */
+
+/* Named `form-label`, not `label`: the design system owns `.label`. */
+.form-label {
+  @apply block text-sm font-semibold text-ink-muted mb-1.5;
 }
 
 .input {
-  @apply bg-ink-800 border border-white/5 rounded-xl px-3 py-2 text-white placeholder-white/40 focus:outline-none focus:border-brand;
+  @apply w-full min-h-[48px] bg-bg-300 border border-line rounded-sg-md px-3.5 py-2.5
+         text-ink placeholder-ink-subtle transition-colors duration-press
+         focus:border-gold-500
+         disabled:opacity-45 disabled:cursor-not-allowed;
 }
 
+/* Paired with aria-invalid, so the error is not carried by colour alone. */
+.input[aria-invalid='true'] {
+  @apply border-danger;
+}
+
+.help {
+  @apply mt-1.5 text-xs text-ink-muted;
+}
+
+.field-error {
+  @apply mt-1.5 text-xs text-danger;
+}
+
+/* --- status blocks -------------------------------------------------------
+   A word in every one of them: the colour supports the meaning and never
+   carries it alone. */
+
+.alert {
+  @apply rounded-sg-md border px-4 py-3 text-sm;
+}
+.alert-error {
+  @apply alert bg-bg-200 border-danger text-danger;
+}
+.alert-success {
+  @apply alert bg-bg-200 border-success text-success;
+}
+.alert-info {
+  @apply alert bg-bg-200 border-gold-line text-gold-text;
+}
+
+/* --- console leftovers --------------------------------------------------- */
+
 .table-row {
-  @apply border-b border-white/5;
+  @apply border-b border-line;
 }
 
 .tag {
-  @apply text-xs px-2 py-0.5 rounded-full border;
+  @apply text-xs px-2 py-0.5 rounded-sg-pill border border-line;
+}
+
+/* --- map surface ---------------------------------------------------------
+   Where the map goes.
+
+   THIS SURFACE WILL NOT DRAW A FAKE MAP. When the provider is unavailable,
+   it is a plain `bg-100` panel carrying a stated fallback -- never
+   decorative streets, and never the faint grid it used to draw, which a
+   customer could reasonably read as "this is where I am". */
+
+.map-surface {
+  @apply relative overflow-hidden bg-bg-100;
 }

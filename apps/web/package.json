@@ -2,13 +2,20 @@
   "name": "saaradhigo-ops-console",
   "version": "0.1.0",
   "private": true,
-  "description": "SaaradhiGo internal operations console. Multi-page Next.js app served at console.saaradhigo.in (or local). Targets the same backend the mobile apps use.",
+  "description": "SaaradhiGo internal operations console. Multi-page Next.js app served at console.saaradhigo.com (or local). Targets the same backend the mobile apps use.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "check-icons": "node scripts/check-icons.mjs",
+    "check-tokens": "node scripts/check-tokens.mjs",
+    "verify:hosts": "node scripts/verify-hosts.mjs",
+    "verify:auth": "node scripts/verify-auth.mjs",
+    "verify:booking": "node scripts/verify-booking.mjs",
+    "verify:driver-docs": "node scripts/verify-driver-docs.mjs",
+    "verify:site": "node scripts/site-cert.mjs"
   },
   "dependencies": {
     "next": "15.5.26",
@@ -24,6 +31,7 @@
     "eslint-config-next": "15.5.26",
     "postcss": "8.5.28",
     "tailwindcss": "3.4.4",
-    "typescript": "5.4.5"
+    "typescript": "5.4.5",
+    "playwright-core": "1.49.1"
   }
 }

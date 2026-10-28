@@ -1,0 +1,145 @@
+/* SaaradhiGo — generated from tokens.json */
+:root, [data-theme="dark"] {
+  --noir: #000000;
+  --on-noir: #f1f5f9;
+  --on-noir-muted: #94a3b8;
+  --bg-000: #000000;
+  --bg-100: #141414;
+  --bg-200: #18181b;
+  --bg-300: #27272a;
+  --line: #27272a;
+  --line-strong: #71717a;
+  --ink: #f1f5f9;
+  --ink-muted: #94a3b8;
+  --ink-subtle: #8090a6;
+  --gold-500: #ffd700;
+  --gold-300: #ffe34d;
+  --gold-700: #d4b200;
+  --on-gold: #000000;
+  --gold-text: #ffd700;
+  --gold-soft: rgba(255,215,0,0.10);
+  --gold-line: rgba(255,215,0,0.20);
+  --bg-glass: rgba(10,10,10,0.80);
+  --map-ground: #0a0a0a;
+  --map-street: #18181b;
+  --map-arterial: #27272a;
+  --map-highway: #3a3205;
+  --map-water: #0a1418;
+  --map-park: #0d140e;
+  --map-label: #7d8ba1;
+  --logo: #ffd700;
+  --champagne: #fff4bf;
+  --pickup: #46c98b;
+  --success: #46c98b;
+  --danger: #ff8a6b;
+  --focus-ring: #ffe766;
+  --shadow-panel: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,215,0,0.12);
+  --shadow-glow: 0 8px 28px rgba(255,215,0,0.30);
+  --shadow-sheen: inset 0 1px 0 rgba(255,255,255,0.38), inset 0 -2px 0 rgba(0,0,0,0.16);
+}
+[data-theme="light"] {
+  --noir: #000000;
+  --on-noir: #f1f5f9;
+  --on-noir-muted: #94a3b8;
+  --bg-000: #fafafa;
+  --bg-100: #ffffff;
+  --bg-200: #f4f4f5;
+  --bg-300: #e4e4e7;
+  --line: #e4e4e7;
+  --line-strong: #71717a;
+  --ink: #0a0a0a;
+  --ink-muted: #475569;
+  --ink-subtle: #5b6577;
+  --gold-500: #ffd700;
+  --gold-300: #ffe34d;
+  --gold-700: #d4b200;
+  --on-gold: #000000;
+  --gold-text: #7a6000;
+  --gold-soft: rgba(255,215,0,0.18);
+  --gold-line: rgba(122,96,0,0.28);
+  --bg-glass: rgba(255,255,255,0.86);
+  --map-ground: #ececec;
+  --map-street: #fafafa;
+  --map-arterial: #ffffff;
+  --map-highway: #fbeaa0;
+  --map-water: #d3dde2;
+  --map-park: #dfe6d8;
+  --map-label: #5b6577;
+  --logo: #7a6000;
+  --champagne: #fff4bf;
+  --pickup: #1d7a4e;
+  --success: #1d7a4e;
+  --danger: #b83a1e;
+  --focus-ring: #7a6000;
+  --shadow-panel: 0 24px 56px rgba(10,10,10,0.12), 0 0 0 1px rgba(10,10,10,0.06);
+  --shadow-glow: 0 8px 24px rgba(212,178,0,0.30);
+  --shadow-sheen: inset 0 1px 0 rgba(255,255,255,0.38), inset 0 -2px 0 rgba(0,0,0,0.16);
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 72px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+  /* No display serif. One heading family, `--font-sans`, everywhere.
+     See the font link in app/layout.tsx for why. */
+  --font-sans: "Manrope", "Noto Sans", "Noto Sans Telugu", "Noto Sans Devanagari", system-ui, sans-serif;
+  --font-brand: "Cinzel", "Trajan Pro", Georgia, serif;
+}
+/* ONE TYPOGRAPHY SYSTEM. These were Cormorant Garamond, a serif, while the
+   public pages set every heading in Manrope -- so a visitor moving from
+   /ride to /book or to sign-in watched the headings change typeface. They
+   are sans now, at the weight and tracking the sans family needs rather than
+   the serif's.
+
+   The serif also had no Telugu or Devanagari coverage at all, so a te-IN or
+   hi-IN heading fell back to Noto Serif and looked different again. Manrope
+   carries the Noto fallbacks the token stack already names. */
+.display-xl { font-family: var(--font-sans); font-size: 44px; line-height: 1.08; font-weight: 800; letter-spacing: -0.025em; }
+.display-lg { font-family: var(--font-sans); font-size: 30px; line-height: 1.15; font-weight: 700; letter-spacing: -0.02em; }
+.brand-name { font-family: var(--font-brand); font-size: 20px; line-height: 24px; font-weight: 600; letter-spacing: 0.06em; }
+.eyebrow { font-family: var(--font-brand); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.24em; }
+.heading { font-family: var(--font-sans); font-size: 21px; line-height: 28px; font-weight: 700; letter-spacing: -0.01em; }
+.title { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 700; }
+.body-lg { font-family: var(--font-sans); font-size: 16px; line-height: 25px; font-weight: 500; }
+.body { font-family: var(--font-sans); font-size: 15px; line-height: 22px; font-weight: 500; }
+.caption { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 500; }
+.label { font-family: var(--font-sans); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 0.12em; }
+.fare-xl { font-family: var(--font-sans); font-size: 30px; line-height: 36px; font-weight: 800; letter-spacing: -0.02em; }
+.fare { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 800; }
+
+/* --- Operations console ----------------------------------------------------
+   The console is pinned dark and runs a cooler, denser grey ramp than the
+   marketing site, because an operator reads tables of it for a shift. These
+   are the values console.css already used, named so the token guard can see
+   them. Not a second brand palette: gold and the status colours stay within
+   the system. Declared on :root (not inside a rule) so console.css can
+   actually resolve them. ------------------------------------------------- */
+:root, [data-theme="dark"] {
+  --ops-bg-000: #0b0b0b;
+  --ops-bg-100: #121212;
+  --ops-bg-150: #161616;
+  --ops-bg-200: #181818;
+  --ops-bg-300: #1f1f1f;
+  --ops-line-strong: #3a3a40;
+  --ops-ink-1: #c6cedb;
+  --ops-ink-2: #9aa6b6;
+  --ops-ink-3: #8e99a8;
+  --ops-ink-4: #7d8795;
+  --ops-ink-5: #6b7585;
+  --ops-ink-6: #5d6675;
+  --ops-ink-7: #4f5765;
+  --ops-gold-300: #ffe98a;
+  --ops-gold-350: #ffe07a;
+  --ops-success: #7fdcb0;
+  --ops-danger: #ffa98f;
+  --ops-danger-bg: #27100a;
+}

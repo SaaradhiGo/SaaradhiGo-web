@@ -83,5 +83,17 @@ jobs:
       - name: Type-check
         run: npm run type-check
 
+      # The browser requests /favicon.ico whether or not anything links to it.
+      # Nothing imports these files, so only a browser (or this step) notices
+      # when one goes missing.
+      - name: Icon assets
+        run: npm run check-icons
+
+      # The design system's tokens.css is the only file allowed to hold a
+      # colour. Nothing in a lint or a type-check notices a hex literal, which
+      # is how this app ended up with two palettes that had drifted apart.
+      - name: Design tokens
+        run: npm run check-tokens
+
       - name: Build
         run: npm run build
