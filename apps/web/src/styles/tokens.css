@@ -114,14 +114,16 @@
 .caption { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 500; }
 .label { font-family: var(--font-sans); font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 0.12em; }
 .fare-xl { font-family: var(--font-sans); font-size: 30px; line-height: 36px; font-weight: 800; letter-spacing: -0.02em; }
-.fare { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 800;
+.fare { font-family: var(--font-sans); font-size: 18px; line-height: 24px; font-weight: 800; }
 
-  /* --- Operations console ------------------------------------------------
-     The console is pinned dark and runs a cooler, denser grey ramp than the
-     marketing site, because an operator reads tables of it for a shift. These
-     are the values console.css already used, named so the token guard can see
-     them. They are not a second brand palette: gold and the status colours
-     below stay within the system. ---------------------------------------- */
+/* --- Operations console ----------------------------------------------------
+   The console is pinned dark and runs a cooler, denser grey ramp than the
+   marketing site, because an operator reads tables of it for a shift. These
+   are the values console.css already used, named so the token guard can see
+   them. Not a second brand palette: gold and the status colours stay within
+   the system. Declared on :root (not inside a rule) so console.css can
+   actually resolve them. ------------------------------------------------- */
+:root, [data-theme="dark"] {
   --ops-bg-000: #0b0b0b;
   --ops-bg-100: #121212;
   --ops-bg-150: #161616;
