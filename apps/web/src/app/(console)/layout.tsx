@@ -61,7 +61,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
   // NOT `useState(readOperator())`. localStorage is unreadable during
   // server rendering, so the server emitted "Operator" and the client
   // immediately rendered the real name -- a hydration mismatch, which React
-  // reports as minified error #418 on every console page. Read it after
+  // reports as minified error 418 on every console page. Read it after
   // mount instead, where the two sides agree.
   const [operator, setOperator] = useState<ReturnType<typeof readOperator>>(null);
 
