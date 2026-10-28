@@ -19,7 +19,7 @@ import './login-preview.css';
 export const PREVIEW_MARKER = 'console-preview-strip';
 
 export const PREVIEW_STATES = [
-  'credentials', 'totp', 'recovery', 'reason', 'password', 'locked', 'expired',
+  'credentials', 'totp', 'recovery', 'reason', 'password', 'codes', 'locked', 'expired',
 ] as const;
 
 export function LoginPreview({ current }: { current: string }) {

@@ -14,8 +14,9 @@ import {
 } from '@/lib/consolePrefs';
 import { Sidebar, type NavGroup } from '@/components/console/Sidebar';
 import { TopBar } from '@/components/console/TopBar';
+import { RecoveryLowBanner } from '@/components/console/RecoveryLowBanner';
 import {
-  Gauge, LifeBuoy, MapPin, Route, Siren, Users, Wallet,
+  Gauge, LifeBuoy, MapPin, Route, Shield, Siren, Users, Wallet,
 } from '@/components/console/icons';
 import '@/styles/console.css';
 
@@ -66,6 +67,10 @@ const GROUPS: NavGroup[] = [
     label: 'Settings',
     items: [
       { href: '/zones', label: 'Zones & fares', Icon: MapPin, need: 'zone.write' },
+      // No `need`: the operator's OWN authenticator and recovery codes.
+      // The endpoints behind it identify them from the token and answer
+      // about nobody else, so every operator may open it.
+      { href: '/settings/security', label: 'Security', Icon: Shield },
     ],
   },
 ];
@@ -172,7 +177,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
     pathname === href || Boolean(pathname?.startsWith(href + '/')), [pathname]);
 
   const groups = useMemo(() => GROUPS
-    .map((g) => ({ ...g, items: g.items.filter((item) => can(access ?? null, item.need)) }))
+    .map((g) => ({ ...g, items: g.items.filter((item) => !item.need || can(access ?? null, item.need)) }))
     .filter((g) => g.items.length > 0), [access]);
 
   return (
@@ -212,6 +217,10 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
               </span>
             </div>
           )}
+
+          {/* A recovery code was spent at sign-in and few are left. Said
+              once, here, with the way to fix it. */}
+          <RecoveryLowBanner />
 
           {access === undefined ? (
             /* Nothing is rendered until we know what this operator holds.
