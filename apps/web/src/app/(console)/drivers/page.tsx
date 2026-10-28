@@ -35,10 +35,10 @@ import {
  * somebody to think before taking, so it lives on the driver's own page
  * next to the evidence.
  *
- * `?q=` is the global search landing here. The server has no search yet,
- * so the page searches the rows it loaded and says so, in words, above
- * the table -- rather than returning "no results" for a driver who is on
- * page two.
+ * `?q=` narrows the rows THIS PAGE loaded and says so, in words, above
+ * the table. It is a filter on a list, not a search: finding a driver by
+ * phone, plate or name across every page is the search box in the top
+ * bar, which asks the server.
  */
 type Person = { phone_number?: string; full_name?: string; email?: string };
 
@@ -202,7 +202,7 @@ function DriversInner() {
     <>
       <PageHeader
         title="Drivers"
-        subtitle={q ? 'The server does not search yet; this matches within the drivers loaded on this page.' : undefined}
+        subtitle={q ? 'Matches within the drivers loaded on this page. To find a driver anywhere by phone, plate or name, use the search box above.' : undefined}
       />
 
       <Panel flush>
@@ -232,7 +232,7 @@ function DriversInner() {
         ) : (shown?.length ?? 0) === 0 ? (
           <Empty
             title={q ? 'No driver here matches that' : 'No drivers here'}
-            detail={q ? 'Only the loaded page was searched. Clear the search or narrow the filters.'
+            detail={q ? 'Only the loaded page was filtered. Use the search box above to look everywhere, or clear this filter.'
               : approved === 'false' ? 'Nothing is waiting on a decision.' : undefined}
           />
         ) : (

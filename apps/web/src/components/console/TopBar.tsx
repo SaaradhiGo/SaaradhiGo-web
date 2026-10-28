@@ -40,7 +40,7 @@ export function TopBar({
       <div className="ops__top-left">
         <ScopeSwitcher access={access} />
       </div>
-      <GlobalSearch />
+      <GlobalSearch access={access} />
       <div className="ops__top-right">
         <EnvBadge />
         {safety && (
