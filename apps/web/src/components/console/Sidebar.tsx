@@ -9,8 +9,12 @@ export type NavItem = {
   href: string;
   label: string;
   Icon: ComponentType<{ className?: string }>;
-  /** The permission that governs the page. Hides the link; the server refuses the page. */
-  need: string;
+  /**
+   * The permission that governs the page. Hides the link; the server
+   * refuses the page. Absent for a self-service page every operator may
+   * open (Security: their own second factor).
+   */
+  need?: string;
   /** Which queue count sits beside it, if any. */
   countKey?: string;
   /** Red rather than gold when non-zero: things with a clock on them. */

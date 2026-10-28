@@ -264,6 +264,16 @@ export type AdminLoginExtra = {
   /** The second factor, once `AUTH_MFA_REQUIRED` has asked for it. */
   mfaCode?: string;
   /**
+   * One of the single-use recovery codes, INSTEAD of the authenticator
+   * code, when the authenticator is lost. Sent as `recovery_code`: the
+   * server checks that field against the recovery set only, consumes the
+   * code, and answers with how many remain (`recovery_codes_remaining`,
+   * `recovery_codes_low`). This screen used to post it as `mfa_code`,
+   * which the server still accepts, but the field should say what it
+   * carries.
+   */
+  recoveryCode?: string;
+  /**
    * Why the emergency account is being used. The server demands it from a
    * break-glass account AFTER the password and the second factor, with
    * `AUTH_BREAK_GLASS_REASON_REQUIRED`; the console asks and resends.
@@ -299,18 +309,29 @@ export type AdminLoginExtra = {
  * `is_operator` BEFORE minting a token, so a token from it always represents
  * an account allowed to operate the platform.
  */
+export type AdminLoginResult = {
+  token?: string;
+  refresh_token?: string;
+  user?: OperatorUser;
+  /**
+   * Present on exactly ONE sign-in: the first token after the
+   * authenticator is confirmed, and on a regeneration. The server never
+   * returns them again, so whatever is shown from this must be shown now.
+   */
+  recovery_codes?: string[];
+  recovery_codes_notice?: string;
+  /** After a recovery code was spent: how many are left, and whether that is few. */
+  recovery_codes_remaining?: number;
+  recovery_codes_low?: boolean;
+};
+
 export async function adminLoginWithPassword(
   identifier: string,
   password: string,
-  { mfaCode, reason, newPassword }: AdminLoginExtra = {},
-) {
+  { mfaCode, recoveryCode, reason, newPassword }: AdminLoginExtra = {},
+): Promise<AdminLoginResult> {
   const looksLikeEmail = identifier.includes('@');
-  type LoginResp = {
-    token?: string;
-    refresh_token?: string;
-    user?: OperatorUser;
-  };
-  const data = await api.post<LoginResp>(
+  const data = await api.post<AdminLoginResult>(
     '/auth/admin/login/',
     {
       ...(looksLikeEmail
@@ -318,6 +339,7 @@ export async function adminLoginWithPassword(
         : { phone_number: identifier.trim() }),
       password,
       ...(mfaCode ? { mfa_code: mfaCode } : {}),
+      ...(recoveryCode ? { recovery_code: recoveryCode } : {}),
       ...(reason ? { reason } : {}),
       ...(newPassword ? { new_password: newPassword } : {}),
     },
@@ -356,5 +378,76 @@ export async function changePassword(currentPassword: string, newPassword: strin
   return api.post<{ message?: string }>('/auth/password/change/', {
     current_password: currentPassword,
     new_password: newPassword,
+  });
+}
+
+// ---- The operator's own second factor ----
+
+/**
+ * How many recovery codes were left after the last sign-in that spent one,
+ * kept for THIS browser session so the console can say so on its first
+ * page. The sign-in page cannot show it: the next thing it does is leave.
+ * Cleared when dismissed or when a fresh set is issued.
+ */
+export const RECOVERY_LOW_KEY = 'saaradhi_recovery_codes_low';
+/** Fired on `window` when the note changes, so a banner already on screen follows. */
+export const RECOVERY_LOW_EVENT = 'saaradhi:recovery-codes-low';
+
+export function readRecoveryLow(): number | null {
+  try {
+    const raw = window.sessionStorage.getItem(RECOVERY_LOW_KEY);
+    if (raw === null || raw === '') return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeRecoveryLow(remaining: number | null) {
+  try {
+    if (remaining === null) window.sessionStorage.removeItem(RECOVERY_LOW_KEY);
+    else window.sessionStorage.setItem(RECOVERY_LOW_KEY, String(remaining));
+  } catch {
+    /* no storage: the notice is simply not shown */
+  }
+  try {
+    window.dispatchEvent(new Event(RECOVERY_LOW_EVENT));
+  } catch {
+    /* not in a browser */
+  }
+}
+
+export type MfaStatus = {
+  /** False only outside production, where `ADMIN_MFA_REQUIRED` may be off. */
+  mfa_enabled: boolean;
+  /** A confirmed authenticator. */
+  enrolled: boolean;
+  /** An authenticator set up in a shell and not yet confirmed at sign-in. */
+  pending: boolean;
+  recovery_codes_remaining: number;
+  recovery_codes_low: boolean;
+};
+
+/** `GET /auth/admin/mfa/status/`: the caller's own state, counts and booleans only. */
+export async function fetchMfaStatus() {
+  return api.get<MfaStatus>('/auth/admin/mfa/status/');
+}
+
+export type RecoveryCodesIssued = {
+  recovery_codes: string[];
+  recovery_codes_notice?: string;
+  recovery_codes_remaining: number;
+  recovery_codes_low: boolean;
+};
+
+/**
+ * Replace the caller's recovery codes. Needs a LIVE authenticator code --
+ * a recovery code is refused (`AUTH_INVALID_CODE`, 403) -- and returns the
+ * new set exactly once. Every previous code is dead from this moment.
+ */
+export async function regenerateRecoveryCodes(mfaCode: string) {
+  return api.post<RecoveryCodesIssued>('/auth/admin/mfa/recovery-codes/regenerate/', {
+    mfa_code: mfaCode,
   });
 }
