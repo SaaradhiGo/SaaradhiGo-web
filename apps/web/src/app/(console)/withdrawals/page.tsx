@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { withScope } from '@/lib/adminScope';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { Empty, PageHeader, Panel, Pill, Stat, StatStrip, Table } from '@/components/console/ui';
@@ -76,8 +77,8 @@ export default function WithdrawalsPage() {
     setRows(null);
     setError(null);
     try {
-      const page = await api.get<Page>(
-        `/driver/admin/withdrawals/?status=${encodeURIComponent(status)}&page_size=100`);
+      const page = await api.get<Page>(withScope(
+        `/driver/admin/withdrawals/?status=${encodeURIComponent(status)}&page_size=100`));
       const list = Array.isArray(page?.results) ? page.results
         : (Array.isArray(page) ? (page as unknown as Withdrawal[]) : []);
       setRows(list);

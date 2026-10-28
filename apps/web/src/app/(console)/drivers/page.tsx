@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { withScope } from '@/lib/adminScope';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
@@ -20,9 +21,24 @@ import { Empty, PageHeader, Panel, Pill, Table, Filters } from '@/components/con
  * The filter is in the URL so the dashboard can link straight to the
  * queue that matters — `/drivers?approved=false`.
  */
+type Person = { phone_number?: string; full_name?: string; email?: string };
+
 type Driver = {
   id: number;
-  user_id?: { phone_number?: string; full_name?: string; email?: string } | number;
+  /**
+   * `DriverAdminListSerializer` returns the person as `user_details`.
+   * This page read `user_id`, which on that payload is absent -- so every
+   * row rendered as "Driver #<id>" with a dash for the phone number, and
+   * the drivers queue has never shown a single name. Found by driving the
+   * console in a browser; no test noticed, because the page rendered
+   * perfectly well with nothing in it.
+   *
+   * Both are accepted: other admin payloads nest the person under
+   * `user_id`, and a console that works against one shape and silently
+   * blanks on the other is how this happened in the first place.
+   */
+  user_details?: Person;
+  user_id?: Person | number;
   status?: string;
   approved?: boolean;
   doc_status?: string | null;
@@ -40,7 +56,8 @@ const FILTERS = [
 ] as const;
 
 function who(d: Driver) {
-  const u = typeof d.user_id === 'object' && d.user_id ? d.user_id : null;
+  const u = d.user_details
+    ?? (typeof d.user_id === 'object' && d.user_id ? d.user_id : null);
   return {
     name: u?.full_name?.trim() || null,
     phone: u?.phone_number || null,
@@ -54,6 +71,13 @@ function DriversInner() {
   const approved = search.get('approved') ?? '';
 
   const [drivers, setDrivers] = useState<Driver[] | null>(null);
+
+  // Whether the SERVER masked what it sent, not whether we think it should
+  // have. The payload is the only honest source: an operator holding
+  // `pii.view` receives the real number and there is nothing to announce.
+  const maskedContacts = (drivers ?? []).some(
+    (d) => (who(d).phone ?? '').includes('•'),
+  );
   const [total, setTotal] = useState<number | null>(null);
   const [more, setMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +88,7 @@ function DriversInner() {
     try {
       const query = new URLSearchParams({ page_size: '50' });
       if (approved) query.set('approved', approved);
-      const page = await api.get<Page>(`/driver/admin/?${query}`);
+      const page = await api.get<Page>(withScope(`/driver/admin/?${query}`));
       const list = Array.isArray(page?.results) ? page.results
         : (Array.isArray(page) ? (page as unknown as Driver[]) : []);
       setDrivers(list);
@@ -115,7 +139,17 @@ function DriversInner() {
         ) : (
           <Table head={<>
             <th>Driver</th>
-            <th>Contact</th>
+            <th>
+              Contact
+              {/* Said once in the header rather than decorating every
+                  row: an operator who cannot see contact details needs
+                  to know that the dots are policy, not missing data. */}
+              {maskedContacts && (
+                <span className="th-note" title="Your role cannot see full contact details">
+                  masked
+                </span>
+              )}
+            </th>
             <th>Review</th>
             <th>State</th>
             <th className="num">Trips</th>

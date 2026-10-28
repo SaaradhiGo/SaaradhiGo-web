@@ -15,7 +15,8 @@
     "verify:auth": "node scripts/verify-auth.mjs",
     "verify:booking": "node scripts/verify-booking.mjs",
     "verify:driver-docs": "node scripts/verify-driver-docs.mjs",
-    "verify:site": "node scripts/site-cert.mjs"
+    "verify:site": "node scripts/site-cert.mjs",
+    "verify:scope": "node scripts/verify-scope.mjs"
   },
   "dependencies": {
     "next": "15.5.26",

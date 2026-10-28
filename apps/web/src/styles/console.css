@@ -136,6 +136,86 @@
   font: 500 11.5px/1.4 var(--font-sans); color: var(--ops-ink-5); overflow-wrap: anywhere;
 }
 
+/* The role line under the operator's name. Dimmer than the address: it is
+   context for when a page refuses them, not something to read every time. */
+.ops__who-role {
+  font: 600 11px/1.45 var(--font-sans);
+  color: var(--gold-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}
+
+/* A note in a table header, e.g. "Contact masked". Quiet, because it is
+   describing policy rather than reporting a problem. */
+.th-note {
+  margin-left: 7px;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font: 700 9px/1.5 var(--font-sans);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ops-ink-5);
+  vertical-align: middle;
+}
+
+/* A standing notice at the top of the work area. Gold rather than red:
+   it reports a state to put right, not a failure. */
+.ops-banner {
+  display: grid; gap: 2px;
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--gold);
+  border-left-width: 3px;
+  border-radius: 8px;
+  background: rgba(200, 167, 90, 0.06);
+}
+.ops-banner b { font: 700 13px/1.4 var(--font-sans); color: var(--ink); }
+.ops-banner span { font: 500 12px/1.5 var(--font-sans); color: var(--ops-ink-3b); }
+
+/* --- region switcher ------------------------------------------------------ */
+/* Directly under the brand, because "which city am I looking at" has to be
+   answerable before anything on the page means anything. One console now
+   serves India and the USA, where the same number is rupees or dollars. */
+
+.ops__scope {
+  margin: 2px 0 18px;
+  padding: 10px 12px;
+  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 3px;
+}
+.ops__scope-label {
+  font: 700 9.5px/1.2 var(--font-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ops-ink-5);
+}
+.ops__scope b { font: 700 13px/1.4 var(--font-sans); color: var(--ink); }
+.ops__scope small {
+  font: 600 10.5px/1.3 var(--font-sans);
+  color: var(--ops-ink-5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ops__scope-select {
+  width: 100%;
+  background: var(--surface-1);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 8px;
+  font: 600 12.5px/1.3 var(--font-sans);
+  cursor: pointer;
+}
+.ops__scope-select:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
 .ops__main { min-width: 0; padding: 26px var(--ops-gutter) 56px; }
 
 /* --- page header ---------------------------------------------------------- */

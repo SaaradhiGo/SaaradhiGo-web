@@ -1,4 +1,5 @@
 import { api } from './api';
+import { AdminAccess, can, withScope } from '@/lib/adminScope';
 
 /**
  * How much work is waiting, for the sidebar badges and the dashboard.
@@ -60,13 +61,53 @@ export const QUEUES = {
  * Fetch every queue count. Independent on purpose: one failing leaves the
  * others alone and leaves its own count unknown.
  */
-export async function fetchQueueCounts(): Promise<QueueCounts> {
+/**
+ * Which queue each badge needs permission to count.
+ *
+ * Without this the sidebar asked for every queue on every page load, so a
+ * City Ops Manager -- who holds no `finance.read` -- fired a request that
+ * answered 403 and logged a console error on EVERY page, for most roles.
+ * Found by driving the console in a browser as four different operators.
+ *
+ * It is not a security measure: the endpoint refuses them either way.
+ * It stops the console asking questions it already knows the answer to.
+ */
+const QUEUE_PERMISSION = {
+  driversAwaiting: 'driver.read',
+  withdrawalsPending: 'finance.read',
+  supportOpen: 'support.read',
+  sosOpen: 'safety.respond',
+} as const;
+
+export async function fetchQueueCounts(
+  access?: AdminAccess | null,
+): Promise<QueueCounts> {
+  // The badges must agree with the pages they link to. A count taken
+  // across every region beside a list showing one city is worse than no
+  // count at all: the operator chases a driver who is not on their list.
+  //
+  // `withScope` is a no-op when no region is selected, and the server
+  // refuses a region the caller does not hold, so the count can never be
+  // wider than what the operator may see.
+  // `can` returns true when access is unknown, so a failed lookup counts
+  // everything and the badges degrade to how they behaved before.
+  const allowed = (key: keyof typeof QUEUE_PERMISSION) =>
+    can(access ?? null, QUEUE_PERMISSION[key]);
+
+  const skip = Promise.resolve(null);
+
   const [driversAwaiting, withdrawalsPending, supportOpen, sosOpen] =
     await Promise.all([
-      countOf(QUEUES.driversAwaiting),
-      countOf(QUEUES.withdrawalsPending),
-      countOf(QUEUES.supportOpen),
-      countOf(QUEUES.sosOpen),
+      allowed('driversAwaiting')
+        ? countOf(withScope(QUEUES.driversAwaiting)) : skip,
+      allowed('withdrawalsPending')
+        ? countOf(withScope(QUEUES.withdrawalsPending)) : skip,
+      // Support and SOS are not scope-filtered server-side yet, so they
+      // are deliberately NOT given a scope parameter -- sending one the
+      // endpoint ignores would make the badge look region-aware when it
+      // is not. They scope when their endpoints do.
+      allowed('supportOpen') ? countOf(QUEUES.supportOpen) : skip,
+      allowed('sosOpen') ? countOf(QUEUES.sosOpen) : skip,
     ]);
   return { driversAwaiting, withdrawalsPending, supportOpen, sosOpen };
 }
