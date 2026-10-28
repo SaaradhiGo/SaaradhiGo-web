@@ -13,7 +13,7 @@
     "check-tokens": "node scripts/check-tokens.mjs",
     "check-css": "node scripts/check-css.mjs",
     "check-no-preview": "node scripts/check-no-preview.mjs",
-    "test": "node --experimental-strip-types --test \"tests/**/*.test.ts\"",
+    "test": "node --experimental-strip-types --test \"tests/**/*.test.ts\" && vitest run",
     "verify:hosts": "node scripts/verify-hosts.mjs",
     "verify:auth": "node scripts/verify-auth.mjs",
     "verify:booking": "node scripts/verify-booking.mjs",
@@ -29,15 +29,19 @@
     "react-dom": "19.3.0"
   },
   "devDependencies": {
-    "@types/node": "20.11.30",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@types/node": "20.19.43",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "autoprefixer": "10.4.19",
     "eslint": "8.57.0",
     "eslint-config-next": "15.5.26",
+    "jsdom": "26.1.0",
+    "playwright-core": "1.49.1",
     "postcss": "8.5.28",
     "tailwindcss": "3.4.4",
     "typescript": "5.4.5",
-    "playwright-core": "1.49.1"
+    "vitest": "3.2.7"
   }
 }

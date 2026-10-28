@@ -260,6 +260,31 @@ export function readOperator(): OperatorUser | null {
   }
 }
 
+export type AdminLoginExtra = {
+  /** The second factor, once `AUTH_MFA_REQUIRED` has asked for it. */
+  mfaCode?: string;
+  /**
+   * Why the emergency account is being used. The server demands it from a
+   * break-glass account AFTER the password and the second factor, with
+   * `AUTH_BREAK_GLASS_REASON_REQUIRED`; the console asks and resends.
+   */
+  reason?: string;
+  /**
+   * The replacement for a temporary password, once
+   * `AUTH_PASSWORD_CHANGE_REQUIRED` has asked for one.
+   *
+   * THE CHANGE RIDES ON THE SIGN-IN ITSELF. The server refuses to mint a
+   * token on a temporary password at all, so at this point there is no
+   * bearer token and `/auth/password/change/` cannot be called; the only
+   * way through is this same request with `new_password` added. The gates
+   * run in order -- credentials, second factor, break-glass reason, then
+   * the password -- so whatever the earlier gates asked for is sent again
+   * alongside it. A weak choice, or the temporary password again, comes
+   * back as 400 `AUTH_PASSWORD_WEAK` and the person picks another.
+   */
+  newPassword?: string;
+};
+
 /**
  * Sign an operator in with an email address (or phone) and a password.
  *
@@ -277,13 +302,7 @@ export function readOperator(): OperatorUser | null {
 export async function adminLoginWithPassword(
   identifier: string,
   password: string,
-  mfaCode?: string,
-  /**
-   * Why the emergency account is being used. The server demands it from a
-   * break-glass account AFTER the password and the second factor, with
-   * `AUTH_BREAK_GLASS_REASON_REQUIRED`; the console asks and resends.
-   */
-  reason?: string,
+  { mfaCode, reason, newPassword }: AdminLoginExtra = {},
 ) {
   const looksLikeEmail = identifier.includes('@');
   type LoginResp = {
@@ -300,6 +319,7 @@ export async function adminLoginWithPassword(
       password,
       ...(mfaCode ? { mfa_code: mfaCode } : {}),
       ...(reason ? { reason } : {}),
+      ...(newPassword ? { new_password: newPassword } : {}),
     },
     // Explicitly no token: a stale, expired console session in localStorage
     // would otherwise be sent on the request that is meant to replace it.
@@ -324,11 +344,13 @@ export async function adminLoginWithPassword(
 }
 
 /**
- * Replace the signed-in operator's password.
+ * Replace the SIGNED-IN operator's password.
  *
- * `/auth/password/change/` checks the current password server-side and
- * applies the same strength rules as sign-up (`AUTH_PASSWORD_WEAK` names
- * what was wrong). Used by the forced-change screen.
+ * `/auth/password/change/` needs a bearer token: it checks the current
+ * password server-side and applies the same strength rules as sign-up
+ * (`AUTH_PASSWORD_WEAK` names what was wrong). It is NOT the forced change
+ * at first sign-in -- no token exists then; that goes through
+ * `adminLoginWithPassword` with `newPassword`.
  */
 export async function changePassword(currentPassword: string, newPassword: string) {
   return api.post<{ message?: string }>('/auth/password/change/', {

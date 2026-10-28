@@ -7,7 +7,6 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ApiError,
   adminLoginWithPassword,
-  changePassword,
   readToken,
 } from '@/lib/api';
 import { LOGIN_LOCK_AFTER, LOGIN_LOCK_MINUTES } from '@/lib/consoleEnv';
@@ -15,7 +14,7 @@ import { useTheme } from '@/lib/consolePrefs';
 import { Logo } from '@/components/sg/Logo';
 import { EnvBadge } from '@/components/console/EnvBadge';
 import {
-  Alert, ArrowRight, Check, Clock, KeyRound, Lock, Moon, Sun,
+  Alert, ArrowRight, Clock, KeyRound, Lock, Moon, Sun,
 } from '@/components/console/icons';
 import '@/styles/console.css';
 
@@ -31,9 +30,15 @@ import '@/styles/console.css';
  *
  * It goes to `/auth/admin/login/`, which enforces `is_operator` BEFORE it
  * mints a token, demands the second factor where the environment requires
- * one (`AUTH_MFA_REQUIRED`), and asks the emergency account for a reason
- * (`AUTH_BREAK_GLASS_REASON_REQUIRED`). Each of those is a step here, not an
- * error.
+ * one (`AUTH_MFA_REQUIRED`), asks the emergency account for a reason
+ * (`AUTH_BREAK_GLASS_REASON_REQUIRED`), and makes an operator on a
+ * temporary password choose their own (`AUTH_PASSWORD_CHANGE_REQUIRED`).
+ * Each of those is a step here, not an error, and EVERY STEP RESENDS THE
+ * SAME SIGN-IN with one more field: the server runs its gates in that
+ * order and issues no token until the last one passes, so there is never
+ * a bearer token to call anything else with. The password the person
+ * typed stays in component state only for as long as those resends need
+ * it, and is dropped the moment a token arrives.
  *
  * THE FORM NEVER SAYS WHICH PART WAS WRONG. Wrong email, wrong password,
  * right password on a rider's account and a locked account all come back
@@ -110,13 +115,11 @@ function LoginInner() {
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [reason, setReason] = useState('');
-  const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
   const [failures, setFailures] = useState(0);
   const [lockUntil, setLockUntil] = useState<number | null>(null);
 
@@ -194,26 +197,63 @@ function LoginInner() {
     return err instanceof ApiError && err.fromServer && err.message ? err.message : null;
   }
 
-  async function attempt(extra: { mfaCode?: string; reason?: string } = {}) {
+  /**
+   * One sign-in request, resent with whatever the server has asked for so
+   * far. Each gate's answer is carried in state (the code, the reason, the
+   * new password), so a later step does not lose an earlier step's answer;
+   * `extra` overrides state for the field that was typed a moment ago and
+   * has not been committed to state yet (the six digits auto-submit).
+   */
+  async function attempt(extra: { mfaCode?: string; reason?: string; newPassword?: string } = {}) {
+    const sent = {
+      mfaCode: extra.mfaCode ?? (code.trim() || undefined),
+      reason: extra.reason ?? (reason.trim() || undefined),
+      newPassword: extra.newPassword ?? (newPw || undefined),
+    };
     setBusy(true);
     setError(null);
     try {
-      await adminLoginWithPassword(email, password, extra.mfaCode, extra.reason);
+      await adminLoginWithPassword(email, password, sent);
       writeLockUntil(null);
+      // Signed in: the password, its replacement and the code have done
+      // their work and leave memory now.
+      setPassword('');
+      setNewPw('');
+      setConfirmPw('');
+      setCode('');
       router.replace(next);
     } catch (err) {
-      const code = err instanceof ApiError ? err.code : '';
-      if (code === 'AUTH_MFA_REQUIRED') {
+      const errCode = err instanceof ApiError ? err.code : '';
+      const status = err instanceof ApiError ? err.status : 0;
+      if (errCode === 'AUTH_MFA_REQUIRED') {
         // Not a failure: the first factor was accepted and the second is
         // now being asked for.
         setStep('totp');
         setCode('');
-      } else if (code === 'AUTH_BREAK_GLASS_REASON_REQUIRED') {
+      } else if (errCode === 'AUTH_BREAK_GLASS_REASON_REQUIRED') {
         setStep('reason');
-      } else if (code === 'AUTH_PASSWORD_CHANGE_REQUIRED') {
-        // Not emitted by the server yet; the screen exists for when it is.
+      } else if (errCode === 'AUTH_PASSWORD_CHANGE_REQUIRED') {
+        // Everything else was accepted; the temporary password has to be
+        // replaced before a token is issued. Asked here, sent on the same
+        // request.
         setStep('password');
-      } else if (code === 'AUTH_INVALID_CREDENTIALS' || (err instanceof ApiError && err.status === 401)) {
+      } else if (errCode === 'AUTH_PASSWORD_WEAK') {
+        // The step stays open with the server's reason, and the person
+        // chooses another. Not a sign-in failure: nothing was wrong with
+        // who they are.
+        setNewPw('');
+        setConfirmPw('');
+        setError(serverText(err) ?? 'That password is not strong enough. Choose another.');
+      } else if (step === 'password' && status === 401 && sent.mfaCode) {
+        // The password was accepted a step ago, so a refusal here is the
+        // authenticator code: it aged past its 30 seconds while a new
+        // password was being chosen. Back to the code; the chosen password
+        // is kept and goes out again with the fresh one.
+        setStep('totp');
+        setCode('');
+        refused('That code has expired. Enter the current one to finish signing in.');
+      } else if (errCode === 'AUTH_INVALID_CREDENTIALS' || status === 401) {
+        if (step === 'password') setStep('credentials');
         refused(step === 'totp' || step === 'recovery'
           ? 'That code did not work. Codes change every 30 seconds — enter the current one.'
           : 'That email and password did not match. Check both and try again.');
@@ -224,6 +264,16 @@ function LoginInner() {
     } finally {
       setBusy(false);
     }
+  }
+
+  // Back to the first step with nothing carried over.
+  function startOver() {
+    setStep('credentials');
+    setCode('');
+    setReason('');
+    setNewPw('');
+    setConfirmPw('');
+    setError(null);
   }
 
   // THE BUTTON IS NEVER DISABLED FOR AN EMPTY FIELD. A disabled gold button
@@ -258,31 +308,24 @@ function LoginInner() {
     void attempt({ reason: reason.trim(), ...(code ? { mfaCode: code } : {}) });
   }
 
-  async function onPassword(e: React.FormEvent) {
+  // The temporary password is not asked for again: it was typed a step
+  // ago and is still in state for exactly this resend.
+  function onPassword(e: React.FormEvent) {
     e.preventDefault();
-    if (!currentPw || newPw.length < 12) {
-      setError(!currentPw ? 'Enter your current password.' : 'The new password needs at least 12 characters.');
+    if (newPw.length < 12) {
+      setError('The new password needs at least 12 characters.');
       return;
     }
     if (newPw !== confirmPw) {
       setError('The two new passwords do not match.');
       return;
     }
-    setBusy(true);
-    setError(null);
-    try {
-      await changePassword(currentPw, newPw);
-      setNotice('Password changed. Sign in with the new one.');
-      setPassword('');
-      setCurrentPw('');
-      setNewPw('');
-      setConfirmPw('');
-      setStep('credentials');
-    } catch (err) {
-      setError(serverText(err) ?? 'The password could not be changed.');
-    } finally {
-      setBusy(false);
+    if (newPw === password) {
+      // The server refuses this too; saying so here saves the round trip.
+      setError('The new password must be different from the temporary one.');
+      return;
     }
+    void attempt({ newPassword: newPw });
   }
 
   // Six digits typed or pasted: go, without a second gesture.
@@ -312,7 +355,7 @@ function LoginInner() {
     totp: `Open your authenticator app and enter the six-digit code for ${email || 'this account'}.`,
     recovery: 'One of the codes you saved when you set up your authenticator. Each works once.',
     reason: 'This is the emergency account. A reason is required and every Super Admin is told.',
-    password: 'Your password must be replaced before you can continue.',
+    password: 'The password you signed in with is temporary. Choose your own to finish signing in.',
     locked: 'Too many attempts in a row.',
   }[step];
 
@@ -353,12 +396,6 @@ function LoginInner() {
             <div className="login__notice" role="status">
               <Clock />
               <span><b>Your session ended.</b> Sign in again to pick up where you were.</span>
-            </div>
-          )}
-          {notice && (
-            <div className="login__notice" role="status">
-              <Check />
-              <span>{notice}</span>
             </div>
           )}
           {error && (
@@ -476,7 +513,7 @@ function LoginInner() {
                     Use the authenticator instead
                   </button>
                 )}
-                <button type="button" className="login__link login__link--quiet" onClick={() => { setStep('credentials'); setCode(''); setError(null); }}>
+                <button type="button" className="login__link login__link--quiet" onClick={startOver}>
                   Start over
                 </button>
               </div>
@@ -515,7 +552,7 @@ function LoginInner() {
                 {!busy && <ArrowRight />}
               </button>
               <div className="login__links">
-                <button type="button" className="login__link login__link--quiet" onClick={() => { setStep('credentials'); setReason(''); setError(null); }}>
+                <button type="button" className="login__link login__link--quiet" onClick={startOver}>
                   Cancel
                 </button>
               </div>
@@ -525,21 +562,9 @@ function LoginInner() {
           {step === 'password' && (
             <form className="login__form" onSubmit={onPassword} noValidate>
               <div className="login__field">
-                <label htmlFor="login-current">Current password</label>
-                <input
-                  ref={pwRef}
-                  id="login-current"
-                  name="current_password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={currentPw}
-                  onChange={(e) => setCurrentPw(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="login__field">
                 <label htmlFor="login-new">New password</label>
                 <input
+                  ref={pwRef}
                   id="login-new"
                   name="new_password"
                   type="password"
@@ -570,9 +595,14 @@ function LoginInner() {
                 className="sg-btn sg-btn--primary login__submit"
                 disabled={busy}
               >
-                {busy ? 'Saving…' : 'Change password and continue'}
+                {busy ? 'Signing you in…' : 'Change password and continue'}
                 {!busy && <ArrowRight />}
               </button>
+              <div className="login__links">
+                <button type="button" className="login__link login__link--quiet" onClick={startOver}>
+                  Start over
+                </button>
+              </div>
             </form>
           )}
 
