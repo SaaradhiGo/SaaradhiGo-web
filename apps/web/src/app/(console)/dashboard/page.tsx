@@ -1,101 +1,125 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { EMPTY_COUNTS, QueueCounts, fetchQueueCounts } from '@/lib/consoleQueues';
 import {
+  AdminAccess, can, currentScope, getCachedAccess, scopeLabel, withScope,
+} from '@/lib/adminScope';
+import { clock, longDate, timeZoneFor, zoneAbbreviation } from '@/lib/consoleTime';
+import { currencySymbol } from '@/lib/money';
+import {
+  AlertRow,
+  Column,
+  DataTable,
   Empty,
-  Hero,
+  ErrorState,
+  MetricTile,
   PageHeader,
   Panel,
   Pill,
-  Queue,
-  Stat,
-  StatStrip,
-  Table,
+  Skeleton,
+  TileGrid,
 } from '@/components/console/ui';
 
 /**
- * What an operator should do first, what they should know, and what is
- * happening right now.
+ * The Command Centre: what is wrong, what is waiting, and what is happening.
  *
- * THE SECOND PASS. The first one fixed the ordering — work above metrics —
- * but left half a viewport of black below the fold, which is most of why
- * the console still read as a wireframe. A console with nothing under the
- * content looks unfinished however good the top is.
+ * DENSE AND CALM. A grid of figures an operator can scan in a few seconds,
+ * with the one thing that needs them raised in colour AND in words -- an
+ * open SOS is red and says "SOS"; nothing else on the page is red. Gold is
+ * spent on money and on nothing else here, so the eye learns what gold
+ * means.
  *
- * So the page now has three bands, and they are in the order an operator
- * reads them:
+ * Every figure follows the console's rule: a number nobody could load is
+ * "Unavailable", never 0. The comparison with the same day last week is
+ * drawn only when the server supplies it; today it does not, so no tile
+ * carries a trend and none invents one.
  *
- *   1. TODAY'S MONEY, at a size that says it is the headline.
- *   2. WHAT IS WAITING, as queues that link to where the work is done.
- *   3. WHAT IS HAPPENING, a live list of the most recent trips — which is
- *      both the thing an operator glances at all day and the content that
- *      makes this a page rather than a header.
+ * Times are shown in the selected region's own time zone, and the header
+ * says which. A trip at "14:05" in Austin is not at 14:05 in Hyderabad.
  */
 type DashData = {
   date: string;
   trips: { requested: number; accepted: number; completed: number; cancelled: number; total: number };
-  gmv: string | null;
+  gmv?: string | null;
   gmv_display?: string;
   drivers: { online_now: number; online_24h: number };
   riders: { active_24h: number };
   cancellations: { driver_24h: number };
-  withdrawals: {
+  withdrawals?: {
     pending: number;
     completed_today_amount: string | null;
     completed_today_display?: string;
   };
   receipts: { issued_today: number; send_failures_today: number };
+  /**
+   * Not sent yet. When the server adds it, each tile's comparison appears
+   * on its own; the keys mirror the figures above.
+   */
+  same_day_last_week?: Partial<{
+    trips_total: number; completed: number; cancelled: number;
+    gmv: string | number; online_now: number; riders_24h: number;
+  }>;
 };
 
 type Trip = {
   id: number;
   status?: string;
   status_id?: { status_code?: string };
+  user?: string | null;
+  driver_name?: string | null;
   pickup_address?: string;
   destination_address?: string;
-  final_fare?: string;
-  estimated_fare?: string;
+  final_fare?: string | null;
+  estimated_fare?: string | null;
   currency?: string | null;
   requested_at?: string;
 };
-
-/**
- * A fare with the currency the TRIP was priced in.
- *
- * Three money treatments on one screen -- a symbol in the hero, a bare
- * number in the strip, a bare number in the table -- is the detail that
- * makes a screen look unfinished. The trip stamps its own currency; this
- * uses it rather than choosing a symbol.
- */
-function fare(t: Trip) {
-  const amount = t.final_fare ?? t.estimated_fare;
-  if (amount === undefined || amount === null || amount === '') return '—';
-  return t.currency ? `${t.currency} ${amount}` : amount;
-}
 
 const TONE: Record<string, 'good' | 'bad' | 'wait' | 'neutral'> = {
   completed: 'good',
   cancelled: 'bad',
   requested: 'wait',
   accepted: 'wait',
+  reached: 'wait',
   in_progress: 'wait',
 };
 
-const clock = (s?: string) => (s ? s.slice(11, 16) : '—');
+function fare(t: Trip) {
+  const amount = t.final_fare ?? t.estimated_fare;
+  if (amount === undefined || amount === null || amount === '') return '—';
+  return `${currencySymbol(t.currency)}${amount}`;
+}
+
+function pct(now: number | null | undefined, then: number | string | null | undefined) {
+  if (now === null || now === undefined || then === null || then === undefined) return null;
+  const base = Number(then);
+  if (!Number.isFinite(base) || base === 0) return null;
+  return ((now - base) / base) * 100;
+}
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [data, setData] = useState<DashData | null>(null);
   const [trips, setTrips] = useState<Trip[] | null>(null);
   const [counts, setCounts] = useState<QueueCounts>(EMPTY_COUNTS);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [access, setAccess] = useState<AdminAccess | null>(null);
+
+  useEffect(() => setAccess(getCachedAccess()), []);
+
+  const scope = currentScope(access);
+  const tz = timeZoneFor(scope?.code);
+  const tzName = useMemo(() => zoneAbbreviation(tz), [tz]);
 
   const load = useCallback(async () => {
+    setLoading(true);
     try {
-      setData(await api.get<DashData>('/ride/admin/dashboard/'));
+      setData(await api.get<DashData>(withScope('/ride/admin/dashboard/')));
       setError(null);
     } catch (err) {
       setError(err instanceof ApiError && err.fromServer
@@ -107,10 +131,10 @@ export default function DashboardPage() {
     // Shared with the sidebar. See lib/consoleQueues.ts: the endpoints
     // disagree about the case of their status values, and support returns
     // a confident 0 when it is wrong.
-    setCounts(await fetchQueueCounts());
+    setCounts(await fetchQueueCounts(getCachedAccess()));
 
     try {
-      const page = await api.get<{ results?: Trip[] }>('/ride/admin/trips/?page_size=8');
+      const page = await api.get<{ results?: Trip[] }>(withScope('/ride/admin/trips/?page_size=8'));
       setTrips(Array.isArray(page?.results) ? page.results : []);
     } catch {
       setTrips([]);
@@ -119,122 +143,263 @@ export default function DashboardPage() {
 
   useEffect(() => { void load(); }, [load]);
 
-  if (loading) return <p className="text-ink-subtle">Loading…</p>;
-
   const waiting = [counts.sosOpen, counts.driversAwaiting, counts.withdrawalsPending,
     counts.supportOpen].reduce<number>((n, c) => n + (c ?? 0), 0);
 
+  const money = data ? 'gmv' in data || 'gmv_display' in data : false;
+  const lw = data?.same_day_last_week;
+  const where = scopeLabel(access);
+
+  const columns: Column<Trip>[] = [
+    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <Link href={`/trips/${t.id}`}>#{t.id}</Link> },
+    {
+      key: 'status', label: 'Status', width: '8rem',
+      render: (t) => {
+        const state = t.status || t.status_id?.status_code || 'unknown';
+        return <Pill tone={TONE[state] ?? 'neutral'}>{state.replace(/_/g, ' ')}</Pill>;
+      },
+    },
+    { key: 'rider', label: 'Rider', width: '10rem', hideBelow: 1100, render: (t) => <span title={t.user ?? undefined}>{t.user || <span className="muted">—</span>}</span> },
+    { key: 'driver', label: 'Driver', width: '11rem', hideBelow: 1280, render: (t) => <span title={t.driver_name ?? undefined}>{t.driver_name || <span className="muted">unassigned</span>}</span> },
+    {
+      key: 'route', label: 'Pickup → drop',
+      render: (t) => (
+        <span title={`${t.pickup_address ?? ''} → ${t.destination_address ?? ''}`}>
+          {t.pickup_address || '—'} <span className="muted">→</span> {t.destination_address || '—'}
+        </span>
+      ),
+    },
+    { key: 'fare', label: 'Fare', num: true, width: '7rem', render: (t) => fare(t) },
+    { key: 'time', label: tzName ? `Time (${tzName})` : 'Time', num: true, width: '7.5rem', render: (t) => clock(t.requested_at, tz) },
+  ];
+
+  const header = (
+    <PageHeader
+      title="Command Centre"
+      subtitle={
+        <>
+          {longDate(new Date(), tz)}
+          {where ? ` · ${where}` : ''}
+          {/* A region has a clock; the whole platform does not, so a
+              global view says plainly that the times are the viewer's. */}
+          {tzName ? (tz ? ` · times in ${tzName}` : ` · times in your local ${tzName}`) : ''}
+          {' · '}
+          {loading ? 'loading' : waiting
+            ? `${waiting} item${waiting === 1 ? '' : 's'} waiting on you`
+            : 'nothing waiting'}
+        </>
+      }
+    />
+  );
+
+  if (loading && !data) {
+    return (
+      <>
+        {header}
+        <div aria-busy="true" aria-live="polite">
+          <span className="sr-only">Loading today’s figures</span>
+          <TileGrid><Skeleton kind="tile" count={8} /></TileGrid>
+          <div className="ops-band">
+            <Skeleton kind="block" />
+            <Skeleton kind="block" />
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
-      <PageHeader
-        title="Today"
-        subtitle={data?.date
-          ? `${data.date} · ${waiting ? `${waiting} item${waiting === 1 ? '' : 's'} waiting on you` : 'nothing waiting'}`
-          : undefined}
-      />
+      {header}
 
-      {error && <div className="alert-error mb-4" role="alert">{error}</div>}
-
-      {/* ---- 1. the headline ------------------------------------------- */}
-      <Hero
-        label="Collected today"
-        value={data ? (data.gmv_display || data.gmv) : null}
-        note={data
-          ? `${data.trips.completed} completed of ${data.trips.total} trips`
-          : 'The queues below are fetched separately and may still be accurate.'}
-        facts={data ? [
-          { label: 'Online now', value: data.drivers.online_now },
-          { label: 'Riders 24h', value: data.riders.active_24h },
-          { label: 'Cancelled 24h', value: data.cancellations.driver_24h },
-        ] : undefined}
-      />
-
-      {/* ---- 2. what is waiting ---------------------------------------- */}
-      <section className="ops-queues mb-4">
-        <Queue
-          href="/sos" count={counts.sosOpen} urgent
-          title="SOS alerts open"
-          detail="A rider or driver has raised an alarm during a trip."
-        />
-        <Queue
-          href="/drivers?approved=false" count={counts.driversAwaiting}
-          title="Drivers awaiting review"
-          detail="Documents uploaded, waiting on a decision."
-        />
-        <Queue
-          href="/withdrawals" count={counts.withdrawalsPending}
-          title="Withdrawals pending"
-          detail="Drivers waiting to be paid out."
-        />
-        <Queue
-          href="/support" count={counts.supportOpen}
-          title="Support tickets open"
-          detail="Riders and drivers waiting for an answer."
-        />
-      </section>
-
-      {data && (
+      {error && !data && (
         <div className="mb-4">
-          <StatStrip>
-            <Stat label="Trips today" value={data.trips.total}
-                  note={`${data.trips.requested} requested`} />
-            <Stat label="Completed" value={data.trips.completed} />
-            <Stat label="Drivers 24h" value={data.drivers.online_24h} />
-            <Stat label="Paid out today" money
-                  value={data.withdrawals.completed_today_display
-                    || data.withdrawals.completed_today_amount} />
-            <Stat label="Receipts" value={data.receipts.issued_today}
-                  note={data.receipts.send_failures_today > 0
-                    ? `${data.receipts.send_failures_today} failed`
-                    : 'none failed'} />
-          </StatStrip>
+          <ErrorState
+            title="Today’s figures could not be loaded"
+            detail={error}
+            onRetry={() => void load()}
+          />
         </div>
       )}
 
-      {/* Receipts that never reached anybody are a quiet failure: the trip
-          looks finished and the rider has nothing. */}
-      {data && data.receipts.send_failures_today > 0 && (
-        <div className="alert-error mb-4" role="alert">
-          {data.receipts.send_failures_today} receipt
-          {data.receipts.send_failures_today === 1 ? '' : 's'} could not be sent
-          today. Those riders have no record of their trip.
-        </div>
-      )}
+      {/* ---- the figures ------------------------------------------------ */}
+      <TileGrid>
+        {money && (
+          <MetricTile
+            label="Collected today" tone="money"
+            value={data?.gmv_display || data?.gmv}
+            delta={{ pct: pct(data?.gmv ? Number(data.gmv) : null, lw?.gmv) }}
+            note={data ? `${data.trips.completed} completed trip${data.trips.completed === 1 ? '' : 's'}` : undefined}
+            href="/trips?status=completed"
+          />
+        )}
+        <MetricTile
+          label="Trips today" value={data?.trips.total}
+          delta={{ pct: pct(data?.trips.total, lw?.trips_total) }}
+          note={data ? `${data.trips.requested} requested · ${data.trips.accepted} accepted` : undefined}
+          href="/trips"
+        />
+        <MetricTile
+          label="Completed" value={data?.trips.completed} tone="good"
+          delta={{ pct: pct(data?.trips.completed, lw?.completed) }}
+          href="/trips?status=completed"
+        />
+        <MetricTile
+          label="Cancelled" value={data?.trips.cancelled}
+          tone={data && data.cancellations.driver_24h > 0 ? 'wait' : 'neutral'}
+          delta={{ pct: pct(data?.trips.cancelled, lw?.cancelled) }}
+          note={data ? `${data.cancellations.driver_24h} by drivers in 24h` : undefined}
+          href="/trips?status=cancelled"
+        />
+        <MetricTile
+          label="Drivers online" value={data?.drivers.online_now}
+          delta={{ pct: pct(data?.drivers.online_now, lw?.online_now) }}
+          note={data ? `${data.drivers.online_24h} were online in 24h` : undefined}
+          href="/drivers?status=online"
+        />
+        <MetricTile
+          label="Riders active" value={data?.riders.active_24h} unit="24h"
+          delta={{ pct: pct(data?.riders.active_24h, lw?.riders_24h) }}
+        />
+        {money && data?.withdrawals && (
+          <MetricTile
+            label="Paid out today" tone="money"
+            value={data.withdrawals.completed_today_display || data.withdrawals.completed_today_amount}
+            note={`${data.withdrawals.pending} pending`}
+            href="/withdrawals"
+          />
+        )}
+        <MetricTile
+          label="Receipts" value={data?.receipts.issued_today}
+          tone={data && data.receipts.send_failures_today > 0 ? 'urgent' : 'neutral'}
+          note={data
+            ? (data.receipts.send_failures_today > 0
+              ? `${data.receipts.send_failures_today} failed to send`
+              : 'none failed')
+            : undefined}
+        />
+      </TileGrid>
 
-      {/* ---- 3. what is happening -------------------------------------- */}
+      {/* ---- the queues: only the ones this role can act on ------------- */}
+      <TileGrid>
+        {can(access, 'safety.respond') && (
+          <MetricTile
+            label="SOS open" value={counts.sosOpen}
+            tone={(counts.sosOpen ?? 0) > 0 ? 'urgent' : 'neutral'}
+            note={(counts.sosOpen ?? 0) > 0 ? 'Needs someone now' : 'None open'}
+            href="/sos"
+          />
+        )}
+        {can(access, 'driver.read') && (
+          <MetricTile
+            label="Awaiting review" value={counts.driversAwaiting}
+            tone={(counts.driversAwaiting ?? 0) > 0 ? 'wait' : 'neutral'}
+            note="Drivers with documents to check"
+            href="/drivers?approved=false"
+          />
+        )}
+        {can(access, 'finance.read') && (
+          <MetricTile
+            label="Withdrawals pending" value={counts.withdrawalsPending}
+            tone={(counts.withdrawalsPending ?? 0) > 0 ? 'wait' : 'neutral'}
+            note="Drivers waiting to be paid"
+            href="/withdrawals"
+          />
+        )}
+        {can(access, 'support.read') && (
+          <MetricTile
+            label="Support open" value={counts.supportOpen}
+            tone={(counts.supportOpen ?? 0) > 0 ? 'wait' : 'neutral'}
+            note="Tickets without an answer"
+            href="/support"
+          />
+        )}
+      </TileGrid>
+
+      {/* ---- what needs attention, and where to go ---------------------- */}
+      <div className="ops-band">
+        <Panel title="Needs attention" flush>
+          <div className="ops-alerts">
+            {(counts.sosOpen ?? 0) > 0 && (
+              <AlertRow tone="urgent" word="SOS" href="/sos">
+                {counts.sosOpen} alert{counts.sosOpen === 1 ? '' : 's'} open — a rider or driver has raised an alarm.
+              </AlertRow>
+            )}
+            {data && data.receipts.send_failures_today > 0 && (
+              <AlertRow tone="urgent" word="Receipts" href="/trips?status=completed">
+                {data.receipts.send_failures_today} receipt{data.receipts.send_failures_today === 1 ? '' : 's'} could not be sent today. Those riders have no record of their trip.
+              </AlertRow>
+            )}
+            {(counts.driversAwaiting ?? 0) > 0 && (
+              <AlertRow tone="wait" word="Review" href="/drivers?approved=false">
+                {counts.driversAwaiting} driver{counts.driversAwaiting === 1 ? '' : 's'} waiting on a decision.
+              </AlertRow>
+            )}
+            {(counts.withdrawalsPending ?? 0) > 0 && (
+              <AlertRow tone="wait" word="Payout" href="/withdrawals">
+                {counts.withdrawalsPending} withdrawal{counts.withdrawalsPending === 1 ? '' : 's'} pending.
+              </AlertRow>
+            )}
+            {(counts.supportOpen ?? 0) > 0 && (
+              <AlertRow tone="wait" word="Support" href="/support">
+                {counts.supportOpen} ticket{counts.supportOpen === 1 ? '' : 's'} open.
+              </AlertRow>
+            )}
+            {data && data.cancellations.driver_24h > 0 && (
+              <AlertRow tone="neutral" word="Cancels" href="/trips?status=cancelled">
+                {data.cancellations.driver_24h} trip{data.cancellations.driver_24h === 1 ? '' : 's'} cancelled by drivers in the last 24 hours.
+              </AlertRow>
+            )}
+            {!((counts.sosOpen ?? 0) || (counts.driversAwaiting ?? 0) || (counts.withdrawalsPending ?? 0)
+              || (counts.supportOpen ?? 0) || (data?.receipts.send_failures_today ?? 0)
+              || (data?.cancellations.driver_24h ?? 0)) && (
+              <AlertRow tone="good" word="Clear">Nothing needs attention right now.</AlertRow>
+            )}
+          </div>
+        </Panel>
+
+        <Panel title="Go to" flush>
+          <nav className="ops-quick" aria-label="Filtered lists">
+            <Link href="/trips?status=in_progress"><span>Trips</span>in progress now</Link>
+            <Link href="/trips?status=requested"><span>Trips</span>waiting for a driver</Link>
+            <Link href="/trips?status=cancelled"><span>Trips</span>cancelled today</Link>
+            {can(access, 'driver.read') && (
+              <Link href="/drivers?approved=false"><span>Drivers</span>awaiting review
+                {typeof counts.driversAwaiting === 'number' ? <b>{counts.driversAwaiting}</b> : null}
+              </Link>
+            )}
+            {can(access, 'driver.read') && (
+              <Link href="/drivers?status=online"><span>Drivers</span>online now</Link>
+            )}
+            {can(access, 'finance.read') && (
+              <Link href="/withdrawals"><span>Money</span>withdrawals pending
+                {typeof counts.withdrawalsPending === 'number' ? <b>{counts.withdrawalsPending}</b> : null}
+              </Link>
+            )}
+          </nav>
+        </Panel>
+      </div>
+
+      {/* ---- what is happening ------------------------------------------ */}
       <Panel
         title="Latest trips"
         action={<Link href="/trips" className="sg-link text-sm">All trips</Link>}
         flush
       >
         {trips === null ? (
-          <Empty title="Loading…" />
+          <div className="ops-skel-rows" aria-busy="true"><Skeleton kind="row" count={5} /></div>
         ) : trips.length === 0 ? (
-          <Empty title="No trips yet today"
-                 detail="Rides appear here as they are requested." />
+          <Empty title="No trips yet today" detail="Rides appear here as they are requested." />
         ) : (
-          <Table head={<>
-            <th>Trip</th><th>Status</th><th>Pickup</th><th>Drop</th>
-            <th className="num">Fare</th><th className="num">Time</th>
-          </>}>
-            {trips.map((t) => {
-              const state = t.status || t.status_id?.status_code || 'unknown';
-              return (
-                <tr key={t.id}>
-                  <td><Link href={`/trips/${t.id}`}>#{t.id}</Link></td>
-                  <td><Pill tone={TONE[state] ?? 'neutral'}>{state.replace(/_/g, ' ')}</Pill></td>
-                  <td className="max-w-[18rem] truncate" title={t.pickup_address}>
-                    {t.pickup_address || '—'}
-                  </td>
-                  <td className="max-w-[18rem] truncate" title={t.destination_address}>
-                    {t.destination_address || '—'}
-                  </td>
-                  <td className="num">{fare(t)}</td>
-                  <td className="num">{clock(t.requested_at)}</td>
-                </tr>
-              );
-            })}
-          </Table>
+          <DataTable
+            caption="The most recent trips"
+            rows={trips}
+            columns={columns}
+            rowKey={(t) => t.id}
+            onRow={(t) => router.push(`/trips/${t.id}`)}
+            density="compact"
+            maxHeight={false}
+          />
         )}
       </Panel>
     </>

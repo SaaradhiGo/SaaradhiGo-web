@@ -1,19 +1,38 @@
 'use client';
 
 import Link from 'next/link';
-import { withScope } from '@/lib/adminScope';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { Empty, PageHeader, Panel, Pill, Stat, StatStrip, Table } from '@/components/console/ui';
+import { currentScope, getCachedAccess, withScope } from '@/lib/adminScope';
+import { useDensity } from '@/lib/consolePrefs';
+import { stamp, timeZoneFor } from '@/lib/consoleTime';
+import {
+  Column,
+  DataTable,
+  Drawer,
+  Empty,
+  ErrorState,
+  Fact,
+  Facts,
+  MetricTile,
+  PageHeader,
+  Panel,
+  Pill,
+  Skeleton,
+  TableToolbar,
+  TileGrid,
+} from '@/components/console/ui';
 
 /**
  * Releasing a driver's money.
  *
- * The control itself was already right — read the amount and the payee
+ * The control itself was already right -- read the amount and the payee
  * back before it goes, and require a reason to reject, because the driver
- * reads it. What it did with `window.confirm` and `window.prompt` it now
- * does in the page, where the approver can see the KYC state and the UPI
- * handle at the same time as the amount.
+ * reads it. It now happens in a drawer rather than a row that unfolds, so
+ * the approver sees the KYC state, the UPI handle and the amount together
+ * on one surface with one gold button on it, and nothing else on the page
+ * is gold while it is open.
  *
  * TWO THINGS THIS SCREEN WILL NOT DO
  *
@@ -22,28 +41,28 @@ import { Empty, PageHeader, Panel, Pill, Stat, StatStrip, Table } from '@/compon
  * single "pending total" across markets would be a made-up number.
  *
  * It does not let an unapproved driver be paid without saying so. The
- * server enforces it; the row says it too, so nobody learns it from a
- * failure.
+ * server enforces it; the row and the drawer say it too, so nobody learns
+ * it from a failure.
  */
 type Withdrawal = {
   id: number;
   driver: number;
   driver_name?: string;
   driver_phone?: string;
-  driver_upi_id?: string;
+  driver_upi_id?: string | null;
   driver_kyc_approved?: boolean;
   amount: string;
   currency?: string | null;
   status: string;
   requested_at: string;
   processed_at?: string | null;
-  admin_notes?: string;
+  admin_notes?: string | null;
   payout_reference_id?: string | null;
 };
 
-type Page = { count?: number; results?: Withdrawal[] };
+type Page = { count?: number; next?: string | null; results?: Withdrawal[] };
 
-const FILTERS = ['pending', 'approved', 'processing', 'completed', 'failed', 'rejected'] as const;
+const STATES = ['pending', 'approved', 'processing', 'completed', 'failed', 'rejected'] as const;
 
 const TONE: Record<string, 'good' | 'bad' | 'wait' | 'neutral'> = {
   completed: 'good',
@@ -54,8 +73,6 @@ const TONE: Record<string, 'good' | 'bad' | 'wait' | 'neutral'> = {
   rejected: 'neutral',
 };
 
-const when = (s?: string | null) => (s ? s.replace('T', ' ').slice(0, 16) : '—');
-
 /** Amount with its own currency, never a symbol this page chose. */
 function money(w: Withdrawal) {
   const amount = Number(w.amount || 0).toLocaleString('en-IN', {
@@ -64,14 +81,28 @@ function money(w: Withdrawal) {
   return w.currency ? `${w.currency} ${amount}` : amount;
 }
 
-export default function WithdrawalsPage() {
+const payee = (w: Withdrawal) => w.driver_name?.trim() || `Driver #${w.driver}`;
+
+function WithdrawalsInner() {
+  const router = useRouter();
+  const search = useSearchParams();
+  const status = (search.get('status') || 'pending') as (typeof STATES)[number];
+
+  const [density, setDensity] = useDensity();
   const [rows, setRows] = useState<Withdrawal[] | null>(null);
-  const [status, setStatus] = useState<string>('pending');
+  const [total, setTotal] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<number | null>(null);
-  const [acting, setActing] = useState<{ id: number; kind: 'approve' | 'reject' } | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [draft, setDraft] = useState<string>(status);
+  const [selected, setSelected] = useState<Withdrawal | null>(null);
+  const [acting, setActing] = useState<'approve' | 'reject' | null>(null);
   const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  useEffect(() => setDraft(status), [status]);
+
+  const tz = timeZoneFor(currentScope(getCachedAccess())?.code);
 
   const load = useCallback(async () => {
     setRows(null);
@@ -82,6 +113,7 @@ export default function WithdrawalsPage() {
       const list = Array.isArray(page?.results) ? page.results
         : (Array.isArray(page) ? (page as unknown as Withdrawal[]) : []);
       setRows(list);
+      setTotal(typeof page?.count === 'number' ? page.count : list.length);
     } catch (err) {
       setError(err instanceof ApiError && err.fromServer
         ? err.message : 'We could not load the payout queue.');
@@ -91,20 +123,31 @@ export default function WithdrawalsPage() {
 
   useEffect(() => { void load(); }, [load]);
 
-  async function send(w: Withdrawal, kind: 'approve' | 'reject') {
-    setBusyId(w.id);
+  function open(w: Withdrawal) {
+    setSelected(w);
+    setActing(null);
+    setNote('');
+    setActionError(null);
+  }
+
+  async function send(kind: 'approve' | 'reject') {
+    if (!selected) return;
+    setBusy(true);
     setActionError(null);
     try {
-      await api.post(`/driver/admin/withdrawals/${w.id}/${kind}/`,
-        { admin_notes: note.trim() });
+      await api.post(`/driver/admin/withdrawals/${selected.id}/${kind}/`, { admin_notes: note.trim() });
+      setNotice(kind === 'approve'
+        ? `Released ${money(selected)} to ${payee(selected)}.`
+        : `Rejected ${money(selected)} for ${payee(selected)}; the driver can read your reason.`);
+      setSelected(null);
       setActing(null);
       setNote('');
       await load();
     } catch (err) {
       setActionError(err instanceof ApiError && err.fromServer
-        ? err.message : `The ${kind} did not go through.`);
+        ? err.message : `The ${kind === 'approve' ? 'release' : 'rejection'} did not go through.`);
     } finally {
-      setBusyId(null);
+      setBusy(false);
     }
   }
 
@@ -112,176 +155,198 @@ export default function WithdrawalsPage() {
   // number on a screen about releasing money.
   const totals = (rows ?? [])
     .filter((r) => r.status === 'pending')
-    .reduce<Record<string, number>>((acc, r) => {
+    .reduce<Record<string, { amount: number; n: number }>>((acc, r) => {
       const key = r.currency || 'unknown';
-      acc[key] = (acc[key] ?? 0) + Number(r.amount || 0);
+      acc[key] = { amount: (acc[key]?.amount ?? 0) + Number(r.amount || 0), n: (acc[key]?.n ?? 0) + 1 };
       return acc;
     }, {});
+
+  const columns: Column<Withdrawal>[] = [
+    {
+      key: 'driver', label: 'Driver', sortValue: payee,
+      render: (w) => (
+        <>
+          <Link href={`/drivers/${w.driver}`}>{payee(w)}</Link>
+          {w.driver_phone ? <span className="muted"> · {w.driver_phone}</span> : null}
+        </>
+      ),
+    },
+    { key: 'payee', label: 'Payee (UPI)', width: '13rem', render: (w) => w.driver_upi_id || <span className="muted">No UPI on file</span> },
+    {
+      key: 'kyc', label: 'KYC', width: '9rem', sortValue: (w) => (w.driver_kyc_approved ? 1 : 0),
+      render: (w) => (w.driver_kyc_approved ? <Pill tone="good">Approved</Pill> : <Pill tone="bad">Not approved</Pill>),
+    },
+    { key: 'amount', label: 'Amount', num: true, width: '9rem', sortValue: (w) => Number(w.amount || 0), render: money },
+    { key: 'status', label: 'Status', width: '8.5rem', render: (w) => <Pill tone={TONE[w.status] ?? 'neutral'}>{w.status}</Pill> },
+    { key: 'when', label: 'Requested', num: true, width: '9.5rem', sortValue: (w) => w.requested_at, render: (w) => stamp(w.requested_at, tz) },
+  ];
+
+  function apply() {
+    router.push(draft === 'pending' ? '/withdrawals' : `/withdrawals?status=${draft}`);
+    setFiltersOpen(false);
+  }
+
+  const summary = total === null ? null : `${total} ${status}`;
 
   return (
     <>
       <PageHeader
         title="Withdrawals"
-        subtitle="Money leaving the platform. Approving dispatches a real payout."
-        actions={FILTERS.map((f) => (
-          <button
-            key={f}
-            className={f === status ? 'btn-secondary' : 'btn-ghost'}
-            onClick={() => setStatus(f)}
-          >
-            {f}
-          </button>
-        ))}
+        subtitle="Money leaving the platform. Releasing a payout dispatches it for real."
       />
 
-      {error && <div className="alert-error mb-5" role="alert">{error}</div>}
-      {actionError && <div className="alert-error mb-5" role="alert">{actionError}</div>}
+      {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
 
-      {status === 'pending' && Object.keys(totals).length > 0 && (
-        <div className="mb-5">
-          <StatStrip>
-            {Object.entries(totals).map(([currency, amount]) => (
-              <Stat
-                key={currency}
-                money
-                label={`Pending · ${currency === 'unknown' ? 'currency not set' : currency}`}
-                value={amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                note={`${(rows ?? []).filter((r) => r.status === 'pending'
-                  && (r.currency || 'unknown') === currency).length} request(s)`}
-              />
-            ))}
-          </StatStrip>
-        </div>
+      {status === 'pending' && rows && Object.keys(totals).length > 0 && (
+        <TileGrid>
+          {Object.entries(totals).map(([currency, t]) => (
+            <MetricTile
+              key={currency}
+              label={`Pending · ${currency === 'unknown' ? 'currency not set' : currency}`}
+              tone="money"
+              value={t.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              note={`${t.n} request${t.n === 1 ? '' : 's'} waiting`}
+            />
+          ))}
+        </TileGrid>
       )}
 
       <Panel flush>
+        <TableToolbar
+          summary={summary}
+          density={density}
+          onDensity={setDensity}
+          onFilters={() => setFiltersOpen(true)}
+          filtersActive={status === 'pending' ? 0 : 1}
+        />
         {rows === null ? (
-          <Empty title="Loading…" />
+          <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
+            <span className="sr-only">Loading the payout queue</span>
+            <Skeleton kind="row" count={6} />
+          </div>
+        ) : error ? (
+          <div className="p-4">
+            <ErrorState title="The queue could not be loaded" detail={`${error} This is not the same as there being nothing to pay.`} onRetry={() => void load()} />
+          </div>
         ) : rows.length === 0 ? (
-          <Empty
-            error={Boolean(error)}
-            title={error ? 'The queue could not be loaded' : `Nothing ${status}`}
-            detail={error
-              ? 'This is not the same as there being nothing to pay.'
-              : undefined}
-          />
+          <Empty title={`Nothing ${status}`} detail={status === 'pending' ? 'No driver is waiting to be paid.' : undefined} />
         ) : (
-          <Table head={<>
-            <th>Driver</th><th>Payee</th><th>KYC</th>
-            <th className="num">Amount</th><th>Status</th>
-            <th>Requested</th><th />
-          </>}>
-            {rows.map((w) => (
-              // A keyed Fragment, not `<>`: a bare fragment cannot take a
-              // key, so React would lose track of which row is which and
-              // the confirmation panel could reattach to the wrong payout.
-              <Fragment key={w.id}>
-                <tr>
-                  <td>
-                    <Link href={`/drivers/${w.driver}`}>
-                      {w.driver_name?.trim() || `Driver #${w.driver}`}
-                    </Link>
-                    {w.driver_phone ? (
-                      <div className="text-ink-subtle text-xs">{w.driver_phone}</div>
-                    ) : null}
-                  </td>
-                  <td>
-                    {w.driver_upi_id || <span className="text-ink-subtle">No UPI on file</span>}
-                  </td>
-                  <td>
-                    {w.driver_kyc_approved
-                      ? <Pill tone="good">Approved</Pill>
-                      : <Pill tone="bad">Not approved</Pill>}
-                  </td>
-                  <td className="num">{money(w)}</td>
-                  <td><Pill tone={TONE[w.status] ?? 'neutral'}>{w.status}</Pill></td>
-                  <td>{when(w.requested_at)}</td>
-                  <td className="num">
-                    {w.status === 'pending' && acting?.id !== w.id && (
-                      <>
-                        <button
-                          className="btn-ghost"
-                          disabled={busyId !== null}
-                          onClick={() => { setActing({ id: w.id, kind: 'approve' }); setNote(''); }}
-                        >
-                          Release
-                        </button>
-                        {' · '}
-                        <button
-                          className="btn-ghost"
-                          disabled={busyId !== null}
-                          onClick={() => { setActing({ id: w.id, kind: 'reject' }); setNote(''); }}
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-
-                {/* The confirmation, in the page rather than a browser
-                    dialog, so the amount and the payee stay visible while
-                    the approver reads them back. */}
-                {acting?.id === w.id && (
-                  <tr>
-                    <td colSpan={7} style={{ background: 'var(--bg-200)' }}>
-                      <div className="grid gap-3" style={{ maxWidth: '44rem' }}>
-                        <b>
-                          {acting.kind === 'approve'
-                            ? `Release ${money(w)} to ${w.driver_name?.trim() || `driver #${w.driver}`}`
-                            : `Reject ${money(w)} for ${w.driver_name?.trim() || `driver #${w.driver}`}`}
-                        </b>
-                        <span className="text-ink-muted text-sm">
-                          {acting.kind === 'approve' ? (
-                            <>
-                              This dispatches a real payout
-                              {w.driver_upi_id ? ` to ${w.driver_upi_id}` : ''} and
-                              cannot be undone from this console.
-                              {!w.driver_kyc_approved && (
-                                <strong style={{ color: 'var(--danger)' }}>
-                                  {' '}This driver&rsquo;s KYC is not approved.
-                                </strong>
-                              )}
-                            </>
-                          ) : (
-                            'The reason you write is shown to the driver.'
-                          )}
-                        </span>
-                        <textarea
-                          className="input"
-                          rows={2}
-                          value={note}
-                          onChange={(e) => setNote(e.target.value)}
-                          placeholder={acting.kind === 'approve'
-                            ? 'Note for the audit log (optional)'
-                            : 'Why is this being rejected?'}
-                        />
-                        <div className="flex gap-3">
-                          <button
-                            className="btn-primary"
-                            disabled={busyId === w.id
-                              || (acting.kind === 'reject' && note.trim().length < 5)}
-                            onClick={() => send(w, acting.kind)}
-                          >
-                            {busyId === w.id ? 'Working…'
-                              : acting.kind === 'approve' ? 'Release the payout' : 'Reject'}
-                          </button>
-                          <button
-                            className="btn-ghost"
-                            onClick={() => { setActing(null); setNote(''); }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
-            ))}
-          </Table>
+          <DataTable
+            caption="Withdrawal requests"
+            rows={rows}
+            columns={columns}
+            rowKey={(w) => w.id}
+            density={density}
+            onRow={open}
+            selectedKey={selected?.id ?? null}
+            defaultSort={{ key: 'when', dir: 'asc' }}
+          />
         )}
       </Panel>
+
+      <Drawer open={filtersOpen} title="Filter payouts" onClose={() => setFiltersOpen(false)}
+        footer={
+          <>
+            <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setDraft('pending')}>Reset</button>
+            <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={apply}>Show payouts</button>
+          </>
+        }
+      >
+        <div className="ops-filterset">
+          <fieldset>
+            <legend>Status</legend>
+            {STATES.map((v) => (
+              <label key={v}>
+                <input type="radio" name="status" value={v} checked={draft === v} onChange={() => setDraft(v)} />
+                <span className="capitalize">{v}</span>
+              </label>
+            ))}
+          </fieldset>
+        </div>
+      </Drawer>
+
+      {/* The payout, read back before it goes. One gold button, and only
+          once the approver has chosen which way this is going. */}
+      <Drawer
+        open={selected !== null}
+        title={selected ? `${money(selected)} · ${payee(selected)}` : ''}
+        onClose={() => setSelected(null)}
+        footer={selected && selected.status === 'pending' ? (
+          acting === null ? (
+            <>
+              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => { setActing('reject'); setNote(''); }}>Reject</button>
+              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => { setActing('approve'); setNote(''); }}>Release…</button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={busy} onClick={() => { setActing(null); setNote(''); }}>Back</button>
+              <button
+                type="button"
+                className="sg-btn sg-btn--primary sg-btn--sm"
+                disabled={busy || (acting === 'reject' && note.trim().length < 5)}
+                onClick={() => void send(acting)}
+              >
+                {busy ? 'Working…' : acting === 'approve' ? `Release ${money(selected)}` : 'Reject with this reason'}
+              </button>
+            </>
+          )
+        ) : undefined}
+      >
+        {selected && (
+          <div className="grid gap-4">
+            <Facts>
+              <Fact label="Driver"><Link href={`/drivers/${selected.driver}`}>{payee(selected)}</Link></Fact>
+              <Fact label="Phone">{selected.driver_phone || '—'}</Fact>
+              <Fact label="Pays to">{selected.driver_upi_id || 'No UPI on file'}</Fact>
+              <Fact label="KYC">{selected.driver_kyc_approved ? <Pill tone="good">Approved</Pill> : <Pill tone="bad">Not approved</Pill>}</Fact>
+              <Fact label="Amount"><b>{money(selected)}</b></Fact>
+              <Fact label="Status"><Pill tone={TONE[selected.status] ?? 'neutral'}>{selected.status}</Pill></Fact>
+              <Fact label="Requested">{stamp(selected.requested_at, tz)}</Fact>
+              {selected.processed_at ? <Fact label="Processed">{stamp(selected.processed_at, tz)}</Fact> : null}
+              {selected.payout_reference_id ? <Fact label="Reference">{selected.payout_reference_id}</Fact> : null}
+              {selected.admin_notes ? <Fact label="Notes">{selected.admin_notes}</Fact> : null}
+            </Facts>
+
+            {acting && (
+              <div className="ops-confirm">
+                <b>
+                  {acting === 'approve'
+                    ? `Release ${money(selected)} to ${payee(selected)}`
+                    : `Reject ${money(selected)} for ${payee(selected)}`}
+                </b>
+                <span>
+                  {acting === 'approve' ? (
+                    <>
+                      This dispatches a real payout{selected.driver_upi_id ? ` to ${selected.driver_upi_id}` : ''} and cannot be undone from this console.
+                      {!selected.driver_kyc_approved && (
+                        <strong className="ops-confirm__warn"> This driver&rsquo;s KYC is not approved; the server will refuse it.</strong>
+                      )}
+                    </>
+                  ) : 'The reason you write is shown to the driver.'}
+                </span>
+                <label className="sr-only" htmlFor="payout-note">{acting === 'approve' ? 'Note for the audit log' : 'Reason for rejecting'}</label>
+                <textarea
+                  id="payout-note"
+                  className="input"
+                  rows={3}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder={acting === 'approve' ? 'Note for the audit log (optional)' : 'Why is this being rejected? At least a few words.'}
+                />
+                {actionError && <div className="alert-error" role="alert">{actionError}</div>}
+              </div>
+            )}
+          </div>
+        )}
+      </Drawer>
     </>
+  );
+}
+
+export default function WithdrawalsPage() {
+  return (
+    <Suspense fallback={<div className="ops-skel-rows" aria-busy="true"><Skeleton kind="row" count={6} /></div>}>
+      <WithdrawalsInner />
+    </Suspense>
   );
 }

@@ -120,3 +120,196 @@ export function Alert({ className }: Props) {
     </svg>
   );
 }
+
+/* --- the shell's controls ----------------------------------------------
+   Same grid, same stroke. Added with the noir shell: search, alerts, the
+   theme switch, the collapse handle, filters, sorting and the sign-in
+   steps. */
+
+export function Search({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m20 20-4.2-4.2" />
+    </svg>
+  );
+}
+
+export function Bell({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" />
+      <path d="M10 20a2 2 0 0 0 4 0" />
+    </svg>
+  );
+}
+
+export function Sun({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4" />
+    </svg>
+  );
+}
+
+export function Moon({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />
+    </svg>
+  );
+}
+
+export function ChevronDown({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+export function ChevronLeft({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="m15 5-7 7 7 7" />
+    </svg>
+  );
+}
+
+export function Close({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
+  );
+}
+
+/** The sidebar's collapse handle: a panel with its left rail. */
+export function PanelLeft({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
+      <path d="M9 5v14" />
+    </svg>
+  );
+}
+
+/** Filters. */
+export function Sliders({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M4 7h10M18 7h2M4 12h3M11 12h9M4 17h12M20 17h0" />
+      <circle cx="15.5" cy="7" r="1.8" />
+      <circle cx="8.5" cy="12" r="1.8" />
+      <circle cx="17.5" cy="17" r="1.8" />
+    </svg>
+  );
+}
+
+/** A sortable column, pointing the way the sort goes. */
+export function SortArrow({ className, dir }: Props & { dir: 'asc' | 'desc' | 'none' }) {
+  return (
+    <svg {...base} width={14} height={14} className={className}>
+      {dir === 'none' ? (
+        <path d="M8 10l4-4 4 4M8 14l4 4 4-4" />
+      ) : dir === 'asc' ? (
+        <path d="M12 19V5M6 11l6-6 6 6" />
+      ) : (
+        <path d="M12 5v14M6 13l6 6 6-6" />
+      )}
+    </svg>
+  );
+}
+
+/** Safety & Risk. */
+export function Shield({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M12 3.5 5 6v6c0 4.2 3 7.3 7 8.5 4-1.2 7-4.3 7-8.5V6z" />
+      <path d="m9.2 12 2 2 3.8-4" />
+    </svg>
+  );
+}
+
+/** Settings. */
+export function Cog({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M6 18l1.6-1.6M16.4 7.6 18 6" />
+    </svg>
+  );
+}
+
+/** Growth. */
+export function TrendUp({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M4 17 10 11l4 4 6-7" />
+      <path d="M15 8h5v5" />
+    </svg>
+  );
+}
+
+export function Lock({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <rect x="5" y="10.5" width="14" height="10" rx="2.2" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    </svg>
+  );
+}
+
+export function Mail({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <rect x="3.5" y="5.5" width="17" height="13" rx="2.2" />
+      <path d="m4.5 7.5 7.5 5.5 7.5-5.5" />
+    </svg>
+  );
+}
+
+/** The emergency account. */
+export function KeyRound({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <circle cx="8.5" cy="14.5" r="4" />
+      <path d="m11.5 11.5 8-8M16 7l2.5 2.5M18.5 4.5 21 7" />
+    </svg>
+  );
+}
+
+export function Clock({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </svg>
+  );
+}
+
+export function Check({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="m5 12.5 4.5 4.5L19 7.5" />
+    </svg>
+  );
+}
+
+export function ArrowRight({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+export function LogOut({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M10 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20H10" />
+      <path d="M15 8l4 4-4 4M19 12H9" />
+    </svg>
+  );
+}

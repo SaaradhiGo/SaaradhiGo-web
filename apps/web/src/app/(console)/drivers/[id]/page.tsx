@@ -9,14 +9,20 @@ import {
   DocumentList,
   ReviewDocument,
 } from '@/components/console/DriverReview';
+import { ButtonLink } from '@/components/sg/Button';
+import { currentScope, getCachedAccess } from '@/lib/adminScope';
+import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
+  Column,
+  DataTable,
   Empty,
+  ErrorState,
   Fact,
   Facts,
   PageHeader,
   Panel,
   Pill,
-  Table,
+  Skeleton,
 } from '@/components/console/ui';
 
 /**
@@ -87,7 +93,6 @@ type DriverDetail = {
   };
 };
 
-const fmt = (s: string | null | undefined) => (s ? s.replace('T', ' ').slice(0, 16) : '—');
 const hoursMins = (sec: number) => `${Math.floor(sec / 3600)}h ${Math.floor((sec % 3600) / 60)}m`;
 const isExpired = (iso: string | null) => Boolean(iso) && new Date(iso!).getTime() < Date.now();
 const isExpiringSoon = (iso: string | null) =>
@@ -113,6 +118,8 @@ export default function DriverDetailPage() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const tz = timeZoneFor(currentScope(getCachedAccess())?.code);
+  const fmt = (s: string | null | undefined) => stamp(s, tz);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -152,11 +159,35 @@ export default function DriverDetailPage() {
     }
   }
 
-  if (loading) return <p className="text-ink-subtle">Loading…</p>;
-  if (error) return <div className="alert-error" role="alert">{error}</div>;
-  if (!data) return null;
+  if (loading) {
+    return (
+      <div aria-busy="true" aria-live="polite">
+        <span className="sr-only">Loading the driver</span>
+        <PageHeader title={`Driver #${id}`} />
+        <div className="ops-review"><Skeleton kind="block" /><Skeleton kind="block" /></div>
+      </div>
+    );
+  }
+  if (error || !data) {
+    return (
+      <>
+        <PageHeader title={`Driver #${id}`} actions={<ButtonLink href="/drivers" variant="ghost" size="sm">All drivers</ButtonLink>} />
+        <ErrorState title="This driver could not be loaded" detail={error ?? undefined} onRetry={() => void load()} />
+      </>
+    );
+  }
 
   const name = data.user.full_name?.trim() || data.user.phone_number || `Driver #${data.id}`;
+  const tripTone: Record<string, 'good' | 'bad' | 'wait' | 'neutral'> = {
+    completed: 'good', cancelled: 'bad', requested: 'wait', accepted: 'wait', in_progress: 'wait',
+  };
+  const tripColumns: Column<DriverDetail['recent_trips'][number]>[] = [
+    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <Link href={`/trips/${t.id}`}>#{t.id}</Link> },
+    { key: 'status', label: 'Status', width: '8rem', render: (t) => <Pill tone={tripTone[t.status ?? ''] ?? 'neutral'}>{(t.status ?? '—').replace(/_/g, ' ')}</Pill> },
+    { key: 'route', label: 'Pickup → drop', render: (t) => <span title={`${t.pickup_address ?? ''} → ${t.destination_address ?? ''}`}>{t.pickup_address || '—'} <span className="muted">→</span> {t.destination_address || '—'}</span> },
+    { key: 'fare', label: 'Fare', num: true, width: '7rem', render: (t) => t.final_fare ?? (t.estimated_fare ? <>{t.estimated_fare}<span className="muted"> est.</span></> : '—') },
+    { key: 'when', label: 'Requested', num: true, width: '9.5rem', render: (t) => fmt(t.requested_at) },
+  ];
   const vehicle = data.vehicles.find((v) => v.is_active_vehicle) ?? data.vehicles[0] ?? null;
   const compliance = data.compliance;
 
@@ -189,7 +220,7 @@ export default function DriverDetailPage() {
             {data.fatigue?.locked && (
               <Pill tone="bad">Locked until {fmt(data.fatigue.locked_until)}</Pill>
             )}
-            <Link href="/drivers" className="btn-ghost">← All drivers</Link>
+            <ButtonLink href="/drivers" variant="ghost" size="sm">All drivers</ButtonLink>
           </>
         }
       />
@@ -251,21 +282,14 @@ export default function DriverDetailPage() {
             {data.recent_trips.length === 0 ? (
               <Empty title="No trips yet" />
             ) : (
-              <Table head={<>
-                <th>Trip</th><th>Status</th><th>Pickup</th><th>Drop</th>
-                <th className="num">Fare</th><th>Requested</th>
-              </>}>
-                {data.recent_trips.slice(0, 10).map((t) => (
-                  <tr key={t.id}>
-                    <td><Link href={`/trips/${t.id}`}>#{t.id}</Link></td>
-                    <td>{t.status || '—'}</td>
-                    <td className="max-w-[16rem] truncate">{t.pickup_address || '—'}</td>
-                    <td className="max-w-[16rem] truncate">{t.destination_address || '—'}</td>
-                    <td className="num">{t.final_fare ?? t.estimated_fare ?? '—'}</td>
-                    <td>{fmt(t.requested_at)}</td>
-                  </tr>
-                ))}
-              </Table>
+              <DataTable
+                caption="This driver's recent trips"
+                rows={data.recent_trips.slice(0, 10)}
+                columns={tripColumns}
+                rowKey={(t) => t.id}
+                density="compact"
+                maxHeight={false}
+              />
             )}
           </Panel>
         </div>

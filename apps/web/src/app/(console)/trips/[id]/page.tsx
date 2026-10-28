@@ -4,7 +4,40 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
+import { currentScope, getCachedAccess } from '@/lib/adminScope';
+import { stamp, timeZoneFor, zoneAbbreviation } from '@/lib/consoleTime';
+import { currencySymbol } from '@/lib/money';
+import { ButtonLink } from '@/components/sg/Button';
+import {
+  Column,
+  DataTable,
+  Drawer,
+  Empty,
+  ErrorState,
+  Fact,
+  Facts,
+  MetricTile,
+  PageHeader,
+  Panel,
+  Pill,
+  Skeleton,
+  TileGrid,
+} from '@/components/console/ui';
 
+/**
+ * One trip, as the answer to a question.
+ *
+ * An operator opens this from a complaint: "I was charged twice", "the
+ * driver never came", "where is my receipt". So the money is first, as
+ * tiles; the route and the timeline next; the people and the vehicle
+ * beside them; and the long tail -- payments, receipts, ratings, chat,
+ * SOS -- below, each in its own panel and only when there is something in
+ * it. A trip that had an SOS is the one place this page goes red.
+ *
+ * REFUNDS ARE CONFIRMED IN A DRAWER, not in `window.confirm`: the amount,
+ * the rider and the mode are read back on one surface with one gold
+ * button, and the server's own answer is shown rather than a guess at it.
+ */
 type TripDetail = {
   id: number;
   status: string | null;
@@ -20,8 +53,7 @@ type TripDetail = {
   driver: {
     driver_id: number; phone_number: string | null; full_name: string | null;
     status: string | null; approved: boolean; ratings: string;
-    total_trips: number;
-    license_expiry: string | null;
+    total_trips: number; license_expiry: string | null;
     fatigue_lockout_until: string | null;
   } | null;
   vehicle: {
@@ -40,45 +72,36 @@ type TripDetail = {
       surge_multiplier: string; total_fare: string;
     } | null;
   };
+  currency?: string | null;
   payments: Array<{
     id: number; amount: string; method: string; status: string;
     payment_gateway: string | null; gateway_order_id: string | null;
     gateway_payment_id: string | null; created_at: string | null;
   }>;
-  ratings: Array<{
-    id: number; direction: string; score: number; comments: string | null;
-    created_at: string | null;
-  }>;
+  ratings: Array<{ id: number; direction: string; score: number; comments: string | null; created_at: string | null }>;
   receipts: Array<{
     id: number; receipt_number: string; version: number;
     total_fare: string; gst_amount: string; sent_to_email: string;
     last_sent_at: string | null; send_failure_reason: string | null;
     pdf_url: string | null;
   }>;
-  chat: {
-    total: number; offset: number; limit: number;
-    messages: Array<{
-      id: number; sender_role: string; body: string;
-      is_system: boolean; created_at: string | null;
-    }>;
-  };
-  driver_cancellations: Array<{
-    id: number; reason: string; note: string; created_at: string | null;
-  }>;
-  sos_events: Array<{
-    id: number; status: string | null; created_at: string | null;
-    acknowledged_at: string | null; resolved_at: string | null;
-  }>;
-  promo: {
-    code: string; discount_type: string; discount_amount: string;
-    created_at: string | null;
-  } | null;
-  zone: {
-    code: string; name: string; city: string; state_code: string;
-  } | null;
+  chat: { total: number; messages: Array<{ id: number; sender_role: string; body: string; is_system: boolean; created_at: string | null }> };
+  driver_cancellations: Array<{ id: number; reason: string; note: string; created_at: string | null }>;
+  sos_events: Array<{ id: number; status: string | null; created_at: string | null; acknowledged_at: string | null; resolved_at: string | null }>;
+  promo: { code: string; discount_type: string; discount_amount: string; created_at: string | null } | null;
+  zone: { code: string; name: string; city: string; state_code: string } | null;
 };
 
-const fmt = (s: string | null | undefined) => (s ? s.replace('T', ' ').slice(0, 19) : '—');
+const TONE: Record<string, 'good' | 'bad' | 'wait' | 'neutral'> = {
+  completed: 'good', cancelled: 'bad', requested: 'wait', accepted: 'wait', reached: 'wait', in_progress: 'wait',
+};
+const TIMELINE_LABEL: Record<string, string> = {
+  requested_at: 'Requested', accepted_at: 'Accepted', reached_at: 'Driver arrived',
+  started_at: 'Started', completed_at: 'Completed', cancelled_at: 'Cancelled',
+};
+const words = (s: string | null | undefined) => (s ?? '—').replace(/_/g, ' ');
+
+type RefundMode = 'original' | 'credit';
 
 export default function TripDetailPage() {
   const params = useParams<{ id: string }>();
@@ -86,349 +109,354 @@ export default function TripDetailPage() {
   const [data, setData] = useState<TripDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [actionMsg, setActionMsg] = useState<string | null>(null);
-  const [actionErr, setActionErr] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [refund, setRefund] = useState<RefundMode | null>(null);
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const tz = timeZoneFor(currentScope(getCachedAccess())?.code);
+  const tzName = zoneAbbreviation(tz);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const d = await api.get<TripDetail>(`/ride/admin/trips/${id}/`);
-      setData(d);
+      setData(await api.get<TripDetail>(`/ride/admin/trips/${id}/`));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not load trip');
+      setError(err instanceof ApiError && err.fromServer ? err.message : 'We could not load this trip.');
     } finally {
       setLoading(false);
     }
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
   async function resendReceipt() {
-    setActionMsg(null); setActionErr(null);
+    setNotice(null); setActionError(null); setBusy(true);
     try {
       await api.post(`/ride/trip/${id}/receipt/resend/`);
-      setActionMsg('Receipt re-sent.');
-      load();
+      setNotice('Receipt re-sent.');
+      await load();
     } catch (err) {
-      setActionErr(err instanceof ApiError ? err.message : 'Resend failed');
+      setActionError(err instanceof ApiError && err.fromServer ? err.message : 'The receipt could not be re-sent.');
+    } finally {
+      setBusy(false);
     }
   }
 
-  async function refundOriginal() {
-    if (!confirm('Refund to original payment method? Settles in 5-7 days.')) return;
-    setActionMsg(null); setActionErr(null);
+  async function doRefund() {
+    if (!refund) return;
+    setNotice(null); setActionError(null); setBusy(true);
     try {
-      await api.post('/payments/refund/', { trip_id: Number(id), mode: 'original' });
-      setActionMsg('Refund initiated to original payment method.');
-      load();
+      await api.post('/payments/refund/', { trip_id: Number(id), mode: refund });
+      setNotice(refund === 'original'
+        ? 'Refund started to the original payment method. It settles in 5–7 days.'
+        : 'Credits issued to the rider (or, if the balance cap was hit, refunded to the original method).');
+      setRefundOpen(false);
+      setRefund(null);
+      await load();
     } catch (err) {
-      setActionErr(err instanceof ApiError ? err.message : 'Refund failed');
+      setActionError(err instanceof ApiError && err.fromServer ? err.message : 'The refund did not go through.');
+    } finally {
+      setBusy(false);
     }
   }
 
-  async function refundCredit() {
-    if (!confirm('Refund to rider as SaaradhiGo Credits? Instant; subject to balance cap.')) return;
-    setActionMsg(null); setActionErr(null);
-    try {
-      await api.post('/payments/refund/', { trip_id: Number(id), mode: 'credit' });
-      setActionMsg('Credit issued (or auto-fell back to original-method).');
-      load();
-    } catch (err) {
-      setActionErr(err instanceof ApiError ? err.message : 'Refund failed');
-    }
+  if (loading) {
+    return (
+      <div aria-busy="true" aria-live="polite">
+        <span className="sr-only">Loading the trip</span>
+        <PageHeader title={`Trip #${id}`} />
+        <TileGrid><Skeleton kind="tile" count={4} /></TileGrid>
+        <div className="ops-review"><Skeleton kind="block" /><Skeleton kind="block" /></div>
+      </div>
+    );
+  }
+  if (error || !data) {
+    return (
+      <>
+        <PageHeader title={`Trip #${id}`} actions={<ButtonLink href="/trips" variant="ghost" size="sm">All trips</ButtonLink>} />
+        <ErrorState title="This trip could not be loaded" detail={error ?? undefined} onRetry={() => void load()} />
+      </>
+    );
   }
 
-  if (loading) return <p className="text-white/60">Loading...</p>;
-  if (error) return <p className="text-red-400">{error}</p>;
-  if (!data) return null;
+  const sym = currencySymbol(data.currency ?? 'INR');
+  const money = (v: string | null | undefined) => (v == null || v === '' ? '—' : `${sym}${v}`);
+  const charged = data.fare.final_fare != null && data.fare.final_fare !== '';
+  const state = data.status ?? 'unknown';
+  const riderName = data.rider?.full_name?.trim() || data.rider?.phone_number || 'the rider';
+  const hadSos = data.sos_events.length > 0;
+  const mapHref = (lat: string | null, lng: string | null) =>
+    lat && lng ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}` : null;
+
+  const paymentColumns: Column<TripDetail['payments'][number]>[] = [
+    { key: 'id', label: '#', width: '4rem', render: (p) => p.id },
+    { key: 'amount', label: 'Amount', num: true, width: '8rem', render: (p) => money(p.amount) },
+    { key: 'method', label: 'Method', width: '7rem', render: (p) => <span className="capitalize">{p.method}</span> },
+    { key: 'status', label: 'Status', width: '9rem', render: (p) => <Pill tone={/success|captured|paid|completed/i.test(p.status) ? 'good' : /fail|refund/i.test(p.status) ? 'bad' : 'wait'}>{words(p.status)}</Pill> },
+    { key: 'gateway', label: 'Gateway', width: '8rem', render: (p) => p.payment_gateway ?? <span className="muted">—</span> },
+    { key: 'order', label: 'Order ID', render: (p) => <span title={p.gateway_order_id ?? undefined}>{p.gateway_order_id ?? <span className="muted">—</span>}</span> },
+    { key: 'when', label: tzName ? `When (${tzName})` : 'When', num: true, width: '9.5rem', render: (p) => stamp(p.created_at, tz) },
+  ];
+
+  const receiptColumns: Column<TripDetail['receipts'][number]>[] = [
+    { key: 'no', label: 'Receipt', render: (r) => <span title={r.receipt_number}>{r.receipt_number} <span className="muted">v{r.version}</span></span> },
+    { key: 'total', label: 'Total', num: true, width: '7rem', render: (r) => money(r.total_fare) },
+    { key: 'gst', label: 'GST', num: true, width: '7rem', render: (r) => money(r.gst_amount) },
+    { key: 'to', label: 'Sent to', render: (r) => r.sent_to_email || <span className="muted">—</span> },
+    {
+      key: 'sent', label: 'Last sent', num: true, width: '10rem',
+      render: (r) => r.send_failure_reason
+        ? <Pill tone="bad">Failed</Pill>
+        : stamp(r.last_sent_at, tz),
+    },
+    { key: 'pdf', label: 'PDF', width: '5rem', render: (r) => (r.pdf_url ? <a href={r.pdf_url} target="_blank" rel="noopener noreferrer">Open</a> : <span className="muted">—</span>) },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <Link href="/trips" className="btn-ghost text-xs">&larr; Back to trips</Link>
-          <h1 className="text-2xl font-semibold mt-1">
-            Trip #{data.id}{' '}
-            <span className="ml-3 tag border-white/20 text-sm">{data.status ?? '—'}</span>
-            {data.zone && (
-              <span className="ml-2 tag border-gold-line text-gold-text text-xs">{data.zone.code}</span>
-            )}
-          </h1>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={resendReceipt} className="btn-ghost text-gold-text text-sm">Resend receipt</button>
-          <button onClick={refundCredit} className="btn-ghost text-gold-text text-sm">Refund to credits</button>
-          <button onClick={refundOriginal} className="btn-ghost text-gold-text text-sm">Refund to original</button>
-        </div>
-      </div>
-      {actionMsg && <p className="text-emerald-400 text-sm">{actionMsg}</p>}
-      {actionErr && <p className="text-red-400 text-sm">{actionErr}</p>}
+    <>
+      <PageHeader
+        title={`Trip #${data.id}`}
+        subtitle={
+          <>
+            {data.zone ? `${data.zone.name} (${data.zone.code})` : 'No zone'}
+            {' · requested '}{stamp(data.timeline.requested_at, tz)}{tzName ? ` ${tzName}` : ''}
+          </>
+        }
+        actions={
+          <>
+            <Pill tone={TONE[state] ?? 'neutral'}>{words(state)}</Pill>
+            <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void resendReceipt()}>Resend receipt</button>
+            <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => { setRefund(null); setRefundOpen(true); }}>Refund…</button>
+            <ButtonLink href="/trips" variant="ghost" size="sm">All trips</ButtonLink>
+          </>
+        }
+      />
 
-      {/* Locations */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="card">
-          <div className="text-xs uppercase tracking-widest text-white/50 mb-1">Pickup</div>
-          <div>{data.pickup.address ?? '—'}</div>
-          <div className="text-xs text-white/40 mt-1">
-            {data.pickup.lat}, {data.pickup.lng}
-          </div>
-        </div>
-        <div className="card">
-          <div className="text-xs uppercase tracking-widest text-white/50 mb-1">Drop</div>
-          <div>{data.destination.address ?? '—'}</div>
-          <div className="text-xs text-white/40 mt-1">
-            {data.destination.lat}, {data.destination.lng}
-          </div>
-        </div>
-      </div>
+      {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
+      {actionError && <div className="alert-error mb-4" role="alert">{actionError}</div>}
 
-      {/* Timeline */}
-      <div className="card">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-white/70 mb-3">Timeline</h2>
-        <table className="w-full text-sm">
-          <tbody>
-            {Object.entries(data.timeline).map(([k, v]) => (
-              <tr key={k} className="table-row">
-                <td className="py-2 text-white/60 w-48">{k}</td>
-                <td className="py-2">{fmt(v)}</td>
-              </tr>
-            ))}
-            {data.otp && (
-              <tr className="table-row">
-                <td className="py-2 text-white/60">otp</td>
-                <td className="py-2 font-mono">{data.otp}</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <TileGrid>
+        <MetricTile
+          label={charged ? 'Charged' : 'Estimated fare'} tone="money"
+          value={money(charged ? data.fare.final_fare : data.fare.estimated_fare)}
+          note={charged && data.fare.estimated_fare ? `estimated ${money(data.fare.estimated_fare)}` : charged ? undefined : 'not yet charged'}
+        />
+        <MetricTile
+          label="Distance"
+          value={data.fare.actual_distance_km ?? data.fare.estimated_distance_km}
+          unit="km"
+          note={data.fare.actual_distance_km ? 'driven' : data.fare.estimated_distance_km ? 'estimated' : undefined}
+        />
+        <MetricTile label="Surge" value={`×${data.fare.surge_multiplier ?? '1.00'}`} />
+        <MetricTile
+          label="Payment"
+          value={data.fare.payment_method ? data.fare.payment_method.toUpperCase() : null}
+          note={data.fare.payment_status ? words(data.fare.payment_status) : 'status not recorded'}
+          tone={/fail/i.test(data.fare.payment_status ?? '') ? 'urgent' : 'neutral'}
+        />
+      </TileGrid>
 
-      {/* Rider / Driver / Vehicle */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="card">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-white/70 mb-3">Rider</h2>
-          {data.rider ? (
-            <dl className="text-sm space-y-1">
-              <dt className="text-white/50">Phone</dt><dd>{data.rider.phone_number ?? '—'}</dd>
-              <dt className="text-white/50 mt-2">Name</dt><dd>{data.rider.full_name ?? '—'}</dd>
-              <dt className="text-white/50 mt-2">Email</dt><dd>{data.rider.email ?? '—'}</dd>
-              <dt className="text-white/50 mt-2">Rating</dt>
-              <dd>
-                {data.rider.rating ?? '—'} ({data.rider.rating_count} ratings)
-                {data.rider.flagged_for_review && (
-                  <span className="ml-2 tag border-red-500/40 text-red-300">flagged</span>
-                )}
-              </dd>
-            </dl>
-          ) : <p className="text-white/50 text-sm">No rider</p>}
-        </div>
-        <div className="card">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-white/70 mb-3">Driver</h2>
-          {data.driver ? (
-            <dl className="text-sm space-y-1">
-              <dt className="text-white/50">Phone</dt><dd>{data.driver.phone_number ?? '—'}</dd>
-              <dt className="text-white/50 mt-2">Name</dt><dd>{data.driver.full_name ?? '—'}</dd>
-              <dt className="text-white/50 mt-2">Status</dt>
-              <dd>
-                <span className="tag border-white/20">{data.driver.status ?? '—'}</span>
-                {data.driver.approved
-                  ? <span className="ml-2 tag border-emerald-500/40 text-emerald-300">approved</span>
-                  : <span className="ml-2 tag border-yellow-500/40 text-yellow-300">unapproved</span>}
-              </dd>
-              <dt className="text-white/50 mt-2">Rating</dt><dd>{data.driver.ratings}</dd>
-              <dt className="text-white/50 mt-2">Total trips</dt><dd>{data.driver.total_trips}</dd>
-              {data.driver.fatigue_lockout_until && (
-                <>
-                  <dt className="text-white/50 mt-2">Lockout until</dt>
-                  <dd className="text-red-300">{fmt(data.driver.fatigue_lockout_until)}</dd>
-                </>
-              )}
-            </dl>
-          ) : <p className="text-white/50 text-sm">No driver assigned</p>}
-        </div>
-        <div className="card">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-white/70 mb-3">Vehicle</h2>
-          {data.vehicle ? (
-            <dl className="text-sm space-y-1">
-              <dt className="text-white/50">Type</dt><dd>{data.vehicle.type}</dd>
-              <dt className="text-white/50 mt-2">Brand / Model</dt>
-              <dd>{data.vehicle.brand} {data.vehicle.model} ({data.vehicle.color})</dd>
-              <dt className="text-white/50 mt-2">Number</dt><dd>{data.vehicle.vehicle_number}</dd>
-              <dt className="text-white/50 mt-2">Insurance</dt><dd>{data.vehicle.insurance_expiry ?? '—'}</dd>
-              <dt className="text-white/50 mt-2">Permit</dt><dd>{data.vehicle.permit_expiry ?? '—'}</dd>
-              <dt className="text-white/50 mt-2">Fitness</dt><dd>{data.vehicle.fitness_expiry ?? '—'}</dd>
-              <dt className="text-white/50 mt-2">PUC</dt><dd>{data.vehicle.puc_expiry ?? '—'}</dd>
-            </dl>
-          ) : <p className="text-white/50 text-sm">No vehicle</p>}
-        </div>
-      </div>
+      <div className="ops-review">
+        <div className="grid gap-4">
+          <Panel title="Route">
+            <Facts>
+              <Fact label="Pickup">
+                {data.pickup.address ?? '—'}
+                {mapHref(data.pickup.lat, data.pickup.lng) ? <> · <a className="sg-link" target="_blank" rel="noreferrer" href={mapHref(data.pickup.lat, data.pickup.lng)!}>map</a></> : null}
+              </Fact>
+              <Fact label="Drop">
+                {data.destination.address ?? '—'}
+                {mapHref(data.destination.lat, data.destination.lng) ? <> · <a className="sg-link" target="_blank" rel="noreferrer" href={mapHref(data.destination.lat, data.destination.lng)!}>map</a></> : null}
+              </Fact>
+            </Facts>
+          </Panel>
 
-      {/* Fare */}
-      <div className="card">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-white/70 mb-3">Fare</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div>
-            <div className="text-white/50">Final</div>
-            <div className="text-xl font-semibold">Rs {data.fare.final_fare ?? data.fare.estimated_fare ?? '—'}</div>
-          </div>
-          <div>
-            <div className="text-white/50">Distance</div>
-            <div>{data.fare.actual_distance_km ?? data.fare.estimated_distance_km ?? '—'} km</div>
-          </div>
-          <div>
-            <div className="text-white/50">Surge</div>
-            <div>x {data.fare.surge_multiplier ?? '1.00'}</div>
-          </div>
-          <div>
-            <div className="text-white/50">Payment</div>
-            <div>{data.fare.payment_method ?? '—'} ({data.fare.payment_status ?? '—'})</div>
-          </div>
-        </div>
-        {data.fare.breakdown && (
-          <table className="w-full text-xs mt-4">
-            <tbody>
-              <tr className="table-row"><td className="py-1 text-white/60">Base fare</td><td className="py-1 text-right">Rs {data.fare.breakdown.base_fare}</td></tr>
-              <tr className="table-row"><td className="py-1 text-white/60">Distance fare</td><td className="py-1 text-right">Rs {data.fare.breakdown.distance_fare}</td></tr>
-              <tr className="table-row"><td className="py-1 text-white/60">Time fare</td><td className="py-1 text-right">Rs {data.fare.breakdown.time_fare}</td></tr>
-              <tr className="table-row"><td className="py-1 text-white/60">Surge multiplier</td><td className="py-1 text-right">x {data.fare.breakdown.surge_multiplier}</td></tr>
-              <tr className="table-row"><td className="py-1 font-semibold">Total</td><td className="py-1 text-right font-semibold">Rs {data.fare.breakdown.total_fare}</td></tr>
-            </tbody>
-          </table>
-        )}
-        {data.promo && (
-          <div className="mt-3 text-sm">
-            <span className="tag border-gold-line text-gold-text">{data.promo.code}</span>
-            <span className="text-white/60 ml-2">discount: Rs {data.promo.discount_amount}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Payments */}
-      {data.payments.length > 0 && (
-        <div className="card">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-white/70 mb-3">Payments</h2>
-          <table className="w-full text-sm">
-            <thead className="text-left text-white/60">
-              <tr><th className="pb-2">#</th><th className="pb-2">Amount</th><th className="pb-2">Method</th><th className="pb-2">Status</th><th className="pb-2">Gateway</th><th className="pb-2">Order ID</th></tr>
-            </thead>
-            <tbody>
-              {data.payments.map((p) => (
-                <tr key={p.id} className="table-row">
-                  <td className="py-2">{p.id}</td>
-                  <td className="py-2">Rs {p.amount}</td>
-                  <td className="py-2">{p.method}</td>
-                  <td className="py-2"><span className="tag border-white/20">{p.status}</span></td>
-                  <td className="py-2">{p.payment_gateway ?? '—'}</td>
-                  <td className="py-2 font-mono text-xs">{p.gateway_order_id ?? '—'}</td>
-                </tr>
+          <Panel title={tzName ? `Timeline (${tzName})` : 'Timeline'}>
+            <Facts>
+              {Object.entries(data.timeline).map(([k, v]) => (
+                <Fact key={k} label={TIMELINE_LABEL[k] ?? words(k)}>
+                  {v ? stamp(v, tz) : <span className="muted">—</span>}
+                </Fact>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              {data.otp ? <Fact label="Pickup OTP"><code>{data.otp}</code></Fact> : null}
+            </Facts>
+          </Panel>
 
-      {/* Ratings */}
-      {data.ratings.length > 0 && (
-        <div className="card">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-white/70 mb-3">Ratings</h2>
-          {data.ratings.map((r) => (
-            <div key={r.id} className="text-sm border-b border-white/5 py-2 last:border-0">
-              <div className="flex justify-between">
-                <span className="text-white/60">{r.direction}</span>
-                <span>{'★'.repeat(r.score)}{'☆'.repeat(5 - r.score)}</span>
+          {data.fare.breakdown && (
+            <Panel title="Fare breakdown">
+              <Facts>
+                <Fact label="Base fare">{money(data.fare.breakdown.base_fare)}</Fact>
+                <Fact label="Distance">{money(data.fare.breakdown.distance_fare)}</Fact>
+                <Fact label="Time">{money(data.fare.breakdown.time_fare)}</Fact>
+                <Fact label="Surge">×{data.fare.breakdown.surge_multiplier}</Fact>
+                <Fact label="Total"><b>{money(data.fare.breakdown.total_fare)}</b></Fact>
+                {data.promo ? <Fact label="Promo">{data.promo.code} · −{money(data.promo.discount_amount)}</Fact> : null}
+              </Facts>
+            </Panel>
+          )}
+
+          {data.payments.length > 0 && (
+            <Panel title="Payments" flush>
+              <DataTable caption="Payments on this trip" rows={data.payments} columns={paymentColumns} rowKey={(p) => p.id} density="compact" maxHeight={false} />
+            </Panel>
+          )}
+
+          {data.receipts.length > 0 && (
+            <Panel title="Receipts" flush>
+              <DataTable caption="Receipts for this trip" rows={data.receipts} columns={receiptColumns} rowKey={(r) => r.id} density="compact" maxHeight={false} />
+            </Panel>
+          )}
+
+          <Panel title={`Chat · ${data.chat.total} message${data.chat.total === 1 ? '' : 's'}`}>
+            {data.chat.messages.length === 0 ? (
+              <Empty title="No messages" detail="Nothing was said in the app on this trip." />
+            ) : (
+              <div className="ops-thread">
+                {data.chat.messages.map((m) => {
+                  const kind = m.is_system || m.sender_role === 'system' ? 'system' : m.sender_role === 'driver' ? 'support' : 'user';
+                  return (
+                    <div key={m.id} className={`ops-msg ops-msg--${kind}`}>
+                      <div className="ops-msg__meta">
+                        <span>{kind === 'system' ? 'System' : m.sender_role}</span>
+                        <time dateTime={m.created_at ?? undefined}>{stamp(m.created_at, tz)}</time>
+                      </div>
+                      <p className="ops-msg__body">{m.body}</p>
+                    </div>
+                  );
+                })}
               </div>
-              {r.comments && <div className="text-white/80 mt-1">{r.comments}</div>}
-              <div className="text-xs text-white/40 mt-1">{fmt(r.created_at)}</div>
-            </div>
-          ))}
+            )}
+          </Panel>
         </div>
-      )}
 
-      {/* Receipts */}
-      {data.receipts.length > 0 && (
-        <div className="card">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-white/70 mb-3">Receipts</h2>
-          <table className="w-full text-sm">
-            <thead className="text-left text-white/60">
-              <tr><th className="pb-2">#</th><th className="pb-2">Version</th><th className="pb-2">Total</th><th className="pb-2">GST</th><th className="pb-2">Sent to</th><th className="pb-2">Last sent</th><th className="pb-2">PDF</th></tr>
-            </thead>
-            <tbody>
-              {data.receipts.map((r) => (
-                <tr key={r.id} className="table-row">
-                  <td className="py-2 font-mono text-xs">{r.receipt_number}</td>
-                  <td className="py-2">v{r.version}</td>
-                  <td className="py-2">Rs {r.total_fare}</td>
-                  <td className="py-2">Rs {r.gst_amount}</td>
-                  <td className="py-2">{r.sent_to_email || '—'}</td>
-                  <td className="py-2">{fmt(r.last_sent_at)}</td>
-                  <td className="py-2">{r.pdf_url ? <a className="text-gold-text" href={r.pdf_url} target="_blank">Open</a> : '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Driver cancellations */}
-      {data.driver_cancellations.length > 0 && (
-        <div className="card">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-white/70 mb-3">Driver cancellations</h2>
-          {data.driver_cancellations.map((c) => (
-            <div key={c.id} className="text-sm border-b border-white/5 py-2 last:border-0">
-              <div className="text-white/60">{c.reason}</div>
-              {c.note && <div className="text-white/80 mt-1">{c.note}</div>}
-              <div className="text-xs text-white/40 mt-1">{fmt(c.created_at)}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* SOS */}
-      {data.sos_events.length > 0 && (
-        <div className="card border border-red-500/40 bg-red-900/10">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-red-300 mb-3">SOS events</h2>
-          {data.sos_events.map((e) => (
-            <div key={e.id} className="text-sm border-b border-red-500/20 py-2 last:border-0">
-              <div className="flex justify-between">
-                <span>SOS #{e.id}</span>
-                <span className="tag border-red-500/40 text-red-300">{e.status ?? '—'}</span>
+        <div className="grid gap-4">
+          {hadSos && (
+            <section className="ops-panel ops-panel--alarm">
+              <div className="ops-panel__head"><h2>SOS on this trip</h2></div>
+              <div className="ops-panel__body">
+                <Facts>
+                  {data.sos_events.map((e) => (
+                    <Fact key={e.id} label={`SOS #${e.id}`}>
+                      <Pill tone={e.status === 'resolved' ? 'good' : e.status === 'open' ? 'bad' : 'wait'}>{words(e.status)}</Pill>
+                      <div className="help">raised {stamp(e.created_at, tz)}{e.acknowledged_at ? ` · acknowledged ${stamp(e.acknowledged_at, tz)}` : ''}{e.resolved_at ? ` · resolved ${stamp(e.resolved_at, tz)}` : ''}</div>
+                    </Fact>
+                  ))}
+                </Facts>
+                <div className="mt-3"><ButtonLink href="/sos" variant="secondary" size="sm">Open the SOS board</ButtonLink></div>
               </div>
-              <div className="text-xs text-white/60 mt-1">
-                created {fmt(e.created_at)} ·
-                ack {fmt(e.acknowledged_at)} ·
-                resolved {fmt(e.resolved_at)}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            </section>
+          )}
 
-      {/* Chat */}
-      <div className="card">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-white/70 mb-3">
-          Chat ({data.chat.total} messages)
-        </h2>
-        {data.chat.messages.length === 0 ? (
-          <p className="text-white/50 text-sm">No messages.</p>
-        ) : (
-          <div className="space-y-2">
-            {data.chat.messages.map((m) => (
-              <div key={m.id} className="text-sm">
-                {m.is_system || m.sender_role === 'system' ? (
-                  <div className="text-center italic text-white/40 text-xs">{m.body}</div>
-                ) : (
-                  <div className={m.sender_role === 'driver' ? 'text-emerald-300' : 'text-amber-200'}>
-                    <span className="text-xs text-white/40 mr-2 uppercase tracking-widest">{m.sender_role}</span>
-                    {m.body}
-                    <span className="text-xs text-white/30 ml-2">{fmt(m.created_at)}</span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+          <Panel title="Rider">
+            {data.rider ? (
+              <Facts>
+                <Fact label="Name">{data.rider.full_name ?? '—'}{data.rider.flagged_for_review ? <> <Pill tone="bad">Flagged</Pill></> : null}</Fact>
+                <Fact label="Phone">{data.rider.phone_number ?? '—'}</Fact>
+                <Fact label="Email">{data.rider.email ?? '—'}</Fact>
+                <Fact label="Rating">{data.rider.rating ?? '—'}{data.rider.rating_count ? ` (${data.rider.rating_count})` : ''}</Fact>
+              </Facts>
+            ) : <Empty title="No rider" />}
+          </Panel>
+
+          <Panel title="Driver">
+            {data.driver ? (
+              <Facts>
+                <Fact label="Name"><Link href={`/drivers/${data.driver.driver_id}`}>{data.driver.full_name ?? `Driver #${data.driver.driver_id}`}</Link></Fact>
+                <Fact label="Phone">{data.driver.phone_number ?? '—'}</Fact>
+                <Fact label="State">
+                  <Pill tone={data.driver.status === 'online' ? 'good' : 'neutral'}>{data.driver.status ?? '—'}</Pill>{' '}
+                  {data.driver.approved ? <Pill tone="good">Approved</Pill> : <Pill tone="wait">Unapproved</Pill>}
+                </Fact>
+                <Fact label="Rating">{data.driver.ratings} · {data.driver.total_trips} trips</Fact>
+                {data.driver.fatigue_lockout_until ? <Fact label="Rest until">{stamp(data.driver.fatigue_lockout_until, tz)}</Fact> : null}
+              </Facts>
+            ) : <Empty title="No driver assigned" />}
+          </Panel>
+
+          <Panel title="Vehicle">
+            {data.vehicle ? (
+              <Facts>
+                <Fact label="Registration">{data.vehicle.vehicle_number ?? '—'}</Fact>
+                <Fact label="Make">{[data.vehicle.brand, data.vehicle.model, data.vehicle.color].filter(Boolean).join(' · ') || '—'}</Fact>
+                <Fact label="Category">{data.vehicle.type ?? '—'}</Fact>
+                <Fact label="Insurance">{data.vehicle.insurance_expiry ?? '—'}</Fact>
+                <Fact label="Permit">{data.vehicle.permit_expiry ?? '—'}</Fact>
+                <Fact label="Fitness">{data.vehicle.fitness_expiry ?? '—'}</Fact>
+                <Fact label="PUC">{data.vehicle.puc_expiry ?? '—'}</Fact>
+              </Facts>
+            ) : <Empty title="No vehicle recorded" />}
+          </Panel>
+
+          {data.ratings.length > 0 && (
+            <Panel title="Ratings">
+              <Facts>
+                {data.ratings.map((r) => (
+                  <Fact key={r.id} label={words(r.direction)}>
+                    <span aria-label={`${r.score} out of 5`}>{'★'.repeat(r.score)}{'☆'.repeat(Math.max(0, 5 - r.score))}</span>
+                    {r.comments ? <div className="help">{r.comments}</div> : null}
+                  </Fact>
+                ))}
+              </Facts>
+            </Panel>
+          )}
+
+          {data.driver_cancellations.length > 0 && (
+            <Panel title="Driver cancellations">
+              <Facts>
+                {data.driver_cancellations.map((c) => (
+                  <Fact key={c.id} label={stamp(c.created_at, tz)}>
+                    {words(c.reason)}{c.note ? <div className="help">{c.note}</div> : null}
+                  </Fact>
+                ))}
+              </Facts>
+            </Panel>
+          )}
+        </div>
       </div>
-    </div>
+
+      <Drawer
+        open={refundOpen}
+        title={`Refund trip #${data.id}`}
+        onClose={() => setRefundOpen(false)}
+        footer={
+          <>
+            <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={busy} onClick={() => setRefundOpen(false)}>Cancel</button>
+            <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" disabled={busy || !refund} onClick={() => void doRefund()}>
+              {busy ? 'Working…' : refund === 'original' ? 'Refund to original method' : refund === 'credit' ? 'Issue credits' : 'Choose how'}
+            </button>
+          </>
+        }
+      >
+        <div className="grid gap-4">
+          <Facts>
+            <Fact label="Rider">{riderName}</Fact>
+            <Fact label="Charged"><b>{money(charged ? data.fare.final_fare : data.fare.estimated_fare)}</b></Fact>
+            <Fact label="Paid by">{data.fare.payment_method ? data.fare.payment_method.toUpperCase() : '—'}</Fact>
+          </Facts>
+          <div className="ops-filterset">
+            <fieldset>
+              <legend>How</legend>
+              <label>
+                <input type="radio" name="refund" value="original" checked={refund === 'original'} onChange={() => setRefund('original')} />
+                <span>Back to the original payment method <span className="muted">· settles in 5–7 days</span></span>
+              </label>
+              <label>
+                <input type="radio" name="refund" value="credit" checked={refund === 'credit'} onChange={() => setRefund('credit')} />
+                <span>As SaaradhiGo credits <span className="muted">· instant, subject to the balance cap</span></span>
+              </label>
+            </fieldset>
+          </div>
+          {refund && (
+            <div className="ops-confirm">
+              <b>{refund === 'original' ? `Refund ${money(charged ? data.fare.final_fare : data.fare.estimated_fare)} to ${riderName}'s original method` : `Issue ${money(charged ? data.fare.final_fare : data.fare.estimated_fare)} in credits to ${riderName}`}</b>
+              <span>The server decides the exact amount from what was actually captured, and refuses a second refund. Its answer is shown here.</span>
+            </div>
+          )}
+        </div>
+      </Drawer>
+    </>
   );
 }
