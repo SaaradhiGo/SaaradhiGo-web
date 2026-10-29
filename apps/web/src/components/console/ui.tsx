@@ -307,7 +307,12 @@ export function Table({
  * ONLY when the server supplies one -- a tile must not invent a trend.
  * Given `href`, the whole tile is the quick link into the filtered list.
  */
-export type Delta = { pct: number | null; label?: string } | null | undefined;
+export type Delta = {
+  pct: number | null;
+  label?: string;
+  /** Replaces the default "NN%" magnitude, for a delta in another unit ("5.0 pp"). */
+  text?: string;
+} | null | undefined;
 
 export function MetricTile({
   label,
@@ -340,7 +345,7 @@ export function MetricTile({
             : delta.pct < 0 ? 'ops-tile__delta--down' : 'ops-tile__delta--flat'}`}
         >
           {delta.pct > 0 ? '▲' : delta.pct < 0 ? '▼' : '■'}
-          {' '}{Math.abs(delta.pct).toFixed(0)}%
+          {' '}{delta.text ?? `${Math.abs(delta.pct).toFixed(0)}%`}
           <span> {delta.label ?? 'vs same day last week'}</span>
         </span>
       ) : note ? (
@@ -368,7 +373,7 @@ export function Skeleton({
   count = 1,
   width,
 }: {
-  kind?: 'text' | 'tile' | 'row' | 'block';
+  kind?: 'text' | 'tile' | 'row' | 'block' | 'queue';
   count?: number;
   width?: string;
 }) {
