@@ -8,6 +8,7 @@ import { currentScope, getCachedAccess } from '@/lib/adminScope';
 import { stamp, timeZoneFor, zoneAbbreviation } from '@/lib/consoleTime';
 import { currencySymbol } from '@/lib/money';
 import { ButtonLink } from '@/components/sg/Button';
+import { Revealable } from '@/components/console/Revealable';
 import {
   Column,
   DataTable,
@@ -188,6 +189,9 @@ export default function TripDetailPage() {
   const state = data.status ?? 'unknown';
   const riderName = data.rider?.full_name?.trim() || data.rider?.phone_number || 'the rider';
   const hadSos = data.sos_events.length > 0;
+  // Every reveal on this page is about this one trip. Masked values are
+  // what the server sent; nothing revealed outlives the page.
+  const tripTarget = { type: 'trip', id: data.id } as const;
   const mapHref = (lat: string | null, lng: string | null) =>
     lat && lng ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}` : null;
 
@@ -263,12 +267,14 @@ export default function TripDetailPage() {
         <div className="grid gap-4">
           <Panel title="Route">
             <Facts>
+              {/* The server cuts both addresses to locality, city and state
+                  for everyone; the exact door is one logged reveal away. */}
               <Fact label="Pickup">
-                {data.pickup.address ?? '—'}
+                <Revealable value={data.pickup.address ?? '—'} label="exact pickup address" target={tripTarget} field="pickup_address" />
                 {mapHref(data.pickup.lat, data.pickup.lng) ? <> · <a className="sg-link" target="_blank" rel="noreferrer" href={mapHref(data.pickup.lat, data.pickup.lng)!}>map</a></> : null}
               </Fact>
               <Fact label="Drop">
-                {data.destination.address ?? '—'}
+                <Revealable value={data.destination.address ?? '—'} label="exact drop address" target={tripTarget} field="destination_address" />
                 {mapHref(data.destination.lat, data.destination.lng) ? <> · <a className="sg-link" target="_blank" rel="noreferrer" href={mapHref(data.destination.lat, data.destination.lng)!}>map</a></> : null}
               </Fact>
             </Facts>
@@ -354,8 +360,8 @@ export default function TripDetailPage() {
             {data.rider ? (
               <Facts>
                 <Fact label="Name">{data.rider.full_name ?? '—'}{data.rider.flagged_for_review ? <> <Pill tone="bad">Flagged</Pill></> : null}</Fact>
-                <Fact label="Phone">{data.rider.phone_number ?? '—'}</Fact>
-                <Fact label="Email">{data.rider.email ?? '—'}</Fact>
+                <Fact label="Phone"><Revealable value={data.rider.phone_number ?? '—'} label="rider phone" target={tripTarget} field="rider_phone" /></Fact>
+                <Fact label="Email"><Revealable value={data.rider.email ?? '—'} label="rider email" target={tripTarget} field="rider_email" /></Fact>
                 <Fact label="Rating">{data.rider.rating ?? '—'}{data.rider.rating_count ? ` (${data.rider.rating_count})` : ''}</Fact>
               </Facts>
             ) : <Empty title="No rider" />}
@@ -365,7 +371,7 @@ export default function TripDetailPage() {
             {data.driver ? (
               <Facts>
                 <Fact label="Name"><Link href={`/drivers/${data.driver.driver_id}`}>{data.driver.full_name ?? `Driver #${data.driver.driver_id}`}</Link></Fact>
-                <Fact label="Phone">{data.driver.phone_number ?? '—'}</Fact>
+                <Fact label="Phone"><Revealable value={data.driver.phone_number ?? '—'} label="driver phone" target={tripTarget} field="driver_phone" /></Fact>
                 <Fact label="State">
                   <Pill tone={data.driver.status === 'online' ? 'good' : 'neutral'}>{data.driver.status ?? '—'}</Pill>{' '}
                   {data.driver.approved ? <Pill tone="good">Approved</Pill> : <Pill tone="wait">Unapproved</Pill>}

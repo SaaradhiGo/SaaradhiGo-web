@@ -10,6 +10,7 @@ import {
   ReviewDocument,
 } from '@/components/console/DriverReview';
 import { ButtonLink } from '@/components/sg/Button';
+import { Revealable } from '@/components/console/Revealable';
 import { currentScope, getCachedAccess } from '@/lib/adminScope';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
@@ -191,10 +192,32 @@ export default function DriverDetailPage() {
   const vehicle = data.vehicles.find((v) => v.is_active_vehicle) ?? data.vehicles[0] ?? null;
   const compliance = data.compliance;
 
-  const driverDocs: ReviewDocument[] = (compliance?.driver_documents ?? []).map((d) => ({
-    ...d,
-    url: d.key === 'license_back' ? data.license_doc_back_url : data.license_doc_url,
-  }));
+  // Every reveal on this page is about this one driver.
+  const driverTarget = { type: 'driver', id: data.id } as const;
+  const openDoc = (url: unknown) => (typeof url === 'string' && url
+    ? <a className="ops-doc__open" href={url} target="_blank" rel="noopener noreferrer">Open</a>
+    : <span className="ops-doc__missing">No link</span>);
+
+  const driverDocs: ReviewDocument[] = (compliance?.driver_documents ?? []).map((d) => {
+    const back = d.key === 'license_back';
+    const field = back ? 'license_doc_back_url' : 'license_doc_url';
+    return {
+      ...d,
+      url: back ? data.license_doc_back_url : data.license_doc_url,
+      // The server withholds the link from roles without `pii.view`; a
+      // holder whose response still carried none can ask for it, logged.
+      withheld: (
+        <Revealable
+          value={null}
+          label={back ? 'licence (back) link' : 'licence link'}
+          target={driverTarget}
+          field={field}
+          render={openDoc}
+          compact
+        />
+      ),
+    };
+  });
 
   const vehicleDocs: ReviewDocument[] = (compliance?.vehicle_documents ?? []).map((d) => ({
     ...d,
@@ -209,8 +232,8 @@ export default function DriverDetailPage() {
         title={name}
         subtitle={
           <>
-            Driver #{data.id} · {data.user.phone_number}
-            {data.user.email ? ` · ${data.user.email}` : ''}
+            Driver #{data.id} · <Revealable value={data.user.phone_number ?? '—'} label="driver phone" target={driverTarget} field="phone_number" compact />
+            {data.user.email ? <> · <Revealable value={data.user.email} label="driver email" target={driverTarget} field="email" compact /></> : null}
             {compliance?.country ? ` · reviewed against ${compliance.country}` : ''}
           </>
         }
@@ -331,7 +354,11 @@ export default function DriverDetailPage() {
               <Fact label="Today">{data.earnings.today}</Fact>
               <Fact label="This month">{data.earnings.this_month}</Fact>
               <Fact label="Lifetime">{data.earnings.lifetime}</Fact>
-              <Fact label="UPI">{data.upi_id || 'Not set'}</Fact>
+              <Fact label="UPI">
+                {data.upi_id
+                  ? <Revealable value={data.upi_id} label="UPI handle" target={driverTarget} field="upi_id" />
+                  : 'Not set'}
+              </Fact>
             </Facts>
             {data.earnings.currency ? (
               <p className="help">Amounts in {data.earnings.currency}.</p>

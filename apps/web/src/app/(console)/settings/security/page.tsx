@@ -8,7 +8,8 @@ import {
   ErrorState, PageHeader, Panel, Pill, Skeleton,
 } from '@/components/console/ui';
 import { RecoveryCodesScreen } from '@/components/console/RecoveryCodes';
-import { Alert, KeyRound } from '@/components/console/icons';
+import { Alert, Eye, KeyRound } from '@/components/console/icons';
+import { REVEAL_LIMIT_PER_MINUTE, useRevealStats } from '@/lib/reveal';
 
 /**
  * The operator's own second factor.
@@ -107,6 +108,9 @@ export default function SecurityPage() {
 
   const remaining = status?.recovery_codes_remaining ?? 0;
   const low = Boolean(status?.recovery_codes_low);
+  // In memory for this page load only: the count is a reminder, not a
+  // record. The record is the audit log, written server-side per reveal.
+  const reveals = useRevealStats();
 
   return (
     <>
@@ -240,6 +244,28 @@ export default function SecurityPage() {
             )}
           </Panel>
         ) : null}
+
+        <Panel title="Personal data reveals">
+          <dl className="ops-facts">
+            <div className="ops-fact">
+              <dt>Reveals this session</dt>
+              <dd>
+                <span className="ops-num ops-fact__num" data-testid="reveals-session">{reveals.session}</span>
+                {reveals.inWindow !== null ? (
+                  <span className="muted" data-testid="reveals-window">
+                    {reveals.inWindow} of {REVEAL_LIMIT_PER_MINUTE} in the last minute, as of your last reveal
+                  </span>
+                ) : null}
+              </dd>
+            </div>
+          </dl>
+          <p className="ops-fact__note">
+            <Eye /> Personal data is masked in every list and record for every
+            role. Each value you reveal is logged with your name, the record
+            and the fields; it stays on screen only until you leave the page
+            or mask it again, and the limit is {REVEAL_LIMIT_PER_MINUTE} reveals a minute.
+          </p>
+        </Panel>
       </div>
     </>
   );

@@ -6,6 +6,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { currentScope, getCachedAccess } from '@/lib/adminScope';
 import { clock, stamp, timeZoneFor } from '@/lib/consoleTime';
+import { Revealable } from '@/components/console/Revealable';
 import {
   Drawer,
   Empty,
@@ -72,6 +73,14 @@ const FILTERS = [
 
 const minutesSince = (iso: string) => Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
 const words = (s: string) => s.replace(/_/g, ' ');
+
+/** The one reason the SOS door refuses: nobody is left to reach. */
+const SOS_CLOSED_REASON = 'Contact can be revealed only while the incident is open or acknowledged.';
+
+/** A revealed number is for dialling. */
+const telLink = (v: unknown) => (typeof v === 'string' && v
+  ? <a href={`tel:${v}`} className="ops-sos__phone">{v}</a>
+  : <span className="muted">Not on file</span>);
 
 function SosInner() {
   const router = useRouter();
@@ -204,7 +213,18 @@ function SosInner() {
                   <div className="ops-sos__who">
                     <span className="ops-sos__label">Raised by {ev.initiated_by}</span>
                     <b>{ev.user_label || '—'}</b>
-                    {ev.user_phone ? <a href={`tel:${ev.user_phone}`} className="ops-sos__phone">{ev.user_phone}</a> : null}
+                    {/* The number is masked for everyone, Super Admin
+                        included. The real one comes through the SOS
+                        reveal, logged, and only while the incident is
+                        live: a closed incident has nobody left to call. */}
+                    <Revealable
+                      value={<span className="ops-sos__phone">{ev.user_phone || '—'}</span>}
+                      label={`caller phone for SOS #${ev.id}`}
+                      target={{ type: 'sos_event', id: ev.id }}
+                      field="phone_number"
+                      render={telLink}
+                      disabledReason={live ? undefined : SOS_CLOSED_REASON}
+                    />
                   </div>
                   <div className="ops-sos__facts">
                     <span>{ev.trip_id ? <Link href={`/trips/${ev.trip_id}`}>Trip #{ev.trip_id}</Link> : 'No trip attached'}</span>

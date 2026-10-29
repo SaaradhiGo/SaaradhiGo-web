@@ -7,6 +7,7 @@ import { ApiError, api } from '@/lib/api';
 import { currentScope, getCachedAccess, withScope } from '@/lib/adminScope';
 import { useDensity } from '@/lib/consolePrefs';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
+import { Revealable } from '@/components/console/Revealable';
 import {
   Column,
   DataTable,
@@ -296,8 +297,16 @@ function WithdrawalsInner() {
           <div className="grid gap-4">
             <Facts>
               <Fact label="Driver"><Link href={`/drivers/${selected.driver}`}>{payee(selected)}</Link></Fact>
-              <Fact label="Phone">{selected.driver_phone || '—'}</Fact>
-              <Fact label="Pays to">{selected.driver_upi_id || 'No UPI on file'}</Fact>
+              {/* The list stays masked; the record is where a reveal is
+                  offered, one payout at a time. */}
+              <Fact label="Phone">
+                <Revealable value={selected.driver_phone || '—'} label="driver phone" target={{ type: 'withdrawal', id: selected.id }} field="driver_phone" />
+              </Fact>
+              <Fact label="Pays to">
+                {selected.driver_upi_id
+                  ? <Revealable value={selected.driver_upi_id} label="UPI handle" target={{ type: 'withdrawal', id: selected.id }} field="upi_id" />
+                  : 'No UPI on file'}
+              </Fact>
               <Fact label="KYC">{selected.driver_kyc_approved ? <Pill tone="good">Approved</Pill> : <Pill tone="bad">Not approved</Pill>}</Fact>
               <Fact label="Amount"><b>{money(selected)}</b></Fact>
               <Fact label="Status"><Pill tone={TONE[selected.status] ?? 'neutral'}>{selected.status}</Pill></Fact>

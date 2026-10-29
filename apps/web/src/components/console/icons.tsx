@@ -333,3 +333,25 @@ export function Download({ className }: Props) {
     </svg>
   );
 }
+
+/** Reveal a masked value: an eye. Paired with a label, never alone. */
+export function Eye({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="2.8" />
+    </svg>
+  );
+}
+
+/** Mask it again: the same eye, struck through. */
+export function EyeOff({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M4 4l16 16" />
+      <path d="M10.6 6.1A10 10 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a16.3 16.3 0 0 1-3.2 3.9" />
+      <path d="M6.6 7.6A15 15 0 0 0 2.5 12S6 18.5 12 18.5a9.4 9.4 0 0 0 4-.9" />
+      <path d="M9.9 9.9a2.8 2.8 0 0 0 4 4" />
+    </svg>
+  );
+}
