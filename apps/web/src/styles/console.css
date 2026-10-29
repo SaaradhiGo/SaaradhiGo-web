@@ -249,6 +249,78 @@
 }
 .ops__search input:focus ~ kbd { display: none; }
 
+/* The results under the box. One listbox, four groups, the active row
+   lit the way the profile menu lights its hover, so the two popovers in
+   the same bar read as one family. */
+.ops-search-pop {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px);
+  min-width: min(520px, 92vw);
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--ops-bg-100);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--ops-lift);
+  z-index: 30;
+}
+.ops-search-list { display: grid; gap: 4px; }
+.ops-search-group { display: grid; gap: 1px; }
+.ops-search-group + .ops-search-group { border-top: 1px solid var(--line); padding-top: 6px; margin-top: 2px; }
+.ops-search-group__label {
+  padding: 6px 10px 4px;
+  font: 700 10.5px/1 var(--font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ops-ink-5);
+}
+.ops-search-opt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "title meta" "detail detail";
+  column-gap: 12px; row-gap: 2px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.ops-search-opt--active { background: var(--ops-wash-strong); }
+/* The lit row's wash is lighter than the panel, and ink-4 on it falls to
+   4.1:1 in the dark theme (Lighthouse, 2026-10-28). One step up keeps the
+   secondary lines readable on the row the keyboard is on. */
+.ops-search-opt--active .ops-search-opt__meta,
+.ops-search-opt--active .ops-search-opt__detail { color: var(--ops-ink-3); }
+.ops-search-opt--inert { cursor: default; }
+.ops-search-opt--inert .ops-search-opt__title { color: var(--ops-ink-4); }
+.ops-search-opt__title { grid-area: title; font: 600 13px/1.3 var(--font-sans); overflow-wrap: anywhere; }
+.ops-search-opt__meta { grid-area: meta; font: 500 11.5px/1.3 var(--font-sans); color: var(--ops-ink-4); white-space: nowrap; }
+.ops-search-opt__detail { grid-area: detail; font: 500 12px/1.35 var(--font-sans); color: var(--ops-ink-4); overflow-wrap: anywhere; }
+.ops-search-msg {
+  margin: 0; padding: 12px 10px;
+  font: 500 13px/1.45 var(--font-sans);
+  color: var(--ink);
+}
+.ops-search-msg--quiet { color: var(--ops-ink-4); }
+.ops-search-msg--error { color: var(--danger); padding-top: 6px; padding-bottom: 6px; }
+.ops-search-msg__hint { display: block; margin-top: 4px; font-size: 12px; color: var(--ops-ink-4); }
+.ops-search-foot {
+  display: flex; gap: 14px; align-items: center;
+  margin-top: 4px; padding: 8px 10px 4px;
+  border-top: 1px solid var(--line);
+  font: 500 11px/1 var(--font-sans);
+  color: var(--ops-ink-5);
+}
+.ops-search-foot kbd {
+  position: static;
+  margin-right: 4px;
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font: 600 10px/1.5 var(--font-sans);
+  color: var(--ops-ink-5);
+}
+.ops-search-foot__busy { margin-left: auto; color: var(--gold-text); }
+
 /* Environment. Production is the only filled one. */
 .ops-env {
   display: inline-flex; align-items: center; gap: 6px;
@@ -765,6 +837,7 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .ops-skel--row { height: 40px; border-radius: 0; margin: 0 18px; }
 .ops-skel--row + .ops-skel--row { margin-top: 1px; }
 .ops-skel--block { height: 160px; border-radius: var(--ops-radius); }
+.ops-skel--queue { height: 78px; border-radius: var(--ops-radius); }
 .ops-skel-rows { padding: 8px 0; display: grid; gap: 8px; }
 
 /* --- drawer --------------------------------------------------------------- */
@@ -1202,6 +1275,64 @@ a.ops-alert:hover { background: var(--ops-wash); }
   .login__hero p { font-size: 14px; }
   .login__caps { display: none; }
   .login__panel { padding: 28px 16px 40px; }
+}
+
+/* ===========================================================================
+   Command Centre (module 1): the city / window bar, a board per city, and
+   the alerts list. Layout only; every colour is a token.
+   =========================================================================== */
+.ops-cc-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.ops-cc-bar__city { display: flex; align-items: center; gap: 10px; }
+.ops-cc-bar__label {
+  font: 700 10px/1.3 var(--font-sans); letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ops-ink-5);
+}
+.ops-cc-bar__static { display: inline-flex; align-items: baseline; gap: 8px; }
+.ops-cc-bar__static b { font: 800 15px/1.2 var(--font-sans); color: var(--ink); }
+.ops-cc-bar__static small { font: 600 11px/1.2 var(--font-sans); color: var(--ops-ink-5); text-transform: capitalize; }
+
+.ops-cc-boards { display: grid; gap: 22px; margin-bottom: 16px; }
+.ops-cc-city { display: grid; gap: 12px; }
+.ops-cc-city__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ops-cc-city__head h2 {
+  margin: 0; display: inline-flex; align-items: center; gap: 10px;
+  font: 800 17px/1.2 var(--font-sans); letter-spacing: -0.01em; color: var(--ink);
+}
+.ops-cc-city__head--single h2 { font-size: 14px; color: var(--ops-ink-3); }
+.ops-cc-city__head p { margin: 0; font: 500 12px/1.4 var(--font-sans); color: var(--ops-ink-4); }
+.ops-cc-city .ops-tiles { margin-bottom: 4px; }
+.ops-cc-city .ops-subhead { margin-top: 6px; }
+
+.ops-band--alerts { grid-template-columns: minmax(0, 1fr); }
+
+.ops-cc-note {
+  margin: 0 0 16px; padding: 10px 14px;
+  border: 1px dashed var(--line); border-radius: var(--ops-radius);
+  font: 500 12.5px/1.5 var(--font-sans); color: var(--ops-ink-4);
+}
+.ops-cc-note .sg-link { font-size: inherit; background: none; border-top: 0; border-left: 0; border-right: 0; cursor: pointer; }
+
+.ops-cc-alerts { list-style: none; margin: 0; padding: 0; display: grid; }
+.ops-cc-alert {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.ops-cc-alert:last-child { border-bottom: 0; }
+.ops-cc-alert--critical { background: var(--ops-danger-wash); }
+.ops-cc-alert--warning { box-shadow: inset 3px 0 0 var(--gold-500); }
+.ops-cc-alert__text { display: grid; gap: 2px; min-width: 0; }
+.ops-cc-alert__text b { font: 700 13.5px/1.3 var(--font-sans); color: var(--ink); }
+.ops-cc-alert__text span { font: 500 12px/1.45 var(--font-sans); color: var(--ops-ink-4); }
+.ops-cc-alert__who { font: 600 11px/1.3 var(--font-sans); color: var(--ops-ink-5); white-space: nowrap; }
+.ops-cc-alert__fail { padding: 10px 18px; font: 600 12.5px/1.4 var(--font-sans); color: var(--danger); border-bottom: 1px solid var(--line); }
+
+@media (max-width: 720px) {
+  .ops-cc-alert { grid-template-columns: auto minmax(0, 1fr); }
+  .ops-cc-alert > .sg-btn, .ops-cc-alert__who { grid-column: 2; justify-self: start; }
 }
 
 /* ===========================================================================
