@@ -181,6 +181,20 @@ describe('ready', () => {
     expect(screen.queryByRole('combobox')).toBeNull();
     expect(screen.getByText('Hyderabad', { selector: 'b' })).toBeTruthy();
   });
+
+  it('counts only the queues the caller is shown', async () => {
+    server({ overview: () => overviewOf([HYD]), alerts: () => alertsOf([]) });
+    render(<CommandCentre access={cityOps} />);
+    expect(await screen.findByText(/3 items waiting on you/)).toBeTruthy();
+  });
+
+  it('tells a reports-only caller no queue is theirs, and counts none', async () => {
+    const reportsOnly: AdminAccess = { ...cityOps, permissions: ['report.read'] };
+    server({ overview: () => overviewOf([HYD]), alerts: () => alertsOf([]) });
+    render(<CommandCentre access={reportsOnly} />);
+    expect(await screen.findByText(/0 items waiting on you/)).toBeTruthy();
+    expect(screen.getByText('No work queues are part of your access.')).toBeTruthy();
+  });
 });
 
 describe('empty', () => {

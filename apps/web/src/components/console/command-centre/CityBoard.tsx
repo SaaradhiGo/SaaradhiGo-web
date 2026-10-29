@@ -54,6 +54,9 @@ function countTile(
   );
 }
 
+/** The capabilities behind the four "Waiting on you" queues below. */
+const QUEUE_CAPABILITIES = ['safety.respond', 'finance.read', 'support.read', 'driver.read'];
+
 export function CityBoard({
   row,
   access,
@@ -161,6 +164,9 @@ export function CityBoard({
       </TileGrid>
 
       <h3 className="ops-subhead">Waiting on you</h3>
+      {!QUEUE_CAPABILITIES.some((c) => can(access, c)) && (
+        <p className="ops-cc-note" role="note">No work queues are part of your access.</p>
+      )}
       <div className="ops-queues">
         {can(access, 'safety.respond') && (
           <Queue
