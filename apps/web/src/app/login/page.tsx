@@ -8,7 +8,9 @@ import {
   ApiError,
   adminLoginWithPassword,
   readToken,
+  writeRecoveryLow,
 } from '@/lib/api';
+import { RecoveryCodesScreen } from '@/components/console/RecoveryCodes';
 import { LOGIN_LOCK_AFTER, LOGIN_LOCK_MINUTES } from '@/lib/consoleEnv';
 import { useTheme } from '@/lib/consolePrefs';
 import { Logo } from '@/components/sg/Logo';
@@ -59,9 +61,17 @@ type Step =
   | 'recovery'     // a recovery code instead of the six digits
   | 'reason'       // break-glass: why
   | 'password'     // forced password change
+  | 'codes'        // the recovery codes, shown once, after the token arrived
   | 'locked';      // too many attempts, from this browser
 
-const PREVIEWABLE: Step[] = ['totp', 'recovery', 'reason', 'password', 'locked'];
+const PREVIEWABLE: Step[] = ['totp', 'recovery', 'reason', 'password', 'codes', 'locked'];
+
+/**
+ * Stand-ins for the show-once screen in a PREVIEW build. Not codes: the
+ * real ones come from the server exactly once and never touch this file.
+ */
+const PREVIEW_CODES = ['aaaa2222', 'bbbb3333', 'cccc4444', 'dddd5555', 'eeee6666',
+  'ffff7777', 'gggg2222', 'hhhh3333', 'jjjj4444', 'kkkk5555'];
 const LOCK_KEY = 'saaradhi_login_lock_until';
 
 /**
@@ -114,7 +124,17 @@ function LoginInner() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
+  // The recovery code, kept apart from the six digits: whichever was last
+  // submitted is what later steps resend, and the field it goes out in
+  // says which it is.
+  const [recovery, setRecovery] = useState('');
   const [reason, setReason] = useState('');
+  // THE RECOVERY CODES, HERE AND NOWHERE ELSE. Set from the one response
+  // that carries them, cleared when the operator confirms they are saved.
+  // Not in storage, not in the URL: this state is the only copy.
+  const [issued, setIssued] = useState<{ codes: string[]; notice: string | null } | null>(
+    preview === 'codes' ? { codes: PREVIEW_CODES, notice: null } : null,
+  );
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
 
@@ -131,9 +151,13 @@ function LoginInner() {
   // An already-signed-in operator who lands here goes straight in. A
   // session that just ended has had its token cleared, so `expired` and a
   // token never coexist.
+  //
+  // Except while the recovery codes are on screen: the token arrived with
+  // them, and the console waits until the operator says they are saved.
   useEffect(() => {
+    if (step === 'codes') return;
     if (readToken()) router.replace(next);
-  }, [router, next]);
+  }, [router, next, step]);
 
   // The console's theme follows the operator into the sign-in page; the
   // <html> attribute has to match so the scrollbar and native controls do.
@@ -204,16 +228,25 @@ function LoginInner() {
    * `extra` overrides state for the field that was typed a moment ago and
    * has not been committed to state yet (the six digits auto-submit).
    */
-  async function attempt(extra: { mfaCode?: string; reason?: string; newPassword?: string } = {}) {
+  async function attempt(extra: {
+    mfaCode?: string; recoveryCode?: string; reason?: string; newPassword?: string;
+  } = {}) {
+    // One second factor goes out, never both: the one typed a moment ago
+    // wins, else whichever was committed last.
+    const typedRecovery = extra.recoveryCode !== undefined;
+    const typedTotp = extra.mfaCode !== undefined;
     const sent = {
-      mfaCode: extra.mfaCode ?? (code.trim() || undefined),
+      mfaCode: typedRecovery ? undefined
+        : (extra.mfaCode ?? ((!recovery && code.trim()) || undefined)),
+      recoveryCode: typedTotp ? undefined
+        : (extra.recoveryCode ?? (recovery.trim() || undefined)),
       reason: extra.reason ?? (reason.trim() || undefined),
       newPassword: extra.newPassword ?? (newPw || undefined),
     };
     setBusy(true);
     setError(null);
     try {
-      await adminLoginWithPassword(email, password, sent);
+      const data = await adminLoginWithPassword(email, password, sent);
       writeLockUntil(null);
       // Signed in: the password, its replacement and the code have done
       // their work and leave memory now.
@@ -221,6 +254,19 @@ function LoginInner() {
       setNewPw('');
       setConfirmPw('');
       setCode('');
+      setRecovery('');
+      // A recovery code was spent and few are left: noted for the console
+      // to say on its first page, because this page is about to leave.
+      if (data.recovery_codes_low && typeof data.recovery_codes_remaining === 'number') {
+        writeRecoveryLow(data.recovery_codes_remaining);
+      }
+      if (Array.isArray(data.recovery_codes) && data.recovery_codes.length > 0) {
+        // The one response that carries them. The console waits until the
+        // operator has confirmed the codes are saved.
+        setIssued({ codes: data.recovery_codes, notice: data.recovery_codes_notice ?? null });
+        setStep('codes');
+        return;
+      }
       router.replace(next);
     } catch (err) {
       const errCode = err instanceof ApiError ? err.code : '';
@@ -230,6 +276,7 @@ function LoginInner() {
         // now being asked for.
         setStep('totp');
         setCode('');
+        setRecovery('');
       } else if (errCode === 'AUTH_BREAK_GLASS_REASON_REQUIRED') {
         setStep('reason');
       } else if (errCode === 'AUTH_PASSWORD_CHANGE_REQUIRED') {
@@ -252,12 +299,22 @@ function LoginInner() {
         setStep('totp');
         setCode('');
         refused('That code has expired. Enter the current one to finish signing in.');
+      } else if (step === 'password' && status === 401 && sent.recoveryCode) {
+        // Same, for a recovery code: it was consumed by the request that
+        // asked for the new password, so it cannot be sent again. Another
+        // one is needed; the chosen password is kept.
+        setStep('recovery');
+        setRecovery('');
+        refused('That recovery code has been used. Enter a different one to finish signing in.');
       } else if (errCode === 'AUTH_INVALID_CREDENTIALS' || status === 401) {
         if (step === 'password') setStep('credentials');
-        refused(step === 'totp' || step === 'recovery'
+        refused(step === 'totp'
           ? 'That code did not work. Codes change every 30 seconds — enter the current one.'
-          : 'That email and password did not match. Check both and try again.');
+          : step === 'recovery'
+            ? 'That recovery code did not work. Each code works once; check it and try another if needed.'
+            : 'That email and password did not match. Check both and try again.');
         setCode('');
+        setRecovery('');
       } else {
         setError(serverText(err) ?? 'We could not sign you in. Try again in a moment.');
       }
@@ -270,6 +327,7 @@ function LoginInner() {
   function startOver() {
     setStep('credentials');
     setCode('');
+    setRecovery('');
     setReason('');
     setNewPw('');
     setConfirmPw('');
@@ -291,12 +349,27 @@ function LoginInner() {
 
   function onCode(e: React.FormEvent) {
     e.preventDefault();
+    if (step === 'recovery') {
+      const value = recovery.trim();
+      if (value.replace(/[\s-]/g, '').length < 8) {
+        setError('Enter the whole recovery code: eight letters and numbers.');
+        return;
+      }
+      void attempt({ recoveryCode: value, ...(reason ? { reason } : {}) });
+      return;
+    }
     const value = code.trim();
-    if (step === 'totp' ? value.length !== 6 : value.length < 4) {
-      setError(step === 'totp' ? 'Enter all six digits.' : 'Enter the whole recovery code.');
+    if (value.length !== 6) {
+      setError('Enter all six digits.');
       return;
     }
     void attempt({ mfaCode: value, ...(reason ? { reason } : {}) });
+  }
+
+  // The codes are saved; the only copy leaves memory and the console opens.
+  function onCodesSaved() {
+    setIssued(null);
+    router.replace(next);
   }
 
   function onReason(e: React.FormEvent) {
@@ -305,7 +378,10 @@ function LoginInner() {
       setError('Say a little more: at least 12 characters, and specific.');
       return;
     }
-    void attempt({ reason: reason.trim(), ...(code ? { mfaCode: code } : {}) });
+    void attempt({
+      reason: reason.trim(),
+      ...(recovery ? { recoveryCode: recovery } : code ? { mfaCode: code } : {}),
+    });
   }
 
   // The temporary password is not asked for again: it was typed a step
@@ -347,6 +423,7 @@ function LoginInner() {
     recovery: 'Use a recovery code',
     reason: 'Say why',
     password: 'Choose a new password',
+    codes: 'You are signed in',
     locked: 'Paused',
   }[step];
 
@@ -356,6 +433,7 @@ function LoginInner() {
     recovery: 'One of the codes you saved when you set up your authenticator. Each works once.',
     reason: 'This is the emergency account. A reason is required and every Super Admin is told.',
     password: 'The password you signed in with is temporary. Choose your own to finish signing in.',
+    codes: 'One more thing before the console: your recovery codes, shown this once.',
     locked: 'Too many attempts in a row.',
   }[step];
 
@@ -480,19 +558,22 @@ function LoginInner() {
                     ref={codeRef}
                     id="login-code"
                     name="recovery_code"
+                    className="login__recovery"
                     autoComplete="off"
+                    autoCapitalize="off"
                     spellCheck={false}
-                    placeholder="xxxx-xxxx-xxxx"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="xxxxxxxx"
+                    value={recovery}
+                    onChange={(e) => setRecovery(e.target.value)}
                     aria-invalid={error ? true : undefined}
+                    aria-describedby="login-code-hint"
                     required
                   />
                 )}
                 <p className="login__hint" id="login-code-hint">
                   {step === 'totp'
                     ? 'Paste works. The code is checked as soon as six digits are in.'
-                    : 'A used recovery code stops working; set up a fresh authenticator afterwards.'}
+                    : 'Eight letters and numbers, like k3q7m2x9. Paste works; spaces, dashes and capitals are ignored. Each code works once.'}
                 </p>
               </div>
               <button
@@ -506,10 +587,10 @@ function LoginInner() {
               <div className="login__links">
                 {step === 'totp' ? (
                   <button type="button" className="login__link" onClick={() => { setStep('recovery'); setCode(''); setError(null); }}>
-                    Use a recovery code
+                    Use a recovery code instead
                   </button>
                 ) : (
-                  <button type="button" className="login__link" onClick={() => { setStep('totp'); setCode(''); setError(null); }}>
+                  <button type="button" className="login__link" onClick={() => { setStep('totp'); setRecovery(''); setError(null); }}>
                     Use the authenticator instead
                   </button>
                 )}
@@ -604,6 +685,16 @@ function LoginInner() {
                 </button>
               </div>
             </form>
+          )}
+
+          {step === 'codes' && issued && (
+            <RecoveryCodesScreen
+              codes={issued.codes}
+              notice={issued.notice}
+              heading="Save your recovery codes"
+              confirmLabel="Continue to the console"
+              onDone={onCodesSaved}
+            />
           )}
 
           {step === 'locked' && (

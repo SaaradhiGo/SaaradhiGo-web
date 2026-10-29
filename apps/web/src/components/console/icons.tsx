@@ -313,3 +313,23 @@ export function LogOut({ className }: Props) {
     </svg>
   );
 }
+
+/** Copy to the clipboard: two sheets. */
+export function Copy({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M5 15V6a2 2 0 0 1 2-2h9" />
+    </svg>
+  );
+}
+
+/** Save a file: an arrow into a tray. */
+export function Download({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M12 4v11M7.5 10.5 12 15l4.5-4.5" />
+      <path d="M4.5 17.5V19a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-1.5" />
+    </svg>
+  );
+}
