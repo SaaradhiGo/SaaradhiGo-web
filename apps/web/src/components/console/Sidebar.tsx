@@ -10,11 +10,11 @@ export type NavItem = {
   label: string;
   Icon: ComponentType<{ className?: string }>;
   /**
-   * The permission that governs the page. Hides the link; the server
-   * refuses the page. Absent for a self-service page every operator may
-   * open (Security: their own second factor).
+   * The permission(s) that open the page: any one of them. Hides the link;
+   * the server refuses the page. Absent for a self-service page every
+   * operator may open (Security: their own second factor).
    */
-  need?: string;
+  need?: string | readonly string[];
   /** Which queue count sits beside it, if any. */
   countKey?: string;
   /** Red rather than gold when non-zero: things with a clock on them. */
@@ -45,18 +45,24 @@ export function Sidebar({
   collapsed,
   onToggle,
   isCurrent,
+  home = '/settings/security',
 }: {
   groups: NavGroup[];
   counts: Record<string, number | undefined>;
   collapsed: boolean;
   onToggle: () => void;
   isCurrent: (href: string) => boolean;
+  /**
+   * Where the brand mark goes: the first page this operator can open. Never
+   * a fixed page (the Command Centre is not open to every role).
+   */
+  home?: string;
 }) {
   return (
     <aside className="ops__side sg-on-noir" aria-label="Sidebar">
       {/* Named by its own text while that text is visible; only the
           collapsed rail, where the words are hidden, needs a label. */}
-      <Link href="/dashboard" className="ops__brand" aria-label={collapsed ? 'Saaradhi Go Admin, home' : undefined}>
+      <Link href={home} className="ops__brand" aria-label={collapsed ? 'Saaradhi Go Admin, home' : undefined}>
         <Logo variant="emblem" />
         <span className="ops__wordmark">
           Saaradhi Go

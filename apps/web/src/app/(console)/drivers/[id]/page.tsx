@@ -1,5 +1,6 @@
 'use client';
 
+import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
@@ -153,7 +154,7 @@ export default function DriverDetailPage() {
     : <span className="ops-doc__missing">No link</span>);
 
   const tripColumns: Column<Trip>[] = [
-    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <Link href={`/trips/${t.id}`}>#{t.id}</Link> },
+    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <PageLink page="trips" href={`/trips/${t.id}`}>#{t.id}</PageLink> },
     { key: 'status', label: 'Status', width: '8rem', render: (t) => <Pill tone={TRIP_TONE[t.status ?? ''] ?? 'neutral'}>{words(t.status)}</Pill> },
     { key: 'route', label: 'Pickup → drop', render: (t) => <span>{t.pickup_address || '—'} <span className="muted">→</span> {t.destination_address || '—'}</span> },
     { key: 'when', label: 'Requested', num: true, width: '10rem', render: (t) => cityTime(t.requested_at, tz) },
@@ -333,10 +334,10 @@ export default function DriverDetailPage() {
               <Fact label="Trips">{data.total_trips}</Fact>
               <Fact label="Cancellations">{data.cancellations.last_24h} in 24h · {data.cancellations.last_7d} in 7d · {data.cancellations.last_30d} in 30d</Fact>
               <Fact label="SOS">
-                <Link href="/safety-ops">{data.counts?.sos_total ?? 0} total, {data.counts?.sos_open ?? 0} open</Link>
+                <PageLink page="safety" href="/safety-ops">{data.counts?.sos_total ?? 0} total, {data.counts?.sos_open ?? 0} open</PageLink>
               </Fact>
               <Fact label="Tickets">
-                <Link href="/support">{data.counts?.tickets_total ?? 0} total, {data.counts?.tickets_open ?? 0} open</Link>
+                <PageLink page="support" href="/support">{data.counts?.tickets_total ?? 0} total, {data.counts?.tickets_open ?? 0} open</PageLink>
               </Fact>
               <Fact label="Licence expiry">{data.license_expiry ?? 'Not set'}{data.documents_expired ? ' · a document has expired' : ''}</Fact>
               <Fact label="Joined">{when(data.joined_at)}</Fact>

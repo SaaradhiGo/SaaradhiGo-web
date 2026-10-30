@@ -7,9 +7,10 @@ import { ApiError, api } from '@/lib/api';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   CATEGORY_LABEL, OUTCOME_LABEL, SOURCE_LABEL, STATUS_LABEL, ackState, ackText, elapsed,
-  emergencyLine, minutesBetween, type IncidentDetail, type SosEventRow, type Timer,
+  emergencyLabel, emergencyLine, minutesBetween, signalSummary, type IncidentDetail, type SosEventRow, type Timer,
 } from '@/lib/safety';
 import { Revealable } from '@/components/console/Revealable';
+import { PageLink } from '@/components/console/PageLink';
 import { SeverityPill } from '@/components/console/safety/SeverityPill';
 import {
   ACTION_TITLE, IncidentActionDrawer, type IncidentAction,
@@ -114,6 +115,8 @@ export default function IncidentPage() {
   const tz = timeZoneFor(data.anchor.node);
   const a = data.actions;
   const closed = data.status === 'closed';
+  // A caller who may only look (safety.read): no action, no reveal, no buttons.
+  const readOnly = data.read_only === true;
   const ack = ackState(data, timers, now);
 
   const buttons: Array<[IncidentAction, boolean]> = [
@@ -163,7 +166,7 @@ export default function IncidentPage() {
             <Fact label="Country">{data.country ?? 'Unknown'}</Fact>
             <Fact label="Assignee">{data.assignee ? data.assignee.label : <span className="muted">Unassigned</span>}</Fact>
             <Fact label="Opened">{stamp(data.opened_at, tz)} <span className="muted">· {elapsed(minutesBetween(data.opened_at, now))} ago</span></Fact>
-            <Fact label="Trip">{data.trip_id ? <Link href={`/trips/${data.trip_id}`}>#{data.trip_id}</Link> : 'None'}</Fact>
+            <Fact label="Trip">{data.trip_id ? <PageLink page="trips" href={`/trips/${data.trip_id}`}>#{data.trip_id}</PageLink> : 'None'}</Fact>
             {closed ? (
               <>
                 <Fact label="Closed">{stamp(data.closed_at, tz)}</Fact>
@@ -182,7 +185,7 @@ export default function IncidentPage() {
             <ul className="ops-emergency__list" aria-label={`Emergency numbers for ${data.emergency.country}`}>
               {data.emergency.numbers.map((n) => (
                 <li key={`${n.label}-${n.number}`}>
-                  <span>{words(n.label)}</span> <a href={`tel:${n.number}`} className="ops-sos__phone">{n.number}</a>
+                  <span>{emergencyLabel(n.label)}</span> <a href={`tel:${n.number}`} className="ops-sos__phone">{n.number}</a>
                 </li>
               ))}
             </ul>
@@ -222,11 +225,12 @@ export default function IncidentPage() {
                       field="phone_number"
                       render={TELL}
                       disabledReason={ev.active ? undefined : 'Contact can be revealed only while the SOS is open or acknowledged.'}
+                      noReveal={readOnly}
                     />
                   </div>
                   {ev.status === 'open' ? <span className={ack.kind === 'overdue' ? 'ops-late' : 'muted'}>{ackText(ack, data.country)}</span> : null}
                 </div>
-                {ev.active && (
+                {ev.active && !readOnly && (
                   <div className="ops-sos__actions">
                     {ev.status === 'open' && (
                       <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setSosAct({ id: ev.id, action: 'acknowledge' })}>Acknowledge</button>
@@ -247,21 +251,21 @@ export default function IncidentPage() {
             {data.people.drivers.map((d) => (
               <li key={`d${d.id}`}>
                 <span className="ops-linklist__kind">Driver</span>
-                {d.in_scope ? <Link href={`/drivers/${d.id}`}>{d.driver_name || `Driver #${d.id}`}</Link> : <span>{d.driver_name || `Driver #${d.id}`} <span className="muted">(outside your scope)</span></span>}
+                {d.in_scope ? <PageLink page="drivers" href={`/drivers/${d.id}`}>{d.driver_name || `Driver #${d.id}`}</PageLink> : <span>{d.driver_name || `Driver #${d.id}`} <span className="muted">(outside your scope)</span></span>}
                 {d.suspended ? <Pill tone="bad">Suspended</Pill> : null}
               </li>
             ))}
             {data.people.riders.map((r) => (
               <li key={`r${r.id}`}>
                 <span className="ops-linklist__kind">Rider</span>
-                {r.in_scope ? <Link href={`/riders/${r.id}`}>{r.rider_name || `Rider #${r.id}`}</Link> : <span>{r.rider_name || `Rider #${r.id}`} <span className="muted">(outside your scope)</span></span>}
+                {r.in_scope ? <PageLink page="riders" href={`/riders/${r.id}`}>{r.rider_name || `Rider #${r.id}`}</PageLink> : <span>{r.rider_name || `Rider #${r.id}`} <span className="muted">(outside your scope)</span></span>}
                 {r.blocked ? <Pill tone="bad">Blocked</Pill> : null}
               </li>
             ))}
             {data.people.trips.map((t) => (
               <li key={`t${t.id}`}>
                 <span className="ops-linklist__kind">Trip</span>
-                {t.in_scope ? <Link href={`/trips/${t.id}`}>Trip #{t.id}</Link> : <span>Trip #{t.id} <span className="muted">(outside your scope)</span></span>}
+                {t.in_scope ? <PageLink page="trips" href={`/trips/${t.id}`}>Trip #{t.id}</PageLink> : <span>Trip #{t.id} <span className="muted">(outside your scope)</span></span>}
                 {t.status ? <span className="muted">{words(t.status)}</span> : null}
                 {t.primary ? <Pill>Primary</Pill> : null}
               </li>
@@ -269,7 +273,7 @@ export default function IncidentPage() {
             {data.people.tickets.map((t) => (
               <li key={`k${t.id}`}>
                 <span className="ops-linklist__kind">Ticket</span>
-                {t.in_scope ? <Link href={`/support/${t.id}`}>Ticket #{t.id}</Link> : <span>Ticket #{t.id} <span className="muted">(outside your scope)</span></span>}
+                {t.in_scope ? <PageLink page="support" href={`/support/${t.id}`}>Ticket #{t.id}</PageLink> : <span>Ticket #{t.id} <span className="muted">(outside your scope)</span></span>}
                 <span className="muted">{words(t.issue_type)} · {words(t.status.toLowerCase())}</span>
               </li>
             ))}
@@ -281,15 +285,13 @@ export default function IncidentPage() {
 
         <Panel title={`Detected signals (${data.signals.length})`}>
           {data.signals.length === 0 ? (
-            <Empty title="No signals" detail="A long stop or an ETA overrun on this trip would appear here." />
+            <Empty title="No signals" detail="A long stop, an ETA overrun or a route deviation on this trip would appear here." />
           ) : (
             <ul className="ops-linklist">
               {data.signals.map((s) => (
                 <li key={s.id}>
                   <Pill tone="wait">{words(s.kind)}</Pill>
-                  <span>{s.kind === 'long_stop'
-                    ? `Stopped ${s.measured.stopped_minutes} min`
-                    : `${s.measured.over_minutes} min over the estimate`}</span>
+                  <span>{signalSummary(s)}</span>
                   {s.dismissed_at ? <span className="muted">dismissed: {s.dismiss_reason}</span> : null}
                 </li>
               ))}

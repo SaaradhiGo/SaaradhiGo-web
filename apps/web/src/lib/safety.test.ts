@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_SAFETY_FILTERS, ackState, ackText, activeSafetyFilterCount, configPatch, configValue,
-  elapsed, emergencyLine, incidentsApiPath, minutesBetween, parseConfigDraft,
+  elapsed, emergencyLabel, emergencyLine, filtersFor, incidentsApiPath, minutesBetween, parseConfigDraft,
   safetyFiltersFromSearch, safetyFiltersToQuery, signalSummary, signalsApiPath, tabCount,
   type IncidentRow, type Signal, type Timer,
 } from './safety';
@@ -140,7 +140,7 @@ describe('emergency numbers', () => {
   it('lists what the country has', () => {
     expect(emergencyLine({ country: 'IN', configured: true, numbers: [
       { label: 'unified', number: '112' }, { label: 'police', number: '100' },
-    ] })).toBe('unified 112 · police 100');
+    ] })).toBe('Emergency (all services) 112 · Police 100');
   });
 
   it('says "not configured" rather than showing anything else', () => {
@@ -184,5 +184,30 @@ describe('signal summaries', () => {
     expect(signalSummary(signal('long_stop', { stopped_minutes: 12.4, radius_m: 50 }))).toBe('Stopped 12.4 min within 50 m');
     expect(signalSummary(signal('eta_overrun', { over_minutes: 25, over_percent: 125, estimated_minutes: 20 })))
       .toBe('25 min (125%) over a 20 min estimate');
+  });
+});
+
+describe('emergency number labels', () => {
+  it('shows human text, never the raw key', () => {
+    expect(emergencyLabel('unified')).toBe('Emergency (all services)');
+    expect(emergencyLabel('police')).toBe('Police');
+    expect(emergencyLabel('women_helpline')).toBe('Women’s helpline');
+    // An unknown key is made readable, not shown raw.
+    expect(emergencyLabel('coast_guard')).toBe('Coast guard');
+    expect(emergencyLabel('')).toBe('Number');
+  });
+});
+
+describe('which filters apply to which tab', () => {
+  it('the Signals tab keeps only the filters that apply to signals', () => {
+    expect(filtersFor('signals')).toEqual(['country']);
+    expect(filtersFor('incidents')).toEqual(['q', 'severity', 'category', 'assigned', 'country']);
+    expect(filtersFor('closed')).toContain('severity');
+  });
+
+  it('hidden filters do not count as active on the Signals tab', () => {
+    const f = { ...DEFAULT_SAFETY_FILTERS, tab: 'signals' as const, severity: 'high', q: 'x', country: 'IN' };
+    expect(activeSafetyFilterCount(f)).toBe(1);
+    expect(activeSafetyFilterCount({ ...f, tab: 'incidents' })).toBe(3);
   });
 });

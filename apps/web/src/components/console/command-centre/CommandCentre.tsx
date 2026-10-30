@@ -5,7 +5,8 @@ import {
   CITY_KEY, WINDOW_KEY, Window, isWindow, readStored, writeStored,
 } from '@/lib/commandCentre';
 import { useAlerts, useOverview } from '@/lib/useCommandCentre';
-import { AdminAccess, can, getCachedAccess, scopeLabel } from '@/lib/adminScope';
+import { AdminAccess, getCachedAccess, scopeLabel } from '@/lib/adminScope';
+import { boardLinks } from '@/lib/boardLinks';
 import { longDate } from '@/lib/consoleTime';
 import {
   Empty, ErrorState, PageHeader, Skeleton, TileGrid,
@@ -84,11 +85,14 @@ export function CommandCentre({ access: given }: { access?: AdminAccess | null }
 
   // Only the queues this caller is shown (the same gates as CityBoard's
   // "Waiting on you"), so the header never counts work they cannot see.
-  const waiting = shown.reduce((n, r) => n
-    + (r.queues.sos_open?.now ?? 0)  // present only for a caller who may respond
-    + (can(access, 'support.read') ? r.queues.tickets_open.now ?? 0 : 0)
-    + (can(access, 'finance.read') ? r.queues.withdrawals_pending?.now ?? 0 : 0)
-    + (can(access, 'driver.read') ? r.queues.kyc_awaiting.now ?? 0 : 0), 0);
+  const waiting = shown.reduce((n, r) => {
+    const links = boardLinks(access, r.code);
+    return n
+      + (links.safety ? r.queues.sos_open?.now ?? 0 : 0)
+      + (links.support ? r.queues.tickets_open.now ?? 0 : 0)
+      + (links.withdrawals ? r.queues.withdrawals_pending?.now ?? 0 : 0)
+      + (links.drivers ? r.queues.kyc_awaiting.now ?? 0 : 0);
+  }, 0);
   const openAlerts = alerts.data?.open_count ?? null;
 
   const header = (

@@ -112,7 +112,6 @@ export type Signal = {
 export type SignalPage = {
   count: number;
   results: Signal[];
-  route_deviation: { detected: boolean; reason: string };
 };
 
 export type TimelineEntry = {
@@ -168,6 +167,13 @@ export type IncidentDetail = IncidentRow & {
   signals: Signal[];
   emergency: EmergencyNumbers;
   actions: IncidentActions;
+  /**
+   * True for a caller who may only look (`safety.read`, City Ops): no action
+   * is offered, nobody is unmasked, and there is no SOS reveal to ask for.
+   */
+  read_only?: boolean;
+  /** The names of the actions this caller may take now; empty when read-only. */
+  allowed_actions?: string[];
   vocabulary: { categories: string[]; severities: string[]; statuses: string[]; outcomes: string[] };
 };
 
@@ -178,6 +184,8 @@ export type ConfigValues = {
   eta_overrun_percent: number | null; eta_overrun_minutes: number | null;
   eta_overrun_incident_percent: number | null; eta_overrun_incident_minutes: number | null;
   route_deviation_meters: number | null; route_deviation_minutes: number | null;
+  /** Fewest Safety Officers a live city needs; null = not configured (not ready). */
+  min_safety_officers: number | null;
 };
 
 export type ConfigVersion = ConfigValues & {
@@ -192,7 +200,6 @@ export type ConfigRow = {
   active: ConfigVersion | null;
   registry_numbers: Array<{ label: string; number: string }>;
   history: ConfigVersion[];
-  route_deviation: { detected: boolean; reason: string };
 };
 
 export type ConfigPage = {
@@ -256,7 +263,12 @@ export function safetyFiltersToQuery(f: SafetyFilters): string {
 }
 
 export function activeSafetyFilterCount(f: SafetyFilters): number {
-  return [f.severity, f.category, f.assigned, f.country, f.q.trim(), f.scope].filter(Boolean).length;
+  // Only the filters that apply to the tab (and the scope, which always does).
+  const on = filtersFor(f.tab);
+  const values: Record<FilterKey, string> = {
+    q: f.q.trim(), severity: f.severity, category: f.category, assigned: f.assigned, country: f.country,
+  };
+  return [...on.map((k) => values[k]), f.scope].filter(Boolean).length;
 }
 
 const LIVE = 'open,investigating,action_taken';
@@ -365,7 +377,7 @@ export function emergencyLine(e: EmergencyNumbers | undefined): string {
   if (!e || !e.configured || e.numbers.length === 0) {
     return e?.country ? `Not configured for ${e.country}` : 'Not configured: the incident has no country';
   }
-  return e.numbers.map((n) => `${n.label} ${n.number}`).join(' · ');
+  return e.numbers.map((n) => `${emergencyLabel(n.label)} ${n.number}`).join(' · ');
 }
 
 // ---------------------------------------------------------------------------
@@ -373,6 +385,8 @@ export function emergencyLine(e: EmergencyNumbers | undefined): string {
 // ---------------------------------------------------------------------------
 
 export const canRespond = (a: AdminAccess | null) => can(a, 'safety.respond');
+/** May look at the queue (`safety.read`) or work it (`safety.respond`). */
+export const canReadSafety = (a: AdminAccess | null) => can(a, 'safety.read') || can(a, 'safety.respond');
 export const canEditSafetyConfig = (a: AdminAccess | null) => can(a, 'safety.config');
 
 // ---------------------------------------------------------------------------
@@ -392,8 +406,9 @@ export const CONFIG_FIELDS: Array<{
   { key: 'eta_overrun_minutes', label: '…and by at least', unit: 'min', hint: 'Both lines must be crossed.' },
   { key: 'eta_overrun_incident_percent', label: 'Overrun opens an incident at', unit: '%', hint: 'With the minutes line below.' },
   { key: 'eta_overrun_incident_minutes', label: '…and at least', unit: 'min', hint: '' },
-  { key: 'route_deviation_meters', label: 'Route deviation distance', unit: 'm', hint: 'Not measured yet: no planned route is stored per trip.' },
-  { key: 'route_deviation_minutes', label: 'Route deviation time', unit: 'min', hint: 'Not measured yet.' },
+  { key: 'route_deviation_meters', label: 'Route deviation distance', unit: 'm', hint: 'Driver this far from the trip’s planned route…' },
+  { key: 'route_deviation_minutes', label: 'Route deviation time', unit: 'min', hint: '…for longer than this. A trip with no stored route is never flagged.' },
+  { key: 'min_safety_officers', label: 'Safety Officers per live city', unit: 'people', hint: 'A city cannot go live with fewer, and a live city below it raises a critical alert. Blank means not configured, which is not ready.' },
 ];
 
 /** What a config value reads as: the number, or "off" for a blank. */
@@ -429,7 +444,50 @@ export function configPatch(
 
 export function signalSummary(s: Signal): string {
   const m = s.measured;
+  if (s.kind === 'route_deviation') return `${m.max_distance_m} m off the planned route for ${m.off_route_minutes} min (line ${m.threshold_m} m)`;
   if (s.kind === 'long_stop') return `Stopped ${m.stopped_minutes} min within ${m.radius_m} m`;
   if (s.kind === 'eta_overrun') return `${m.over_minutes} min (${m.over_percent}%) over a ${m.estimated_minutes} min estimate`;
   return Object.entries(m).map(([k, v]) => `${k}: ${v}`).join(', ');
+}
+
+
+// ---------------------------------------------------------------------------
+// Emergency number labels
+// ---------------------------------------------------------------------------
+
+const NUMBER_LABEL: Record<string, string> = {
+  unified: 'Emergency (all services)',
+  police: 'Police',
+  ambulance: 'Ambulance',
+  fire: 'Fire',
+  women_helpline: 'Women’s helpline',
+  child_helpline: 'Child helpline',
+};
+
+/**
+ * A stored number's label as human text. The config keeps a short key
+ * (`unified`); a person reads "Emergency (all services)". An unknown key is
+ * made readable (underscores to spaces, first letter up) rather than shown raw.
+ */
+export function emergencyLabel(label: string): string {
+  const key = (label ?? '').trim();
+  if (NUMBER_LABEL[key.toLowerCase()]) return NUMBER_LABEL[key.toLowerCase()];
+  const text = key.replace(/_/g, ' ');
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : 'Number';
+}
+
+// ---------------------------------------------------------------------------
+// Which filters apply to which tab
+// ---------------------------------------------------------------------------
+
+export type FilterKey = 'q' | 'severity' | 'category' | 'assigned' | 'country';
+
+/**
+ * The filters that mean something on a tab. The Signals tab is a different
+ * list (detected signals): the server filters it by state, kind and country
+ * only, so Find, Severity, Category and Assignee would be controls that do
+ * nothing. They are not drawn there.
+ */
+export function filtersFor(tab: TabKey): FilterKey[] {
+  return tab === 'signals' ? ['country'] : ['q', 'severity', 'category', 'assigned', 'country'];
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
@@ -167,7 +168,7 @@ function WithdrawalsInner() {
       key: 'driver', label: 'Driver', sortValue: payee,
       render: (w) => (
         <>
-          <Link href={`/drivers/${w.driver}`}>{payee(w)}</Link>
+          <PageLink page="drivers" href={`/drivers/${w.driver}`}>{payee(w)}</PageLink>
           {w.driver_phone ? <span className="muted"> · {w.driver_phone}</span> : null}
         </>
       ),
@@ -296,7 +297,7 @@ function WithdrawalsInner() {
         {selected && (
           <div className="grid gap-4">
             <Facts>
-              <Fact label="Driver"><Link href={`/drivers/${selected.driver}`}>{payee(selected)}</Link></Fact>
+              <Fact label="Driver"><PageLink page="drivers" href={`/drivers/${selected.driver}`}>{payee(selected)}</PageLink></Fact>
               {/* The list stays masked; the record is where a reveal is
                   offered, one payout at a time. */}
               <Fact label="Phone">

@@ -578,7 +578,7 @@ export type Column<T> = {
   num?: boolean;
   width?: string;
   /** Drops the column below this viewport width. */
-  hideBelow?: 1280 | 1100;
+  hideBelow?: 1500 | 1280 | 1100;
 };
 
 export type SortState = { key: string; dir: 'asc' | 'desc' } | null;

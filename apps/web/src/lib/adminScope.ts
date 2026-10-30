@@ -38,6 +38,8 @@ export type AdminScope = {
   kind: 'global' | 'country' | 'state' | 'city' | string;
   status: string;
   depth: number;
+  /** Materialised path (`/IN/IN-TG/IN-TG-HYD/`): lets a per-city link be decided. */
+  path?: string;
 };
 
 export type AdminAccess = {
@@ -53,7 +55,15 @@ export type AdminAccess = {
     scope: string;
     scope_name: string;
     scope_kind: string;
+    /** The place the role is held, and the capability names it carries: nothing else. */
+    scope_path?: string;
+    permissions?: string[];
   }[];
+  /**
+   * True when the account is not narrowed to any place (a superuser, a
+   * Global assignment, or an account the migration has not reached).
+   */
+  unrestricted?: boolean;
   scopes: AdminScope[];
   /**
    * Which model answered for this account.
@@ -179,12 +189,41 @@ export function withScope(path: string): string {
  * "Anywhere" is the right question for drawing a nav item: an operator who
  * can approve payouts in one city should see the Withdrawals link. Whether
  * they may act on a PARTICULAR row is the server's answer, not this one.
+ *
+ * THE LINK RULE (owner, AUDIT 27.40): never render a link, nav item, tab,
+ * button or count that leads to a page or action the role cannot open. So
+ * this hides when in doubt: unknown access (the lookup failed) holds
+ * nothing, and an unmigrated account is read from the same list as everyone
+ * else (`/admin-access/me/` now describes what the API will allow it,
+ * legacy grants included). Hiding is not security -- the server still
+ * refuses -- it is what keeps the console from offering a dead end.
  */
 export function can(access: AdminAccess | null, permission: string): boolean {
-  // Unknown access means we could not ask. Show it; the server decides.
-  if (!access) return true;
-  if (access.access_model === 'legacy_unscoped') return true;
+  if (!access) return false;
   return access.permissions.includes(permission);
+}
+
+/** Does the operator hold ANY of these? (A page that two capabilities open.) */
+export function canAny(access: AdminAccess | null, permissions: readonly string[]): boolean {
+  return permissions.some((p) => can(access, p));
+}
+
+/**
+ * Does the operator hold `permission` at this city? For a link on one
+ * city's board: a role held at another city must not draw it here.
+ * Falls back to "anywhere" when the API did not say where (an older
+ * backend), which the server then refuses row by row.
+ */
+export function canAt(
+  access: AdminAccess | null, permission: string, cityCode: string | null | undefined,
+): boolean {
+  if (!can(access, permission)) return false;
+  if (!access || access.unrestricted || access.access_model === 'legacy_unscoped') return true;
+  const held = (access.roles ?? []).filter((r) => r.scope_path && r.permissions);
+  const path = (access.scopes ?? []).find((s) => s.code === cityCode)?.path;
+  if (held.length === 0 || !path) return true;
+  return held.some((r) => path.startsWith(r.scope_path as string)
+    && (r.permissions as string[]).includes(permission));
 }
 
 /**

@@ -5,12 +5,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
+import { PageLink } from '@/components/console/PageLink';
 import { useDensity } from '@/lib/consolePrefs';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   CATEGORY_LABEL, DEFAULT_SAFETY_FILTERS, SEVERITY_LABEL, SIGNAL_LABEL, STATUS_LABEL, TAB_KEYS,
   TAB_LABEL, ackState, ackText, activeSafetyFilterCount, canEditSafetyConfig, elapsed,
-  incidentsApiPath, minutesBetween, safetyFiltersFromSearch, safetyFiltersToQuery, signalSummary,
+  canRespond, filtersFor, incidentsApiPath, minutesBetween, safetyFiltersFromSearch, safetyFiltersToQuery, signalSummary,
   signalsApiPath, tabCount, type IncidentPage, type IncidentRow, type SafetyFilters,
   type Signal, type SignalPage,
 } from '@/lib/safety';
@@ -86,7 +87,7 @@ function SafetyInner() {
       setError(err instanceof ApiError && err.fromServer ? err.message : 'We could not load the safety queue.');
       if (first.current) {
         setPage({ count: 0, limit: 0, offset: 0, counts: {}, timers: {}, results: [] });
-        setSignals({ count: 0, results: [], route_deviation: { detected: false, reason: '' } });
+        setSignals({ count: 0, results: [] });
       }
     } finally {
       first.current = false;
@@ -110,6 +111,8 @@ function SafetyInner() {
   const rows = page?.results ?? [];
   const active = activeSafetyFilterCount(filters);
   const countries = Object.keys(timers ?? {});
+  const mayRespond = canRespond(access);
+  const applies = filtersFor(filters.tab);
 
   const tabs = TAB_KEYS.map((t) => {
     const n = tabCount(t, counts);
@@ -118,7 +121,7 @@ function SafetyInner() {
 
   const columns: Column<IncidentRow>[] = [
     {
-      key: 'id', label: 'Incident', width: '15rem',
+      key: 'id', label: 'Incident',
       render: (r) => (
         <>
           <Link href={`/safety-ops/incidents/${r.id}`}>#{r.id}</Link>{' '}
@@ -126,9 +129,9 @@ function SafetyInner() {
         </>
       ),
     },
-    { key: 'severity', label: 'Severity', width: '7.5rem', render: (r) => <SeverityPill severity={r.severity} /> },
+    { key: 'severity', label: 'Severity', width: '7rem', render: (r) => <SeverityPill severity={r.severity} /> },
     {
-      key: 'clock', label: filters.tab === 'closed' ? 'Outcome' : 'Clock', width: '19rem',
+      key: 'clock', label: filters.tab === 'closed' ? 'Outcome' : 'Clock', width: '17rem',
       render: (r) => {
         if (filters.tab === 'closed') return r.outcome ? r.outcome.replace(/_/g, ' ') : '—';
         const ack = ackState(r, timers, now);
@@ -145,26 +148,26 @@ function SafetyInner() {
       },
     },
     {
-      key: 'assignee', label: 'Assignee', width: '9rem',
+      key: 'assignee', label: 'Assignee', width: '8rem',
       render: (r) => (r.assignee ? r.assignee.label : <span className="muted">Unassigned</span>),
     },
     {
-      key: 'city', label: 'City', width: '8rem', hideBelow: 1100,
+      key: 'city', label: 'City', width: '7.5rem', hideBelow: 1100,
       render: (r) => r.anchor.node_name ?? <span className="muted">Not placed</span>,
     },
     {
-      key: 'status', label: 'Status', width: '9rem', hideBelow: 1100,
+      key: 'status', label: 'Status', width: '8rem', hideBelow: 1100,
       render: (r) => <Pill tone={r.status === 'closed' ? 'good' : r.status === 'open' ? 'bad' : 'wait'}>{STATUS_LABEL[r.status]}</Pill>,
     },
     {
-      key: 'opened', label: 'Opened', width: '10rem', num: true, hideBelow: 1280,
+      key: 'opened', label: 'Opened', width: '9rem', num: true, hideBelow: 1500,
       render: (r) => stamp(r.opened_at, timeZoneFor(r.anchor.node)),
     },
     ...(filters.tab === 'sos' ? [{
-      key: 'act', label: 'Respond', width: '8rem',
+      key: 'act', label: mayRespond ? 'Respond' : 'Open', width: '7rem',
       render: (r: IncidentRow) => {
         const id = r.sos.unacknowledged_ids?.[0];
-        return id ? (
+        return id && mayRespond ? (
           <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setActing({ sosId: id })}>
             Acknowledge
           </button>
@@ -175,7 +178,7 @@ function SafetyInner() {
 
   const signalColumns: Column<Signal>[] = [
     { key: 'kind', label: 'Signal', width: '9rem', render: (s) => <Pill tone="wait">{SIGNAL_LABEL[s.kind] ?? s.kind}</Pill> },
-    { key: 'trip', label: 'Trip', width: '6rem', render: (s) => <Link href={`/trips/${s.trip_id}`}>#{s.trip_id}</Link> },
+    { key: 'trip', label: 'Trip', width: '6rem', render: (s) => <PageLink page="trips" href={`/trips/${s.trip_id}`}>#{s.trip_id}</PageLink> },
     { key: 'what', label: 'Measured', render: (s) => signalSummary(s) },
     { key: 'city', label: 'City', width: '8rem', hideBelow: 1100, render: (s) => s.anchor.node_name ?? <span className="muted">Not placed</span> },
     {
@@ -188,12 +191,13 @@ function SafetyInner() {
       key: 'seen', label: 'First seen', width: '10rem', num: true, hideBelow: 1280,
       render: (s) => stamp(s.created_at, timeZoneFor(s.anchor.node)),
     },
-    {
+    // Dismissing a signal is a write (safety.respond): not drawn for a caller who may only look.
+    ...(mayRespond ? [{
       key: 'dismiss', label: 'Review', width: '8rem',
-      render: (s) => (
+      render: (s: Signal) => (
         <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setDismissing(s)}>Dismiss</button>
       ),
-    },
+    }] : []),
   ];
 
   const total = filters.tab === 'signals' ? signals?.count ?? null : page?.count ?? null;
@@ -206,7 +210,7 @@ function SafetyInner() {
   const emptyDetail: Record<string, string> = {
     sos: 'An SOS raised during a trip appears here within a few seconds.',
     incidents: 'Nothing is open.',
-    signals: 'Long stops and overruns that need a look appear here.',
+    signals: 'Long stops, overruns and route deviations that need a look appear here.',
     closed: 'Closed incidents appear here with their outcome.',
   };
 
@@ -217,7 +221,9 @@ function SafetyInner() {
         subtitle="SOS first, then severity, then the oldest. Each timer is the incident's own country's; contact details are masked here."
         actions={(
           <>
-            <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setCreating(true)}>Open an incident</button>
+            {mayRespond ? (
+              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setCreating(true)}>Open an incident</button>
+            ) : null}
             <ButtonLink href="/safety-ops/config" variant="ghost" size="sm">
               {canEditSafetyConfig(access) ? 'Safety settings' : 'Safety settings (read only)'}
             </ButtonLink>
@@ -234,27 +240,46 @@ function SafetyInner() {
       <Panel title="Filters">
         <form className="ops-form" aria-label="Filter incidents" onSubmit={(e) => { e.preventDefault(); go({ ...draft }); }}>
           <div className="ops-form__row">
-            <label className="ops-form__label" htmlFor="sf-q">Find</label>
-            <input id="sf-q" className="ops-select" value={draft.q} placeholder="Incident or trip number"
-              onChange={(e) => setDraft({ ...draft, q: e.target.value })} size={22} />
-            <label className="ops-form__label" htmlFor="sf-sev">Severity</label>
-            <select id="sf-sev" className="ops-select" value={draft.severity} onChange={(e) => setDraft({ ...draft, severity: e.target.value })}>
-              <option value="">Any</option>
-              {Object.entries(SEVERITY_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </select>
-            <label className="ops-form__label" htmlFor="sf-cat">Category</label>
-            <select id="sf-cat" className="ops-select" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>
-              <option value="">Any</option>
-              {Object.entries(CATEGORY_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </select>
-            <label className="ops-form__label" htmlFor="sf-asg">Assignee</label>
-            <select id="sf-asg" className="ops-select" value={draft.assigned}
-              onChange={(e) => setDraft({ ...draft, assigned: e.target.value as SafetyFilters['assigned'] })}>
-              <option value="">Anyone</option>
-              <option value="me">Me</option>
-              <option value="none">Unassigned</option>
-            </select>
-            {countries.length > 1 ? (
+            {/* Only the filters that apply to this tab: the Signals list is
+                filtered by country alone, so Find, Severity, Category and
+                Assignee are not drawn there (they would do nothing). */}
+            {applies.includes('q') ? (
+              <>
+                <label className="ops-form__label" htmlFor="sf-q">Find</label>
+                <input id="sf-q" className="ops-select" value={draft.q} placeholder="Incident or trip number"
+                  onChange={(e) => setDraft({ ...draft, q: e.target.value })} size={22} />
+              </>
+            ) : null}
+            {applies.includes('severity') ? (
+              <>
+                <label className="ops-form__label" htmlFor="sf-sev">Severity</label>
+                <select id="sf-sev" className="ops-select" value={draft.severity} onChange={(e) => setDraft({ ...draft, severity: e.target.value })}>
+                  <option value="">Any</option>
+                  {Object.entries(SEVERITY_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </>
+            ) : null}
+            {applies.includes('category') ? (
+              <>
+                <label className="ops-form__label" htmlFor="sf-cat">Category</label>
+                <select id="sf-cat" className="ops-select" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>
+                  <option value="">Any</option>
+                  {Object.entries(CATEGORY_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </>
+            ) : null}
+            {applies.includes('assigned') ? (
+              <>
+                <label className="ops-form__label" htmlFor="sf-asg">Assignee</label>
+                <select id="sf-asg" className="ops-select" value={draft.assigned}
+                  onChange={(e) => setDraft({ ...draft, assigned: e.target.value as SafetyFilters['assigned'] })}>
+                  <option value="">Anyone</option>
+                  <option value="me">Me</option>
+                  <option value="none">Unassigned</option>
+                </select>
+              </>
+            ) : null}
+            {applies.includes('country') && countries.length > 1 ? (
               <>
                 <label className="ops-form__label" htmlFor="sf-country">Country</label>
                 <select id="sf-country" className="ops-select" value={draft.country} onChange={(e) => setDraft({ ...draft, country: e.target.value })}>
@@ -294,13 +319,6 @@ function SafetyInner() {
         )}
         {error && !empty && !loading ? (
           <div className="alert-error m-4" role="alert">{error} Showing the last list that loaded.</div>
-        ) : null}
-        {filters.tab === 'signals' && signals ? (
-          <p className="help p-4">
-            {signals.route_deviation.detected
-              ? 'Route deviation is being measured.'
-              : 'Route deviation is not measured yet: no planned route is stored per trip.'}
-          </p>
         ) : null}
       </Panel>
 

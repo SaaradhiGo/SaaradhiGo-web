@@ -8,78 +8,27 @@ import {
 import {
   AdminAccess, can, fetchAdminAccess, isLockedOut,
 } from '@/lib/adminScope';
+import { NAV_GROUPS, homeFor, visibleGroups } from '@/components/console/navGroups';
 import { fetchInboxUnread, fetchQueueCounts } from '@/lib/consoleQueues';
 import {
   readSidebarCollapsed, useTheme, writeSidebarCollapsed,
 } from '@/lib/consolePrefs';
-import { Sidebar, type NavGroup } from '@/components/console/Sidebar';
+import { Sidebar } from '@/components/console/Sidebar';
 import { TopBar } from '@/components/console/TopBar';
 import { RecoveryLowBanner } from '@/components/console/RecoveryLowBanner';
-import {
-  Gauge, LifeBuoy, MapPin, Route, Shield, Siren, UserRound, Users, Wallet,
-} from '@/components/console/icons';
 import '@/styles/console.css';
 
 /**
  * The console shell: a noir rail, a top bar, and the page.
  *
- * THE RAIL IS GROUPED THE WAY THE WORK IS. Operations, People, Money,
- * Safety & Risk, Settings -- and Growth, which has nothing in it yet and
- * so is not drawn. A group only appears when the operator holds at least
- * one of its pages, and an item only when they hold its permission: a link
- * the server would refuse is a dead end, not a feature.
- *
- * `need` hides a link; it is NOT what stops the operator. Every endpoint
- * re-checks the permission and re-filters the rows. See lib/adminScope.ts.
+ * THE RAIL is `navGroups.ts`, filtered by what the operator holds (the link
+ * rule: nothing is drawn that leads where they cannot go). See
+ * lib/consoleLinks.ts and lib/adminScope.ts.
  *
  * THE COUNTS ARE ALLOWED TO BE UNKNOWN. A failed count renders as nothing,
  * never as a zero: "0 drivers awaiting review" is a sentence an operator
  * acts on, and it must never be the way a broken request looks.
  */
-const GROUPS: NavGroup[] = [
-  {
-    label: 'Operations',
-    items: [
-      { href: '/dashboard', label: 'Command Centre', Icon: Gauge, need: 'trip.read' },
-      { href: '/trips', label: 'Trips', Icon: Route, need: 'trip.read' },
-    ],
-  },
-  {
-    label: 'People',
-    items: [
-      { href: '/drivers', label: 'Drivers', Icon: Users, need: 'driver.read', countKey: 'drivers' },
-      { href: '/riders', label: 'Riders', Icon: UserRound, need: 'rider.read' },
-      { href: '/support', label: 'Support', Icon: LifeBuoy, need: 'support.read', countKey: 'support' },
-    ],
-  },
-  {
-    label: 'Money',
-    items: [
-      { href: '/withdrawals', label: 'Withdrawals', Icon: Wallet, need: 'finance.read', countKey: 'withdrawals' },
-    ],
-  },
-  {
-    label: 'Safety & Risk',
-    items: [
-      { href: '/safety-ops', label: 'Safety', Icon: Siren, need: 'safety.respond', countKey: 'sos', urgent: true },
-    ],
-  },
-  {
-    label: 'Settings',
-    items: [
-      { href: '/zones', label: 'Zones & fares', Icon: MapPin, need: 'zone.write' },
-      // No `need`: the operator's OWN authenticator and recovery codes.
-      // The endpoints behind it identify them from the token and answer
-      // about nobody else, so every operator may open it.
-      { href: '/settings/security', label: 'Security', Icon: Shield },
-    ],
-  },
-];
-
-// Growth (promotions, markets) has no page yet and so no group: a heading
-// with nothing under it is a promise the console cannot keep. It joins
-// GROUPS when something exists to put in it.
-
 type Counts = Record<string, number | undefined>;
 
 export default function ConsoleLayout({ children }: { children: React.ReactNode }) {
@@ -182,9 +131,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
   const isCurrent = useCallback((href: string) =>
     pathname === href || Boolean(pathname?.startsWith(href + '/')), [pathname]);
 
-  const groups = useMemo(() => GROUPS
-    .map((g) => ({ ...g, items: g.items.filter((item) => !item.need || can(access ?? null, item.need)) }))
-    .filter((g) => g.items.length > 0), [access]);
+  const groups = useMemo(() => visibleGroups(access ?? null, NAV_GROUPS), [access]);
 
   return (
     <div className="ops" data-theme={theme} data-collapsed={collapsed ? 'true' : undefined}>
@@ -195,6 +142,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
         collapsed={collapsed}
         onToggle={toggleSidebar}
         isCurrent={isCurrent}
+        home={homeFor(groups)}
       />
 
       <div className="ops__main">

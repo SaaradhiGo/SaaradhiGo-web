@@ -194,12 +194,27 @@ describe('ready', () => {
     expect(await screen.findByText(/3 items waiting on you/)).toBeTruthy();
   });
 
-  it('shows City Ops the live SOS queue the server sends, without safety.respond', async () => {
-    const ops: AdminAccess = { ...cityOps, permissions: cityOps.permissions.filter((p) => p !== 'safety.respond') };
+  it('shows City Ops the live SOS queue (read-only safety.read), without safety.respond', async () => {
+    const ops: AdminAccess = {
+      ...cityOps,
+      permissions: [...cityOps.permissions.filter((p) => p !== 'safety.respond'), 'safety.read'],
+    };
     server({ overview: () => overviewOf([HYD]), alerts: () => alertsOf([]) });
     render(<CommandCentre access={ops} />);
     expect(await screen.findByText('SOS open')).toBeTruthy();
     expect(screen.getByText(/3 items waiting on you/)).toBeTruthy();
+    expect(screen.getByText('SOS open').closest('a')?.getAttribute('href')).toBe('/safety-ops?scope=IN-TG-HYD');
+  });
+
+  it('draws no SOS queue, link or count for a role that cannot open Safety, even if sent', async () => {
+    // The link rule: a count whose page the role cannot open is not drawn.
+    const ops: AdminAccess = {
+      ...cityOps, permissions: cityOps.permissions.filter((p) => p !== 'safety.respond'),
+    };
+    server({ overview: () => overviewOf([HYD]), alerts: () => alertsOf([]) });
+    render(<CommandCentre access={ops} />);
+    expect(await screen.findByText(/2 items waiting on you/)).toBeTruthy();
+    expect(screen.queryByText('SOS open')).toBeNull();
   });
 
   it('draws no SOS queue when the server withholds it', async () => {

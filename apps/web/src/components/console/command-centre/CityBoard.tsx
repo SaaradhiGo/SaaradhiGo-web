@@ -4,7 +4,8 @@ import { ReactNode } from 'react';
 import {
   CityRow, Delta, Pair, delta, formatCount, formatDelta, formatMinutes, formatRate, moneyTiles,
 } from '@/lib/commandCentre';
-import { AdminAccess, can } from '@/lib/adminScope';
+import type { AdminAccess } from '@/lib/adminScope';
+import { boardLinks } from '@/lib/boardLinks';
 import { clock, zoneAbbreviation } from '@/lib/consoleTime';
 import { MetricTile, Queue, TileGrid } from '@/components/console/ui';
 
@@ -54,10 +55,6 @@ function countTile(
   );
 }
 
-/** The capabilities behind the "Waiting on you" queues below (live SOS goes
- *  to safety.respond and City Ops' trip.write; the server sends it or not). */
-const QUEUE_CAPABILITIES = ['safety.respond', 'trip.write', 'finance.read', 'support.read', 'driver.read'];
-
 export function CityBoard({
   row,
   access,
@@ -70,6 +67,11 @@ export function CityBoard({
 }) {
   const country = row.country;
   const tz = row.timezone;
+  // THE LINK RULE: a tile, queue or count is drawn as a link only if this
+  // operator can open the page behind it, at this city. A figure whose page
+  // is closed to them stays a plain figure.
+  const links = boardLinks(access, row.code);
+  const to = (allowed: boolean, href: string) => (allowed ? href : undefined);
   const w = row.window.key;
   const requested = row.trips.requested.now ?? 0;
   const noRequests = requested === 0;
@@ -102,14 +104,14 @@ export function CityBoard({
 
       <TileGrid>
         {countTile('Requested', row.trips.requested, country, w, {
-          href: `/trips?scope=${row.code}`, note: noRequests ? emptyNote : undefined,
+          href: to(links.trips, `/trips?scope=${row.code}`), note: noRequests ? emptyNote : undefined,
         })}
         {countTile('Accepted', row.trips.accepted, country, w, { direction: 'up' })}
         {countTile('Completed', row.trips.completed, country, w, {
-          direction: 'up', tone: 'good', href: `/trips?status=completed&scope=${row.code}`,
+          direction: 'up', tone: 'good', href: to(links.trips, `/trips?status=completed&scope=${row.code}`),
         })}
         {countTile('Cancelled', row.trips.cancelled, country, w, {
-          direction: 'down', href: `/trips?status=cancelled&scope=${row.code}`,
+          direction: 'down', href: to(links.trips, `/trips?status=cancelled&scope=${row.code}`),
         })}
         {countTile('Unfulfilled', row.trips.unfulfilled, country, w, {
           direction: 'down', note: 'No driver ever accepted',
@@ -139,7 +141,7 @@ export function CityBoard({
           label="Drivers online"
           value={formatCount(row.drivers.online_now.now, country)}
           note={`${formatCount(row.drivers.active.now, country) ?? '—'} active in window`}
-          href={`/drivers?status=online&scope=${row.code}`}
+          href={to(links.drivers, `/drivers?status=online&scope=${row.code}`)}
         />
         {countTile('Riders active', row.riders.active_24h, country, w, {
           direction: 'up', note: 'last 24 h',
@@ -152,7 +154,7 @@ export function CityBoard({
             tone="money"
             delta={tileDelta(t.delta, country, w)}
             note={`${formatCount(row.trips.completed.now, country) ?? '—'} completed trips`}
-            href={`/trips?status=completed&scope=${row.code}`}
+            href={to(links.trips, `/trips?status=completed&scope=${row.code}`)}
           />
         ))}
         {row.money && collected.length === 0 ? (
@@ -160,16 +162,17 @@ export function CityBoard({
         ) : null}
         {pendingSums.map((t) => (
           <MetricTile key={`pending-${t.currency}`} label={t.label} value={t.value} tone="money"
-            note={`${formatCount(q.withdrawals_pending?.now ?? 0, country)} waiting`} href="/withdrawals" />
+            note={`${formatCount(q.withdrawals_pending?.now ?? 0, country)} waiting`}
+            href={to(links.withdrawals, '/withdrawals')} />
         ))}
       </TileGrid>
 
       <h3 className="ops-subhead">Waiting on you</h3>
-      {!QUEUE_CAPABILITIES.some((c) => can(access, c)) && (
+      {!(links.safety || links.withdrawals || links.support || links.drivers) && (
         <p className="ops-cc-note" role="note">No work queues are part of your access.</p>
       )}
       <div className="ops-queues">
-        {q.sos_open && (
+        {q.sos_open && links.safety && (
           <Queue
             count={sosOpen}
             title="SOS open"
@@ -180,7 +183,7 @@ export function CityBoard({
             urgent
           />
         )}
-        {can(access, 'finance.read') && q.withdrawals_pending && (
+        {links.withdrawals && q.withdrawals_pending && (
           <Queue
             count={q.withdrawals_pending.now}
             title="Withdrawals pending"
@@ -190,7 +193,7 @@ export function CityBoard({
             href={`/withdrawals?scope=${row.code}`}
           />
         )}
-        {can(access, 'support.read') && (
+        {links.support && (
           <Queue
             count={q.tickets_open.now}
             title="Tickets open"
@@ -198,7 +201,7 @@ export function CityBoard({
             href={`/support?scope=${row.code}`}
           />
         )}
-        {can(access, 'driver.read') && (
+        {links.drivers && (
           <Queue
             count={q.kyc_awaiting.now}
             title="KYC awaiting review"
