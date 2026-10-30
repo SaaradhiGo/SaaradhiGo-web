@@ -26,9 +26,12 @@ const TITLE: Record<ActionKey, string> = {
  */
 export function ActionDrawer({
   action, tripId, currency, refundable, refundKey, riderName, cancelReasons, flagReasons, onClose, onDone,
+  ticketId,
 }: {
   action: ActionKey; tripId: number; currency: string; refundable: number | null;
   refundKey: string | null; riderName: string;
+  /** The support ticket a refund is for (fare review): sent with the refund so the server links them. */
+  ticketId?: number;
   cancelReasons?: Record<string, string>; flagReasons?: Record<string, string>;
   onClose: () => void; onDone: (message: string, kind: 'pending' | 'done') => void;
 }) {
@@ -59,7 +62,10 @@ export function ActionDrawer({
         await api.post(`${base}/cancel/`, { reason_code: code, note: text, waive_fee: waive });
         done = 'Trip cancelled. The rider and driver have been told.';
       } else if (action === 'refund') {
-        body = await api.post<ApprovalBody>(`${base}/refund/`, { amount_minor: parsed, reason: text, idempotency_key: key });
+        body = await api.post<ApprovalBody>(`${base}/refund/`, {
+          amount_minor: parsed, reason: text, idempotency_key: key,
+          ...(ticketId ? { ticket_id: ticketId } : {}),
+        });
         done = `Refund of ${formatMinor(parsed, currency)} recorded.`;
       } else if (action === 'adjust') {
         body = await api.post<ApprovalBody>(`${base}/adjust-fare/`, { amount_minor: parsed, reason: text, idempotency_key: key });

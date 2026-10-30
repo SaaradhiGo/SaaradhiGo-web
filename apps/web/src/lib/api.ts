@@ -193,6 +193,8 @@ export const api = {
     call<T>('POST', path, body, authToken),
   patch: <T,>(path: string, body?: unknown, authToken?: string | null) =>
     call<T>('PATCH', path, body, authToken),
+  put: <T,>(path: string, body?: unknown, authToken?: string | null) =>
+    call<T>('PUT', path, body, authToken),
   delete: <T,>(path: string, authToken?: string | null) =>
     call<T>('DELETE', path, undefined, authToken),
   patchForm: <T,>(path: string, form: FormData, authToken?: string | null) =>
