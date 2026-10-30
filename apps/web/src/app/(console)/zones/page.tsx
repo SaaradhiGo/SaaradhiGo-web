@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useDensity } from '@/lib/consolePrefs';
 import { currencySymbol } from '@/lib/money';
+import { PageLink } from '@/components/console/PageLink';
 import {
   Column,
   DataTable,
@@ -51,7 +52,6 @@ type RateCard = {
   per_min_fare: string;
   min_fare: string;
   surge_cap_multiplier: string;
-  commission_percent: string;
   gst_percent: string;
   version: number;
   is_active: boolean;
@@ -118,8 +118,8 @@ export default function ZonesPage() {
   return (
     <>
       <PageHeader
-        title="Zones & fares"
-        subtitle="What is live. Fares change through approved configuration, not here."
+        title="Zones"
+        subtitle="Where we operate. Fares and commission are under Pricing."
       />
 
       <Panel flush>
@@ -165,6 +165,9 @@ export default function ZonesPage() {
 
             <section>
               <h3 className="ops-subhead">Active rate cards</h3>
+              <p className="help m-0">
+                Changes are made under <PageLink page="pricing" href="/pricing/fare-cards">Pricing &gt; Fare cards</PageLink>.
+              </p>
               {selectedCards === null || selectedCards === undefined ? (
                 <div className="ops-skel-rows" aria-busy="true"><Skeleton kind="row" count={3} /></div>
               ) : selectedCards === 'error' ? (
@@ -183,7 +186,6 @@ export default function ZonesPage() {
                         <th scope="col" className="num">/min</th>
                         <th scope="col" className="num">Min</th>
                         <th scope="col" className="num">Surge cap</th>
-                        <th scope="col" className="num">Commission</th>
                         <th scope="col" className="num">GST</th>
                       </tr>
                     </thead>
@@ -196,7 +198,6 @@ export default function ZonesPage() {
                           <td className="num">{sym(selected)}{c.per_min_fare}</td>
                           <td className="num">{sym(selected)}{c.min_fare}</td>
                           <td className="num">×{c.surge_cap_multiplier}</td>
-                          <td className="num">{c.commission_percent}%</td>
                           <td className="num">{c.gst_percent}%</td>
                         </tr>
                       ))}

@@ -2,7 +2,7 @@ import { AdminAccess, canAny } from '@/lib/adminScope';
 import { PAGE_NEEDS } from '@/lib/consoleLinks';
 import type { NavGroup, NavItem } from '@/components/console/Sidebar';
 import {
-  Gauge, LifeBuoy, MapPin, Route, Shield, Siren, TrendUp, UserRound, Users, Wallet,
+  Gauge, LifeBuoy, MapPin, Percent, Route, Shield, Siren, TrendUp, UserRound, Users, Wallet,
 } from '@/components/console/icons';
 
 /**
@@ -44,6 +44,8 @@ export const NAV_GROUPS: NavGroup[] = [
       // Payouts, Reconciliation); the rail carries the two entry points.
       { href: '/finance', label: 'Finance', Icon: TrendUp, need: PAGE_NEEDS.finance },
       { href: '/finance/payouts', label: 'Payouts', Icon: Wallet, need: PAGE_NEEDS.withdrawals, countKey: 'withdrawals' },
+      // Commission and fare cards (module 8). Readable with `zone.read`.
+      { href: '/pricing', label: 'Pricing', Icon: Percent, need: PAGE_NEEDS.pricing },
     ],
   },
   {
@@ -56,7 +58,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Settings',
     items: [
-      { href: '/zones', label: 'Zones & fares', Icon: MapPin, need: PAGE_NEEDS.zones },
+      { href: '/zones', label: 'Zones', Icon: MapPin, need: PAGE_NEEDS.zones },
       // No `need`: the operator's OWN authenticator and recovery codes.
       // The endpoints behind it identify them from the token and answer
       // about nobody else, so every operator may open it.

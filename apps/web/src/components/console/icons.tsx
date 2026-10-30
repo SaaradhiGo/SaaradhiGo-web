@@ -111,6 +111,17 @@ export function MapPin({ className }: Props) {
   );
 }
 
+/** Pricing: a percent sign, because the page is mostly rates. */
+export function Percent({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M18 6 6 18" />
+      <circle cx="7.5" cy="7.5" r="2.3" />
+      <circle cx="16.5" cy="16.5" r="2.3" />
+    </svg>
+  );
+}
+
 /** Forward, for a row that is a link. */
 export function Chevron({ className }: Props) {
   return (

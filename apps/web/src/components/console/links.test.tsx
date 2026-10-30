@@ -59,7 +59,7 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
     permissions: [
       'trip.read', 'trip.write', 'rider.read', 'driver.read', 'driver.write', 'support.read', 'report.read',
       'zone.read', 'zone.write', 'promo.write', 'pii.view', 'rider.note', 'rider.flag', 'rider.signout',
-      'rider.block', 'safety.read', 'support.sla', 'support.dashboard', 'finance.aggregate',
+      'rider.block', 'pricing.write', 'safety.read', 'support.sla', 'support.dashboard', 'finance.aggregate',
     ],
   },
   support_agent: {
@@ -121,16 +121,16 @@ const ROW: CityRow = {
 };
 
 const NAV = {
-  super_admin: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/safety-ops', '/zones', '/settings/security'],
-  city_ops_manager: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/safety-ops', '/zones', '/settings/security'],
+  super_admin: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/safety-ops', '/zones', '/settings/security'],
+  city_ops_manager: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/pricing', '/safety-ops', '/zones', '/settings/security'],
   support_agent: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/settings/security'],
   support_lead: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/settings/security'],
   safety_officer: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/safety-ops', '/settings/security'],
   kyc_verifier: ['/drivers', '/settings/security'],
-  finance: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/settings/security'],
+  finance: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/settings/security'],
   // Owner ruling 4: Marketing keeps the Command Centre (aggregates only).
   marketing: ['/dashboard', '/settings/security'],
-  analyst: ['/dashboard', '/trips', '/drivers', '/riders', '/settings/security'],
+  analyst: ['/dashboard', '/trips', '/drivers', '/riders', '/pricing', '/settings/security'],
 } as const;
 
 /** Every destination on the city board (a tile or a queue), without the city query. */

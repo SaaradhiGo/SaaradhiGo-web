@@ -191,6 +191,29 @@ export function formatMinutes(value: number | null | undefined, country?: string
   return `${digits} min`;
 }
 
+/**
+ * A long wait as a person says it: "36 d", "5 h 20 min", "45 min".
+ *
+ * `formatMinutes` is for an ETA ("10.0 min"). An SOS left open for five weeks
+ * printed as "51,922.5 min", which nobody reads as five weeks. Minutes under an
+ * hour stay minutes; under a day they are hours and minutes; from a day they are
+ * days (with the hours while it is under ten days). Whole numbers only: a number
+ * of this size does not need a decimal. null stays null.
+ */
+export function formatAge(minutes: number | null | undefined): string | null {
+  if (minutes === null || minutes === undefined || !Number.isFinite(minutes)) return null;
+  const total = Math.max(0, Math.floor(minutes));
+  if (total < 60) return `${total} min`;
+  const hours = Math.floor(total / 60);
+  if (hours < 24) {
+    const rest = total % 60;
+    return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
+  }
+  const days = Math.floor(hours / 24);
+  const restHours = hours % 24;
+  return days < 10 && restHours > 0 ? `${days} d ${restHours} h` : `${days} d`;
+}
+
 // ---------------------------------------------------------------------------
 // Deltas
 // ---------------------------------------------------------------------------
@@ -297,6 +320,10 @@ export function alertMeasure(alert: OperatorAlert): string | null {
   const p = alert.payload;
   if (p.value === undefined || p.value === null || !p.threshold) return null;
   const unit = alertUnit(p.unit);
+  // A wait in minutes reads as an age ("36 d vs 5 min line"), not 51922.5 min.
+  if (p.unit === 'minutes' && typeof p.value === 'number' && Number.isFinite(Number(p.threshold))) {
+    return `${formatAge(p.value)} vs ${formatAge(Number(p.threshold))} line`;
+  }
   const value = typeof p.value === 'number'
     ? new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(p.value)
     : String(p.value);

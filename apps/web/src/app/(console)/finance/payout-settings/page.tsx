@@ -35,6 +35,8 @@ type PendingChange = { id: number; status: string; requested_at: string; maker: 
 type Run = {
   id: number; week_start: string; withdrawal_count: number; amount_minor: number; currency: string;
   outcome: string; approval_request_id: number | null; truncated: boolean; created_at: string;
+  // Drivers the run skipped because they have no payout handle (no UPI or bank account).
+  skipped_count?: number; skipped?: Array<{ driver_id: number; reason: string }>;
 };
 type Country = {
   country: string; name: string; currency: string; configured: boolean; message: string | null;
@@ -145,6 +147,9 @@ function SettingsInner() {
                               {r.truncated ? ' · cut at the weekly cap' : ''}
                             </>
                           ) },
+                          { key: 'skip', label: 'No payout handle', render: (r) => (r.skipped_count
+                            ? `${r.skipped_count} skipped (driver ${(r.skipped ?? []).slice(0, 5).map((x) => `#${x.driver_id}`).join(', ')}${(r.skipped_count ?? 0) > 5 ? ' …' : ''})`
+                            : '—') },
                         ]} />
                     </div>
                   )}
