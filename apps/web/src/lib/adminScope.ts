@@ -27,6 +27,7 @@
  * an error, never a wider view than the operator chose.
  */
 
+import { useSyncExternalStore } from 'react';
 import { api, readToken } from '@/lib/api';
 
 export const SCOPE_KEY = 'saaradhi_admin_scope';
@@ -76,22 +77,49 @@ export type AdminAccess = {
 // runs this is filled in; a page must still cope with `null`.
 let cached: AdminAccess | null = null;
 
+// Who wants to know when the answer changes. A component that reads the
+// cache at render time sees whatever was there when it rendered; one that
+// subscribes re-renders when the shell's fetch lands. `useAdminAccess`
+// below is the subscription; `getCachedAccess` is the plain read.
+const listeners = new Set<() => void>();
+
+function setCached(next: AdminAccess | null) {
+  cached = next;
+  listeners.forEach((fn) => fn());
+}
+
 export async function fetchAdminAccess(): Promise<AdminAccess | null> {
   if (!readToken()) return null;
   try {
-    cached = await api.get<AdminAccess>('/admin-access/me/');
+    setCached(await api.get<AdminAccess>('/admin-access/me/'));
     return cached;
   } catch {
     // A failure here must not blank the console. The caller renders
     // without permission hints, which shows more rather than less, and
     // the server still refuses what it should.
-    cached = null;
+    setCached(null);
     return null;
   }
 }
 
 export function getCachedAccess(): AdminAccess | null {
   return cached;
+}
+
+function subscribeAccess(fn: () => void) {
+  listeners.add(fn);
+  return () => { listeners.delete(fn); };
+}
+
+/**
+ * The cached access, as a hook: re-renders when the shell's fetch lands.
+ *
+ * On the server there is no token and no cache, so the snapshot is null
+ * there and on the first client render, which is what keeps the two in
+ * agreement.
+ */
+export function useAdminAccess(): AdminAccess | null {
+  return useSyncExternalStore(subscribeAccess, getCachedAccess, () => null);
 }
 
 /**
@@ -157,6 +185,24 @@ export function can(access: AdminAccess | null, permission: string): boolean {
   if (!access) return true;
   if (access.access_model === 'legacy_unscoped') return true;
   return access.permissions.includes(permission);
+}
+
+/**
+ * May this operator ask for a personal value to be unmasked?
+ *
+ * Stricter than `can`: unknown access HIDES the affordance. Everything
+ * else in the console shows a control when in doubt and lets the server
+ * refuse it, because a hidden control is a support ticket. A reveal is
+ * the one place that rule inverts -- the value is already on screen in a
+ * form the operator may read, and the control's only job is to hand over
+ * more; an operator the console cannot vouch for gets the masked value,
+ * which is what everyone gets anyway. Legacy unscoped accounts are served
+ * through the bridge, which grants `pii.view`, so they see it.
+ */
+export function canRevealPii(access: AdminAccess | null): boolean {
+  if (!access) return false;
+  if (access.access_model === 'legacy_unscoped') return true;
+  return access.permissions.includes('pii.view');
 }
 
 /** A label for the scope being viewed, for the shell to display. */

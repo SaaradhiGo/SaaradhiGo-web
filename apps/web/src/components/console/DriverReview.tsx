@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { Pill } from '@/components/console/ui';
 
 /**
@@ -29,6 +29,12 @@ export type ReviewDocument = {
   recordable: boolean;
   /** Short-lived signed link, when there is a document to open. */
   url?: string | null;
+  /**
+   * What to offer when the document is on file but its link was withheld
+   * (the server serves document links only to roles holding `pii.view`,
+   * and a reveal is the logged way to one). Rendered in place of "No link".
+   */
+  withheld?: ReactNode;
 };
 
 export function DocumentList({ documents }: { documents: ReviewDocument[] }) {
@@ -67,6 +73,8 @@ export function DocumentList({ documents }: { documents: ReviewDocument[] }) {
             >
               Open
             </a>
+          ) : doc.present && doc.withheld ? (
+            doc.withheld
           ) : (
             <span className="ops-doc__missing">
               {doc.present ? 'No link' : 'Missing'}

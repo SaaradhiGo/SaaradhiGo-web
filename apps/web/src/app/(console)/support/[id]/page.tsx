@@ -7,6 +7,7 @@ import { ApiError, api } from '@/lib/api';
 import { currentScope, getCachedAccess } from '@/lib/adminScope';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import { ButtonLink } from '@/components/sg/Button';
+import { Revealable } from '@/components/console/Revealable';
 import {
   Empty,
   ErrorState,
@@ -66,6 +67,12 @@ function raisedBy(t: Ticket) {
   const u = typeof t.user_id === 'object' && t.user_id ? t.user_id : null;
   return u?.full_name?.trim() || u?.phone_number
     || (typeof t.user_id === 'number' ? `User #${t.user_id}` : '—');
+}
+
+/** The requester's masked phone, when the ticket carried one. */
+function requesterPhone(t: Ticket) {
+  const u = typeof t.user_id === 'object' && t.user_id ? t.user_id : null;
+  return u?.phone_number || null;
 }
 
 export default function SupportTicketDetailPage() {
@@ -252,6 +259,14 @@ export default function SupportTicketDetailPage() {
               <Fact label="Status"><Pill tone={TONE[ticket.status]}>{words(ticket.status)}</Pill></Fact>
               <Fact label="Issue"><span className="capitalize">{words(ticket.issue_type)}</span></Fact>
               <Fact label="Raised by">{raisedBy(ticket)}</Fact>
+              {/* The contact is masked for every role; reaching the person
+                  is a logged reveal of this one ticket's requester. */}
+              <Fact label="Phone">
+                <Revealable value={requesterPhone(ticket) ?? <span className="muted">Masked</span>} label="requester phone" target={{ type: 'support_ticket', id: ticket.id }} field="requester_phone" />
+              </Fact>
+              <Fact label="Email">
+                <Revealable value={<span className="muted">Masked</span>} label="requester email" target={{ type: 'support_ticket', id: ticket.id }} field="requester_email" />
+              </Fact>
               <Fact label="Opened">{stamp(ticket.created_at, tz)}</Fact>
               <Fact label="Last update">{stamp(ticket.updated_at, tz)}</Fact>
               {ticket.resolved_at ? <Fact label="Resolved">{stamp(ticket.resolved_at, tz)}</Fact> : null}
