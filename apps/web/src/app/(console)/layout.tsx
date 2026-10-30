@@ -61,7 +61,7 @@ const GROUPS: NavGroup[] = [
   {
     label: 'Safety & Risk',
     items: [
-      { href: '/sos', label: 'SOS', Icon: Siren, need: 'safety.respond', countKey: 'sos', urgent: true },
+      { href: '/safety-ops', label: 'Safety', Icon: Siren, need: 'safety.respond', countKey: 'sos', urgent: true },
     ],
   },
   {

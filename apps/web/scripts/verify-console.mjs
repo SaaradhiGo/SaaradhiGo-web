@@ -83,7 +83,7 @@ log('PASS', '/login', `signed in as ${EMAIL}`);
 /* ---- every page ------------------------------------------------------- */
 const PAGES = [
   { path: '/dashboard', wants: /trip|driver|revenue|today|total/i },
-  { path: '/sos', wants: /sos|alert|incident|no .*(alert|sos)/i },
+  { path: '/safety-ops', wants: /sos|alert|incident|no .*(alert|sos)/i },
   { path: '/trips', wants: /trip|status|fare|no trips/i },
   { path: '/drivers', wants: /driver|approved|kyc|no drivers/i },
   { path: '/withdrawals', wants: /withdraw|amount|payout|no withdraw/i },
