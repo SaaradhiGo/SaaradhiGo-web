@@ -65,7 +65,7 @@ describe('FinanceNav', () => {
     pathname = '/finance/payouts';
     render(<FinanceNav />);
     const links = screen.getAllByRole('link');
-    expect(links.map((l) => l.textContent)).toEqual(['Overview', 'Payments', 'Settlements', 'Payouts', 'Reconciliation']);
+    expect(links.map((l) => l.textContent)).toEqual(['Overview', 'Payments', 'Settlements', 'Payouts', 'Reconciliation', 'Payout settings']);
     expect(links.filter((l) => l.getAttribute('aria-current') === 'page').map((l) => l.textContent)).toEqual(['Payouts']);
   });
 

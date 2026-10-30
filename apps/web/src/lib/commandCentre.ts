@@ -63,6 +63,8 @@ export type CityRow = {
 };
 
 export type Overview = {
+  /** Aggregate money tiles per city (finance.aggregate); absent from an older server. */
+  finance?: import('./financeActions').FinanceBlock;
   window: Window;
   generated_at: string;
   scope: string | null;

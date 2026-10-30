@@ -14,6 +14,7 @@ import {
 import { AlertsPanel } from './AlertsPanel';
 import { CityBoard } from './CityBoard';
 import { CityWindowBar } from './CityWindowBar';
+import { FinanceTiles } from './FinanceTiles';
 import { LiveTrips } from './LiveTrips';
 
 /**
@@ -167,6 +168,8 @@ export function CommandCentre({ access: given }: { access?: AdminAccess | null }
           ))}
         </div>
       )}
+
+      <FinanceTiles finance={overview.data?.finance} access={access} city={city} />
 
       <div className="ops-band ops-band--alerts">
         <AlertsPanel alerts={alerts} access={access} timeZones={timeZones} onChanged={overview.reload} />
