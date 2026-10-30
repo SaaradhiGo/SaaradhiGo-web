@@ -122,7 +122,7 @@ for (const theme of THEMES) {
       return false;
     };
     for (const [name, url] of [
-      ['sos', '/sos'],
+      ['safety', '/safety-ops'],
       ['support', '/support?status=all'],
       ['withdrawals', '/withdrawals'],
       ['zones', '/zones'],

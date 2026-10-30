@@ -479,7 +479,7 @@ export default function TripDetailPage() {
                     </Fact>
                   ))}
                 </Facts>
-                <div className="mt-3"><ButtonLink href="/sos" variant="secondary" size="sm">Open the SOS board</ButtonLink></div>
+                <div className="mt-3"><ButtonLink href="/safety-ops" variant="secondary" size="sm">Open Safety</ButtonLink></div>
               </div>
             </section>
           )}

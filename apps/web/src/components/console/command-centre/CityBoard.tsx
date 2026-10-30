@@ -176,7 +176,7 @@ export function CityBoard({
             detail={sosOpen > 0
               ? `Oldest ${formatMinutes(q.sos_oldest_open_minutes, country)} unacknowledged`
               : 'None open'}
-            href={`/sos?scope=${row.code}`}
+            href={`/safety-ops?scope=${row.code}`}
             urgent
           />
         )}

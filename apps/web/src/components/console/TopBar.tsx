@@ -62,7 +62,7 @@ export function TopBar({
         )}
         {safety && (
           <Link
-            href="/sos"
+            href="/safety-ops"
             className={`ops__bell ${open ? 'ops__bell--live' : ''}`}
             aria-label={open === null
               ? 'SOS alerts'

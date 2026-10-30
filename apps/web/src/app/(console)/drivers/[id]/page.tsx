@@ -333,7 +333,7 @@ export default function DriverDetailPage() {
               <Fact label="Trips">{data.total_trips}</Fact>
               <Fact label="Cancellations">{data.cancellations.last_24h} in 24h · {data.cancellations.last_7d} in 7d · {data.cancellations.last_30d} in 30d</Fact>
               <Fact label="SOS">
-                <Link href="/sos">{data.counts?.sos_total ?? 0} total, {data.counts?.sos_open ?? 0} open</Link>
+                <Link href="/safety-ops">{data.counts?.sos_total ?? 0} total, {data.counts?.sos_open ?? 0} open</Link>
               </Fact>
               <Fact label="Tickets">
                 <Link href="/support">{data.counts?.tickets_total ?? 0} total, {data.counts?.tickets_open ?? 0} open</Link>

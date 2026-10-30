@@ -146,7 +146,7 @@ export default function RiderDetailPage() {
     { key: 'when', label: 'Opened', num: true, width: '10rem', render: (t) => cityTime(t.created_at, tz) },
   ];
   const sosColumns: Column<SosRow>[] = [
-    { key: 'id', label: 'SOS', width: '6rem', render: (s) => <Link href="/sos">#{s.id}</Link> },
+    { key: 'id', label: 'SOS', width: '6rem', render: (s) => <Link href="/safety-ops">#{s.id}</Link> },
     { key: 'status', label: 'Status', width: '8rem', render: (s) => <Pill tone={TONE[s.status] ?? 'neutral'}>{words(s.status)}</Pill> },
     { key: 'trip', label: 'Trip', width: '6rem', render: (s) => (s.trip_id ? <Link href={`/trips/${s.trip_id}`}>#{s.trip_id}</Link> : <span className="muted">none</span>) },
     { key: 'when', label: 'Raised', num: true, width: '10rem', render: (s) => cityTime(s.created_at, tz) },

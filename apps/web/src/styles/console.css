@@ -1492,3 +1492,25 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .ops-history__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .ops-history__item { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--ops-line-strong); border-radius: 8px; }
 .ops-history__body { margin: 6px 0 0; white-space: pre-wrap; font: 500 12.5px/1.5 var(--font-sans); color: var(--ops-ink-2); }
+
+/* --- safety: incident page and settings ------------------------------------ */
+.ops-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin: 0 0 20px; align-items: start; }
+@media (max-width: 1100px) { .ops-grid-2 { grid-template-columns: minmax(0, 1fr); } }
+.ops-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ops-linklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ops-linklist li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font: 500 13.5px/1.45 var(--font-sans); color: var(--ink); }
+.ops-linklist a { color: var(--gold-text); font-weight: 600; text-decoration: none; }
+.ops-linklist a:hover { text-decoration: underline; }
+.ops-linklist__kind { min-width: 4.5rem; font: 700 11px/1.3 var(--font-sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ops-ink-4); }
+.ops-emergency { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid var(--ops-line-strong); border-radius: 8px; font: 500 13px/1.5 var(--font-sans); color: var(--ops-ink-2); }
+.ops-emergency b { color: var(--ink); }
+.ops-emergency ul, .ops-emergency__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ops-emergency__list { font: 500 14px/1.5 var(--font-sans); color: var(--ink); }
+.ops-emergency a { color: var(--gold-text); font-weight: 700; text-decoration: none; font-variant-numeric: tabular-nums; }
+.ops-emergency a:hover { text-decoration: underline; }
+.ops-config { display: grid; gap: 20px; }
+.ops-config__table { width: 100%; border-collapse: collapse; font: 500 13.5px/1.45 var(--font-sans); }
+.ops-config__table th { text-align: left; font: 700 11px/1.3 var(--font-sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ops-ink-4); padding: 8px 10px; border-bottom: 1px solid var(--ops-line-strong); }
+.ops-config__table td { padding: 9px 10px; border-bottom: 1px solid var(--ops-hairline); color: var(--ink); vertical-align: top; }
+.ops-config__table td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ops-config__hint { display: block; font: 500 12px/1.4 var(--font-sans); color: var(--ops-ink-4); }
