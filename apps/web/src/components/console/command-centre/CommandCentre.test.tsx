@@ -46,6 +46,12 @@ function city(overrides: Partial<CityRow> & { code: string; name: string; countr
   };
 }
 
+/** The row as the server sends it to a caller who may not see live SOS. */
+function withoutSos(row: CityRow): CityRow {
+  const { sos_open: _a, sos_oldest_open_minutes: _b, sos_raised: _c, ...queues } = row.queues;
+  return { ...row, queues };
+}
+
 const HYD = city({ code: 'IN-TG-HYD', name: 'Hyderabad', country: 'IN', currency: 'INR', timezone: 'Asia/Kolkata' });
 const AUS = city({
   code: 'US-TX-AUS', name: 'Austin', country: 'US', currency: 'USD', timezone: 'America/Chicago', status: 'paused',
@@ -188,9 +194,24 @@ describe('ready', () => {
     expect(await screen.findByText(/3 items waiting on you/)).toBeTruthy();
   });
 
+  it('shows City Ops the live SOS queue the server sends, without safety.respond', async () => {
+    const ops: AdminAccess = { ...cityOps, permissions: cityOps.permissions.filter((p) => p !== 'safety.respond') };
+    server({ overview: () => overviewOf([HYD]), alerts: () => alertsOf([]) });
+    render(<CommandCentre access={ops} />);
+    expect(await screen.findByText('SOS open')).toBeTruthy();
+    expect(screen.getByText(/3 items waiting on you/)).toBeTruthy();
+  });
+
+  it('draws no SOS queue when the server withholds it', async () => {
+    server({ overview: () => overviewOf([withoutSos(HYD)]), alerts: () => alertsOf([]) });
+    render(<CommandCentre access={cityOps} />);
+    expect(await screen.findByText(/2 items waiting on you/)).toBeTruthy();
+    expect(screen.queryByText('SOS open')).toBeNull();
+  });
+
   it('tells a reports-only caller no queue is theirs, and counts none', async () => {
     const reportsOnly: AdminAccess = { ...cityOps, permissions: ['report.read'] };
-    server({ overview: () => overviewOf([HYD]), alerts: () => alertsOf([]) });
+    server({ overview: () => overviewOf([withoutSos(HYD)]), alerts: () => alertsOf([]) });
     render(<CommandCentre access={reportsOnly} />);
     expect(await screen.findByText(/0 items waiting on you/)).toBeTruthy();
     expect(screen.getByText('No work queues are part of your access.')).toBeTruthy();
