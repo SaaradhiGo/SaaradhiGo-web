@@ -901,6 +901,9 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .ops-doc { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--ops-hairline); }
 .ops-doc:last-child { border-bottom: 0; padding-bottom: 0; }
 .ops-doc:first-child { padding-top: 0; }
+/* Drivers module: a document row with its own approve / reject. */
+.ops-doc--review { grid-template-columns: 22px minmax(0, 1fr) auto auto; }
+.ops-doc--review .ops-pill { margin-left: 6px; vertical-align: middle; }
 .ops-doc__tick { width: 20px; height: 20px; border-radius: 999px; border: 1px solid var(--ops-line-strong); display: grid; place-items: center; font: 800 11px/1 var(--font-sans); color: var(--ops-ink-6); }
 .ops-doc__tick.is-on { background: var(--ops-success-wash); border-color: var(--ops-success-edge); color: var(--ops-success); }
 .ops-doc__tick.is-off { border-color: var(--ops-danger-edge); color: var(--ops-danger); }
