@@ -4,9 +4,13 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { currentScope, getCachedAccess } from '@/lib/adminScope';
-import { stamp, timeZoneFor, zoneAbbreviation } from '@/lib/consoleTime';
+import { currentScope, getCachedAccess, useAdminAccess } from '@/lib/adminScope';
+import { timeZoneFor } from '@/lib/consoleTime';
 import { currencySymbol } from '@/lib/money';
+import {
+  type ActionKey, type TripActions, cityTime, cityZoneLabel, formatMinor, visibleActions,
+} from '@/lib/trips';
+import { ActionDrawer } from '@/components/console/TripActionDrawer';
 import { ButtonLink } from '@/components/sg/Button';
 import { Revealable } from '@/components/console/Revealable';
 import {
@@ -91,6 +95,31 @@ type TripDetail = {
   sos_events: Array<{ id: number; status: string | null; created_at: string | null; acknowledged_at: string | null; resolved_at: string | null }>;
   promo: { code: string; discount_type: string; discount_amount: string; created_at: string | null } | null;
   zone: { code: string; name: string; city: string; state_code: string } | null;
+  // Trips module (console module 2)
+  city?: { code: string; name: string; timezone: string; country: string | null } | null;
+  timeline_events?: Array<{ event: string; at: string | null; actor: { type: string; id: number | null } | null; detail?: string | null; created_by?: { label: string; role: string } | null }>;
+  fare_minor?: {
+    currency: string; estimated_minor: number | null; final_minor: number | null; charged_minor: number;
+    cancellation_fee_minor: number; tax_minor: number | null; tax_stub: boolean;
+    breakdown: {
+      base_minor: number; distance_minor: number; time_minor: number; surge_multiplier: string;
+      night_surge_multiplier: string | null; gross_minor: number | null; promo_discount_minor: number | null;
+      promo_code: string | null; total_minor: number; rider_payable_minor: number | null; currency: string;
+    } | null;
+  };
+  payment_summary?: {
+    currency: string; method: string | null; status: string | null; paid_minor: number;
+    refunded_minor: number; refundable_minor: number; adjustments_minor: number;
+    payout: { status: string; driver_net_minor: number | null; commission_minor: number | null; settled_at: string | null };
+  };
+  support_tickets?: Array<{ id: number; status: string; issue_type: string; created_at: string | null }>;
+  flags?: Array<{ id: number; reason: string; note: string; active: boolean; created_at: string | null; created_by: { label: string } | null }>;
+  notes?: Array<{ id: number; body: string; created_at: string | null; created_by: { label: string; role: string } | null }>;
+  money_actions?: Array<{ id: number; kind: string; amount_minor: number; currency: string; method: string; status: string; reason: string; approval_request_id: number | null; created_at: string | null }>;
+  approval_requests?: Array<{ id: number; action_key: string; status: string; amount: number | null; currency: string; requested_at: string | null }>;
+  audit_trail?: Array<{ id: number; action: string; created_at: string | null; reason: string; created_by: { label: string; role: string } | null }>;
+  stale?: { is_stale: boolean; reason: string | null };
+  actions?: TripActions;
 };
 
 const TONE: Record<string, 'good' | 'bad' | 'wait' | 'neutral'> = {
@@ -102,7 +131,15 @@ const TIMELINE_LABEL: Record<string, string> = {
 };
 const words = (s: string | null | undefined) => (s ?? '—').replace(/_/g, ' ');
 
-type RefundMode = 'original' | 'credit';
+const ACTION_LABEL: Record<ActionKey, string> = {
+  cancel: 'Cancel trip…', refund: 'Refund…', adjust: 'Adjust fare…', flag: 'Flag…', note: 'Add note…',
+};
+const EVENT_LABEL: Record<string, string> = {
+  requested: 'Requested', accepted: 'Driver accepted', arrived: 'Driver arrived', started: 'Trip started',
+  completed: 'Completed', cancelled: 'Cancelled', driver_withdrew: 'Driver withdrew', stale_flagged: 'Flagged stale',
+  trip_cancelled: 'Operator cancelled', trip_flagged: 'Operator flagged', trip_unflagged: 'Flag cleared',
+  trip_note_added: 'Internal note', trip_refunded: 'Refund recorded', trip_fare_adjusted: 'Fare adjusted',
+};
 
 export default function TripDetailPage() {
   const params = useParams<{ id: string }>();
@@ -112,15 +149,14 @@ export default function TripDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [refund, setRefund] = useState<RefundMode | null>(null);
-  const [refundOpen, setRefundOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [acting, setActing] = useState<ActionKey | null>(null);
+  const access = useAdminAccess();
 
   const tz = timeZoneFor(currentScope(getCachedAccess())?.code);
-  const tzName = zoneAbbreviation(tz);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true);
     setError(null);
     try {
       setData(await api.get<TripDetail>(`/ride/admin/trips/${id}/`));
@@ -138,7 +174,7 @@ export default function TripDetailPage() {
     try {
       await api.post(`/ride/trip/${id}/receipt/resend/`);
       setNotice('Receipt re-sent.');
-      await load();
+      await load(true);
     } catch (err) {
       setActionError(err instanceof ApiError && err.fromServer ? err.message : 'The receipt could not be re-sent.');
     } finally {
@@ -146,19 +182,14 @@ export default function TripDetailPage() {
     }
   }
 
-  async function doRefund() {
-    if (!refund) return;
+  async function clearFlags() {
     setNotice(null); setActionError(null); setBusy(true);
     try {
-      await api.post('/payments/refund/', { trip_id: Number(id), mode: refund });
-      setNotice(refund === 'original'
-        ? 'Refund started to the original payment method. It settles in 5–7 days.'
-        : 'Credits issued to the rider (or, if the balance cap was hit, refunded to the original method).');
-      setRefundOpen(false);
-      setRefund(null);
-      await load();
+      await api.post(`/ride/admin/trips/${id}/unflag/`, {});
+      setNotice('Flags cleared.');
+      await load(true);
     } catch (err) {
-      setActionError(err instanceof ApiError && err.fromServer ? err.message : 'The refund did not go through.');
+      setActionError(err instanceof ApiError && err.fromServer ? err.message : 'The flags could not be cleared.');
     } finally {
       setBusy(false);
     }
@@ -183,6 +214,12 @@ export default function TripDetailPage() {
     );
   }
 
+  // The trip's own city clock, from the server; the selected scope's otherwise.
+  const cityTz = data.city?.timezone ?? tz;
+  const cur = data.fare_minor?.currency ?? data.currency ?? 'INR';
+  const minor = (v: number | null | undefined, opts?: { signed?: boolean }) => formatMinor(v ?? null, cur, opts);
+  const rail = visibleActions(data.actions, access);
+  const pending = (data.approval_requests ?? []).filter((r) => r.status === 'requested');
   const sym = currencySymbol(data.currency ?? 'INR');
   const money = (v: string | null | undefined) => (v == null || v === '' ? '—' : `${sym}${v}`);
   const charged = data.fare.final_fare != null && data.fare.final_fare !== '';
@@ -202,7 +239,7 @@ export default function TripDetailPage() {
     { key: 'status', label: 'Status', width: '9rem', render: (p) => <Pill tone={/success|captured|paid|completed/i.test(p.status) ? 'good' : /fail|refund/i.test(p.status) ? 'bad' : 'wait'}>{words(p.status)}</Pill> },
     { key: 'gateway', label: 'Gateway', width: '8rem', render: (p) => p.payment_gateway ?? <span className="muted">—</span> },
     { key: 'order', label: 'Order ID', render: (p) => <span title={p.gateway_order_id ?? undefined}>{p.gateway_order_id ?? <span className="muted">—</span>}</span> },
-    { key: 'when', label: tzName ? `When (${tzName})` : 'When', num: true, width: '9.5rem', render: (p) => stamp(p.created_at, tz) },
+    { key: 'when', label: 'When', num: true, width: '9.5rem', render: (p) => cityTime(p.created_at, cityTz) },
   ];
 
   const receiptColumns: Column<TripDetail['receipts'][number]>[] = [
@@ -214,7 +251,7 @@ export default function TripDetailPage() {
       key: 'sent', label: 'Last sent', num: true, width: '10rem',
       render: (r) => r.send_failure_reason
         ? <Pill tone="bad">Failed</Pill>
-        : stamp(r.last_sent_at, tz),
+        : cityTime(r.last_sent_at, cityTz),
     },
     { key: 'pdf', label: 'PDF', width: '5rem', render: (r) => (r.pdf_url ? <a href={r.pdf_url} target="_blank" rel="noopener noreferrer">Open</a> : <span className="muted">—</span>) },
   ];
@@ -226,14 +263,13 @@ export default function TripDetailPage() {
         subtitle={
           <>
             {data.zone ? `${data.zone.name} (${data.zone.code})` : 'No zone'}
-            {' · requested '}{stamp(data.timeline.requested_at, tz)}{tzName ? ` ${tzName}` : ''}
+            {' · requested '}{cityTime(data.timeline.requested_at, cityTz, { zone: true })}
           </>
         }
         actions={
           <>
             <Pill tone={TONE[state] ?? 'neutral'}>{words(state)}</Pill>
             <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void resendReceipt()}>Resend receipt</button>
-            <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => { setRefund(null); setRefundOpen(true); }}>Refund…</button>
             <ButtonLink href="/trips" variant="ghost" size="sm">All trips</ButtonLink>
           </>
         }
@@ -241,13 +277,43 @@ export default function TripDetailPage() {
 
       {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
       {actionError && <div className="alert-error mb-4" role="alert">{actionError}</div>}
+      {pending.length > 0 && (
+        <div className="ops-banner" role="status">
+          <b>Waiting for a checker</b>
+          <span>{pending.map((r) => `${r.action_key} · request #${r.id}${r.amount != null && r.currency ? ` · ${formatMinor(r.amount, r.currency)}` : ''}`).join('; ')}</span>
+        </div>
+      )}
+      {data.stale?.is_stale && (
+        <div className="ops-banner" role="status"><b>Stale</b><span>{words(data.stale.reason)}: this trip has stopped progressing.</span></div>
+      )}
+
+      {rail.length > 0 && (
+        <nav className="ops-form__row mb-4" aria-label="Trip actions">
+          {rail.map((key) => (
+            <button key={key} type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => { setNotice(null); setActionError(null); setActing(key); }}>
+              {ACTION_LABEL[key]}
+            </button>
+          ))}
+          {(data.flags ?? []).some((f) => f.active) && data.actions?.flag ? (
+            <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={busy} onClick={() => void clearFlags()}>Clear flags</button>
+          ) : null}
+        </nav>
+      )}
 
       <TileGrid>
-        <MetricTile
-          label={charged ? 'Charged' : 'Estimated fare'} tone="money"
-          value={money(charged ? data.fare.final_fare : data.fare.estimated_fare)}
-          note={charged && data.fare.estimated_fare ? `estimated ${money(data.fare.estimated_fare)}` : charged ? undefined : 'not yet charged'}
-        />
+        {data.fare_minor ? (
+          <MetricTile
+            label={state === 'completed' ? 'Charged' : 'Fare'} tone="money"
+            value={minor(data.fare_minor.charged_minor)}
+            note={data.fare_minor.final_minor != null ? `quoted ${minor(data.fare_minor.estimated_minor)}` : state === 'completed' ? 'the quoted fare' : 'quoted, not yet charged'}
+          />
+        ) : (
+          <MetricTile
+            label={charged ? 'Charged' : 'Estimated fare'} tone="money"
+            value={money(charged ? data.fare.final_fare : data.fare.estimated_fare)}
+            note={charged && data.fare.estimated_fare ? `estimated ${money(data.fare.estimated_fare)}` : charged ? undefined : 'not yet charged'}
+          />
+        )}
         <MetricTile
           label="Distance"
           value={data.fare.actual_distance_km ?? data.fare.estimated_distance_km}
@@ -280,18 +346,51 @@ export default function TripDetailPage() {
             </Facts>
           </Panel>
 
-          <Panel title={tzName ? `Timeline (${tzName})` : 'Timeline'}>
-            <Facts>
-              {Object.entries(data.timeline).map(([k, v]) => (
-                <Fact key={k} label={TIMELINE_LABEL[k] ?? words(k)}>
-                  {v ? stamp(v, tz) : <span className="muted">—</span>}
-                </Fact>
-              ))}
-              {data.otp ? <Fact label="Pickup OTP"><code>{data.otp}</code></Fact> : null}
-            </Facts>
+          <Panel title={cityZoneLabel(cityTz) ? `Timeline (${cityZoneLabel(cityTz)})` : 'Timeline'}>
+            {data.timeline_events && data.timeline_events.length > 0 ? (
+              <ol className="ops-timeline">
+                {data.timeline_events.map((e, i) => (
+                  <li key={`${e.event}-${i}`} className="ops-timeline__item">
+                    <time dateTime={e.at ?? undefined}>{cityTime(e.at, cityTz)}</time>
+                    <b>{EVENT_LABEL[e.event] ?? words(e.event)}</b>
+                    <span className="muted">
+                      {e.created_by?.label ? `${e.created_by.label}${e.created_by.role ? ` (${e.created_by.role})` : ''}` : e.actor ? words(e.actor.type) : 'system'}
+                      {e.detail ? ` · ${e.detail}` : ''}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <Facts>
+                {Object.entries(data.timeline).map(([k, v]) => (
+                  <Fact key={k} label={TIMELINE_LABEL[k] ?? words(k)}>
+                    {v ? cityTime(v, cityTz) : <span className="muted">—</span>}
+                  </Fact>
+                ))}
+              </Facts>
+            )}
+            {data.otp ? <Facts><Fact label="Pickup OTP"><code>{data.otp}</code></Fact></Facts> : null}
           </Panel>
 
-          {data.fare.breakdown && (
+          {data.fare_minor ? (
+            <Panel title={`Fare breakdown · ${cur}`}>
+              <Facts>
+                {data.fare_minor.breakdown ? (
+                  <>
+                    <Fact label="Base fare">{minor(data.fare_minor.breakdown.base_minor)}</Fact>
+                    <Fact label="Distance">{minor(data.fare_minor.breakdown.distance_minor)}</Fact>
+                    <Fact label="Time">{minor(data.fare_minor.breakdown.time_minor)}</Fact>
+                    <Fact label="Surge">×{data.fare_minor.breakdown.surge_multiplier}{data.fare_minor.breakdown.night_surge_multiplier ? ` · night ×${data.fare_minor.breakdown.night_surge_multiplier}` : ''}</Fact>
+                    {data.fare_minor.breakdown.promo_discount_minor ? <Fact label={`Promo${data.fare_minor.breakdown.promo_code ? ` ${data.fare_minor.breakdown.promo_code}` : ''}`}>{minor(-data.fare_minor.breakdown.promo_discount_minor)}</Fact> : null}
+                    <Fact label="Fare total">{minor(data.fare_minor.breakdown.total_minor)}</Fact>
+                  </>
+                ) : <Fact label="Breakdown"><span className="muted">No fare snapshot was recorded</span></Fact>}
+                <Fact label="Tax">{data.fare_minor.tax_minor != null ? minor(data.fare_minor.tax_minor) : '—'} <span className="muted">(GST stub, per receipt)</span></Fact>
+                {data.fare_minor.cancellation_fee_minor ? <Fact label="Cancellation fee">{minor(data.fare_minor.cancellation_fee_minor)}</Fact> : null}
+                <Fact label="Charged"><b>{minor(data.fare_minor.charged_minor)}</b>{data.fare_minor.final_minor == null ? <span className="muted"> (quoted fare)</span> : null}</Fact>
+              </Facts>
+            </Panel>
+          ) : data.fare.breakdown ? (
             <Panel title="Fare breakdown">
               <Facts>
                 <Fact label="Base fare">{money(data.fare.breakdown.base_fare)}</Fact>
@@ -299,7 +398,36 @@ export default function TripDetailPage() {
                 <Fact label="Time">{money(data.fare.breakdown.time_fare)}</Fact>
                 <Fact label="Surge">×{data.fare.breakdown.surge_multiplier}</Fact>
                 <Fact label="Total"><b>{money(data.fare.breakdown.total_fare)}</b></Fact>
-                {data.promo ? <Fact label="Promo">{data.promo.code} · −{money(data.promo.discount_amount)}</Fact> : null}
+              </Facts>
+            </Panel>
+          ) : null}
+
+          {data.payment_summary && (
+            <Panel title="Payment and payout">
+              <Facts>
+                <Fact label="Method">{data.payment_summary.method ? data.payment_summary.method.toUpperCase() : '—'} · {words(data.payment_summary.status)}</Fact>
+                <Fact label="Paid">{minor(data.payment_summary.paid_minor)}</Fact>
+                <Fact label="Refunded">{minor(data.payment_summary.refunded_minor)}</Fact>
+                <Fact label="Refundable">{minor(data.payment_summary.refundable_minor)}</Fact>
+                {data.payment_summary.adjustments_minor ? <Fact label="Adjustments">{minor(data.payment_summary.adjustments_minor, { signed: true })}</Fact> : null}
+                <Fact label="Driver payout">
+                  <Pill tone={data.payment_summary.payout.status === 'settled' ? 'good' : 'wait'}>{words(data.payment_summary.payout.status)}</Pill>
+                  {data.payment_summary.payout.driver_net_minor != null ? ` ${minor(data.payment_summary.payout.driver_net_minor)} net` : ''}
+                </Fact>
+              </Facts>
+            </Panel>
+          )}
+
+          {(data.money_actions ?? []).length > 0 && (
+            <Panel title="Refunds and adjustments">
+              <Facts>
+                {(data.money_actions ?? []).map((m) => (
+                  <Fact key={m.id} label={`${words(m.kind)} #${m.id}`}>
+                    {formatMinor(m.amount_minor, m.currency, { signed: m.kind === 'adjustment' })} · {words(m.status)}
+                    {m.approval_request_id ? <span className="muted"> · request #{m.approval_request_id}</span> : null}
+                    <div className="help">{m.reason} · {cityTime(m.created_at, cityTz)}</div>
+                  </Fact>
+                ))}
               </Facts>
             </Panel>
           )}
@@ -327,7 +455,7 @@ export default function TripDetailPage() {
                     <div key={m.id} className={`ops-msg ops-msg--${kind}`}>
                       <div className="ops-msg__meta">
                         <span>{kind === 'system' ? 'System' : m.sender_role}</span>
-                        <time dateTime={m.created_at ?? undefined}>{stamp(m.created_at, tz)}</time>
+                        <time dateTime={m.created_at ?? undefined}>{cityTime(m.created_at, cityTz)}</time>
                       </div>
                       <p className="ops-msg__body">{m.body}</p>
                     </div>
@@ -347,7 +475,7 @@ export default function TripDetailPage() {
                   {data.sos_events.map((e) => (
                     <Fact key={e.id} label={`SOS #${e.id}`}>
                       <Pill tone={e.status === 'resolved' ? 'good' : e.status === 'open' ? 'bad' : 'wait'}>{words(e.status)}</Pill>
-                      <div className="help">raised {stamp(e.created_at, tz)}{e.acknowledged_at ? ` · acknowledged ${stamp(e.acknowledged_at, tz)}` : ''}{e.resolved_at ? ` · resolved ${stamp(e.resolved_at, tz)}` : ''}</div>
+                      <div className="help">raised {cityTime(e.created_at, cityTz)}{e.acknowledged_at ? ` · acknowledged ${cityTime(e.acknowledged_at, cityTz)}` : ''}{e.resolved_at ? ` · resolved ${cityTime(e.resolved_at, cityTz)}` : ''}</div>
                     </Fact>
                   ))}
                 </Facts>
@@ -355,6 +483,64 @@ export default function TripDetailPage() {
               </div>
             </section>
           )}
+
+          {(data.support_tickets ?? []).length > 0 && (
+            <Panel title="Support tickets">
+              <Facts>
+                {(data.support_tickets ?? []).map((t) => (
+                  <Fact key={t.id} label={`Ticket #${t.id}`}>
+                    <Link href={`/support/${t.id}`}>{words(t.issue_type)}</Link> · <Pill tone={/resolved|closed/i.test(t.status) ? 'good' : 'wait'}>{words(t.status.toLowerCase())}</Pill>
+                  </Fact>
+                ))}
+              </Facts>
+            </Panel>
+          )}
+
+          {(data.flags ?? []).length > 0 && (
+            <Panel title="Flags">
+              <Facts>
+                {(data.flags ?? []).map((f) => (
+                  <Fact key={f.id} label={words(f.reason)}>
+                    <Pill tone={f.active ? 'bad' : 'neutral'}>{f.active ? 'active' : 'cleared'}</Pill>
+                    <div className="help">{f.note ? `${f.note} · ` : ''}{f.created_by?.label ?? 'operator'} · {cityTime(f.created_at, cityTz)}</div>
+                  </Fact>
+                ))}
+              </Facts>
+            </Panel>
+          )}
+
+          <Panel title="Internal notes">
+            {(data.notes ?? []).length === 0 ? (
+              <Empty title="No notes" detail="Notes are for operators only; riders and drivers never see them." />
+            ) : (
+              <div className="ops-thread">
+                {(data.notes ?? []).map((n) => (
+                  <div key={n.id} className="ops-msg ops-msg--support">
+                    <div className="ops-msg__meta">
+                      <span>{n.created_by?.label ?? 'operator'}</span>
+                      <time dateTime={n.created_at ?? undefined}>{cityTime(n.created_at, cityTz)}</time>
+                    </div>
+                    <p className="ops-msg__body">{n.body}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+
+          <Panel title="Audit trail">
+            {(data.audit_trail ?? []).length === 0 ? (
+              <Empty title="No operator actions" detail="Every cancel, refund, flag and note on this trip is listed here." />
+            ) : (
+              <Facts>
+                {(data.audit_trail ?? []).map((r) => (
+                  <Fact key={r.id} label={cityTime(r.created_at, cityTz)}>
+                    {EVENT_LABEL[r.action] ?? words(r.action)}
+                    <div className="help">{r.created_by?.label ?? 'system'}{r.created_by?.role ? ` (${r.created_by.role})` : ''}{r.reason ? ` · ${r.reason}` : ''}</div>
+                  </Fact>
+                ))}
+              </Facts>
+            )}
+          </Panel>
 
           <Panel title="Rider">
             {data.rider ? (
@@ -377,7 +563,7 @@ export default function TripDetailPage() {
                   {data.driver.approved ? <Pill tone="good">Approved</Pill> : <Pill tone="wait">Unapproved</Pill>}
                 </Fact>
                 <Fact label="Rating">{data.driver.ratings} · {data.driver.total_trips} trips</Fact>
-                {data.driver.fatigue_lockout_until ? <Fact label="Rest until">{stamp(data.driver.fatigue_lockout_until, tz)}</Fact> : null}
+                {data.driver.fatigue_lockout_until ? <Fact label="Rest until">{cityTime(data.driver.fatigue_lockout_until, cityTz)}</Fact> : null}
               </Facts>
             ) : <Empty title="No driver assigned" />}
           </Panel>
@@ -413,7 +599,7 @@ export default function TripDetailPage() {
             <Panel title="Driver cancellations">
               <Facts>
                 {data.driver_cancellations.map((c) => (
-                  <Fact key={c.id} label={stamp(c.created_at, tz)}>
+                  <Fact key={c.id} label={cityTime(c.created_at, cityTz)}>
                     {words(c.reason)}{c.note ? <div className="help">{c.note}</div> : null}
                   </Fact>
                 ))}
@@ -423,46 +609,20 @@ export default function TripDetailPage() {
         </div>
       </div>
 
-      <Drawer
-        open={refundOpen}
-        title={`Refund trip #${data.id}`}
-        onClose={() => setRefundOpen(false)}
-        footer={
-          <>
-            <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={busy} onClick={() => setRefundOpen(false)}>Cancel</button>
-            <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" disabled={busy || !refund} onClick={() => void doRefund()}>
-              {busy ? 'Working…' : refund === 'original' ? 'Refund to original method' : refund === 'credit' ? 'Issue credits' : 'Choose how'}
-            </button>
-          </>
-        }
-      >
-        <div className="grid gap-4">
-          <Facts>
-            <Fact label="Rider">{riderName}</Fact>
-            <Fact label="Charged"><b>{money(charged ? data.fare.final_fare : data.fare.estimated_fare)}</b></Fact>
-            <Fact label="Paid by">{data.fare.payment_method ? data.fare.payment_method.toUpperCase() : '—'}</Fact>
-          </Facts>
-          <div className="ops-filterset">
-            <fieldset>
-              <legend>How</legend>
-              <label>
-                <input type="radio" name="refund" value="original" checked={refund === 'original'} onChange={() => setRefund('original')} />
-                <span>Back to the original payment method <span className="muted">· settles in 5–7 days</span></span>
-              </label>
-              <label>
-                <input type="radio" name="refund" value="credit" checked={refund === 'credit'} onChange={() => setRefund('credit')} />
-                <span>As SaaradhiGo credits <span className="muted">· instant, subject to the balance cap</span></span>
-              </label>
-            </fieldset>
-          </div>
-          {refund && (
-            <div className="ops-confirm">
-              <b>{refund === 'original' ? `Refund ${money(charged ? data.fare.final_fare : data.fare.estimated_fare)} to ${riderName}'s original method` : `Issue ${money(charged ? data.fare.final_fare : data.fare.estimated_fare)} in credits to ${riderName}`}</b>
-              <span>The server decides the exact amount from what was actually captured, and refuses a second refund. Its answer is shown here.</span>
-            </div>
-          )}
-        </div>
-      </Drawer>
+      {acting && (
+        <ActionDrawer
+          action={acting}
+          tripId={data.id}
+          currency={cur}
+          refundable={data.payment_summary?.refundable_minor ?? null}
+          refundKey={data.actions?.refund_action_key ?? null}
+          riderName={riderName}
+          cancelReasons={data.actions?.cancel_reasons}
+          flagReasons={data.actions?.flag_reasons}
+          onClose={() => setActing(null)}
+          onDone={(message, kind) => { if (kind === 'done') setNotice(message); void load(true); }}
+        />
+      )}
     </>
   );
 }
