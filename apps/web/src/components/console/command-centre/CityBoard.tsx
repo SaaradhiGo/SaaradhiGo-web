@@ -163,7 +163,7 @@ export function CityBoard({
         {pendingSums.map((t) => (
           <MetricTile key={`pending-${t.currency}`} label={t.label} value={t.value} tone="money"
             note={`${formatCount(q.withdrawals_pending?.now ?? 0, country)} waiting`}
-            href={to(links.withdrawals, '/withdrawals')} />
+            href={to(links.withdrawals, '/finance/payouts')} />
         ))}
       </TileGrid>
 
@@ -190,7 +190,7 @@ export function CityBoard({
             detail={(q.withdrawals_pending.now ?? 0) > 0
               ? `Oldest waiting ${new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(q.withdrawals_oldest_pending_hours ?? 0)} h`
               : 'Nobody waiting to be paid'}
-            href={`/withdrawals?scope=${row.code}`}
+            href={`/finance/payouts?scope=${row.code}`}
           />
         )}
         {links.support && (

@@ -13,6 +13,7 @@ import { cityTime, words } from '@/lib/trips';
 import { DocumentReviewDrawer, DriverActionDrawer, type ReviewTarget } from '@/components/console/DriverActionDrawer';
 import { ButtonLink } from '@/components/sg/Button';
 import { Revealable } from '@/components/console/Revealable';
+import { LedgerLink } from '@/components/console/finance';
 import {
   Column, DataTable, Drawer, Empty, ErrorState, Fact, Facts, PageHeader, Panel, Pill, Skeleton,
 } from '@/components/console/ui';
@@ -198,6 +199,8 @@ export default function DriverDetailPage() {
             <Pill tone={kycTone}>{kycLabel}</Pill>
             {suspended ? <Pill tone="bad">{data.suspension?.permanent ? 'deactivated' : 'suspended'}</Pill> : null}
             <Pill tone={data.status === 'online' ? 'good' : 'neutral'}>{words(data.status)}</Pill>
+            {/* Drawn only for finance.read (the link rule): the statement behind the balance. */}
+            <LedgerLink driverId={data.id} />
             <ButtonLink href="/drivers" variant="ghost" size="sm">All drivers</ButtonLink>
           </>
         }

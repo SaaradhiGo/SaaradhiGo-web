@@ -186,6 +186,43 @@ async function callForm<T>(
   return (json?.data ?? json) as T;
 }
 
+/**
+ * Fetch a file (a CSV export) with the operator's token.
+ *
+ * A plain link cannot carry the Authorization header, so the export is
+ * fetched here and handed to the browser as a Blob. A refusal comes back as
+ * the server's own JSON error (a row cap, a missing capability), raised as an
+ * ApiError like any other call.
+ */
+export async function apiDownload(path: string): Promise<{ blob: Blob; filename: string }> {
+  const token = readToken();
+  const resp = await fetch(`${BASE}${path}`, {
+    method: 'GET',
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  });
+  if (!resp.ok) {
+    let json: any = null;
+    try {
+      json = await resp.json();
+    } catch {
+      /* not JSON */
+    }
+    const err = json?.error ?? {};
+    const authored = typeof err.message === 'string' && err.message.trim() !== '';
+    noteSessionEnd(resp.status, undefined, token);
+    throw new ApiError(
+      resp.status,
+      err.code ?? 'UNKNOWN_ERROR',
+      authored ? err.message : `HTTP ${resp.status}`,
+      authored,
+      null,
+    );
+  }
+  const disposition = resp.headers.get('Content-Disposition') ?? '';
+  const match = /filename="?([^";]+)"?/.exec(disposition);
+  return { blob: await resp.blob(), filename: match?.[1] ?? 'export.csv' };
+}
+
 export const api = {
   get: <T,>(path: string, authToken?: string | null) =>
     call<T>('GET', path, undefined, authToken),

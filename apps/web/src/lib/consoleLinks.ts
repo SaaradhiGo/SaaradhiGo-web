@@ -24,7 +24,7 @@ import { AdminAccess, canAny, canAt } from '@/lib/adminScope';
  */
 export type Page =
   | 'dashboard' | 'trips' | 'drivers' | 'riders' | 'support' | 'supportInbox'
-  | 'withdrawals' | 'safety' | 'safetyConfig' | 'zones';
+  | 'withdrawals' | 'finance' | 'safety' | 'safetyConfig' | 'zones';
 
 export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   dashboard: ['trip.read'],
@@ -33,7 +33,11 @@ export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   riders: ['rider.read'],
   support: ['support.read'],
   supportInbox: ['support.read'],
+  // The payout queue (the old Withdrawals page now lives at /finance/payouts).
   withdrawals: ['finance.read'],
+  // The Finance pages: overview, payments, settlements, payouts, reconciliation
+  // and a driver's ledger. One capability opens them all.
+  finance: ['finance.read'],
   safety: ['safety.read', 'safety.respond'],
   safetyConfig: ['safety.read', 'safety.respond'],
   zones: ['zone.write'],

@@ -2,7 +2,7 @@ import { AdminAccess, canAny } from '@/lib/adminScope';
 import { PAGE_NEEDS } from '@/lib/consoleLinks';
 import type { NavGroup, NavItem } from '@/components/console/Sidebar';
 import {
-  Gauge, LifeBuoy, MapPin, Route, Shield, Siren, UserRound, Users, Wallet,
+  Gauge, LifeBuoy, MapPin, Route, Shield, Siren, TrendUp, UserRound, Users, Wallet,
 } from '@/components/console/icons';
 
 /**
@@ -40,7 +40,10 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Money',
     items: [
-      { href: '/withdrawals', label: 'Withdrawals', Icon: Wallet, need: PAGE_NEEDS.withdrawals, countKey: 'withdrawals' },
+      // Finance pages share one sub-navigation (Overview, Payments, Settlements,
+      // Payouts, Reconciliation); the rail carries the two entry points.
+      { href: '/finance', label: 'Finance', Icon: TrendUp, need: PAGE_NEEDS.finance },
+      { href: '/finance/payouts', label: 'Payouts', Icon: Wallet, need: PAGE_NEEDS.withdrawals, countKey: 'withdrawals' },
     ],
   },
   {
