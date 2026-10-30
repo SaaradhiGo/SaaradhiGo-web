@@ -61,7 +61,7 @@ describe('role-aware actions', () => {
   it('follows the server answer when there is one', () => {
     expect(visibleRiderActions(server({ block: true, flag: true, sign_out: true, note: true }), access([]), { blocked: false }))
       .toEqual(['block', 'flag', 'sign_out', 'note']);
-    expect(visibleRiderActions(server({ unblock: true, unflag: true }), access(['rider.write']), { blocked: true }))
+    expect(visibleRiderActions(server({ unblock: true, unflag: true }), access(['rider.block']), { blocked: true }))
       .toEqual(['unblock', 'unflag']);
   });
 
@@ -70,14 +70,18 @@ describe('role-aware actions', () => {
     expect(visibleRiderActions(undefined, access(['rider.read']), { blocked: false })).toEqual([]);
   });
 
-  it('without a server answer falls back to rider.write', () => {
-    expect(visibleRiderActions(undefined, access(['rider.write']), { blocked: true, flagged: true }))
+  it('without a server answer falls back to each capability', () => {
+    expect(visibleRiderActions(undefined, access(['rider.block', 'rider.flag', 'rider.signout', 'rider.note']), { blocked: true, flagged: true }))
       .toEqual(['unblock', 'flag', 'unflag', 'sign_out', 'note']);
+    expect(visibleRiderActions(undefined, access(['rider.note', 'rider.flag', 'rider.signout']), { blocked: false }))
+      .toEqual(['flag', 'sign_out', 'note']);
+    expect(visibleRiderActions(undefined, access(['rider.note']), { blocked: false })).toEqual(['note']);
   });
 
-  it('bulk is for rider.write only', () => {
+  it('bulk is for rider.block only', () => {
     expect(canBulkRiders(access(['rider.read']))).toBe(false);
-    expect(canBulkRiders(access(['rider.read', 'rider.write']))).toBe(true);
+    expect(canBulkRiders(access(['rider.read', 'rider.flag', 'rider.note']))).toBe(false);
+    expect(canBulkRiders(access(['rider.read', 'rider.block']))).toBe(true);
     expect(canBulkRiders(null)).toBe(false);
   });
 

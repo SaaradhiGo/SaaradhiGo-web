@@ -96,7 +96,7 @@ describe('RiderActionDrawer', () => {
   });
 
   it('shows the server refusal and changes nothing', async () => {
-    vi.stubGlobal('fetch', respond(403, { code: 'PERMISSION_DENIED', message: 'You do not hold rider.write here.' }));
+    vi.stubGlobal('fetch', respond(403, { code: 'PERMISSION_DENIED', message: 'You do not hold rider.flag here.' }));
     const onDone = vi.fn();
     render(<RiderActionDrawer action="flag" riderId={23} riderName="Lakshmi" onClose={vi.fn()} onDone={onDone} />);
     fireEvent.click(screen.getByRole('button', { name: 'Flag rider' }));
