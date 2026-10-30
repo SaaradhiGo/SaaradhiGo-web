@@ -50,7 +50,7 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
       'trip.read', 'rider.read', 'driver.read', 'support.read', 'finance.read', 'report.read', 'audit.read',
       'zone.read', 'pii.view', 'trip.write', 'rider.write', 'rider.note', 'rider.flag', 'rider.signout',
       'rider.block', 'driver.write', 'driver.kyc', 'driver.deactivate', 'support.reply', 'support.refund',
-      'support.macro', 'support.sla', 'support.dashboard', 'finance.payout', 'finance.adjust', 'pricing.write',
+      'support.macro', 'support.sla', 'support.dashboard', 'finance.payout', 'finance.adjust', 'finance.export', 'pricing.write',
       'zone.write', 'promo.write', 'notify.send', 'safety.read', 'safety.respond', 'safety.config',
       'fraud.review', 'admin.manage', 'platform.settings', 'approval.check',
     ],
@@ -77,7 +77,7 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
   kyc_verifier: { permissions: ['driver.read', 'driver.kyc', 'pii.view'] },
   finance: {
     permissions: ['trip.read', 'driver.read', 'rider.read', 'support.read', 'finance.read', 'finance.payout',
-      'finance.adjust', 'support.refund', 'report.read', 'zone.read', 'pii.view', 'rider.note'],
+      'finance.adjust', 'finance.export', 'support.refund', 'report.read', 'zone.read', 'pii.view', 'rider.note'],
   },
   marketing: { permissions: ['promo.write', 'notify.send', 'report.read'] },
   analyst: { permissions: ['trip.read', 'driver.read', 'rider.read', 'report.read', 'zone.read'] },
@@ -120,20 +120,20 @@ const ROW: CityRow = {
 };
 
 const NAV = {
-  super_admin: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/withdrawals', '/safety-ops', '/zones', '/settings/security'],
+  super_admin: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/safety-ops', '/zones', '/settings/security'],
   city_ops_manager: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/safety-ops', '/zones', '/settings/security'],
   support_agent: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/settings/security'],
   support_lead: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/settings/security'],
   safety_officer: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/safety-ops', '/settings/security'],
   kyc_verifier: ['/drivers', '/settings/security'],
-  finance: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/withdrawals', '/settings/security'],
+  finance: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/settings/security'],
   marketing: ['/settings/security'],
   analyst: ['/dashboard', '/trips', '/drivers', '/riders', '/settings/security'],
 } as const;
 
 /** Every destination on the city board (a tile or a queue), without the city query. */
 const BOARD = {
-  super_admin: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online', '/withdrawals',
+  super_admin: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online', '/finance/payouts',
     '/safety-ops', '/support', '/drivers?approved=false'],
   city_ops_manager: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online',
     '/safety-ops', '/support', '/drivers?approved=false'],
@@ -144,7 +144,7 @@ const BOARD = {
   safety_officer: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online',
     '/safety-ops', '/support', '/drivers?approved=false'],
   kyc_verifier: ['/drivers?status=online', '/drivers?approved=false'],
-  finance: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online', '/withdrawals',
+  finance: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online', '/finance/payouts',
     '/support', '/drivers?approved=false'],
   marketing: [],
   analyst: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online',

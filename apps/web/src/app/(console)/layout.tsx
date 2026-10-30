@@ -128,10 +128,16 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
     });
   }
 
-  const isCurrent = useCallback((href: string) =>
-    pathname === href || Boolean(pathname?.startsWith(href + '/')), [pathname]);
-
   const groups = useMemo(() => visibleGroups(access ?? null, NAV_GROUPS), [access]);
+
+  // The LONGEST nav href that contains the path is the current one, so
+  // /finance/payouts lights Payouts and not also Finance (its prefix).
+  const isCurrent = useCallback((href: string) => {
+    if (!pathname) return false;
+    const contains = (h: string) => pathname === h || pathname.startsWith(h + '/');
+    if (!contains(href)) return false;
+    return !groups.some((g) => g.items.some((i) => i.href.length > href.length && contains(i.href)));
+  }, [pathname, groups]);
 
   return (
     <div className="ops" data-theme={theme} data-collapsed={collapsed ? 'true' : undefined}>

@@ -62,6 +62,7 @@ landed.
 | `verify:scope` | the console as several operators: region shown, nav drawn, rows listed, contact masking |
 | `shoot:console` | photographs the console's sign-in states, shell and first pages in both themes at 1440 and 1024 |
 | `a11y:console` | Lighthouse accessibility on sign-in and the Command Centre, both themes (needs `LIGHTHOUSE_DIR`) |
+| `a11y:finance` | Lighthouse accessibility on Finance overview, payouts and reconciliation, both themes (needs `LIGHTHOUSE_DIR`; run against rows in two currencies) |
 
 ## Build-time guards (run by CI, no browser)
 
