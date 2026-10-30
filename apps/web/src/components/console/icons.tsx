@@ -365,3 +365,23 @@ export function EyeOff({ className }: Props) {
     </svg>
   );
 }
+
+/** A clock that is stopped: a ticket waiting on the user. */
+export function Pause({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M10 9v6M14 9v6" />
+    </svg>
+  );
+}
+
+/** The operator inbox: a tray. */
+export function Inbox({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M4 13.5 6.5 5.5h11L20 13.5" />
+      <path d="M4 13.5V18a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 18v-4.5h-4.5a3.5 3.5 0 0 1-7 0H4Z" />
+    </svg>
+  );
+}

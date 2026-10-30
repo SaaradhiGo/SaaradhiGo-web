@@ -111,3 +111,17 @@ export async function fetchQueueCounts(
     ]);
   return { driversAwaiting, withdrawalsPending, supportOpen, sosOpen };
 }
+
+/**
+ * The operator's own unread inbox items (refund requests sent back to them).
+ * `null` means "could not find out": the header then shows no badge, never a
+ * zero.
+ */
+export async function fetchInboxUnread(): Promise<number | null> {
+  try {
+    const r = await api.get<{ unread?: number }>('/support/admin/inbox/?unread=1');
+    return typeof r?.unread === 'number' ? r.unread : null;
+  } catch {
+    return null;
+  }
+}

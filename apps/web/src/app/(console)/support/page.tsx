@@ -10,10 +10,11 @@ import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   DEFAULT_SUPPORT_FILTERS, ISSUE_LABEL, PRIORITY_LABEL, QUEUE_TABS, STATUS_LABEL,
   SUPPORT_PAGE_SIZES, SUPPORT_SORT_OPTIONS, type QueueCounts, type Sla, type SupportFilters,
-  activeSupportFilterCount, canEditSla, canManageMacros, priorityTone, slaChip, supportApiPath,
+  activeSupportFilterCount, canEditSla, canManageMacros, canViewDashboard, priorityTone, supportApiPath,
   supportFiltersFromSearch, supportFiltersToQuery,
 } from '@/lib/supportDesk';
 import { ButtonLink } from '@/components/sg/Button';
+import { SlaChip } from '@/components/console/SlaChip';
 import {
   Column, DataTable, Empty, ErrorState, Filters, PageHeader, Panel, Pill, Skeleton, TableToolbar,
 } from '@/components/console/ui';
@@ -111,10 +112,7 @@ function SupportInner() {
     },
     {
       key: 'sla', label: 'SLA', width: '12rem',
-      render: (t) => {
-        const chip = slaChip(t.sla);
-        return <Pill tone={chip.tone}>{chip.label}</Pill>;
-      },
+      render: (t) => <SlaChip sla={t.sla} />,
     },
     {
       key: 'issue', label: 'Issue', width: '11rem',
@@ -154,6 +152,7 @@ function SupportInner() {
         subtitle="Contact details are masked. Each ticket sits in the city of its trip, a driver's home city, or where its rider is visible."
         actions={
           <>
+            {canViewDashboard(access) ? <ButtonLink href="/support/dashboard" variant="secondary" size="sm">SLA dashboard</ButtonLink> : null}
             {canManageMacros(access) ? <ButtonLink href="/support/macros" variant="secondary" size="sm">Macros</ButtonLink> : null}
             <ButtonLink href="/support/sla" variant="ghost" size="sm">{canEditSla(access) ? 'SLA policy' : 'SLA policy (read only)'}</ButtonLink>
           </>
@@ -238,7 +237,10 @@ function SupportInner() {
         ) : rows.length === 0 ? (
           <Empty
             title="No tickets here"
-            detail={active ? 'Try fewer filters.' : filters.queue === 'mine' ? 'Nothing is assigned to you.' : 'Nothing is waiting in this queue.'}
+            detail={active ? 'Try fewer filters.'
+              : filters.queue === 'mine' ? 'Nothing is assigned to you.'
+              : filters.queue === 'returned' ? 'No refund request has come back to you.'
+              : 'Nothing is waiting in this queue.'}
           />
         ) : (
           <DataTable caption="Support tickets" rows={rows} columns={columns} rowKey={(t) => t.id} density={density} />

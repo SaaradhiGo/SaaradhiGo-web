@@ -8,7 +8,7 @@ import {
 import {
   AdminAccess, can, fetchAdminAccess, isLockedOut,
 } from '@/lib/adminScope';
-import { fetchQueueCounts } from '@/lib/consoleQueues';
+import { fetchInboxUnread, fetchQueueCounts } from '@/lib/consoleQueues';
 import {
   readSidebarCollapsed, useTheme, writeSidebarCollapsed,
 } from '@/lib/consolePrefs';
@@ -86,6 +86,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
   const router = useRouter();
   const pathname = usePathname();
   const [counts, setCounts] = useState<Counts>({});
+  const [inboxUnread, setInboxUnread] = useState<number | undefined>(undefined);
   const [theme, setTheme] = useTheme();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -152,6 +153,10 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
       support: c.supportOpen ?? undefined,
       sos: c.sosOpen ?? undefined,
     }));
+    // The operator's own inbox (refunds sent back to them), for the header badge.
+    if (can(access ?? null, 'support.read')) {
+      void fetchInboxUnread().then((n) => setInboxUnread(n ?? undefined));
+    }
   }, [access]);
 
   useEffect(() => {
@@ -197,6 +202,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
           access={access ?? null}
           operator={operator}
           sosOpen={counts.sos}
+          inboxUnread={inboxUnread}
           theme={theme}
           onTheme={setTheme}
           onSignOut={signOut}
