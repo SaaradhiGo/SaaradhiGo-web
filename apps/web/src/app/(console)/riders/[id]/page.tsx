@@ -9,6 +9,7 @@ import { useAdminAccess } from '@/lib/adminScope';
 import { type RiderActionKey, type RiderActions, riderName, visibleRiderActions } from '@/lib/riders';
 import { cityTime, formatMinor, words } from '@/lib/trips';
 import { RiderActionDrawer } from '@/components/console/RiderActionDrawer';
+import { CreditWalletDrawer } from '@/components/console/FinanceActionDrawers';
 import { ButtonLink } from '@/components/sg/Button';
 import { Revealable } from '@/components/console/Revealable';
 import {
@@ -18,8 +19,9 @@ import {
 /**
  * One rider: who they are, what they have done, and what operators did.
  *
- * The wallet is shown, never changed here: credits and debits belong to
- * Payments & Finance. Amounts are integer minor units with their currency.
+ * The wallet is shown here. The only change offered is "Credit wallet", a
+ * closed-loop credit that always needs a second admin (finance.adjust); there
+ * is no debit of a rider wallet. Amounts are integer minor units with their currency.
  * Trips, tickets and SOS link to their own pages. The action rail is drawn
  * from the server's per-rider answer (`actions`), so an operator without
  * a rider capability (`rider.note`, `flag`, `signout`, `block`) sees no
@@ -61,7 +63,7 @@ type RiderDetail = {
   notes: Array<{ id: number; body: string; created_at: string | null; created_by?: { label?: string } | null }>;
   approval_requests: Array<{ id: number; action_key: string; status: string; requested_at: string | null }>;
   audit_trail: AuditRow[];
-  actions?: RiderActions;
+  actions?: RiderActions & { wallet_credit?: boolean };
 };
 
 const TONE: Record<string, 'good' | 'bad' | 'wait' | 'neutral'> = {
@@ -83,6 +85,7 @@ export default function RiderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<{ text: string; kind: 'pending' | 'done' } | null>(null);
   const [action, setAction] = useState<RiderActionKey | null>(null);
+  const [crediting, setCrediting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -207,7 +210,11 @@ export default function RiderDetailPage() {
                     />
                   )
                 ))}
-                <p className="help">Read-only. The latest {data.wallet.rows_per_currency} entries per currency; credits and refunds are made in Payments.</p>
+                <p className="help">The latest {data.wallet.rows_per_currency} entries per currency. Refunds are made on the trip.</p>
+                {data.actions?.wallet_credit && data.wallet.balances.length > 0 ? (
+                  <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm"
+                    onClick={() => setCrediting(true)}>Credit wallet…</button>
+                ) : null}
               </>
             )}
           </Panel>
@@ -333,6 +340,13 @@ export default function RiderDetailPage() {
           onDone={(text, kind) => done(text, kind)}
         />
       )}
+      {crediting && data.wallet.balances.length > 0 ? (
+        <CreditWalletDrawer
+          riderId={data.id} riderName={name} currency={data.wallet.balances[0].currency}
+          onClose={() => setCrediting(false)}
+          onDone={(text, kind) => done(text, kind)}
+        />
+      ) : null}
     </>
   );
 }

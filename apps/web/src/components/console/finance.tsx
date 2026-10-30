@@ -27,6 +27,7 @@ const TABS = [
   { href: '/finance/settlements', label: 'Settlements' },
   { href: '/finance/payouts', label: 'Payouts' },
   { href: '/finance/reconciliation', label: 'Reconciliation' },
+  { href: '/finance/payout-settings', label: 'Payout settings' },
 ] as const;
 
 export function FinanceNav() {

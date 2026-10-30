@@ -17,6 +17,8 @@ import { ButtonLink } from '@/components/sg/Button';
 import { Revealable } from '@/components/console/Revealable';
 import { SlaChip } from '@/components/console/SlaChip';
 import { ActionDrawer } from '@/components/console/TripActionDrawer';
+import { CreditWalletDrawer } from '@/components/console/FinanceActionDrawers';
+import { canCreditWallet } from '@/lib/financeActions';
 import {
   Empty, ErrorState, Fact, Facts, PageHeader, Panel, Pill, Skeleton,
 } from '@/components/console/ui';
@@ -199,6 +201,7 @@ function TicketView({
   setActionError: (e: string | null) => void;
   reload: () => Promise<void>;
 }) {
+  const [creditOpen, setCreditOpen] = useState(false);
   const tz = timeZoneFor(ticket.city?.code);
   const actions = ticket.allowed_actions;
   const visible = visibleSupportActions(actions, access);
@@ -316,6 +319,17 @@ function TicketView({
 
           <TicketPanel ticket={ticket} tz={tz} has={has} assignees={assignees} onDone={done} onError={setActionError} />
 
+          {canCreditWallet(access) && ticket.requester.page?.type === 'rider' ? (
+            <Panel title="Wallet credit">
+              <p className="help m-0">
+                Add closed-loop credit to this rider&apos;s wallet. It needs a second admin to approve it; this
+                ticket gets an internal note now and the rider is told only once the credit is added.
+              </p>
+              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm mt-3"
+                onClick={() => setCreditOpen(true)}>Credit wallet…</button>
+            </Panel>
+          ) : null}
+
           {ticket.trip ? (
             <TripPanel
               trip={ticket.trip} refund={ticket.refund} tz={tz}
@@ -326,6 +340,14 @@ function TicketView({
           )}
         </div>
       </div>
+
+      {creditOpen && ticket.requester.page?.type === 'rider' ? (
+        <CreditWalletDrawer
+          riderId={ticket.requester.page.id} riderName={name} ticketId={ticket.id}
+          onClose={() => setCreditOpen(false)}
+          onDone={(text, kind) => done(text, kind)}
+        />
+      ) : null}
 
       {refundOpen && ticket.trip && ticket.refund ? (
         <ActionDrawer

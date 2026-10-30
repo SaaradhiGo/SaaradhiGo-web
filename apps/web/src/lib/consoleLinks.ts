@@ -27,7 +27,10 @@ export type Page =
   | 'withdrawals' | 'finance' | 'safety' | 'safetyConfig' | 'zones';
 
 export const PAGE_NEEDS: Record<Page, readonly string[]> = {
-  dashboard: ['trip.read'],
+  // The Command Centre opens for `report.read` too: Marketing keeps it with
+  // the aggregate board only (no live SOS, no money, no person), which the
+  // overview endpoint enforces (owner ruling 4, AUDIT 27.43).
+  dashboard: ['trip.read', 'report.read'],
   trips: ['trip.read'],
   drivers: ['driver.read'],
   riders: ['rider.read'],

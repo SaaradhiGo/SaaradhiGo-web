@@ -3,11 +3,14 @@
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
+import { useAdminAccess } from '@/lib/adminScope';
 import { useDensity } from '@/lib/consolePrefs';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   LEDGER_KIND, LEDGER_PURPOSE, cityName, formatMinor, isDate, rangeProblem, signedMoney,
 } from '@/lib/finance';
+import { canAdjustBalance } from '@/lib/financeActions';
+import { AdjustBalanceDrawer } from '@/components/console/FinanceActionDrawers';
 import { PageLink } from '@/components/console/PageLink';
 import { FinanceNav, Pager, RangeBar } from '@/components/console/finance';
 import {
@@ -28,6 +31,7 @@ type Entry = {
   id: number; at: string; kind: string; purpose: string; direction: 'credit' | 'debit';
   amount_minor: number; currency: string; running_balance_minor: number; status: string;
   trip_id: number | null; withdrawal_id: number | null;
+  adjustment?: { approval_request_id: number; reason_code: string | null; note: string | null } | null;
   settlement?: { gross_fare_minor: number; commission_percent: string; commission_amount_minor: number;
     driver_net_minor: number; payment_method: string; version: number };
 };
@@ -55,7 +59,10 @@ function LedgerInner() {
   const to = isDate(search.get('to')) ? (search.get('to') as string) : '';
   const page = Math.max(1, Number(search.get('page')) || 1);
 
+  const access = useAdminAccess();
   const [density, setDensity] = useDensity();
+  const [adjusting, setAdjusting] = useState(false);
+  const [notice, setNotice] = useState<{ text: string; kind: 'pending' | 'done' } | null>(null);
   const [data, setData] = useState<Ledger | null>(null);
   const [error, setError] = useState<{ status: number; message: string } | null>(null);
 
@@ -102,6 +109,11 @@ function LedgerInner() {
         <>
           {LEDGER_PURPOSE[e.purpose] ?? LEDGER_KIND[e.kind] ?? e.kind.replace(/_/g, ' ')}
           {e.trip_id ? <> · <PageLink page="trips" href={`/trips/${e.trip_id}`}>trip #{e.trip_id}</PageLink></> : null}
+          {e.adjustment ? (
+            <span className="muted">
+              {' '}· {(e.adjustment.reason_code ?? '').replace(/_/g, ' ')}{e.adjustment.note ? `: ${e.adjustment.note}` : ''} · request #{e.adjustment.approval_request_id}
+            </span>
+          ) : null}
           {e.settlement ? (
             <span className="muted">
               {' '}· gross {formatMinor(e.settlement.gross_fare_minor, e.currency)} at {Number(e.settlement.commission_percent)}% commission
@@ -131,8 +143,18 @@ function LedgerInner() {
             <PageLink page="drivers" href={`/drivers/${data.driver.id}`}>Driver record</PageLink>
           </>
         ) : 'A driver statement.'}
+        actions={data && data.has_wallet && cur && canAdjustBalance(access) ? (
+          <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setAdjusting(true)}>
+            Adjust balance
+          </button>
+        ) : undefined}
       />
       <FinanceNav />
+      {notice && (
+        <div className={notice.kind === 'pending' ? 'ops-confirm mb-4' : 'alert-success mb-4'} role="status">
+          <b>{notice.text}</b>
+        </div>
+      )}
 
       {data && data.has_wallet && cur && (
         <TileGrid>
@@ -203,6 +225,14 @@ function LedgerInner() {
           </Panel>
         </div>
       )}
+      {adjusting && data && cur ? (
+        <AdjustBalanceDrawer
+          driverId={data.driver.id} driverName={data.driver.driver_name || `Driver #${data.driver.id}`}
+          currency={cur} balanceMinor={data.balance_minor ?? null}
+          onClose={() => setAdjusting(false)}
+          onDone={(text, kind) => { setNotice({ text, kind }); void load(); }}
+        />
+      ) : null}
     </>
   );
 }

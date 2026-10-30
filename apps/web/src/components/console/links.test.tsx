@@ -50,7 +50,7 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
       'trip.read', 'rider.read', 'driver.read', 'support.read', 'finance.read', 'report.read', 'audit.read',
       'zone.read', 'pii.view', 'trip.write', 'rider.write', 'rider.note', 'rider.flag', 'rider.signout',
       'rider.block', 'driver.write', 'driver.kyc', 'driver.deactivate', 'support.reply', 'support.refund',
-      'support.macro', 'support.sla', 'support.dashboard', 'finance.payout', 'finance.adjust', 'finance.export', 'pricing.write',
+      'support.macro', 'support.sla', 'support.dashboard', 'finance.payout', 'finance.adjust', 'finance.export', 'finance.config', 'finance.aggregate', 'pricing.write',
       'zone.write', 'promo.write', 'notify.send', 'safety.read', 'safety.respond', 'safety.config',
       'fraud.review', 'admin.manage', 'platform.settings', 'approval.check',
     ],
@@ -59,7 +59,7 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
     permissions: [
       'trip.read', 'trip.write', 'rider.read', 'driver.read', 'driver.write', 'support.read', 'report.read',
       'zone.read', 'zone.write', 'promo.write', 'pii.view', 'rider.note', 'rider.flag', 'rider.signout',
-      'rider.block', 'safety.read', 'support.sla', 'support.dashboard',
+      'rider.block', 'safety.read', 'support.sla', 'support.dashboard', 'finance.aggregate',
     ],
   },
   support_agent: {
@@ -77,10 +77,11 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
   kyc_verifier: { permissions: ['driver.read', 'driver.kyc', 'pii.view'] },
   finance: {
     permissions: ['trip.read', 'driver.read', 'rider.read', 'support.read', 'finance.read', 'finance.payout',
-      'finance.adjust', 'finance.export', 'support.refund', 'report.read', 'zone.read', 'pii.view', 'rider.note'],
+      'finance.adjust', 'finance.export', 'finance.config', 'finance.aggregate', 'support.refund',
+      'report.read', 'zone.read', 'pii.view', 'rider.note'],
   },
   marketing: { permissions: ['promo.write', 'notify.send', 'report.read'] },
-  analyst: { permissions: ['trip.read', 'driver.read', 'rider.read', 'report.read', 'zone.read'] },
+  analyst: { permissions: ['trip.read', 'driver.read', 'rider.read', 'report.read', 'zone.read', 'finance.aggregate'] },
 };
 
 const CITY = { code: 'IN-TG-HYD', name: 'Hyderabad', kind: 'city', status: 'active', depth: 3, path: '/IN/IN-TG/IN-TG-HYD/' };
@@ -127,7 +128,8 @@ const NAV = {
   safety_officer: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/safety-ops', '/settings/security'],
   kyc_verifier: ['/drivers', '/settings/security'],
   finance: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/settings/security'],
-  marketing: ['/settings/security'],
+  // Owner ruling 4: Marketing keeps the Command Centre (aggregates only).
+  marketing: ['/dashboard', '/settings/security'],
   analyst: ['/dashboard', '/trips', '/drivers', '/riders', '/settings/security'],
 } as const;
 

@@ -234,6 +234,7 @@ export const LEDGER_KIND: Record<string, string> = {
 
 /** The two wallet purposes a settlement line comes from. */
 export const LEDGER_PURPOSE: Record<string, string> = {
+  adjustment: 'Balance adjustment',
   trip_earnings: 'Trip earnings (online trip)',
   trip_commission: 'Commission on a cash trip',
 };
