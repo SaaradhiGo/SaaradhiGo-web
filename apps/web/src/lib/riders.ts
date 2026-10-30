@@ -164,7 +164,7 @@ export type RiderActionKey = 'block' | 'unblock' | 'flag' | 'unflag' | 'sign_out
 /**
  * The buttons to draw, in rail order. The server's per-rider answer wins;
  * without one (an older backend) fall back to what the operator holds
- * anywhere, which only ever shows a control the server may then refuse.
+ * anywhere (`rider.block`, `rider.flag`, `rider.signout`, `rider.note`), which only ever shows a control the server may then refuse.
  */
 export function visibleRiderActions(
   actions: RiderActions | null | undefined,
@@ -175,16 +175,20 @@ export function visibleRiderActions(
     const order: RiderActionKey[] = ['block', 'unblock', 'flag', 'unflag', 'sign_out', 'note'];
     return order.filter((k) => actions[k]);
   }
-  if (!can(access, 'rider.write')) return [];
-  const out: RiderActionKey[] = [rider.blocked ? 'unblock' : 'block', 'flag'];
-  if (rider.flagged) out.push('unflag');
-  out.push('sign_out', 'note');
+  const out: RiderActionKey[] = [];
+  if (can(access, 'rider.block')) out.push(rider.blocked ? 'unblock' : 'block');
+  if (can(access, 'rider.flag')) {
+    out.push('flag');
+    if (rider.flagged) out.push('unflag');
+  }
+  if (can(access, 'rider.signout')) out.push('sign_out');
+  if (can(access, 'rider.note')) out.push('note');
   return out;
 }
 
 /** May this operator tick rows for a bulk block / unblock? */
 export function canBulkRiders(access: AdminAccess | null): boolean {
-  return Boolean(access) && can(access, 'rider.write');
+  return Boolean(access) && can(access, 'rider.block');
 }
 
 export const FALLBACK_BLOCK_REASONS: Record<string, string> = {

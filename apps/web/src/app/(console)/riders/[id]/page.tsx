@@ -21,9 +21,10 @@ import {
  * Payments & Finance. Amounts are integer minor units with their currency.
  * Trips, tickets and SOS link to their own pages. The action rail is drawn
  * from the server's per-rider answer (`actions`), so an operator without
- * `rider.write` sees no buttons the server would refuse. Contact details
- * are masked by the server; `Revealable` is the logged way to them. Times
- * are in the rider's city (their latest trip's).
+ * a rider capability (`rider.note`, `flag`, `signout`, `block`) sees no
+ * buttons the server would refuse. Contact details are masked by the
+ * server; `Revealable` is the logged way to them. Times are in the rider's
+ * city (their latest trip's, else home city, else country).
  */
 type AuditRow = { id: number; action: string; created_at: string | null; reason: string;
   created_by?: { label?: string; role?: string } | null };
