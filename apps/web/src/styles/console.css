@@ -751,6 +751,7 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .ops-sort:hover, .ops-sort.is-active { color: var(--ink); }
 .ops-sort.is-active svg { opacity: 1; color: var(--gold-text); }
 
+@media (max-width: 1499px) { .ops-hide-1500 { display: none; } }
 @media (max-width: 1279px) { .ops-hide-1280 { display: none; } }
 @media (max-width: 1099px) { .ops-hide-1100 { display: none; } }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
@@ -479,7 +480,7 @@ export default function TripDetailPage() {
                     </Fact>
                   ))}
                 </Facts>
-                <div className="mt-3"><ButtonLink href="/safety-ops" variant="secondary" size="sm">Open Safety</ButtonLink></div>
+                <div className="mt-3"><PageButtonLink page="safety" href="/safety-ops">Open Safety</PageButtonLink></div>
               </div>
             </section>
           )}
@@ -489,7 +490,7 @@ export default function TripDetailPage() {
               <Facts>
                 {(data.support_tickets ?? []).map((t) => (
                   <Fact key={t.id} label={`Ticket #${t.id}`}>
-                    <Link href={`/support/${t.id}`}>{words(t.issue_type)}</Link> · <Pill tone={/resolved|closed/i.test(t.status) ? 'good' : 'wait'}>{words(t.status.toLowerCase())}</Pill>
+                    <PageLink page="support" href={`/support/${t.id}`}>{words(t.issue_type)}</PageLink> · <Pill tone={/resolved|closed/i.test(t.status) ? 'good' : 'wait'}>{words(t.status.toLowerCase())}</Pill>
                   </Fact>
                 ))}
               </Facts>
@@ -556,7 +557,7 @@ export default function TripDetailPage() {
           <Panel title="Driver">
             {data.driver ? (
               <Facts>
-                <Fact label="Name"><Link href={`/drivers/${data.driver.driver_id}`}>{data.driver.full_name ?? `Driver #${data.driver.driver_id}`}</Link></Fact>
+                <Fact label="Name"><PageLink page="drivers" href={`/drivers/${data.driver.driver_id}`}>{data.driver.full_name ?? `Driver #${data.driver.driver_id}`}</PageLink></Fact>
                 <Fact label="Phone"><Revealable value={data.driver.phone_number ?? '—'} label="driver phone" target={tripTarget} field="driver_phone" /></Fact>
                 <Fact label="State">
                   <Pill tone={data.driver.status === 'online' ? 'good' : 'neutral'}>{data.driver.status ?? '—'}</Pill>{' '}

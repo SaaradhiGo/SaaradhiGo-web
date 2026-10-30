@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import type { OperatorUser } from '@/lib/api';
-import { AdminAccess, can } from '@/lib/adminScope';
+import { AdminAccess } from '@/lib/adminScope';
+import { canOpen } from '@/lib/consoleLinks';
 import type { Theme } from '@/lib/consolePrefs';
 import { ScopeSwitcher } from '@/components/console/ScopeSwitcher';
 import { GlobalSearch } from '@/components/console/GlobalSearch';
@@ -37,9 +38,9 @@ export function TopBar({
   onTheme: (t: Theme) => void;
   onSignOut: () => void;
 }) {
-  const safety = can(access, 'safety.respond');
+  const safety = canOpen(access, 'safety');
   const open = typeof sosOpen === 'number' ? sosOpen : null;
-  const inbox = can(access, 'support.read');
+  const inbox = canOpen(access, 'supportInbox');
   const badge = inboxBadge(inboxUnread);
   return (
     <header className="ops__top">

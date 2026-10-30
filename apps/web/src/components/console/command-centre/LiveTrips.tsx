@@ -1,10 +1,12 @@
 'use client';
 
+import { PageLink } from '@/components/console/PageLink';
+import { canOpen } from '@/lib/consoleLinks';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { withScope } from '@/lib/adminScope';
+import { useAdminAccess, withScope } from '@/lib/adminScope';
 import { clock, zoneAbbreviation } from '@/lib/consoleTime';
 import { currencySymbol } from '@/lib/money';
 import {
@@ -48,6 +50,7 @@ function fare(t: Trip) {
 
 export function LiveTrips({ city, timeZone }: { city: string | null; timeZone?: string }) {
   const router = useRouter();
+  const mayOpen = canOpen(useAdminAccess(), 'trips');
   const [trips, setTrips] = useState<Trip[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
@@ -76,7 +79,7 @@ export function LiveTrips({ city, timeZone }: { city: string | null; timeZone?: 
   }
 
   const columns: Column<Trip>[] = [
-    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <Link href={`/trips/${t.id}`}>#{t.id}</Link> },
+    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <PageLink page="trips" href={`/trips/${t.id}`}>#{t.id}</PageLink> },
     {
       key: 'status', label: 'Status', width: '8rem',
       render: (t) => {
@@ -101,7 +104,7 @@ export function LiveTrips({ city, timeZone }: { city: string | null; timeZone?: 
   return (
     <Panel
       title="Latest trips"
-      action={<Link href={city ? `/trips?scope=${city}` : '/trips'} className="sg-link text-sm">All trips</Link>}
+      action={<PageLink page="trips" href={city ? `/trips?scope=${city}` : '/trips'} className="sg-link text-sm">All trips</PageLink>}
       flush
     >
       {error ? (
@@ -119,7 +122,7 @@ export function LiveTrips({ city, timeZone }: { city: string | null; timeZone?: 
           rows={trips}
           columns={columns}
           rowKey={(t) => t.id}
-          onRow={(t) => router.push(`/trips/${t.id}`)}
+          onRow={mayOpen ? (t) => router.push(`/trips/${t.id}`) : undefined}
           density="compact"
           maxHeight={false}
         />

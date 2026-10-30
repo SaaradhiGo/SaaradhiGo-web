@@ -1,5 +1,6 @@
 'use client';
 
+import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -303,7 +304,12 @@ function TicketView({
               </Fact>
               <Fact label="Is a">{ticket.requester.role}</Fact>
               <Fact label="Page">
-                {pageHref ? <Link href={pageHref}>Open the {ticket.requester.page?.type} page</Link> : <span className="muted">None</span>}
+                {pageHref
+                  ? (
+                    <PageLink page={ticket.requester.page?.type === 'driver' ? 'drivers' : 'riders'} href={pageHref}>
+                      Open the {ticket.requester.page?.type} page
+                    </PageLink>
+                  ) : <span className="muted">None</span>}
               </Fact>
             </Facts>
           </Panel>
@@ -680,7 +686,7 @@ function TripPanel({
   return (
     <Panel
       title={`Trip #${trip.id}`}
-      action={<Link href={`/trips/${trip.id}`} className="sg-link">Open trip</Link>}
+      action={<PageLink page="trips" href={`/trips/${trip.id}`} className="sg-link">Open trip</PageLink>}
     >
       <Facts>
         <Fact label="Status">{words(trip.status)}</Fact>

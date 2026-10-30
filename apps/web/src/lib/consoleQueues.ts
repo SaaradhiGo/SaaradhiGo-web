@@ -1,5 +1,6 @@
 import { api } from './api';
-import { AdminAccess, can, withScope } from '@/lib/adminScope';
+import { AdminAccess, can, canAny, withScope } from '@/lib/adminScope';
+import { PAGE_NEEDS } from '@/lib/consoleLinks';
 
 /**
  * How much work is waiting, for the sidebar badges and the dashboard.
@@ -55,6 +56,10 @@ export const QUEUES = {
   // UPPERCASE. See the note above — lowercase silently matches nothing.
   supportOpen: '/support/admin/tickets/?status=OPEN&page_size=1',
   sosOpen: '/sos/admin/?status=open&page_size=1',
+  // A read-only Safety caller (`safety.read`) cannot ask the SOS board; the
+  // queue's own counts answer for them (incidents with an SOS not yet
+  // acknowledged), within the same scope.
+  sosOpenReadOnly: '/safety/admin/incidents/?limit=1',
 } as const;
 
 /**
@@ -73,10 +78,11 @@ export const QUEUES = {
  * It stops the console asking questions it already knows the answer to.
  */
 const QUEUE_PERMISSION = {
-  driversAwaiting: 'driver.read',
-  withdrawalsPending: 'finance.read',
-  supportOpen: 'support.read',
-  sosOpen: 'safety.respond',
+  driversAwaiting: ['driver.read'],
+  withdrawalsPending: ['finance.read'],
+  supportOpen: ['support.read'],
+  // The badge sits on the Safety link: it follows that page's capabilities.
+  sosOpen: PAGE_NEEDS.safety,
 } as const;
 
 export async function fetchQueueCounts(
@@ -89,10 +95,11 @@ export async function fetchQueueCounts(
   // `withScope` is a no-op when no region is selected, and the server
   // refuses a region the caller does not hold, so the count can never be
   // wider than what the operator may see.
-  // `can` returns true when access is unknown, so a failed lookup counts
-  // everything and the badges degrade to how they behaved before.
+  // Unknown access holds nothing (the link rule), so a failed lookup counts
+  // nothing: a badge on a link the operator cannot open is exactly what the
+  // rule forbids.
   const allowed = (key: keyof typeof QUEUE_PERMISSION) =>
-    can(access ?? null, QUEUE_PERMISSION[key]);
+    canAny(access ?? null, QUEUE_PERMISSION[key]);
 
   const skip = Promise.resolve(null);
 
@@ -107,7 +114,9 @@ export async function fetchQueueCounts(
       // endpoint ignores would make the badge look region-aware when it
       // is not. They scope when their endpoints do.
       allowed('supportOpen') ? countOf(QUEUES.supportOpen) : skip,
-      allowed('sosOpen') ? countOf(QUEUES.sosOpen) : skip,
+      allowed('sosOpen')
+        ? (can(access ?? null, 'safety.respond') ? countOf(QUEUES.sosOpen) : readOnlySosCount())
+        : skip,
     ]);
   return { driversAwaiting, withdrawalsPending, supportOpen, sosOpen };
 }
@@ -121,6 +130,18 @@ export async function fetchInboxUnread(): Promise<number | null> {
   try {
     const r = await api.get<{ unread?: number }>('/support/admin/inbox/?unread=1');
     return typeof r?.unread === 'number' ? r.unread : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Incidents with an SOS nobody has acknowledged, for a caller who may only look. */
+async function readOnlySosCount(): Promise<number | null> {
+  try {
+    const page = await api.get<{ counts?: { unacknowledged_sos?: number } }>(
+      withScope(QUEUES.sosOpenReadOnly));
+    const n = page?.counts?.unacknowledged_sos;
+    return typeof n === 'number' ? n : null;
   } catch {
     return null;
   }

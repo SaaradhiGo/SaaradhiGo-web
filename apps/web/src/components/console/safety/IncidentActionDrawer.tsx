@@ -6,7 +6,7 @@ import { FALLBACK_SUSPEND_REASONS } from '@/lib/drivers';
 import { FALLBACK_BLOCK_REASONS } from '@/lib/riders';
 import { newIdempotencyKey } from '@/lib/trips';
 import {
-  OUTCOME_LABEL, STATUS_LABEL, emergencyLine, type IncidentDetail, type IncidentStatus,
+  OUTCOME_LABEL, STATUS_LABEL, emergencyLabel, emergencyLine, type IncidentDetail, type IncidentStatus,
 } from '@/lib/safety';
 import { Drawer } from '@/components/console/ui';
 
@@ -238,7 +238,7 @@ export function IncidentActionDrawer({
               {incident.emergency.configured && incident.emergency.numbers.length > 0 ? (
                 <ul>
                   {incident.emergency.numbers.map((n) => (
-                    <li key={`${n.label}-${n.number}`}><span>{n.label}</span> <a href={`tel:${n.number}`}>{n.number}</a></li>
+                    <li key={`${n.label}-${n.number}`}><span>{emergencyLabel(n.label)}</span> <a href={`tel:${n.number}`}>{n.number}</a></li>
                   ))}
                 </ul>
               ) : (

@@ -124,6 +124,12 @@ describe('who sees the affordance', () => {
     expect(btn.getAttribute('aria-expanded')).toBe('false');
   });
 
+  it('a caller with no way to this reveal (read-only Safety) gets the masked value only', () => {
+    renderPhone({ noReveal: true });
+    expect(screen.getByText(MASKED)).toBeTruthy();
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
   it('a legacy unscoped account is served through the bridge and sees it too', () => {
     access = { ...base, access_model: 'legacy_unscoped' };
     renderPhone();

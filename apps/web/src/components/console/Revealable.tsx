@@ -69,6 +69,12 @@ export type RevealableProps = {
   render?: (value: unknown, all: Record<string, unknown>) => ReactNode;
   /** When set, the reveal is not offered and this says why. */
   disabledReason?: string;
+  /**
+   * The caller has no way to this reveal at all (a read-only Safety caller
+   * has `pii.view` but not `safety.respond`, the SOS door): draw the masked
+   * value and nothing else. Hide, do not disable (the link rule).
+   */
+  noReveal?: boolean;
   /** Icon only, for a subtitle or a dense row. */
   compact?: boolean;
 };
@@ -91,10 +97,11 @@ export function Revealable({
   fields,
   render,
   disabledReason,
+  noReveal = false,
   compact = false,
 }: RevealableProps) {
   const access = useAdminAccess();
-  const allowed = canRevealPii(access);
+  const allowed = canRevealPii(access) && !noReveal;
 
   const [phase, setPhase] = useState<Phase>('masked');
   const [reason, setReason] = useState('');

@@ -1,5 +1,6 @@
 'use client';
 
+import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
@@ -126,7 +127,7 @@ export default function RiderDetailPage() {
   const pending = data.approval_requests.filter((a) => a.status === 'requested');
 
   const tripColumns: Column<TripRow>[] = [
-    { key: 'id', label: 'Trip', width: '6rem', render: (t) => <Link href={`/trips/${t.id}`}>#{t.id}</Link> },
+    { key: 'id', label: 'Trip', width: '6rem', render: (t) => <PageLink page="trips" href={`/trips/${t.id}`}>#{t.id}</PageLink> },
     { key: 'status', label: 'Status', width: '8rem', render: (t) => <Pill tone={TONE[t.status ?? ''] ?? 'neutral'}>{words(t.status)}</Pill> },
     { key: 'city', label: 'City', width: '8rem', hideBelow: 1100, render: (t) => t.city_code ?? '—' },
     { key: 'fare', label: 'Fare', num: true, width: '8rem', render: (t) => formatMinor(t.fare_minor, t.currency) },
@@ -140,15 +141,15 @@ export default function RiderDetailPage() {
       render: (t) => formatMinor(t.txn_type === 'debit' ? -t.amount_minor : t.amount_minor, t.currency, { signed: true }) },
   ];
   const ticketColumns: Column<TicketRow>[] = [
-    { key: 'id', label: 'Ticket', width: '6rem', render: (t) => <Link href={`/support/${t.id}`}>#{t.id}</Link> },
+    { key: 'id', label: 'Ticket', width: '6rem', render: (t) => <PageLink page="support" href={`/support/${t.id}`}>#{t.id}</PageLink> },
     { key: 'status', label: 'Status', width: '8rem', render: (t) => <Pill tone={TONE[t.status] ?? 'neutral'}>{words(t.status.toLowerCase())}</Pill> },
     { key: 'issue', label: 'Issue', render: (t) => words(t.issue_type) },
     { key: 'when', label: 'Opened', num: true, width: '10rem', render: (t) => cityTime(t.created_at, tz) },
   ];
   const sosColumns: Column<SosRow>[] = [
-    { key: 'id', label: 'SOS', width: '6rem', render: (s) => <Link href="/safety-ops">#{s.id}</Link> },
+    { key: 'id', label: 'SOS', width: '6rem', render: (s) => <PageLink page="safety" href="/safety-ops">#{s.id}</PageLink> },
     { key: 'status', label: 'Status', width: '8rem', render: (s) => <Pill tone={TONE[s.status] ?? 'neutral'}>{words(s.status)}</Pill> },
-    { key: 'trip', label: 'Trip', width: '6rem', render: (s) => (s.trip_id ? <Link href={`/trips/${s.trip_id}`}>#{s.trip_id}</Link> : <span className="muted">none</span>) },
+    { key: 'trip', label: 'Trip', width: '6rem', render: (s) => (s.trip_id ? <PageLink page="trips" href={`/trips/${s.trip_id}`}>#{s.trip_id}</PageLink> : <span className="muted">none</span>) },
     { key: 'when', label: 'Raised', num: true, width: '10rem', render: (s) => cityTime(s.created_at, tz) },
   ];
   const auditColumns: Column<AuditRow>[] = [

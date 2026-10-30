@@ -180,7 +180,10 @@ export default function SafetyConfigPage() {
                       {CONFIG_FIELDS.map(({ key, label, unit, hint }) => (
                         <tr key={key}>
                           <td>{label}<span className="ops-config__hint">{hint}</span></td>
-                          <td className="num">{configValue(row.active?.[key], unit)}</td>
+                          <td className="num">
+                            {key === 'min_safety_officers' && row.active?.[key] == null
+                              ? 'Not configured' : configValue(row.active?.[key], unit)}
+                          </td>
                         </tr>
                       ))}
                       <tr>
@@ -189,7 +192,6 @@ export default function SafetyConfigPage() {
                       </tr>
                     </tbody>
                   </table>
-                  <p className="help mt-3">{row.route_deviation.reason}</p>
                 </>
               )}
               {row.history.length > 1 && (
