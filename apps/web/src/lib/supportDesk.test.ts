@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { AdminAccess } from './adminScope';
 import {
+  canRestore, canViewDashboard, configSentence, dashboardPath, dashboardRangeError, formatMedian,
+  formatPct, inboxBadge, inboxLabel, pendingFor, pendingSummary, versionLine,
   DEFAULT_SUPPORT_FILTERS, type Sla, type SupportActions, activeSupportFilterCount, canEditSla,
   canManageMacros, composerModes, filterMacros, formatMinutes, messageKind, priorityTone,
   slaChip, slaSentence, supportApiPath, supportFiltersFromSearch, supportFiltersToQuery,
@@ -168,5 +170,104 @@ describe('thread and macros', () => {
   it('spots a placeholder the server would refuse', () => {
     expect(unknownPlaceholders('Hi {first_name}, #{ticket_id} about {trip_id}')).toEqual([]);
     expect(unknownPlaceholders('Hi {name} and {name} and {first_name}')).toEqual(['{name}']);
+  });
+});
+
+describe('a paused clock (waiting on the user)', () => {
+  it('reads Paused, never breached, and says why', () => {
+    const paused = sla({ state: 'paused', breached: false, paused: true, minutes_remaining: 90 });
+    expect(slaChip(paused)).toEqual({ label: 'Paused', tone: 'neutral' });
+    expect(slaSentence(paused)).toMatch(/waiting on the user/i);
+    expect(slaSentence(paused)).toMatch(/paused/i);
+  });
+
+  it('still reports a late first reply while paused', () => {
+    const late = sla({ state: 'breached', breached: true, paused: true, minutes_remaining: -20 });
+    expect(slaChip(late)).toEqual({ label: 'Breached 20m ago', tone: 'bad' });
+  });
+});
+
+describe('the Returned to you tab', () => {
+  it('asks the server for the tickets sent back to me', () => {
+    const f = supportFiltersFromSearch(new URLSearchParams('queue=returned'));
+    expect(f.queue).toBe('returned');
+    expect(supportApiPath(f)).toContain('returned=me');
+    expect(supportFiltersToQuery(f)).toBe('queue=returned');
+  });
+});
+
+describe('the header inbox', () => {
+  it('shows nothing for zero or unknown, and caps the badge', () => {
+    expect(inboxBadge(0)).toBeNull();
+    expect(inboxBadge(undefined)).toBeNull();
+    expect(inboxBadge(3)).toBe('3');
+    expect(inboxBadge(250)).toBe('99+');
+    expect(inboxLabel(0)).toBe('Inbox');
+    expect(inboxLabel(2)).toBe('Inbox, 2 unread');
+  });
+});
+
+describe('macro history', () => {
+  it('names a restore and offers it for every version but the current one', () => {
+    expect(versionLine({ version: 2, restored_from: null })).toBe('Version 2');
+    expect(versionLine({ version: 3, restored_from: 1 })).toBe('Version 3 · restored from version 1');
+    expect(canRestore({ version: 2 }, 3)).toBe(true);
+    expect(canRestore({ version: 3 }, 3)).toBe(false);
+  });
+});
+
+describe('the SLA dashboard helpers', () => {
+  it('shows a dash, not a zero, when nothing was due', () => {
+    expect(formatPct(null)).toBe('—');
+    expect(formatPct(66.666)).toBe('66.7%');
+    expect(formatPct(0)).toBe('0.0%');
+    expect(formatMedian(null)).toBe('—');
+    expect(formatMedian(155)).toBe('2h 35m');
+  });
+
+  it('builds the query and refuses a bad range before the server does', () => {
+    expect(dashboardPath('', '')).toBe('/support/admin/sla/dashboard/');
+    expect(dashboardPath('2026-10-01', '2026-10-07', 'IN-TG-HYD'))
+      .toBe('/support/admin/sla/dashboard/?date_from=2026-10-01&date_to=2026-10-07&scope=IN-TG-HYD');
+    expect(dashboardRangeError('', '')).toBeNull();
+    expect(dashboardRangeError('2026-10-01', '')).toBe('Pick both dates.');
+    expect(dashboardRangeError('2026-10-08', '2026-10-01')).toMatch(/after/);
+    expect(dashboardRangeError('2026-01-01', '2026-12-31')).toMatch(/92/);
+    expect(dashboardRangeError('2026-10-01', '2026-10-07')).toBeNull();
+  });
+
+  it('is for operators who hold support.dashboard', () => {
+    expect(canViewDashboard(access(['support.dashboard']))).toBe(true);
+    expect(canViewDashboard(access(['support.read']))).toBe(false);
+  });
+});
+
+describe('SLA change requests', () => {
+  const policy = {
+    id: 7, country: 'IN', kind: 'sla_policy' as const, priority: 'normal',
+    first_response_minutes: 120, resolution_minutes: 600,
+  };
+  const cfg = {
+    id: 8, country: 'IN', kind: 'country_config' as const, waiting_reminder_days: 3,
+    waiting_autoclose_days: 10, refund_review_hours: 96,
+  };
+
+  it('says what a pending request asks for', () => {
+    expect(pendingSummary(policy)).toBe('Normal: first reply within 2h, resolved within 10h');
+    expect(pendingSummary(cfg)).toContain('auto-close after 10 days');
+  });
+
+  it('finds the request waiting for a row', () => {
+    expect(pendingFor([policy, cfg], 'IN', 'normal')?.id).toBe(7);
+    expect(pendingFor([policy, cfg], 'IN', null)?.id).toBe(8);
+    expect(pendingFor([policy, cfg], 'US', 'normal')).toBeNull();
+    expect(pendingFor([policy], 'IN', 'high')).toBeNull();
+  });
+
+  it('says plainly when a country is not configured', () => {
+    const none = { country: 'US', configured: false, waiting_reminder_days: null, waiting_autoclose_days: null, refund_review_hours: null, version: 0 };
+    expect(configSentence(none)).toMatch(/^Not configured/);
+    expect(configSentence({ ...none, configured: true, waiting_reminder_days: 2, waiting_autoclose_days: 7, refund_review_hours: 72, version: 1 }))
+      .toBe('Reminder after 2 days, auto-close after 7 days, refund review 72 hours.');
   });
 });

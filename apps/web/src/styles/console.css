@@ -370,6 +370,8 @@
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
+.ops__bell--note { color: var(--ops-gold-350); }
+.ops__bell .ops__bell-count--note { background: var(--ops-gold-350); color: var(--on-gold); }
 
 /* Who. */
 .ops__profile { position: relative; }
@@ -808,6 +810,7 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .ops-pill--good { border-color: var(--ops-success-edge); color: var(--ops-success); background: var(--ops-success-wash); }
 .ops-pill--bad { border-color: var(--ops-danger-edge); color: var(--ops-danger); background: var(--ops-danger-wash); }
 .ops-pill--wait { border-color: var(--ops-gold-edge); color: var(--ops-gold-350); background: var(--ops-gold-wash); }
+.ops-pill__icon { width: 12px; height: 12px; flex: none; }
 
 /* --- empty, loading and error states -------------------------------------- */
 
@@ -1478,3 +1481,14 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .ops-fullthread { display: grid; gap: 6px; max-width: 60ch; font: 500 13px/1.5 var(--font-sans); color: var(--ink); overflow-wrap: anywhere; }
 .ops-fullthread p { margin: 0; white-space: pre-wrap; }
 .ops-facts + .ops-subhead { margin-top: 18px; }
+
+/* --- support: inbox and macro history ------------------------------------ */
+.ops-inbox { list-style: none; margin: 0; padding: 0; }
+.ops-inbox__item { display: grid; gap: 6px; padding: 14px 16px; border-bottom: 1px solid var(--ops-line-strong); }
+.ops-inbox__item:last-child { border-bottom: 0; }
+.ops-inbox__when { font: 500 12px/1.4 var(--font-sans); color: var(--ops-ink-3); }
+.ops-inbox__text { margin: 0; font: 500 13.5px/1.5 var(--font-sans); color: var(--ink); }
+.ops-history { display: grid; gap: 8px; margin-top: 8px; }
+.ops-history__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ops-history__item { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--ops-line-strong); border-radius: 8px; }
+.ops-history__body { margin: 6px 0 0; white-space: pre-wrap; font: 500 12.5px/1.5 var(--font-sans); color: var(--ops-ink-2); }

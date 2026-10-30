@@ -57,13 +57,19 @@ export type SlaClock = {
   done_at: string | null;
   breached: boolean;
   minutes_remaining: number | null;
+  /** Resolution only: the clock is stopped while the ticket waits on the user. */
+  paused?: boolean;
 };
 
 export type Sla = {
-  state: 'ok' | 'due_soon' | 'breached' | 'closed';
+  state: 'ok' | 'due_soon' | 'breached' | 'paused' | 'closed';
   next: 'first_response' | 'resolution' | null;
   minutes_remaining: number | null;
   breached: boolean;
+  /** True while the ticket waits on the user (resolution clock stopped). */
+  paused?: boolean;
+  paused_since?: string | null;
+  paused_seconds?: number;
   first_response: SlaClock;
   resolution: SlaClock;
 };
@@ -92,6 +98,8 @@ const NEXT_LABEL: Record<string, string> = { first_response: 'first reply', reso
 export function slaChip(sla: Sla | null | undefined): { label: string; tone: 'good' | 'bad' | 'wait' | 'neutral' } {
   if (!sla) return { label: 'No clock', tone: 'neutral' };
   if (sla.state === 'closed') return { label: 'Closed', tone: 'neutral' };
+  // Waiting on the user stops the resolution clock: say so, never "breached".
+  if (sla.state === 'paused') return { label: 'Paused', tone: 'neutral' };
   if (sla.minutes_remaining === null) return { label: 'No clock', tone: 'neutral' };
   if (sla.state === 'breached') {
     return { label: `Breached ${formatMinutes(sla.minutes_remaining)} ago`, tone: 'bad' };
@@ -106,6 +114,9 @@ export function slaChip(sla: Sla | null | undefined): { label: string; tone: 'go
 export function slaSentence(sla: Sla | null | undefined): string {
   if (!sla) return 'No clock is running.';
   if (sla.state === 'closed') return 'Closed. The clock has stopped.';
+  if (sla.state === 'paused') {
+    return 'Waiting on the user. The resolution clock is paused until they reply or the status changes.';
+  }
   if (sla.next === null || sla.minutes_remaining === null) return 'No clock is running.';
   const what = NEXT_LABEL[sla.next] ?? sla.next;
   return sla.state === 'breached'
@@ -122,10 +133,11 @@ export function policyMinutes(minutes: number): string {
 // Queue tabs and filters
 // ---------------------------------------------------------------------------
 
-export type QueueKey = 'mine' | 'unassigned' | 'breaching' | 'open' | 'closed';
+export type QueueKey = 'mine' | 'returned' | 'unassigned' | 'breaching' | 'open' | 'closed';
 
 export const QUEUE_TABS: ReadonlyArray<{ key: QueueKey; label: string }> = [
   { key: 'mine', label: 'Mine' },
+  { key: 'returned', label: 'Returned to you' },
   { key: 'unassigned', label: 'Unassigned' },
   { key: 'breaching', label: 'Breaching' },
   { key: 'open', label: 'All open' },
@@ -135,6 +147,8 @@ export const QUEUE_TABS: ReadonlyArray<{ key: QueueKey; label: string }> = [
 /** What a tab means to the server. */
 export const QUEUE_QUERY: Record<QueueKey, Record<string, string>> = {
   mine: { assigned: 'me', status: 'open' },
+  // Tickets whose refund request was turned down and sent back to this agent.
+  returned: { returned: 'me' },
   unassigned: { assigned: 'none', status: 'open' },
   breaching: { breach: 'breached' },
   open: { status: 'open' },
@@ -302,9 +316,14 @@ export function canManageMacros(access: AdminAccess | null): boolean {
   return Boolean(access) && can(access, 'support.macro');
 }
 
-/** May this operator edit the SLA policy? */
+/** May this operator ask for an SLA change? (A second person approves it.) */
 export function canEditSla(access: AdminAccess | null): boolean {
   return Boolean(access) && can(access, 'support.sla');
+}
+
+/** May this operator open the SLA dashboard? */
+export function canViewDashboard(access: AdminAccess | null): boolean {
+  return Boolean(access) && can(access, 'support.dashboard');
 }
 
 // ---------------------------------------------------------------------------
@@ -325,6 +344,8 @@ export type MacroSummary = {
   country: string | null;
   issue_types: string[];
   active: boolean;
+  /** The current version number (every edit and restore adds one). */
+  version?: number;
 };
 
 /** The picker's search: title or body, every word, any case. */
@@ -344,4 +365,165 @@ export const MACRO_PLACEHOLDERS = ['{first_name}', '{ticket_id}', '{trip_id}'] a
 export function unknownPlaceholders(body: string): string[] {
   const found = body.match(/\{[^{}]*\}/g) ?? [];
   return [...new Set(found.filter((p) => !(MACRO_PLACEHOLDERS as readonly string[]).includes(p)))];
+}
+
+// ---------------------------------------------------------------------------
+// Returned refunds, the inbox
+// ---------------------------------------------------------------------------
+
+export type InboxItem = {
+  id: number;
+  kind: string;
+  ticket_id: number | null;
+  text: string;
+  created_at: string | null;
+  read_at: string | null;
+  read: boolean;
+};
+
+/** The header badge: nothing for zero or unknown, "99+" past ninety-nine. */
+export function inboxBadge(unread: number | null | undefined): string | null {
+  if (typeof unread !== 'number' || unread <= 0) return null;
+  return unread > 99 ? '99+' : String(unread);
+}
+
+/** The header link's spoken name. */
+export function inboxLabel(unread: number | null | undefined): string {
+  const n = typeof unread === 'number' && unread > 0 ? unread : 0;
+  return n ? `Inbox, ${n} unread` : 'Inbox';
+}
+
+// ---------------------------------------------------------------------------
+// Macro history
+// ---------------------------------------------------------------------------
+
+export type MacroVersion = {
+  version: number;
+  title: string;
+  body: string;
+  locale: string;
+  issue_types: string[];
+  edited_by: { id: number; label: string } | null;
+  created_at: string | null;
+  restored_from: number | null;
+};
+
+/** One line for a history row: "Version 3 - restored from version 1". */
+export function versionLine(v: Pick<MacroVersion, 'version' | 'restored_from'>): string {
+  return v.restored_from ? `Version ${v.version} \u00b7 restored from version ${v.restored_from}` : `Version ${v.version}`;
+}
+
+/** A version can be restored unless it is already what the macro says. */
+export function canRestore(v: Pick<MacroVersion, 'version'>, currentVersion: number | undefined): boolean {
+  return v.version !== currentVersion;
+}
+
+// ---------------------------------------------------------------------------
+// SLA dashboard
+// ---------------------------------------------------------------------------
+
+export type DashboardStats = {
+  opened: number;
+  first_response_met_pct: number | null;
+  resolution_met_pct: number | null;
+  median_first_response_minutes: number | null;
+  currently_breaching: number;
+  paused: number;
+};
+
+export type DashboardCity = { code: string | null; name: string; country: string | null };
+
+export type Dashboard = {
+  date_from: string;
+  date_to: string;
+  as_of: string;
+  truncated: boolean;
+  totals: DashboardStats;
+  cities: Array<{ city: DashboardCity } & DashboardStats>;
+  rows: Array<{ city: DashboardCity; priority: string } & DashboardStats>;
+  agents: Array<{ agent: { id: number; label: string } | null; unassigned: boolean } & DashboardStats>;
+};
+
+/** "66.7%", or an em dash when nothing was due yet (never a made-up 0%). */
+export function formatPct(value: number | null | undefined): string {
+  return typeof value === 'number' ? `${value.toFixed(1)}%` : '\u2014';
+}
+
+/** "10m" / "2h 35m", or an em dash when nobody has been answered. */
+export function formatMedian(minutes: number | null | undefined): string {
+  return typeof minutes === 'number' ? formatMinutes(minutes) : '\u2014';
+}
+
+/** The dashboard's filters as the API's query (dates are each city's own days). */
+export function dashboardPath(dateFrom: string, dateTo: string, scope = ''): string {
+  const q = new URLSearchParams();
+  if (DATE.test(dateFrom)) q.set('date_from', dateFrom);
+  if (DATE.test(dateTo)) q.set('date_to', dateTo);
+  if (scope) q.set('scope', scope);
+  const text = q.toString();
+  return `/support/admin/sla/dashboard/${text ? `?${text}` : ''}`;
+}
+
+/** Is the range acceptable to the server (ordered, at most 92 days)? */
+export function dashboardRangeError(dateFrom: string, dateTo: string): string | null {
+  if (!dateFrom && !dateTo) return null;
+  if (!DATE.test(dateFrom) || !DATE.test(dateTo)) return 'Pick both dates.';
+  const from = Date.parse(`${dateFrom}T00:00:00Z`);
+  const to = Date.parse(`${dateTo}T00:00:00Z`);
+  if (from > to) return 'The start date is after the end date.';
+  if ((to - from) / 86400000 + 1 > 92) return 'The range can be at most 92 days.';
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// SLA changes (a request for a checker)
+// ---------------------------------------------------------------------------
+
+export type PendingChange = {
+  id: number;
+  country: string;
+  kind: 'sla_policy' | 'country_config' | null;
+  priority?: string | null;
+  first_response_minutes?: number | null;
+  resolution_minutes?: number | null;
+  waiting_reminder_days?: number | null;
+  waiting_autoclose_days?: number | null;
+  refund_review_hours?: number | null;
+  reason?: string;
+  maker_label?: string;
+  maker_id?: number;
+  requested_at?: string | null;
+  expires_at?: string | null;
+};
+
+export type CountryConfig = {
+  country: string;
+  configured: boolean;
+  waiting_reminder_days: number | null;
+  waiting_autoclose_days: number | null;
+  refund_review_hours: number | null;
+  version: number;
+  updated_at?: string | null;
+  updated_by?: { label?: string } | null;
+};
+
+/** What a pending request asks for, in words. */
+export function pendingSummary(p: PendingChange): string {
+  if (p.kind === 'country_config') {
+    return `Reminder after ${p.waiting_reminder_days} days, auto-close after ${p.waiting_autoclose_days} days, refund review ${p.refund_review_hours} hours`;
+  }
+  const pri = PRIORITY_LABEL[p.priority ?? ''] ?? p.priority ?? '';
+  return `${pri}: first reply within ${formatMinutes(p.first_response_minutes ?? 0)}, resolved within ${formatMinutes(p.resolution_minutes ?? 0)}`;
+}
+
+/** The request already waiting for this row (priority null = the country settings). */
+export function pendingFor(pending: PendingChange[], country: string, priority: string | null): PendingChange | null {
+  return pending.find((p) => p.country === country
+    && (priority === null ? p.kind === 'country_config' : p.kind === 'sla_policy' && p.priority === priority)) ?? null;
+}
+
+/** The sentence a configured / unconfigured country reads as. */
+export function configSentence(c: CountryConfig): string {
+  if (!c.configured) return 'Not configured. No reminder, no auto-close, and refund messages carry no timeframe.';
+  return `Reminder after ${c.waiting_reminder_days} days, auto-close after ${c.waiting_autoclose_days} days, refund review ${c.refund_review_hours} hours.`;
 }

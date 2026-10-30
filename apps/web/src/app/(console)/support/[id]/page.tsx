@@ -9,11 +9,12 @@ import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   ISSUE_LABEL, PRIORITIES, PRIORITY_LABEL, STATUS_LABEL, type MacroSummary, type Sla,
   type SupportActionKey, type SupportActions, composerModes, filterMacros, messageKind,
-  priorityTone, slaChip, slaSentence, visibleSupportActions,
+  priorityTone, slaSentence, visibleSupportActions,
 } from '@/lib/supportDesk';
 import { formatMinor, newIdempotencyKey, words } from '@/lib/trips';
 import { ButtonLink } from '@/components/sg/Button';
 import { Revealable } from '@/components/console/Revealable';
+import { SlaChip } from '@/components/console/SlaChip';
 import { ActionDrawer } from '@/components/console/TripActionDrawer';
 import {
   Empty, ErrorState, Fact, Facts, PageHeader, Panel, Pill, Skeleton,
@@ -87,6 +88,9 @@ type Ticket = {
   country: string | null;
   created_at: string; updated_at: string; resolved_at: string | null;
   first_responded_at: string | null;
+  /** Set while a refund request this ticket asked for has come back to its agent. */
+  returned_at?: string | null;
+  returned_reason?: string | null;
   sla: Sla;
   messages: Message[];
   trip: Trip | null;
@@ -198,7 +202,6 @@ function TicketView({
   const actions = ticket.allowed_actions;
   const visible = visibleSupportActions(actions, access);
   const has = (k: SupportActionKey) => visible.includes(k);
-  const chip = slaChip(ticket.sla);
   const target = { type: 'support_ticket', id: ticket.id } as const;
   const name = ticket.requester.full_name?.trim() || `${ticket.requester.role === 'driver' ? 'Driver' : 'Rider'} #${ticket.requester.id}`;
   const pageHref = ticket.requester.page
@@ -222,7 +225,7 @@ function TicketView({
         actions={
           <>
             <Pill tone={priorityTone(ticket.priority)}>{PRIORITY_LABEL[ticket.priority] ?? ticket.priority}</Pill>
-            <Pill tone={chip.tone}>{chip.label}</Pill>
+            <SlaChip sla={ticket.sla} />
             <Pill tone={STATUS_TONE[ticket.status] ?? 'neutral'}>{STATUS_LABEL[ticket.status] ?? ticket.status}</Pill>
             <ButtonLink href="/support" variant="ghost" size="sm">All tickets</ButtonLink>
           </>
@@ -235,6 +238,16 @@ function TicketView({
         </div>
       )}
       {actionError && <div className="alert-error mb-5" role="alert">{actionError}</div>}
+      {ticket.returned_at ? (
+        <div className="ops-confirm mb-5" role="status">
+          <b>Returned to you</b>
+          <span>
+            The refund you asked for on this ticket was turned down
+            {ticket.returned_reason ? `: ${ticket.returned_reason}` : '.'}{' '}
+            Nothing was sent to the {ticket.requester.role === 'driver' ? 'driver' : 'rider'}. Reply or add a note to pick it up again.
+          </span>
+        </div>
+      ) : null}
 
       <div className="ops-review">
         <div className="grid gap-5">
@@ -603,7 +616,7 @@ function TicketPanel({
     <Panel title="Ticket">
       <Facts>
         <Fact label="SLA">
-          <Pill tone={slaChip(ticket.sla).tone}>{slaChip(ticket.sla).label}</Pill>
+          <SlaChip sla={ticket.sla} />
           <span className="ops-sla-sentence">{slaSentence(ticket.sla)}</span>
         </Fact>
         <Fact label="First reply due">{stamp(ticket.sla.first_response.due_at, tz)}{ticket.first_responded_at ? ` · answered ${stamp(ticket.first_responded_at, tz)}` : ''}</Fact>

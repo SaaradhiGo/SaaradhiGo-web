@@ -6,8 +6,8 @@ import { useAdminAccess } from '@/lib/adminScope';
 import { stamp } from '@/lib/consoleTime';
 import { useDensity } from '@/lib/consolePrefs';
 import {
-  ISSUE_LABEL, LOCALE_LABEL, MACRO_PLACEHOLDERS, type MacroSummary, canManageMacros,
-  unknownPlaceholders,
+  ISSUE_LABEL, LOCALE_LABEL, MACRO_PLACEHOLDERS, type MacroSummary, type MacroVersion,
+  canManageMacros, canRestore, unknownPlaceholders, versionLine,
 } from '@/lib/supportDesk';
 import { ButtonLink } from '@/components/sg/Button';
 import {
@@ -23,20 +23,24 @@ import {
  * one country or all, one language, and one set of issue types or all.
  * Deactivating is soft: the text stays, the picker stops offering it, and an
  * audit row records who did it. Changing macros needs `support.macro`
- * (Super Admin by default); everyone who replies can use them.
+ * (Super Admin and Support Lead); everyone who replies can use them.
+ *
+ * Saved replies are versioned: every create, edit and restore writes a new
+ * version, and the editor shows the history and can restore an earlier one
+ * (restoring makes a new version, it never rewrites the old ones).
  */
 type Macro = MacroSummary & { created_by?: { label?: string } | null; updated_at?: string | null };
 
 type Draft = {
   id: number | null; title: string; body: string; locale: string; country: string;
-  issueTypes: string[]; active: boolean;
+  issueTypes: string[]; active: boolean; version?: number;
 };
 
 const BLANK: Draft = { id: null, title: '', body: '', locale: 'en', country: '', issueTypes: [], active: true };
 
 const fromMacro = (m: Macro): Draft => ({
   id: m.id, title: m.title, body: m.body, locale: m.locale, country: m.country ?? '',
-  issueTypes: m.issue_types ?? [], active: m.active,
+  issueTypes: m.issue_types ?? [], active: m.active, version: m.version,
 });
 
 const failure = (err: unknown, fallback: string) =>
@@ -72,6 +76,7 @@ export default function MacrosPage() {
         ? <button type="button" className="ops-linkbtn" onClick={() => setDraft(fromMacro(m))}>{m.title}</button>
         : m.title),
     },
+    { key: 'version', label: 'Version', width: '6rem', num: true, hideBelow: 1100, render: (m) => (m.version ? 'v' + m.version : '') },
     { key: 'locale', label: 'Language', width: '8rem', render: (m) => LOCALE_LABEL[m.locale] ?? m.locale },
     { key: 'country', label: 'Country', width: '8rem', render: (m) => m.country ?? 'All' },
     {
@@ -238,7 +243,80 @@ function MacroDrawer({ draft: initial, onClose, onDone }: { draft: Draft; onClos
           </label>
         ) : null}
         {error && <div className="alert-error" role="alert">{error}</div>}
+        {draft.id ? <History macroId={draft.id} current={initial.version} onDone={onDone} /> : null}
       </div>
     </Drawer>
+  );
+}
+
+/**
+ * Version history. Every create, edit and restore is a new version; nothing is
+ * ever rewritten. Restoring an earlier version makes a NEW one with its text,
+ * so the list only ever grows and shows who did what.
+ */
+function History({ macroId, current, onDone }: { macroId: number; current: number | undefined; onDone: (text: string) => void }) {
+  const [versions, setVersions] = useState<MacroVersion[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<number | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    api.get<{ results: MacroVersion[] }>('/support/admin/macros/' + macroId + '/versions/')
+      .then((r) => { if (live) setVersions(r.results ?? []); })
+      .catch((err) => { if (live) { setError(failure(err, 'We could not load the history.')); setVersions([]); } });
+    return () => { live = false; };
+  }, [macroId]);
+
+  async function restore(version: number) {
+    setBusy(version); setError(null);
+    try {
+      const out = await api.post<{ changed?: boolean; version?: number }>(
+        '/support/admin/macros/' + macroId + '/restore/', { version });
+      onDone(out?.changed === false
+        ? 'Nothing changed: the macro already says that.'
+        : 'Version ' + version + ' restored as version ' + out?.version + '.');
+    } catch (err) {
+      setError(failure(err, 'That version was not restored.'));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <section aria-labelledby="mc-history" className="ops-history">
+      <h3 id="mc-history" className="ops-form__label">History</h3>
+      {versions === null ? (
+        <p className="help m-0" aria-busy="true">Loading the history…</p>
+      ) : versions.length === 0 ? (
+        <p className="help m-0">{error ?? 'No history yet.'}</p>
+      ) : (
+        <ol className="ops-history__list">
+          {versions.map((v) => (
+            <li key={v.version} className="ops-history__item">
+              <div>
+                <b>{versionLine(v)}</b>
+                {v.version === current ? <> <Pill tone="good">Current</Pill></> : null}
+                <div className="help m-0">
+                  {v.edited_by?.label ?? 'Unknown'} · {stamp(v.created_at)}
+                </div>
+                <details>
+                  <summary>Show the text</summary>
+                  <p className="ops-history__body">{v.body}</p>
+                </details>
+              </div>
+              {canRestore(v, current) ? (
+                <button
+                  type="button" className="sg-btn sg-btn--ghost sg-btn--sm"
+                  disabled={busy !== null} onClick={() => void restore(v.version)}
+                >
+                  {busy === v.version ? 'Restoring…' : 'Restore'}<span className="sr-only"> version {v.version}</span>
+                </button>
+              ) : null}
+            </li>
+          ))}
+        </ol>
+      )}
+      {error && versions && versions.length > 0 ? <div className="alert-error" role="alert">{error}</div> : null}
+    </section>
   );
 }
