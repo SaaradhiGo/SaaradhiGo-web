@@ -326,7 +326,8 @@ function TicketView({
 function Thread({ ticket, tz, name }: { ticket: Ticket; tz: string | undefined; name: string }) {
   return (
     <>
-      {ticket.description ? (
+      {/* The app mirrors the description as the first message; show it once. */}
+      {ticket.description && !ticket.messages.some((m) => m.author_role === 'user' && m.body === ticket.description) ? (
         <div className="ops-msg mb-3">
           <div className="ops-msg__meta">
             <span>{name} · opened the ticket</span>

@@ -1477,3 +1477,4 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .ops-form--spaced { margin-top: 14px; }
 .ops-fullthread { display: grid; gap: 6px; max-width: 60ch; font: 500 13px/1.5 var(--font-sans); color: var(--ink); overflow-wrap: anywhere; }
 .ops-fullthread p { margin: 0; white-space: pre-wrap; }
+.ops-facts + .ops-subhead { margin-top: 18px; }
