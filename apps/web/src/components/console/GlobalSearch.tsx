@@ -27,9 +27,8 @@ import {
  * says what landed, because the list appearing below the field is silent
  * to a screen reader otherwise.
  *
- * Trips and drivers open their own pages. There is no rider page and no
- * vehicle page yet, so a rider opens their latest trip and a vehicle opens
- * its driver; the row says so.
+ * Trips, drivers and riders open their own pages. There is no vehicle page
+ * yet, so a vehicle opens its driver; the row says so.
  *
  * `/` focuses it from anywhere that is not already a text field, which is
  * the convention every tool an operator already uses follows.
