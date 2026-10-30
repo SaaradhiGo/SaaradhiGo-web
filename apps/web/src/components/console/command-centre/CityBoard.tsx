@@ -54,8 +54,9 @@ function countTile(
   );
 }
 
-/** The capabilities behind the four "Waiting on you" queues below. */
-const QUEUE_CAPABILITIES = ['safety.respond', 'finance.read', 'support.read', 'driver.read'];
+/** The capabilities behind the "Waiting on you" queues below (live SOS goes
+ *  to safety.respond and City Ops' trip.write; the server sends it or not). */
+const QUEUE_CAPABILITIES = ['safety.respond', 'trip.write', 'finance.read', 'support.read', 'driver.read'];
 
 export function CityBoard({
   row,
@@ -81,7 +82,7 @@ export function CityBoard({
   const collected = row.money ? moneyTiles(row.money.collected, 'Collected', 'up') : [];
   const pendingSums = row.money ? moneyTiles(row.money.withdrawals_pending_sum, 'Payouts pending', 'none') : [];
 
-  const sosOpen = row.queues.sos_open.now ?? 0;
+  const sosOpen = row.queues.sos_open?.now ?? 0;
   const q = row.queues;
 
   return (
@@ -168,7 +169,7 @@ export function CityBoard({
         <p className="ops-cc-note" role="note">No work queues are part of your access.</p>
       )}
       <div className="ops-queues">
-        {can(access, 'safety.respond') && (
+        {q.sos_open && (
           <Queue
             count={sosOpen}
             title="SOS open"

@@ -85,7 +85,7 @@ export function CommandCentre({ access: given }: { access?: AdminAccess | null }
   // Only the queues this caller is shown (the same gates as CityBoard's
   // "Waiting on you"), so the header never counts work they cannot see.
   const waiting = shown.reduce((n, r) => n
-    + (can(access, 'safety.respond') ? r.queues.sos_open.now ?? 0 : 0)
+    + (r.queues.sos_open?.now ?? 0)  // present only for a caller who may respond
     + (can(access, 'support.read') ? r.queues.tickets_open.now ?? 0 : 0)
     + (can(access, 'finance.read') ? r.queues.withdrawals_pending?.now ?? 0 : 0)
     + (can(access, 'driver.read') ? r.queues.kyc_awaiting.now ?? 0 : 0), 0);

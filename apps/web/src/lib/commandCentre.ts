@@ -48,9 +48,10 @@ export type CityRow = {
   drivers: { online_now: Pair; online_source: 'presence' | 'db'; active: Pair };
   riders: { active_24h: Pair };
   queues: {
-    sos_open: Pair;
-    sos_oldest_open_minutes: number;
-    sos_raised: Pair;
+    /** Live SOS: absent unless the caller can respond (safety.respond or City Ops). */
+    sos_open?: Pair;
+    sos_oldest_open_minutes?: number;
+    sos_raised?: Pair;
     tickets_open: Pair;
     tickets_raised: Pair;
     withdrawals_pending?: Pair;
@@ -66,6 +67,7 @@ export type Overview = {
   generated_at: string;
   scope: string | null;
   money_visible: boolean;
+  sos_visible?: boolean;
   definitions: Record<string, string>;
   cities: CityRow[];
   cached?: boolean;
