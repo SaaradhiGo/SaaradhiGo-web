@@ -16,7 +16,7 @@ import { Sidebar, type NavGroup } from '@/components/console/Sidebar';
 import { TopBar } from '@/components/console/TopBar';
 import { RecoveryLowBanner } from '@/components/console/RecoveryLowBanner';
 import {
-  Gauge, LifeBuoy, MapPin, Route, Shield, Siren, Users, Wallet,
+  Gauge, LifeBuoy, MapPin, Route, Shield, Siren, UserRound, Users, Wallet,
 } from '@/components/console/icons';
 import '@/styles/console.css';
 
@@ -48,6 +48,7 @@ const GROUPS: NavGroup[] = [
     label: 'People',
     items: [
       { href: '/drivers', label: 'Drivers', Icon: Users, need: 'driver.read', countKey: 'drivers' },
+      { href: '/riders', label: 'Riders', Icon: UserRound, need: 'rider.read' },
       { href: '/support', label: 'Support', Icon: LifeBuoy, need: 'support.read', countKey: 'support' },
     ],
   },

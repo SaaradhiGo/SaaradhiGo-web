@@ -121,8 +121,8 @@ describe('hrefFor', () => {
   it('opens trips and drivers directly, riders by their latest trip, vehicles by their driver', () => {
     expect(hrefFor(trip)).toBe('/trips/42');
     expect(hrefFor(driver)).toBe('/drivers/5');
-    expect(hrefFor(rider)).toBe('/trips/42');
-    expect(hrefFor(riderWithoutTrips)).toBeNull();
+    expect(hrefFor(rider)).toBe('/riders/7');
+    expect(hrefFor(riderWithoutTrips)).toBe('/riders/7');
     expect(hrefFor(vehicle)).toBe('/drivers/5');
     expect(hrefFor({ ...vehicle, driver_id: null, driver: null })).toBeNull();
   });

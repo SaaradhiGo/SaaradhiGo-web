@@ -160,16 +160,15 @@ export function moveActive(current: number, delta: number, count: number): numbe
 /**
  * Where a result opens.
  *
- * Trips and drivers have pages. There is no rider page and no vehicle page
- * yet, so a rider opens their most recent trip and a vehicle opens its
- * driver; a rider with no trip has nowhere to go and is shown but not
- * actionable.
+ * Trips, drivers and riders have pages (a rider's page is keyed by their
+ * account id, `user.id`). There is no vehicle page yet, so a vehicle opens
+ * its driver.
  */
 export function hrefFor(hit: Hit): string | null {
   switch (hit.type) {
     case 'trip': return `/trips/${hit.id}`;
     case 'driver': return `/drivers/${hit.id}`;
-    case 'rider': return hit.last_trip_id ? `/trips/${hit.last_trip_id}` : null;
+    case 'rider': return `/riders/${hit.user.id}`;
     case 'vehicle': return hit.driver_id ? `/drivers/${hit.driver_id}` : null;
   }
 }

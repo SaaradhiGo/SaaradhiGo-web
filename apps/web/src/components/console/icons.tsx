@@ -69,6 +69,16 @@ export function Users({ className }: Props) {
   );
 }
 
+/** Riders: one person. */
+export function UserRound({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20a7 7 0 0 1 14 0" />
+    </svg>
+  );
+}
+
 /** Support: a ring buoy. */
 export function LifeBuoy({ className }: Props) {
   return (
