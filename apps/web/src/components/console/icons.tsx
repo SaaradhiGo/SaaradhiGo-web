@@ -154,6 +154,16 @@ export function Alert({ className }: Props) {
   );
 }
 
+/** Fraud & Risk: a flag on a pole. */
+export function Flag({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M6 21V4" />
+      <path d="M6 4.5h10.5l-2 3.5 2 3.5H6" />
+    </svg>
+  );
+}
+
 /* --- the shell's controls ----------------------------------------------
    Same grid, same stroke. Added with the noir shell: search, alerts, the
    theme switch, the collapse handle, filters, sorting and the sign-in

@@ -2,7 +2,7 @@ import { AdminAccess, canAny } from '@/lib/adminScope';
 import { PAGE_NEEDS } from '@/lib/consoleLinks';
 import type { NavGroup, NavItem } from '@/components/console/Sidebar';
 import {
-  Gauge, Gift, LifeBuoy, MapPin, Megaphone, Percent, Radar, Route, Shield, Siren, TrendUp, UserRound, Users, Wallet,
+  Flag, Gauge, Gift, LifeBuoy, MapPin, Megaphone, Percent, Radar, Route, Shield, Siren, TrendUp, UserRound, Users, Wallet,
 } from '@/components/console/icons';
 
 /**
@@ -65,6 +65,8 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       // Open to the read-only `safety.read` as well as `safety.respond`.
       { href: '/safety-ops', label: 'Safety', Icon: Siren, need: PAGE_NEEDS.safety, countKey: 'sos', urgent: true },
+      // The fraud review queue and the detection rules (module 13): `fraud.read`.
+      { href: '/fraud', label: 'Fraud & Risk', Icon: Flag, need: PAGE_NEEDS.fraud },
     ],
   },
   {
