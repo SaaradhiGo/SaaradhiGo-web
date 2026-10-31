@@ -24,7 +24,8 @@ import { AdminAccess, canAny, canAt } from '@/lib/adminScope';
  */
 export type Page =
   | 'dashboard' | 'trips' | 'drivers' | 'riders' | 'support' | 'supportInbox'
-  | 'withdrawals' | 'finance' | 'safety' | 'safetyConfig' | 'zones' | 'pricing' | 'liveops';
+  | 'withdrawals' | 'finance' | 'safety' | 'safetyConfig' | 'zones' | 'pricing' | 'liveops'
+  | 'notifications';
 
 export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   // The Command Centre opens for `report.read` too: Marketing keeps it with
@@ -51,6 +52,11 @@ export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   // The Live Ops map (module 10). `liveops.read` shows driver dots and trips;
   // `liveops.aggregate` shows the demand and supply heatmap alone. Either opens it.
   liveops: ['liveops.read', 'liveops.aggregate'],
+  // Notifications (module 11): templates, campaigns, the delivery log and the providers page.
+  // `notify.read` opens all four (Super Admin, City Ops, Support, Marketing); drafting a
+  // template or a campaign also needs `notify.template` / `notify.campaign`, which the
+  // pages ask for themselves.
+  notifications: ['notify.read'],
 };
 
 /** May this operator open the page, anywhere? */
