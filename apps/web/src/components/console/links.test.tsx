@@ -48,7 +48,7 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
     global: true,
     permissions: [
       'trip.read', 'rider.read', 'driver.read', 'support.read', 'finance.read', 'report.read', 'audit.read',
-      'zone.read', 'pii.view', 'trip.write', 'rider.write', 'rider.note', 'rider.flag', 'rider.signout',
+      'zone.read', 'pii.view', 'trip.write', 'trip.stale_resolve', 'rider.write', 'rider.note', 'rider.flag', 'rider.signout',
       'rider.block', 'driver.write', 'driver.kyc', 'driver.deactivate', 'support.reply', 'support.refund',
       'support.macro', 'support.sla', 'support.dashboard', 'finance.payout', 'finance.adjust', 'finance.export', 'finance.config', 'finance.aggregate', 'pricing.write',
       'zone.write', 'promo.write', 'notify.send', 'safety.read', 'safety.respond', 'safety.config',
@@ -58,7 +58,7 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
   },
   city_ops_manager: {
     permissions: [
-      'trip.read', 'trip.write', 'rider.read', 'driver.read', 'driver.write', 'support.read', 'report.read',
+      'trip.read', 'trip.write', 'trip.stale_resolve', 'rider.read', 'driver.read', 'driver.write', 'support.read', 'report.read',
       'zone.read', 'zone.write', 'promo.write', 'pii.view', 'rider.note', 'rider.flag', 'rider.signout',
       'rider.block', 'pricing.write', 'safety.read', 'support.sla', 'support.dashboard', 'finance.aggregate',
       'liveops.read', 'notify.read',

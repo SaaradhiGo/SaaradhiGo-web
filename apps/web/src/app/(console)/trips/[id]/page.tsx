@@ -12,6 +12,8 @@ import {
   type ActionKey, type TripActions, cityTime, cityZoneLabel, formatMinor, visibleActions,
 } from '@/lib/trips';
 import { ActionDrawer } from '@/components/console/TripActionDrawer';
+import { StaleTripPanel } from '@/components/console/StaleTripPanel';
+import { type StaleActions, type StaleDetail, panelModel } from '@/lib/staleTrip';
 import { ButtonLink } from '@/components/sg/Button';
 import { Revealable } from '@/components/console/Revealable';
 import {
@@ -120,6 +122,8 @@ type TripDetail = {
   approval_requests?: Array<{ id: number; action_key: string; status: string; amount: number | null; currency: string; requested_at: string | null }>;
   audit_trail?: Array<{ id: number; action: string; created_at: string | null; reason: string; created_by: { label: string; role: string } | null }>;
   stale?: { is_stale: boolean; reason: string | null };
+  stale_actions?: StaleActions;
+  stale_detail?: StaleDetail;
   actions?: TripActions;
 };
 
@@ -140,6 +144,8 @@ const EVENT_LABEL: Record<string, string> = {
   completed: 'Completed', cancelled: 'Cancelled', driver_withdrew: 'Driver withdrew', stale_flagged: 'Flagged stale',
   trip_cancelled: 'Operator cancelled', trip_flagged: 'Operator flagged', trip_unflagged: 'Flag cleared',
   trip_note_added: 'Internal note', trip_refunded: 'Refund recorded', trip_fare_adjusted: 'Fare adjusted',
+  trip_stale_marked_reviewed: 'Marked reviewed', trip_stale_marked_reviewed_refused: 'Mark reviewed refused',
+  trip_stale_driver_released: 'Driver released', trip_stale_driver_released_refused: 'Driver release refused',
 };
 
 export default function TripDetailPage() {
@@ -300,6 +306,20 @@ export default function TripDetailPage() {
           ) : null}
         </nav>
       )}
+
+      {data.stale_actions ? (
+        <div className="mb-4">
+          <StaleTripPanel
+            model={panelModel(data.stale, data.stale_actions)}
+            tripId={data.id}
+            reason={data.stale?.reason ?? null}
+            actions={data.stale_actions}
+            detail={data.stale_detail}
+            timeZone={cityTz}
+            onDone={(message) => { setActionError(null); setNotice(message); void load(true); }}
+          />
+        </div>
+      ) : null}
 
       <TileGrid>
         {data.fare_minor ? (
