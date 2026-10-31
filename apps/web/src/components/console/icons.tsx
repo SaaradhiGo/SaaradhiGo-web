@@ -111,6 +111,18 @@ export function MapPin({ className }: Props) {
   );
 }
 
+/** Live Ops: a radar sweep, because the page watches the fleet. */
+export function Radar({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="12" r="4.5" />
+      <path d="M12 12 18 6.5" />
+      <circle cx="12" cy="12" r="1" />
+    </svg>
+  );
+}
+
 /** Pricing: a percent sign, because the page is mostly rates. */
 export function Percent({ className }: Props) {
   return (
