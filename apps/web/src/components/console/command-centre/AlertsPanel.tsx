@@ -1,10 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { OperatorAlert, acknowledgeAlert, alertMeasure, messageFor } from '@/lib/commandCentre';
 import type { Remote } from '@/lib/useCommandCentre';
 import type { AlertsPage } from '@/lib/commandCentre';
 import { AdminAccess, can } from '@/lib/adminScope';
+import { canOpen } from '@/lib/consoleLinks';
 import { stamp } from '@/lib/consoleTime';
 import { Empty, ErrorState, Panel, Pill, Skeleton } from '@/components/console/ui';
 
@@ -101,6 +103,9 @@ export function AlertsPanel({
                     {a.payload.window && a.payload.window !== 'now' ? ` · over ${a.payload.window}` : ''}
                     {' · '}
                     <time dateTime={a.created_at}>{stamp(a.created_at, tz)}</time>
+                    {a.kind.startsWith('fraud.') && typeof a.payload.path === 'string' && canOpen(access, 'fraud') ? (
+                      <> · <Link href={a.payload.path}>Open in Fraud &amp; Risk</Link></>
+                    ) : null}
                   </span>
                 </div>
                 {allowed ? (

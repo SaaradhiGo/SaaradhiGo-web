@@ -121,14 +121,6 @@ export type Options = {
   places: Place[]; zones: { code: string; name: string; node: string; country: string }[]; vehicle_types: string[];
 };
 
-export type FraudFlag = {
-  id: number; kind: string; status: 'open' | 'dismissed' | 'confirmed';
-  subject: { ref: string; role: string; user_id: number };
-  evidence: { signals?: string[]; referral_id?: number; campaign_id?: number; role?: string;
-    trips_completed?: number; referee_user_id?: number };
-  source_ref: string; scope: string | null; scope_name: string | null; created_at: string;
-};
-
 // ---------------------------------------------------------------------------
 // Words
 // ---------------------------------------------------------------------------
@@ -189,8 +181,6 @@ export const REDEMPTION_WORDS: Record<Redemption['state'], string> = {
   committed: 'Reserved on a booked trip', settled: 'Settled', released: 'Released (trip cancelled)',
   legacy: 'Before budgets',
 };
-
-export const FRAUD_KIND_WORDS: Record<string, string> = { referral_abuse: 'Referral abuse' };
 
 // ---------------------------------------------------------------------------
 // The budget bar

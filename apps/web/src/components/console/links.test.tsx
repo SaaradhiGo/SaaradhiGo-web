@@ -54,7 +54,7 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
       'zone.write', 'promo.write', 'notify.send', 'safety.read', 'safety.respond', 'safety.config',
       'fraud.review', 'admin.manage', 'platform.settings', 'approval.check', 'liveops.read', 'liveops.aggregate',
       'notify.read', 'notify.template', 'notify.campaign',
-      'promo.read', 'incentive.write', 'fraud.read',
+      'promo.read', 'incentive.write', 'fraud.read', 'fraud.rules',
     ],
   },
   city_ops_manager: {
@@ -62,7 +62,7 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
       'trip.read', 'trip.write', 'trip.stale_resolve', 'rider.read', 'driver.read', 'driver.write', 'support.read', 'report.read',
       'zone.read', 'zone.write', 'pii.view', 'rider.note', 'rider.flag', 'rider.signout',
       'rider.block', 'pricing.write', 'safety.read', 'support.sla', 'support.dashboard', 'finance.aggregate',
-      'liveops.read', 'notify.read', 'promo.read', 'incentive.write', 'fraud.read',
+      'liveops.read', 'notify.read', 'promo.read', 'incentive.write', 'fraud.read', 'fraud.review',
     ],
   },
   support_agent: {
@@ -124,15 +124,15 @@ const ROW: CityRow = {
 };
 
 const NAV = {
-  super_admin: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/notifications', '/promotions', '/safety-ops', '/zones', '/settings/security'],
-  city_ops_manager: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/pricing', '/notifications', '/promotions', '/safety-ops', '/zones', '/settings/security'],
+  super_admin: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/notifications', '/promotions', '/safety-ops', '/fraud', '/zones', '/settings/security'],
+  city_ops_manager: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/pricing', '/notifications', '/promotions', '/safety-ops', '/fraud', '/zones', '/settings/security'],
   support_agent: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/notifications', '/settings/security'],
   support_lead: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/notifications', '/settings/security'],
   safety_officer: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/safety-ops', '/settings/security'],
   kyc_verifier: ['/drivers', '/settings/security'],
   finance: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/promotions', '/settings/security'],
   // Owner ruling 4: Marketing keeps the Command Centre (aggregates only).
-  marketing: ['/dashboard', '/live-ops', '/notifications', '/promotions', '/settings/security'],
+  marketing: ['/dashboard', '/live-ops', '/notifications', '/promotions', '/fraud', '/settings/security'],
   analyst: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/pricing', '/promotions', '/settings/security'],
 } as const;
 
