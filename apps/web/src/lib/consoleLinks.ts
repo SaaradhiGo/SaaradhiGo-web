@@ -25,7 +25,7 @@ import { AdminAccess, canAny, canAt } from '@/lib/adminScope';
 export type Page =
   | 'dashboard' | 'trips' | 'drivers' | 'riders' | 'support' | 'supportInbox'
   | 'withdrawals' | 'finance' | 'safety' | 'safetyConfig' | 'zones' | 'pricing' | 'liveops'
-  | 'notifications';
+  | 'notifications' | 'promotions';
 
 export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   // The Command Centre opens for `report.read` too: Marketing keeps it with
@@ -57,6 +57,11 @@ export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   // template or a campaign also needs `notify.template` / `notify.campaign`, which the
   // pages ask for themselves.
   notifications: ['notify.read'],
+  // Promotions & Incentives (module 12): rider promos, driver incentives, referrals. `promo.read`
+  // opens the pages (Super Admin, Marketing, City Ops, Finance read-only, Analyst read-only);
+  // drafting also needs `promo.write` (rider side) or `incentive.write` (driver side), which the
+  // pages ask for themselves. The fraud tab asks for `fraud.read` on its own.
+  promotions: ['promo.read'],
 };
 
 /** May this operator open the page, anywhere? */

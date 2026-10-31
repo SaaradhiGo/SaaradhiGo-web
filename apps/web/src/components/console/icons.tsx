@@ -188,6 +188,18 @@ export function Megaphone({ className }: Props) {
   );
 }
 
+/** Promotions & Incentives: a gift box, because the page is what the platform gives away. */
+export function Gift({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <rect x="4" y="9" width="16" height="11" rx="1.5" />
+      <path d="M3 9h18v3H3z" />
+      <path d="M12 9v11" />
+      <path d="M12 9c-1.2-3.4-5-3.6-5-1.2C7 9 9 9 12 9zM12 9c1.2-3.4 5-3.6 5-1.2C17 9 15 9 12 9z" />
+    </svg>
+  );
+}
+
 export function Sun({ className }: Props) {
   return (
     <svg {...base} className={className}>

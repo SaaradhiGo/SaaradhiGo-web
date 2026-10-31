@@ -1738,3 +1738,33 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .nf-timeline__at { font-variant-numeric: tabular-nums; color: var(--ops-ink-2); }
 .nf-timeline__detail { flex-basis: 100%; color: var(--ops-ink-2); overflow-wrap: anywhere; }
 @media (max-width: 720px) { .nf-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ===========================================================================
+   Promotions & Incentives (module 12): the budget bar, the cost projection and the activity tables.
+   Colours are tokens only. The bar is a picture of three numbers that are always written out beside it.
+   =========================================================================== */
+.pm-budget { display: grid; gap: 6px; min-width: 12rem; }
+.pm-bar { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: var(--ops-wash-strong); border: 1px solid var(--line-strong); }
+.pm-bar--over { border-color: var(--ops-danger-edge); box-shadow: 0 0 0 1px var(--ops-danger-edge); }
+.pm-bar__spent { background: var(--ops-gold-500); }
+.pm-bar__reserved { background: repeating-linear-gradient(135deg, var(--ops-gold-500) 0 3px, var(--ops-gold-wash) 3px 6px); }
+.pm-budget__nums { display: flex; flex-wrap: wrap; gap: 2px 12px; font: 500 12px/1.4 var(--font-sans); color: var(--ops-ink-2); }
+.pm-budget__nums b { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.pm-budget__over { color: var(--ops-danger); font-weight: 700; }
+.pm-sub { display: block; margin-top: 2px; font: 500 12px/1.4 var(--font-sans); color: var(--ops-ink-2); overflow-wrap: anywhere; }
+.pm-window { font: 500 12.5px/1.4 var(--font-sans); color: var(--ops-ink-1); }
+.pm-error { font: 600 12.5px/1.4 var(--font-sans); color: var(--ops-danger); }
+.pm-cost { gap: 8px; }
+.pm-cost b { color: var(--ink); }
+.pm-scroll { overflow-x: auto; }
+.pm-activity { width: 100%; }
+.pm-activity th, .pm-activity td { text-align: left; vertical-align: top; padding: 9px 10px; white-space: normal; overflow-wrap: anywhere; }
+.pm-activity .ops-pill { white-space: normal; text-align: left; }
+.pm-activity .pm-sub { margin-top: 4px; }
+.pm-sub { white-space: normal; }
+.pm-wrap { display: block; white-space: normal; overflow-wrap: anywhere; }
+.pm-activity .pm-col-status { min-width: 10.5rem; }
+.pm-activity .pm-col-status .ops-pill { white-space: nowrap; }
+/* A blocked row is marked at its edge: tinting the cells would sit under the pill and cost it contrast. */
+.pm-row--blocked td:first-child { box-shadow: inset 3px 0 0 var(--ops-danger); }
+

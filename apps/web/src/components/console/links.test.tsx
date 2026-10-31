@@ -54,14 +54,15 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
       'zone.write', 'promo.write', 'notify.send', 'safety.read', 'safety.respond', 'safety.config',
       'fraud.review', 'admin.manage', 'platform.settings', 'approval.check', 'liveops.read', 'liveops.aggregate',
       'notify.read', 'notify.template', 'notify.campaign',
+      'promo.read', 'incentive.write', 'fraud.read',
     ],
   },
   city_ops_manager: {
     permissions: [
       'trip.read', 'trip.write', 'trip.stale_resolve', 'rider.read', 'driver.read', 'driver.write', 'support.read', 'report.read',
-      'zone.read', 'zone.write', 'promo.write', 'pii.view', 'rider.note', 'rider.flag', 'rider.signout',
+      'zone.read', 'zone.write', 'pii.view', 'rider.note', 'rider.flag', 'rider.signout',
       'rider.block', 'pricing.write', 'safety.read', 'support.sla', 'support.dashboard', 'finance.aggregate',
-      'liveops.read', 'notify.read',
+      'liveops.read', 'notify.read', 'promo.read', 'incentive.write', 'fraud.read',
     ],
   },
   support_agent: {
@@ -80,10 +81,10 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
   finance: {
     permissions: ['trip.read', 'driver.read', 'rider.read', 'support.read', 'finance.read', 'finance.payout',
       'finance.adjust', 'finance.export', 'finance.config', 'finance.aggregate', 'support.refund',
-      'report.read', 'zone.read', 'pii.view', 'rider.note'],
+      'report.read', 'zone.read', 'pii.view', 'rider.note', 'promo.read'],
   },
-  marketing: { permissions: ['promo.write', 'notify.send', 'report.read', 'liveops.aggregate', 'notify.read', 'notify.template', 'notify.campaign'] },
-  analyst: { permissions: ['trip.read', 'driver.read', 'rider.read', 'report.read', 'zone.read', 'finance.aggregate', 'liveops.aggregate'] },
+  marketing: { permissions: ['promo.read', 'promo.write', 'fraud.read', 'notify.send', 'report.read', 'liveops.aggregate', 'notify.read', 'notify.template', 'notify.campaign'] },
+  analyst: { permissions: ['trip.read', 'driver.read', 'rider.read', 'report.read', 'zone.read', 'finance.aggregate', 'liveops.aggregate', 'promo.read'] },
 };
 
 const CITY = { code: 'IN-TG-HYD', name: 'Hyderabad', kind: 'city', status: 'active', depth: 3, path: '/IN/IN-TG/IN-TG-HYD/' };
@@ -123,16 +124,16 @@ const ROW: CityRow = {
 };
 
 const NAV = {
-  super_admin: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/notifications', '/safety-ops', '/zones', '/settings/security'],
-  city_ops_manager: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/pricing', '/notifications', '/safety-ops', '/zones', '/settings/security'],
+  super_admin: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/notifications', '/promotions', '/safety-ops', '/zones', '/settings/security'],
+  city_ops_manager: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/pricing', '/notifications', '/promotions', '/safety-ops', '/zones', '/settings/security'],
   support_agent: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/notifications', '/settings/security'],
   support_lead: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/notifications', '/settings/security'],
   safety_officer: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/safety-ops', '/settings/security'],
   kyc_verifier: ['/drivers', '/settings/security'],
-  finance: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/settings/security'],
+  finance: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/promotions', '/settings/security'],
   // Owner ruling 4: Marketing keeps the Command Centre (aggregates only).
-  marketing: ['/dashboard', '/live-ops', '/notifications', '/settings/security'],
-  analyst: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/pricing', '/settings/security'],
+  marketing: ['/dashboard', '/live-ops', '/notifications', '/promotions', '/settings/security'],
+  analyst: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/pricing', '/promotions', '/settings/security'],
 } as const;
 
 /** Every destination on the city board (a tile or a queue), without the city query. */
