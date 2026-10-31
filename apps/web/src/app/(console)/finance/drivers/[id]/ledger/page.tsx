@@ -28,7 +28,7 @@ import {
  * are shown but move nothing in the wallet and are never in a sum.
  */
 type Entry = {
-  id: number; at: string; kind: string; purpose: string; direction: 'credit' | 'debit';
+  id: number; at: string; kind: string; purpose: string; label?: string; funded_by?: 'platform'; direction: 'credit' | 'debit';
   amount_minor: number; currency: string; running_balance_minor: number; status: string;
   trip_id: number | null; withdrawal_id: number | null;
   adjustment?: { approval_request_id: number; reason_code: string | null; note: string | null } | null;
@@ -107,7 +107,7 @@ function LedgerInner() {
       key: 'kind', label: 'Entry',
       render: (e) => (
         <>
-          {LEDGER_PURPOSE[e.purpose] ?? LEDGER_KIND[e.kind] ?? e.kind.replace(/_/g, ' ')}
+          {e.label ?? LEDGER_PURPOSE[e.purpose] ?? LEDGER_KIND[e.kind] ?? e.kind.replace(/_/g, ' ')}
           {e.trip_id ? <> · <PageLink page="trips" href={`/trips/${e.trip_id}`}>trip #{e.trip_id}</PageLink></> : null}
           {e.adjustment ? (
             <span className="muted">

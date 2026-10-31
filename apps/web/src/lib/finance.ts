@@ -232,11 +232,16 @@ export const LEDGER_KIND: Record<string, string> = {
   adjustment: 'Fare adjustment',
 };
 
-/** The two wallet purposes a settlement line comes from. */
+/** What each wallet purpose is called on the statement. */
 export const LEDGER_PURPOSE: Record<string, string> = {
   adjustment: 'Balance adjustment',
   trip_earnings: 'Trip earnings (online trip)',
   trip_commission: 'Commission on a cash trip',
+  // Platform-funded lines (the server sends the same text as `label`; this is the fallback).
+  promo_discount_platform_funded: 'Promo paid by SaaradhiGo',
+  platform_funded_trip_end: 'Trip ended by SaaradhiGo: earnings paid by SaaradhiGo',
+  incentive_reward: 'Incentive reward',
+  referral_reward: 'Referral reward',
 };
 
 export const RECON_KIND_LABEL: Record<string, string> = {
