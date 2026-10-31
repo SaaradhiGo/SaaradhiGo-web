@@ -30,6 +30,8 @@ type Overview = {
   rows: OverviewRow[];
   totals: Array<{ currency: string } & Record<string, number | string>>;
   note?: string;
+  // A COUNT per country of drivers the latest weekly payout run skipped (no payout details).
+  skipped_in_latest_run?: Array<{ country: string; week_start: string; count: number }>;
 };
 
 function OverviewInner() {
@@ -95,6 +97,13 @@ function OverviewInner() {
           ])}
         </TileGrid>
       )}
+
+      {(data?.skipped_in_latest_run ?? []).map((r) => (
+        <div key={r.country} className="ops-note ops-note--warn mb-4" role="status">
+          <b>{r.country}: {r.count} driver{r.count === 1 ? '' : 's'} skipped in the weekly payout run of {r.week_start}.</b>{' '}
+          They have no payout details; they are asked to add them and are picked up the week they do.
+        </div>
+      ))}
 
       <Panel flush>
         <RangeBar from={from} to={to} onApply={go} idPrefix="overview" />

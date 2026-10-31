@@ -71,6 +71,9 @@ type Row = {
   retryable?: boolean;
   approval_blocked?: boolean;
   approval_blocked_reason?: string | null;
+  // Approved in a currency with no payout rail: held, nothing is sent (module 8).
+  awaiting_rail?: boolean;
+  rail_note?: string | null;
 };
 type Detail = Row & {
   driver_phone: string;
@@ -82,7 +85,7 @@ type Detail = Row & {
   history: Array<{ id: number; action: string; at: string; by: string; reason: string }>;
 };
 type Tab = { status: string; label: string; count: number; amounts: Array<{ currency: string; amount_minor: number }> };
-type Extra = { tabs: Tab[] };
+type Extra = { tabs: Tab[]; rail_notices?: Array<{ currency: string; note: string }> };
 
 type Act = 'approve' | 'reject' | 'retry' | 'investigate';
 type Bulk = 'approve' | 'reject';
@@ -240,6 +243,7 @@ function PayoutsInner() {
         <>
           <Pill tone={payoutTone(w.status)}>{PAYOUT_LABEL[w.status] ?? w.status}</Pill>
           {w.under_investigation ? <> <Pill tone="wait">investigating</Pill></> : null}
+          {w.awaiting_rail ? <> <Pill tone="wait">waiting for a rail</Pill></> : null}
         </>
       ),
     },
@@ -282,6 +286,12 @@ function PayoutsInner() {
           <b>{notice.text}</b>
         </div>
       )}
+
+      {(data?.rail_notices ?? []).map((n) => (
+        <div key={n.currency} className="ops-note ops-note--warn mb-4" role="status">
+          <b>{n.note}</b>
+        </div>
+      ))}
 
       <Panel flush>
         <div className="ops-tabs" role="tablist" aria-label="Payout status">
@@ -466,6 +476,7 @@ function PayoutsInner() {
               ) : null}
               <Fact label="Status"><Pill tone={payoutTone(selected.status)}>{PAYOUT_LABEL[selected.status] ?? selected.status}</Pill></Fact>
               {current?.origin === 'scheduled' ? <Fact label="Created by">The weekly payout run</Fact> : null}
+              {current?.awaiting_rail && current.rail_note ? <Fact label="Payout rail">{current.rail_note}</Fact> : null}
               <Fact label="Requested">{stamp(selected.requested_at, tzOf(selected))}</Fact>
               {selected.processed_at ? <Fact label="Processed">{stamp(selected.processed_at, tzOf(selected))}</Fact> : null}
               <Fact label="Waiting">{ageLabel(selected.age_seconds)}</Fact>

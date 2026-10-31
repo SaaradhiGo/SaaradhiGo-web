@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react';
 import {
-  CityRow, Delta, Pair, delta, formatCount, formatDelta, formatMinutes, formatRate, moneyTiles,
+  CityRow, Delta, Pair, delta, formatAge, formatCount, formatDelta, formatMinutes, formatRate, moneyTiles,
 } from '@/lib/commandCentre';
 import type { AdminAccess } from '@/lib/adminScope';
 import { boardLinks } from '@/lib/boardLinks';
@@ -177,7 +177,7 @@ export function CityBoard({
             count={sosOpen}
             title="SOS open"
             detail={sosOpen > 0
-              ? `Oldest ${formatMinutes(q.sos_oldest_open_minutes, country)} unacknowledged`
+              ? `Oldest ${formatAge(q.sos_oldest_open_minutes)} unacknowledged`
               : 'None open'}
             href={`/safety-ops?scope=${row.code}`}
             urgent
