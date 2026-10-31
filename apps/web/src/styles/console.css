@@ -1696,3 +1696,45 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .lo-swatch--short { border-radius: 2px; background: var(--ops-danger); opacity: 0.5; }
 .lo-list__cap { margin: 0; padding: 8px 18px; font: 500 12.5px/1.45 var(--font-sans); color: var(--ops-ink-3); }
 @media (max-width: 720px) { .lo-map__host { height: 380px; } .lo-city__facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Notifications (module 11): the template editor, campaign builder, delivery log, providers. */
+.nf-editor { display: grid; gap: 18px; }
+.nf-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.nf-field { display: grid; gap: 4px; min-width: 0; }
+.nf-inline { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.nf-inline .input { flex: 1 1 14rem; min-width: 0; }
+.nf-samples { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
+.nf-filters { display: inline-flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.nf-filters .input { min-width: 12rem; }
+
+.nf-preview { display: grid; gap: 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--ops-radius); background: var(--ops-wash); }
+.nf-bubble { display: grid; gap: 4px; max-width: 34rem; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--ops-radius); background: var(--ops-surface); color: var(--ink); }
+.nf-bubble__head { font: 700 14px/1.4 var(--font-sans); color: var(--ink); }
+.nf-bubble__body { margin: 0; font: 500 14px/1.55 var(--font-sans); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.nf-problems { margin: 0; padding: 10px 14px 10px 30px; display: grid; gap: 4px; border: 1px solid var(--ops-danger-edge); border-radius: var(--ops-radius); background: var(--ops-danger-wash); color: var(--ops-danger); font: 600 13px/1.5 var(--font-sans); }
+.nf-refusal { display: grid; gap: 4px; padding: 12px 14px; border: 1px solid var(--ops-gold-edge); border-radius: var(--ops-radius); background: var(--ops-wash-strong); color: var(--ink); }
+.nf-refusal b { font: 700 14px/1.4 var(--font-sans); }
+.nf-refusal span { font: 500 13px/1.55 var(--font-sans); color: var(--ops-ink-2); }
+.nf-versions { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font: 500 13px/1.5 var(--font-sans); }
+
+.nf-checks { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
+.nf-checks legend { float: left; margin-right: 12px; padding: 0; font: 700 11px/1.3 var(--font-sans); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ops-ink-3); }
+.nf-funnel { display: grid; gap: 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--ops-radius); background: var(--ops-wash); }
+.nf-funnel ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font: 500 13px/1.5 var(--font-sans); color: var(--ops-ink-1); }
+.nf-funnel__key { font-weight: 700; color: var(--ink); }
+.nf-funnel button { justify-self: start; }
+
+.nf-filterbar { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.nf-filterbar .input, .nf-filterbar .ops-select { min-width: 9rem; }
+.nf-filterbar__go { display: flex; gap: 8px; }
+.nf-pager { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 18px; border-top: 1px solid var(--line); }
+.nf-masked { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+.nf-envnames { font: 500 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--ops-ink-2); overflow-wrap: anywhere; }
+
+.nf-timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-left: 2px solid var(--line); margin-left: 6px; }
+.nf-timeline li { position: relative; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; padding: 8px 0 8px 18px; font: 500 13px/1.5 var(--font-sans); }
+.nf-timeline li::before { content: ''; position: absolute; left: -6px; top: 14px; width: 10px; height: 10px; border-radius: 50%; background: var(--ops-gold-500); border: 2px solid var(--ops-surface); }
+.nf-timeline__at { font-variant-numeric: tabular-nums; color: var(--ops-ink-2); }
+.nf-timeline__detail { flex-basis: 100%; color: var(--ops-ink-2); overflow-wrap: anywhere; }
+@media (max-width: 720px) { .nf-grid { grid-template-columns: minmax(0, 1fr); } }

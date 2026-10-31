@@ -177,6 +177,17 @@ export function Bell({ className }: Props) {
   );
 }
 
+/** Notifications: a loudhailer, because the page is about what the platform says to people. */
+export function Megaphone({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M4 10v4a1 1 0 0 0 1 1h2l8 4V5L7 9H5a1 1 0 0 0-1 1z" />
+      <path d="M18.5 9.5a4 4 0 0 1 0 5" />
+      <path d="M7 15l1 4h2.5l-1-3.5" />
+    </svg>
+  );
+}
+
 export function Sun({ className }: Props) {
   return (
     <svg {...base} className={className}>

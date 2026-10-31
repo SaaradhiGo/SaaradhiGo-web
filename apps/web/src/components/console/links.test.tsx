@@ -53,6 +53,7 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
       'support.macro', 'support.sla', 'support.dashboard', 'finance.payout', 'finance.adjust', 'finance.export', 'finance.config', 'finance.aggregate', 'pricing.write',
       'zone.write', 'promo.write', 'notify.send', 'safety.read', 'safety.respond', 'safety.config',
       'fraud.review', 'admin.manage', 'platform.settings', 'approval.check', 'liveops.read', 'liveops.aggregate',
+      'notify.read', 'notify.template', 'notify.campaign',
     ],
   },
   city_ops_manager: {
@@ -60,16 +61,16 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
       'trip.read', 'trip.write', 'rider.read', 'driver.read', 'driver.write', 'support.read', 'report.read',
       'zone.read', 'zone.write', 'promo.write', 'pii.view', 'rider.note', 'rider.flag', 'rider.signout',
       'rider.block', 'pricing.write', 'safety.read', 'support.sla', 'support.dashboard', 'finance.aggregate',
-      'liveops.read',
+      'liveops.read', 'notify.read',
     ],
   },
   support_agent: {
     permissions: ['trip.read', 'rider.read', 'driver.read', 'support.read', 'support.reply', 'support.refund',
-      'rider.note', 'rider.flag', 'rider.signout'],
+      'rider.note', 'rider.flag', 'rider.signout', 'notify.read'],
   },
   support_lead: {
     permissions: ['trip.read', 'rider.read', 'driver.read', 'support.read', 'support.reply', 'support.refund',
-      'support.macro', 'support.dashboard', 'rider.note', 'rider.flag', 'rider.signout'],
+      'support.macro', 'support.dashboard', 'rider.note', 'rider.flag', 'rider.signout', 'notify.read'],
   },
   safety_officer: {
     permissions: ['trip.read', 'rider.read', 'driver.read', 'driver.write', 'safety.respond', 'safety.read',
@@ -81,7 +82,7 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
       'finance.adjust', 'finance.export', 'finance.config', 'finance.aggregate', 'support.refund',
       'report.read', 'zone.read', 'pii.view', 'rider.note'],
   },
-  marketing: { permissions: ['promo.write', 'notify.send', 'report.read', 'liveops.aggregate'] },
+  marketing: { permissions: ['promo.write', 'notify.send', 'report.read', 'liveops.aggregate', 'notify.read', 'notify.template', 'notify.campaign'] },
   analyst: { permissions: ['trip.read', 'driver.read', 'rider.read', 'report.read', 'zone.read', 'finance.aggregate', 'liveops.aggregate'] },
 };
 
@@ -122,15 +123,15 @@ const ROW: CityRow = {
 };
 
 const NAV = {
-  super_admin: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/safety-ops', '/zones', '/settings/security'],
-  city_ops_manager: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/pricing', '/safety-ops', '/zones', '/settings/security'],
-  support_agent: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/settings/security'],
-  support_lead: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/settings/security'],
+  super_admin: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/notifications', '/safety-ops', '/zones', '/settings/security'],
+  city_ops_manager: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/pricing', '/notifications', '/safety-ops', '/zones', '/settings/security'],
+  support_agent: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/notifications', '/settings/security'],
+  support_lead: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/notifications', '/settings/security'],
   safety_officer: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/safety-ops', '/settings/security'],
   kyc_verifier: ['/drivers', '/settings/security'],
   finance: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/settings/security'],
   // Owner ruling 4: Marketing keeps the Command Centre (aggregates only).
-  marketing: ['/dashboard', '/live-ops', '/settings/security'],
+  marketing: ['/dashboard', '/live-ops', '/notifications', '/settings/security'],
   analyst: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/pricing', '/settings/security'],
 } as const;
 

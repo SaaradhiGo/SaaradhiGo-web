@@ -2,7 +2,7 @@ import { AdminAccess, canAny } from '@/lib/adminScope';
 import { PAGE_NEEDS } from '@/lib/consoleLinks';
 import type { NavGroup, NavItem } from '@/components/console/Sidebar';
 import {
-  Gauge, LifeBuoy, MapPin, Percent, Radar, Route, Shield, Siren, TrendUp, UserRound, Users, Wallet,
+  Gauge, LifeBuoy, MapPin, Megaphone, Percent, Radar, Route, Shield, Siren, TrendUp, UserRound, Users, Wallet,
 } from '@/components/console/icons';
 
 /**
@@ -18,8 +18,9 @@ import {
  * `need` hides a link; it is NOT what stops the operator. Every endpoint
  * re-checks the permission and re-filters the rows.
  *
- * Growth (promotions, markets) has no page yet and so no group: a heading
- * with nothing under it is a promise the console cannot keep.
+ * Growth now holds Notifications (module 11); promotions and markets have no
+ * page yet. A heading with nothing under it is a promise the console cannot
+ * keep, so the group only appears for an operator who can open a page in it.
  */
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -48,6 +49,13 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/finance/payouts', label: 'Payouts', Icon: Wallet, need: PAGE_NEEDS.withdrawals, countKey: 'withdrawals' },
       // Commission and fare cards (module 8). Readable with `zone.read`.
       { href: '/pricing', label: 'Pricing', Icon: Percent, need: PAGE_NEEDS.pricing },
+    ],
+  },
+  {
+    label: 'Growth',
+    items: [
+      // Templates, campaigns, the delivery log and the providers (module 11): `notify.read`.
+      { href: '/notifications', label: 'Notifications', Icon: Megaphone, need: PAGE_NEEDS.notifications },
     ],
   },
   {
