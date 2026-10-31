@@ -6,7 +6,7 @@ import { useAdminAccess, withScope } from '@/lib/adminScope';
 import { stamp } from '@/lib/consoleTime';
 import { formatMinor } from '@/lib/finance';
 import {
-  NO_POLICY_WORDS, WEEKDAYS, canConfigurePayouts, configBody, configChanges, configProblem, draftFrom,
+  FRAUD_MONEY_DEFAULTS, NO_POLICY_WORDS, WEEKDAYS, canConfigurePayouts, configBody, configChanges, configProblem, draftFrom,
   feeNeedsWarning, scheduleLabel, type ConfigDraft, type PayoutConfig,
 } from '@/lib/financeActions';
 import { interpretWrite, newIdempotencyKey } from '@/lib/trips';
@@ -102,6 +102,9 @@ function SettingsInner() {
                       {c.config.stuck_payout_hours ? `${c.config.stuck_payout_hours} hours` : 'Not checked'}
                     </Fact>
                     <Fact label="Payout schedule">{scheduleLabel(c.config)}</Fact>
+                    <Fact label="A reward under review is held for">{c.config.reward_hold_days ?? FRAUD_MONEY_DEFAULTS.reward_hold_days} days, then released if the flag is not decided</Fact>
+                    <Fact label="A recovery takes at most">{c.config.recovery_max_percent ?? FRAUD_MONEY_DEFAULTS.recovery_max_percent}% of any one payout</Fact>
+                    <Fact label="A payout hold lasts at most">{c.config.payout_hold_max_days ?? FRAUD_MONEY_DEFAULTS.payout_hold_max_days} days unless renewed</Fact>
                     <Fact label="Version">v{c.config.version} · since {stamp(c.config.valid_from)}</Fact>
                   </Facts>
                   {c.payout_approval_blocked && (
@@ -280,6 +283,15 @@ function EditDrawer({ country, warning, onClose, onDone }: {
                 </select>
               </>
             ) : null}
+            <label className="ops-form__label" htmlFor="cfg-reward-hold">A reward under review is held for (days)</label>
+            <input id="cfg-reward-hold" className="input" inputMode="numeric" value={draft.rewardHoldDays}
+              onChange={(e) => set('rewardHoldDays', e.target.value)} />
+            <label className="ops-form__label" htmlFor="cfg-recovery">Most of one payout a recovery may take (%)</label>
+            <input id="cfg-recovery" className="input" inputMode="numeric" value={draft.recoveryPercent}
+              onChange={(e) => set('recoveryPercent', e.target.value)} />
+            <label className="ops-form__label" htmlFor="cfg-hold-max">Longest payout hold, before it must be renewed (days)</label>
+            <input id="cfg-hold-max" className="input" inputMode="numeric" value={draft.holdMaxDays}
+              onChange={(e) => set('holdMaxDays', e.target.value)} />
             <label className="ops-form__label" htmlFor="cfg-reason">Why (kept in the audit log)</label>
             <textarea id="cfg-reason" className="input" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
             {changes.length > 0 ? (

@@ -149,3 +149,60 @@ describe('rule thresholds', () => {
     expect(changedThresholds([row, other], {})).toEqual({});
   });
 });
+
+// ---------------------------------------------------------------------------
+// Money actions (AUDIT 27.56)
+// ---------------------------------------------------------------------------
+import {
+  carryOverWords, holdBlockers, holdProblem, recoverAmountMinor, recoverProblem, rewardTone,
+} from './fraud';
+
+describe('recovering a reward', () => {
+  it('reads the typed amount in major units as minor units, exactly', () => {
+    expect(recoverAmountMinor('300.00', 2)).toBe(30000);
+    expect(recoverAmountMinor('300', 2)).toBe(30000);
+    expect(recoverAmountMinor('0.5', 2)).toBe(50);
+    expect(recoverAmountMinor('1,000', 2)).toBeNull();
+    expect(recoverAmountMinor('1.234', 2)).toBeNull();
+    expect(recoverAmountMinor('', 2)).toBeNull();
+    expect(recoverAmountMinor('-5', 2)).toBeNull();
+  });
+
+  it('refuses nothing, too much, or a missing note, and accepts exactly the cap', () => {
+    expect(recoverProblem(null, 30000, 'Recovering it')).toMatch(/above zero/);
+    expect(recoverProblem(0, 30000, 'Recovering it')).toMatch(/above zero/);
+    expect(recoverProblem(30001, 30000, 'Recovering it')).toMatch(/more than the linked rewards/);
+    expect(recoverProblem(30000, 30000, 'abc')).toMatch(/at least 5/);
+    expect(recoverProblem(30000, 30000, 'Recovering it')).toBeNull();
+  });
+});
+
+describe('a payout hold', () => {
+  it('needs whole days within the country maximum and a note', () => {
+    expect(holdProblem('0', 14, 'Fake trips')).toMatch(/1 to 14/);
+    expect(holdProblem('15', 14, 'Fake trips')).toMatch(/1 to 14/);
+    expect(holdProblem('7.5', 14, 'Fake trips')).toMatch(/1 to 14/);
+    expect(holdProblem('14', 14, 'Fake trips')).toBeNull();
+    expect(holdProblem('14', 14, 'no')).toMatch(/at least 5/);
+    expect(holdProblem('x', 14, 'Fake trips', false)).toBeNull();      // a release has no days
+  });
+
+  it('says why it is not available in words', () => {
+    expect(holdBlockers(['driver_not_suspended', 'reason_not_serious'])).toEqual([
+      expect.stringMatching(/not suspended/), expect.stringMatching(/not serious fraud/),
+    ]);
+  });
+});
+
+describe('words for rewards', () => {
+  it('colours held as waiting and a taken-back reward as bad', () => {
+    expect([rewardTone('held'), rewardTone('forfeited'), rewardTone('paid'), rewardTone('credited')])
+      .toEqual(['wait', 'bad', 'good', 'neutral']);
+  });
+
+  it('reads the carry-over', () => {
+    const fmt = (m: number) => `$${(m / 100).toFixed(2)}`;
+    expect(carryOverWords({ remaining_minor: 3000, currency: 'USD' }, fmt)).toBe('$30.00 carries to the next payout');
+    expect(carryOverWords({ remaining_minor: 0, currency: 'USD' }, fmt)).toBe('Fully recovered');
+  });
+});

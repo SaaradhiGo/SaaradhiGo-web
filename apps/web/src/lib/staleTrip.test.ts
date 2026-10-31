@@ -166,6 +166,41 @@ describe('the started-trip release', () => {
     expect(rows.find((r) => r.label === 'Promo discount')).toBeUndefined();
   });
 
+  it('lays out the US tax on the amount charged, as the server worked it out', () => {
+    const rows = previewRows({
+      ...preview, currency: 'USD', capped_fare_minor: 1305, rider_pays_minor: 1305,
+      pretax_fare_minor: 1050, tax_minor: 105, per_trip_fee_minor: 150,
+      tax_note: 'US accountant to confirm (go-live blocker #15)',
+    });
+    const byLabel = Object.fromEntries(rows.map((r) => [r.label, r.value]));
+    expect(byLabel['Fare before tax']).toBe('$10.50');
+    expect(byLabel['Tax on the amount charged']).toBe('$1.05');
+    expect(byLabel['Per-trip fee']).toBe('$1.50');
+    expect(byLabel['Rider pays']).toBe('$13.05');
+    expect(byLabel['Note']).toMatch(/blocker #15/);
+  });
+
+  it('says no tax or fee is charged when the rider pays 0, and names the platform expense', () => {
+    const rows = previewRows({
+      ...preview, currency: 'USD', rule: 'platform_funded', rider_pays_minor: 0, funded_by: 'platform',
+      pretax_fare_minor: 0, tax_minor: 0, per_trip_fee_minor: 0, regulatory_fee_expense_minor: 150,
+    });
+    const byLabel = Object.fromEntries(rows.map((r) => [r.label, r.value]));
+    expect(byLabel['Tax and fee']).toBe('None charged to the rider');
+    expect(byLabel['Regulatory fee']).toBe('$1.50 booked as a SaaradhiGo expense');
+    expect(byLabel['Tax on the amount charged']).toBeUndefined();
+  });
+
+  it('shows no tax rows at all for India (inclusive tax) or an older backend', () => {
+    const labels = (p: Parameters<typeof previewRows>[0]) => previewRows(p).map((r) => r.label);
+    for (const extra of [{}, { pretax_fare_minor: null, tax_minor: null, per_trip_fee_minor: null }]) {
+      const l = labels({ ...preview, ...extra });
+      expect(l).not.toContain('Tax on the amount charged');
+      expect(l).not.toContain('Fare before tax');
+      expect(l).not.toContain('Tax and fee');
+    }
+  });
+
   it('uses the preview currency, never a hard-coded symbol', () => {
     const rows = previewRows({ ...preview, currency: 'USD' });
     expect(rows.find((r) => r.label === 'Rider pays')?.value).toBe('$49.00');

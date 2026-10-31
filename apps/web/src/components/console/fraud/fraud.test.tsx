@@ -79,7 +79,7 @@ describe('the decision dialog', () => {
     expect(screen.getByText('Suspend the rider')).toBeTruthy();
     expect(screen.queryByText('Request a Finance adjustment')).toBeNull();
     expect(screen.getByText(/Nothing happens until you take one/)).toBeTruthy();
-    expect(screen.getByText(/does not suspend anyone, hold or move any money, or tell the person/)).toBeTruthy();
+    expect(screen.getByText(/does not suspend anyone, take any money, hold a payout, or tell the person/)).toBeTruthy();
   });
 });
 

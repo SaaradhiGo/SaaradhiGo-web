@@ -31,7 +31,18 @@ type Overview = {
   totals: Array<{ currency: string } & Record<string, number | string>>;
   note?: string;
   // A COUNT per country of drivers the latest weekly payout run skipped (no payout details).
-  skipped_in_latest_run?: Array<{ country: string; week_start: string; count: number }>;
+  skipped_in_latest_run?: Array<{
+    country: string; week_start: string; count: number; held_count?: number; no_handle_count?: number;
+  }>;
+  // Started trips an operator ended this week as a safety incident or platform fault: the rider paid 0.
+  platform_funded_trip_ends?: {
+    week_start: string; count: number;
+    totals: Array<{ currency: string; count: number; driver_earnings_minor: number }>;
+    regulatory_fee_expenses?: {
+      totals: Array<{ currency: string; count: number; amount_minor: number }>;
+      rows: Array<{ trip_id: number; amount_minor: number; currency: string }>; note: string;
+    };
+  };
 };
 
 function OverviewInner() {
@@ -98,12 +109,38 @@ function OverviewInner() {
         </TileGrid>
       )}
 
-      {(data?.skipped_in_latest_run ?? []).map((r) => (
-        <div key={r.country} className="ops-note ops-note--warn mb-4" role="status">
-          <b>{r.country}: {r.count} driver{r.count === 1 ? '' : 's'} skipped in the weekly payout run of {r.week_start}.</b>{' '}
-          They have no payout details; they are asked to add them and are picked up the week they do.
-        </div>
-      ))}
+      {(data?.skipped_in_latest_run ?? []).map((r) => {
+        const held = r.held_count ?? 0;
+        const noHandle = r.no_handle_count ?? r.count - held;
+        return (
+          <div key={r.country} className="ops-note ops-note--warn mb-4" role="status">
+            <b>{r.country}: {r.count} driver{r.count === 1 ? '' : 's'} skipped in the weekly payout run of {r.week_start}.</b>{' '}
+            {noHandle > 0 ? `${noHandle} have no payout details; they are asked to add them and are picked up the week they do. ` : ''}
+            {held > 0 ? `${held} ${held === 1 ? 'has' : 'have'} their payouts on hold (a suspended driver, approved by a second admin); the hold ends by itself unless renewed.` : ''}
+          </div>
+        );
+      })}
+
+      {(data?.platform_funded_trip_ends?.count ?? 0) > 0 ? (
+        <Panel title="Trips ended by SaaradhiGo this week (the rider was not charged)">
+          <ul className="fr-evidence" aria-label="Platform-funded trip ends">
+            {(data?.platform_funded_trip_ends?.totals ?? []).map((t) => (
+              <li key={t.currency}>
+                {t.currency}: {t.count} trip{t.count === 1 ? '' : 's'}, driver earnings paid by SaaradhiGo {formatMinor(t.driver_earnings_minor, t.currency)}
+              </li>
+            ))}
+            {(data?.platform_funded_trip_ends?.regulatory_fee_expenses?.totals ?? []).map((t) => (
+              <li key={`fee-${t.currency}`}>
+                {t.currency}: per-trip regulatory fee booked as a platform expense {formatMinor(t.amount_minor, t.currency)} on {t.count} trip{t.count === 1 ? '' : 's'}
+              </li>
+            ))}
+          </ul>
+          <p className="help m-0">
+            {data?.platform_funded_trip_ends?.regulatory_fee_expenses?.note
+              ?? 'No tax or fee is charged to the rider on these trips.'}
+          </p>
+        </Panel>
+      ) : null}
 
       <Panel flush>
         <RangeBar from={from} to={to} onApply={go} idPrefix="overview" />

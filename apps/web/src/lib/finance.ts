@@ -230,6 +230,7 @@ export const LEDGER_KIND: Record<string, string> = {
   withdrawal_paid: 'Payout paid',
   withdrawal_rejected_decision: 'Withdrawal rejected',
   adjustment: 'Fare adjustment',
+  reward_recovery: 'Recovery of reward (reviewed)',
 };
 
 /** What each wallet purpose is called on the statement. */
@@ -242,6 +243,8 @@ export const LEDGER_PURPOSE: Record<string, string> = {
   platform_funded_trip_end: 'Trip ended by SaaradhiGo: earnings paid by SaaradhiGo',
   incentive_reward: 'Incentive reward',
   referral_reward: 'Referral reward',
+  // A recovery of a reward Finance approved (AUDIT 27.56). The server sends the same text as `label`.
+  reward_recovery: 'Recovery of reward (reviewed)',
 };
 
 export const RECON_KIND_LABEL: Record<string, string> = {
