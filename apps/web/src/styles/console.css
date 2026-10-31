@@ -1630,3 +1630,69 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .zn-tester__row { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: end; }
 .zn-tester__result { display: grid; gap: 14px; }
 .zn-tester__block { display: grid; gap: 8px; }
+
+/* Live Ops (module 10): the status bar, the map, its controls and legend. */
+.lo-cities { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.lo-city {
+  width: 100%; display: grid; gap: 10px; padding: 14px 16px; text-align: left; cursor: pointer;
+  border: 1px solid var(--line); border-radius: var(--ops-radius); background: var(--ops-surface);
+  color: var(--ink); font: inherit;
+}
+.lo-city:hover { border-color: var(--ops-gold-edge); }
+.lo-city[aria-pressed='true'] { border-color: var(--ops-gold-500); box-shadow: inset 0 0 0 1px var(--ops-gold-500); }
+.lo-city:focus-visible { outline: 2px solid var(--ops-gold-500); outline-offset: 2px; }
+.lo-city__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font: 700 15px/1.3 var(--font-sans); }
+.lo-city__facts { margin: 0; display: grid; gap: 4px 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lo-city__facts > div { display: grid; gap: 1px; }
+.lo-city__facts dt { font: 600 11.5px/1.3 var(--font-sans); color: var(--ops-ink-3); }
+.lo-city__facts dd { margin: 0; font: 700 16px/1.3 var(--font-sans); color: var(--ink); font-variant-numeric: tabular-nums; }
+.lo-city--idle { gap: 4px; }
+.lo-city--idle .lo-city__facts { display: none; }
+.lo-city__sub { font: 500 11.5px/1.3 var(--font-sans); color: var(--ops-ink-3); }
+
+.lo-link { font: 700 13px/1.3 var(--font-sans); color: var(--ops-ink-2); padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; }
+.lo-link--live { color: var(--ops-success); border-color: var(--ops-success-edge); background: var(--ops-success-wash); }
+.lo-link--down { color: var(--ops-danger); border-color: var(--ops-danger-edge); background: var(--ops-danger-wash); }
+
+.lo-controls { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-end; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.lo-field { display: grid; gap: 4px; }
+.lo-field > span, .lo-layers legend { font: 700 11px/1.3 var(--font-sans); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ops-ink-3); }
+.lo-layers { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+.lo-layers legend { padding: 0; margin-right: 8px; float: left; }
+.lo-check { display: inline-flex; align-items: center; gap: 8px; font: 600 13px/1.3 var(--font-sans); color: var(--ink); cursor: pointer; }
+.lo-check input { accent-color: var(--gold-500); width: 16px; height: 16px; }
+.lo-note { margin: 0; padding: 8px 18px; font: 500 12.5px/1.45 var(--font-sans); color: var(--ops-ink-2); border-bottom: 1px solid var(--line); }
+.lo-note--warn { color: var(--ops-danger); background: var(--ops-danger-wash); }
+
+.lo-map { position: relative; margin: 0; background: var(--ops-bg-field); }
+.lo-map__host { width: 100%; height: 520px; }
+.lo-map__note { padding: 8px 18px; border-top: 1px solid var(--line); font: 500 12px/1.45 var(--font-sans); color: var(--ops-ink-3); }
+.lo-map__empty { margin: 0; padding: 28px 18px; text-align: center; font: 500 13px/1.5 var(--font-sans); color: var(--ops-ink-3); }
+.lo-svg { display: block; width: 100%; height: auto; max-height: 560px; }
+.lo-zone { fill: var(--ops-wash); stroke: var(--ops-ink-4); stroke-width: 1.5; stroke-linejoin: round; }
+.lo-dot { stroke: var(--ops-bg-field); stroke-width: 1.5; }
+.lo-dot--online { fill: var(--ops-success); }
+.lo-dot--on_trip { fill: var(--ops-gold-500); }
+.lo-dot--offline { fill: var(--ops-ink-4); }
+.lo-trip__line { stroke: var(--ops-gold-500); stroke-width: 1.6; opacity: 0.85; }
+.lo-trip--stale .lo-trip__line { stroke: var(--ops-ink-4); stroke-dasharray: 5 4; }
+.lo-trip__from { fill: var(--ops-gold-500); }
+.lo-trip__to { fill: var(--ops-bg-field); stroke: var(--ops-gold-500); stroke-width: 1.5; }
+.lo-trip--stale .lo-trip__from, .lo-trip--stale .lo-trip__to { stroke: var(--ops-ink-4); fill: var(--ops-ink-4); }
+.lo-alert { fill: var(--ops-danger); stroke: var(--ops-bg-field); stroke-width: 1.5; stroke-linejoin: round; }
+.lo-cell { stroke-width: 0.8; }
+.lo-cell--0 { fill: var(--ops-wash-strong); stroke: var(--ops-ink-4); stroke-opacity: 0.5; }
+.lo-cell--1 { fill: var(--ops-danger); fill-opacity: 0.22; stroke: var(--ops-danger); }
+.lo-cell--2 { fill: var(--ops-danger); fill-opacity: 0.4; stroke: var(--ops-danger); }
+.lo-cell--3 { fill: var(--ops-danger); fill-opacity: 0.58; stroke: var(--ops-danger); }
+
+.lo-legend { list-style: none; margin: 0; padding: 10px 18px; display: flex; flex-wrap: wrap; gap: 6px 18px; border-top: 1px solid var(--line); font: 600 12.5px/1.3 var(--font-sans); color: var(--ops-ink-2); }
+.lo-legend li { display: inline-flex; align-items: center; gap: 8px; }
+.lo-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 50%; }
+.lo-swatch--online { background: var(--ops-success); }
+.lo-swatch--on_trip { background: var(--ops-gold-500); }
+.lo-swatch--trip { width: 18px; height: 0; border-radius: 0; border-top: 2px solid var(--ops-gold-500); }
+.lo-swatch--alert { border-radius: 0; background: var(--ops-danger); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.lo-swatch--short { border-radius: 2px; background: var(--ops-danger); opacity: 0.5; }
+.lo-list__cap { margin: 0; padding: 8px 18px; font: 500 12.5px/1.45 var(--font-sans); color: var(--ops-ink-3); }
+@media (max-width: 720px) { .lo-map__host { height: 380px; } .lo-city__facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

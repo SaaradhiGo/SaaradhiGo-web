@@ -24,7 +24,7 @@ import { AdminAccess, canAny, canAt } from '@/lib/adminScope';
  */
 export type Page =
   | 'dashboard' | 'trips' | 'drivers' | 'riders' | 'support' | 'supportInbox'
-  | 'withdrawals' | 'finance' | 'safety' | 'safetyConfig' | 'zones' | 'pricing';
+  | 'withdrawals' | 'finance' | 'safety' | 'safetyConfig' | 'zones' | 'pricing' | 'liveops';
 
 export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   // The Command Centre opens for `report.read` too: Marketing keeps it with
@@ -48,6 +48,9 @@ export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   // is `zone.read`; drafting and submitting also need `pricing.write`, which the
   // pages ask for themselves. Zones stay on their own page (module 9).
   pricing: ['zone.read'],
+  // The Live Ops map (module 10). `liveops.read` shows driver dots and trips;
+  // `liveops.aggregate` shows the demand and supply heatmap alone. Either opens it.
+  liveops: ['liveops.read', 'liveops.aggregate'],
 };
 
 /** May this operator open the page, anywhere? */
