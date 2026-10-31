@@ -86,7 +86,7 @@ describe('money text', () => {
 describe('the budget bar', () => {
   const view = (over: Partial<BudgetView> = {}): BudgetView => ({
     budget_minor: 100000, committed_minor: 0, spent_minor: 0, remaining_minor: 100000, overshoot_minor: 0,
-    used_percent: 0, strict_cap: true, currency: INR, ...over,
+    used_percent: 0, currency: INR, ...over,
   });
 
   it('draws spent, reserved and what is left, in whole percent that never exceed 100', () => {
@@ -360,7 +360,7 @@ describe('editing a saved draft', () => {
       id: 1, kind: 'rider_promo', name: form.name, description: '', state: 'draft', country: 'IN', currency: INR,
       scope: 'IN-TG-HYD', scope_name: 'Hyderabad', scope_kind: 'city',
       budget: { budget_minor: 100000, committed_minor: 0, spent_minor: 0, remaining_minor: 100000,
-        overshoot_minor: 0, used_percent: 0, strict_cap: true, currency: INR },
+        overshoot_minor: 0, used_percent: 0, currency: INR },
       starts_at: new Date(form.startsAt).toISOString(), ends_at: new Date(form.endsAt).toISOString(),
       config: body.config, is_legacy: false, reason: form.reason,
     } as unknown as Campaign;

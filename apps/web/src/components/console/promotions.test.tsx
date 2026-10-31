@@ -23,7 +23,7 @@ const access = (permissions: string[]) => ({ permissions } as unknown as AdminAc
 
 const budget = (over: Partial<BudgetView> = {}): BudgetView => ({
   budget_minor: 100000, committed_minor: 10000, spent_minor: 25000, remaining_minor: 65000,
-  overshoot_minor: 0, used_percent: 35, strict_cap: true, currency: 'INR', ...over,
+  overshoot_minor: 0, used_percent: 35, currency: 'INR', ...over,
 });
 
 describe('the Promotions tabs (the link rule)', () => {

@@ -62,7 +62,7 @@ export type StaffRef = { id: number | null; email: string; label: string; role: 
 export type BudgetView = {
   budget_minor: number | null; committed_minor: number; spent_minor: number;
   remaining_minor: number | null; overshoot_minor: number; used_percent: number | null;
-  strict_cap: boolean; currency: string;
+  currency: string;
 };
 
 export type PromoConfig = {
@@ -244,7 +244,7 @@ export function budgetWords(b: BudgetView): string {
 export type DraftForm = {
   kind: Kind;
   name: string; description: string; scope: string; startsAt: string; endsAt: string;
-  budget: string; strictCap: boolean; reason: string;
+  budget: string; reason: string;
   // rider promo
   code: string; autoApply: boolean; discountType: 'percent' | 'flat'; discountPercent: string;
   discountFlat: string; maxDiscount: string; minFare: string; maxPerUser: string; maxTotal: string;
@@ -257,7 +257,7 @@ export type DraftForm = {
 
 export function blankForm(kind: Kind, audience: Audience = 'rider'): DraftForm {
   return {
-    kind, name: '', description: '', scope: '', startsAt: '', endsAt: '', budget: '', strictCap: true,
+    kind, name: '', description: '', scope: '', startsAt: '', endsAt: '', budget: '',
     reason: '', code: '', autoApply: false, discountType: 'flat', discountPercent: '', discountFlat: '',
     maxDiscount: '', minFare: '', maxPerUser: '1', maxTotal: '', zoneCode: '', newRidersOnly: false,
     typicalFare: '', targetTrips: '', reward: '', hourFrom: '', hourTo: '', vehicleType: '', audience,
@@ -291,7 +291,7 @@ export function fromCampaign(c: Campaign): DraftForm {
     ...form,
     name: c.name, description: c.description, scope: c.scope ?? '',
     startsAt: toLocalInput(c.starts_at), endsAt: toLocalInput(c.ends_at),
-    budget: majorText(c.budget.budget_minor, currency), strictCap: c.budget.strict_cap, reason: c.reason,
+    budget: majorText(c.budget.budget_minor, currency), reason: c.reason,
     code: cfg.code ?? '', autoApply: cfg.auto_apply === true,
     discountType: cfg.discount_type ?? 'flat', discountPercent: cfg.discount_percent ?? '',
     discountFlat: majorText(cfg.discount_flat_minor, currency),
@@ -429,7 +429,7 @@ function validateReferral(form: DraftForm, currency: string, p: Problems) {
 export function toPayload(form: DraftForm, currency: string): Record<string, unknown> {
   const base = {
     kind: form.kind, name: form.name.trim(), description: form.description.trim(), scope: form.scope,
-    budget_minor: minorOf(form.budget, currency), strict_cap: form.strictCap,
+    budget_minor: minorOf(form.budget, currency),
     starts_at: form.startsAt ? new Date(form.startsAt).toISOString() : null,
     ends_at: form.endsAt ? new Date(form.endsAt).toISOString() : null,
     reason: form.reason.trim(),

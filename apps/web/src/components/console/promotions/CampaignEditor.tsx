@@ -328,7 +328,7 @@ function ReadOnly({ c }: { c: Campaign }) {
         <Fact label="Kind">{KIND_WORDS[c.kind]}</Fact>
         <Fact label="Terms">{termsWords(c)}</Fact>
         {c.description ? <Fact label="About">{c.description}</Fact> : null}
-        <Fact label="Hard cap">{c.budget.strict_cap ? 'Yes: a discount that does not fit is refused' : 'No: the last one may cross the cap'}</Fact>
+        <Fact label="Hard cap">An application that does not fit in what is left is refused</Fact>
         {c.projection?.max_redemptions != null ? (
           <Fact label="The budget funds">about {c.projection.max_redemptions}{c.projection.average_minor ? ` at ${formatMinor(c.projection.average_minor, c.currency)} each` : ''}</Fact>
         ) : null}
@@ -477,7 +477,7 @@ function FormBody({ kind, form, set, err, places, options, currency, cost, words
       {kind === 'rider_promo' ? (
         <section className="ops-form" aria-label="The discount">
           <h3 className="ops-subhead">The discount</h3>
-          <p className="help m-0">Paid by the platform. The rider pays the fare less the discount; the driver&apos;s earnings and commission stay on the full fare. A ride never goes below a minimum charge.</p>
+          <p className="help m-0">Paid by the platform. The rider pays the fare less the discount; the driver&apos;s earnings and commission stay on the full fare. A promo may cover the whole fare, and the rider then pays nothing.</p>
           <div className="nf-grid">
             {text('pm-code', 'Code', 'code', err('code'), { autoCapitalize: 'characters', disabled: form.autoApply },
               'Letters, digits, dashes. The rider types it on the fare screen.')}
@@ -577,13 +577,7 @@ function FormBody({ kind, form, set, err, places, options, currency, cost, words
         <div className="nf-grid">
           {money('pm-budget', 'Budget', 'budget', err('budget'), 'A hard cap: the campaign stops when it is used up.')}
         </div>
-        <label className="lo-check">
-          <input type="checkbox" checked={form.strictCap} onChange={(e) => set('strictCap', e.target.checked)} />
-          Hard cap: refuse any application that does not fit in what is left
-        </label>
-        {!form.strictCap ? (
-          <p className="help m-0">Without it the last application may cross the cap by less than one discount. Trips that already hold a discount are always honoured, and an overshoot alerts Finance.</p>
-        ) : null}
+        <p className="help m-0">A hard cap: an application that does not fit in what is left is always refused. A trip that already holds a discount is honoured, and if that ever takes spend past the budget Finance is alerted.</p>
         <div className="nf-funnel pm-cost" aria-live="polite" aria-label="Cost projection">
           <b>What this commits the platform to</b>
           <ul>

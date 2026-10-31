@@ -140,6 +140,10 @@ export type ReleasePreview = {
   capped_fare_minor: number;
   cap_applied: boolean;
   rider_pays_minor: number;
+  /** A promo held on the trip (module 12): what it takes off the capped fare, and what the rider
+   * then pays. Absent from an older backend; 0 when there is no promo or the rider pays nothing. */
+  promo_discount_minor?: number;
+  rider_pays_after_promo_minor?: number;
   commission_percent: string | null;
   commission_minor: number | null;
   driver_earnings_minor: number | null;
@@ -166,12 +170,16 @@ export function previewRows(p: ReleasePreview): PreviewRow[] {
         ? `${money(p.capped_fare_minor)} (capped from ${money(p.uncapped_fare_minor)})`
         : money(p.capped_fare_minor),
     },
-    {
-      label: 'Rider pays',
-      value: p.rider_pays_minor > 0 ? money(p.rider_pays_minor) : 'Not charged',
-      strong: true,
-    },
   ];
+  // A promo applied to a booked trip is honoured: the platform pays the discount, the driver's
+  // earnings and commission stay on the full capped fare. Under the platform-funded rule there is
+  // nothing to discount (the rider pays 0) and the reservation is released.
+  const promo = p.promo_discount_minor ?? 0;
+  if (promo > 0) {
+    rows.push({ label: 'Promo discount', value: `${money(promo)} (paid by SaaradhiGo)` });
+  }
+  const pays = promo > 0 ? (p.rider_pays_after_promo_minor ?? 0) : p.rider_pays_minor;
+  rows.push({ label: 'Rider pays', value: pays > 0 ? money(pays) : 'Not charged', strong: true });
   if (p.driver_earnings_minor == null) {
     rows.push({ label: 'Driver earns', value: 'Worked out when the trip settles', strong: true });
   } else {

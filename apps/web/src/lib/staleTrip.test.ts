@@ -147,6 +147,25 @@ describe('the started-trip release', () => {
     expect(rows.find((r) => r.label === 'Paid by')?.value).toBe('SaaradhiGo (platform-funded)');
   });
 
+  it('shows a promo honoured on the capped fare, and what the rider then pays', () => {
+    const rows = previewRows({ ...preview, promo_discount_minor: 2000, rider_pays_after_promo_minor: 2900 });
+    const byLabel = Object.fromEntries(rows.map((r) => [r.label, r.value]));
+    expect(byLabel['Promo discount']).toBe('₹20.00 (paid by SaaradhiGo)');
+    expect(byLabel['Rider pays']).toBe('₹29.00');
+    expect(byLabel['Driver earns']).toBe('₹39.20 after 20.00% commission');   // still on the full capped fare
+  });
+
+  it('says "Not charged" when a promo covers the whole capped fare', () => {
+    const rows = previewRows({ ...preview, promo_discount_minor: 4900, rider_pays_after_promo_minor: 0 });
+    expect(rows.find((r) => r.label === 'Rider pays')?.value).toBe('Not charged');
+  });
+
+  it('shows no promo row on the platform rule (the reservation is released)', () => {
+    const rows = previewRows({ ...preview, rule: 'platform_funded', rider_pays_minor: 0, funded_by: 'platform',
+      promo_discount_minor: 0, rider_pays_after_promo_minor: 0 });
+    expect(rows.find((r) => r.label === 'Promo discount')).toBeUndefined();
+  });
+
   it('uses the preview currency, never a hard-coded symbol', () => {
     const rows = previewRows({ ...preview, currency: 'USD' });
     expect(rows.find((r) => r.label === 'Rider pays')?.value).toBe('$49.00');
