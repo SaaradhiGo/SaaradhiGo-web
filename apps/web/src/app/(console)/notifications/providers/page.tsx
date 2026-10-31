@@ -75,7 +75,7 @@ export default function ProvidersPage() {
           <Panel title="Sending">
             <Facts>
               <Fact label="Live sending">
-                {state.live_send ? <Pill tone="good">On</Pill> : <Pill tone="wait">Off: every external channel uses the stub</Pill>}
+                {state.live_send ? <Pill tone="good">On</Pill> : <><Pill tone="wait">Off</Pill> <span className="muted">every external channel uses the stub</span></>}
               </Fact>
               <Fact label="Environment">{state.production ? 'Production' : 'Not production'}</Fact>
               <Fact label="Test allowlist">

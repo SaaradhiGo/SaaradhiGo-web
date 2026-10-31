@@ -357,6 +357,13 @@ export function TemplateEditor({ templateId, defaultCountry, onClose, onDone, on
               ) : null}
             </section>
 
+            {refusalBlock ? (
+              <div className="nf-refusal" role="status" aria-label="Why this cannot be activated yet">
+                <b>This template cannot be activated yet</b>
+                {regProblems.map((p) => <span key={p.message}>{p.message}</span>)}
+              </div>
+            ) : null}
+
             {kind === 'india_sms' ? (
               <section className="ops-form" aria-label="India SMS registration">
                 <h3 className="ops-subhead">India SMS registration (DLT)</h3>
@@ -417,13 +424,6 @@ export function TemplateEditor({ templateId, defaultCountry, onClose, onDone, on
                 </div>
                 <p className="help m-0">WhatsApp messages go only to people who have explicitly opted in.</p>
               </section>
-            ) : null}
-
-            {refusalBlock ? (
-              <div className="nf-refusal" role="status" aria-label="Why this cannot be activated yet">
-                <b>This template cannot be activated yet</b>
-                {regProblems.map((p) => <span key={p.message}>{p.message}</span>)}
-              </div>
             ) : null}
 
             {!locked || detail?.status === 'active' ? (
