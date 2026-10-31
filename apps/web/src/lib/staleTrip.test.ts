@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
-  type StaleActions, consequence, failureText, outcomeText, panelModel, reasonProblem, silentFor,
-  staleReasonText,
+  type ReleasePreview, type StaleActions, consequence, failureText, outcomeText, panelModel,
+  previewRows, reasonProblem, releaseReady, silentFor, staleReasonText,
 } from './staleTrip';
+
+const CODES = [
+  { code: 'driver_unresponsive', label: 'Driver unresponsive', rule: 'standard' as const },
+  { code: 'safety_incident', label: 'Safety incident', rule: 'platform_funded' as const },
+];
 
 const base: StaleActions = {
   can_resolve: true, is_stale: true, mark_reviewed: true, release_driver: true, release_case: 'B',
-  refusal: null, routes: [], reason_min_length: 5, reason_max_length: 500,
+  reason_codes: [], reason_min_length: 5, reason_max_length: 500,
 };
 const stale = { is_stale: true, reason: 'driver_silent_long' };
 
@@ -15,15 +20,11 @@ describe('panelModel', () => {
     const m = panelModel(stale, base);
     expect(m.show).toBe(true);
     expect(m.buttons).toEqual(['mark_reviewed', 'release_driver']);
-    expect(m.refusal).toBeNull();
   });
 
-  it('offers only review for a started trip and carries the refusal and routes', () => {
-    const refusal = { code: 'started_trip_needs_policy', message: 'Ending a ride that has already started needs the fare policy.' };
-    const m = panelModel(stale, { ...base, release_driver: false, release_case: 'C', refusal, routes: ['safety', 'support'] });
-    expect(m.buttons).toEqual(['mark_reviewed']);
-    expect(m.refusal).toEqual(refusal);
-    expect(m.routes).toEqual(['safety', 'support']);
+  it('offers review and the release for a started trip (case C)', () => {
+    const m = panelModel(stale, { ...base, release_case: 'C', reason_codes: CODES });
+    expect(m.buttons).toEqual(['mark_reviewed', 'release_driver']);
     expect(m.readOnly).toBe(false);
   });
 
@@ -98,6 +99,68 @@ describe('what the dialog says', () => {
     expect(staleReasonText('driver_silent')).toBe('The driver has gone quiet');
     expect(staleReasonText('something_new')).toBe('something new');
     expect(staleReasonText(null)).toBe('This trip has stopped progressing');
+  });
+});
+
+const preview: ReleasePreview = {
+  reason_code: 'driver_unresponsive', rule: 'standard', currency: 'INR', payment_method: 'online',
+  distance_km: '2.00', distance_source: 'trail', elapsed_minutes: '3.00',
+  uncapped_fare_minor: 4900, upfront_price_minor: 5300, capped_fare_minor: 4900, cap_applied: false,
+  rider_pays_minor: 4900, commission_percent: '20.00', commission_minor: 980,
+  driver_earnings_minor: 3920, funded_by: 'rider', driver_collects_cash: false,
+};
+
+describe('the started-trip release', () => {
+  it('states each rule plainly, and asks for a reason before any code is chosen', () => {
+    expect(consequence('release_driver', 'C', null)).toMatch(/Choose why/);
+    expect(consequence('release_driver', 'C', 'standard')).toMatch(/never more than the upfront price/);
+    expect(consequence('release_driver', 'C', 'platform_funded')).toMatch(/rider is not charged/);
+    expect(consequence('release_driver', 'C', 'platform_funded')).toMatch(/SaaradhiGo pays the driver/);
+  });
+
+  it('will not send a started-trip release without a reason code', () => {
+    expect(releaseReady('C', null, 'Driver gone for an hour')).toBe(false);
+    expect(releaseReady('C', 'other', 'abc')).toBe(false);
+    expect(releaseReady('C', 'other', 'Driver gone for an hour')).toBe(true);
+    // A pre-pickup release needs no code.
+    expect(releaseReady('B', null, 'Driver gone for an hour')).toBe(true);
+  });
+
+  it("lays out the server's figures with the money helper, not its own arithmetic", () => {
+    const rows = previewRows(preview);
+    const byLabel = Object.fromEntries(rows.map((r) => [r.label, r.value]));
+    expect(byLabel['Distance driven']).toBe('2.00 km (from the recorded trail)');
+    expect(byLabel['Time charged']).toMatch(/^3\.00 min/);
+    expect(byLabel['Rider pays']).toBe('₹49.00');
+    expect(byLabel['Driver earns']).toBe('₹39.20 after 20.00% commission');
+    expect(byLabel['Paid by']).toBe('The rider');
+  });
+
+  it('shows the cap when it applied', () => {
+    const rows = previewRows({ ...preview, cap_applied: true, uncapped_fare_minor: 25000, capped_fare_minor: 5300, rider_pays_minor: 5300 });
+    expect(rows.find((r) => r.label === 'Fare for the distance driven')?.value).toBe('₹53.00 (capped from ₹250.00)');
+  });
+
+  it('says "Not charged" and who funds it on the platform rule', () => {
+    const rows = previewRows({ ...preview, rule: 'platform_funded', rider_pays_minor: 0, funded_by: 'platform' });
+    expect(rows.find((r) => r.label === 'Rider pays')?.value).toBe('Not charged');
+    expect(rows.find((r) => r.label === 'Paid by')?.value).toBe('SaaradhiGo (platform-funded)');
+  });
+
+  it('uses the preview currency, never a hard-coded symbol', () => {
+    const rows = previewRows({ ...preview, currency: 'USD' });
+    expect(rows.find((r) => r.label === 'Rider pays')?.value).toBe('$49.00');
+  });
+
+  it('says there is no trail when none was recorded, and how cash is handled', () => {
+    const rows = previewRows({ ...preview, distance_km: '0.00', distance_source: 'none', payment_method: 'cash', driver_collects_cash: true });
+    expect(rows[0].value).toBe('0.00 km (no trail recorded, counted as 0)');
+    expect(rows.find((r) => r.label === 'Cash trip')?.value).toMatch(/owes the commission/);
+  });
+
+  it('reports the started-trip outcome by rule', () => {
+    expect(outcomeText('release_driver', { trip_id: 1, outcome: 'ended_by_operator', case: 'C', rule: 'standard' })).toMatch(/pays the fare for the distance driven/);
+    expect(outcomeText('release_driver', { trip_id: 1, outcome: 'ended_by_operator', case: 'C', rule: 'platform_funded' })).toMatch(/rider was not charged/);
   });
 });
 
