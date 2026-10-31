@@ -157,6 +157,7 @@ describe('payout settings', () => {
     expect(configBody(draft, 'INR', ' Q4 review ', 'k')).toEqual({
       fee_percent: '1.50', minimum_withdrawal_minor: 50000, stuck_payout_hours: null,
       payout_schedule: 'weekly', payout_weekday: 4, reason: 'Q4 review', idempotency_key: 'k',
+      reward_hold_days: 7, recovery_max_percent: 50, payout_hold_max_days: 14,
     });
     expect(configBody({ ...draft, schedule: 'on_request' }, 'INR', 'r', 'k').payout_weekday).toBeNull();
   });
@@ -168,6 +169,22 @@ describe('payout settings', () => {
     expect(configProblem({ ...draft, fee: '1.234' }, 'INR')).toMatch(/two decimals/);
     expect(configProblem({ ...draft, stuckHours: '0' }, 'INR')).toMatch(/whole number/);
     expect(configProblem({ ...draft, minimum: 'x' }, 'INR')).toMatch(/minimum/i);
+  });
+
+  it('carries the fraud money settings: defaults, changes and bounds', () => {
+    const draft = draftFrom(current, 'INR');
+    expect([draft.rewardHoldDays, draft.recoveryPercent, draft.holdMaxDays]).toEqual(['7', '50', '14']);
+    const changes = configChanges(current, { ...draft, rewardHoldDays: '5', recoveryPercent: '40', holdMaxDays: '10' }, 'INR');
+    expect(changes.map((c) => `${c.label}: ${c.from} to ${c.to}`)).toEqual([
+      'Reward held for review: 7 days to 5 days',
+      'Most of one payout a recovery may take: 50% to 40%',
+      'Longest payout hold: 14 days to 10 days',
+    ]);
+    expect(configProblem({ ...draft, rewardHoldDays: '0' }, 'INR')).toMatch(/Reward hold/);
+    expect(configProblem({ ...draft, recoveryPercent: '101' }, 'INR')).toMatch(/Recovery cap/);
+    expect(configProblem({ ...draft, holdMaxDays: '1.5' }, 'INR')).toMatch(/payout hold/);
+    const fromServer = draftFrom({ ...current, reward_hold_days: 3, recovery_max_percent: 20, payout_hold_max_days: 9 }, 'INR');
+    expect([fromServer.rewardHoldDays, fromServer.recoveryPercent, fromServer.holdMaxDays]).toEqual(['3', '20', '9']);
   });
 
   it('warns for any fee above zero and for none at zero', () => {

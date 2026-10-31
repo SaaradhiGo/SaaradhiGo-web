@@ -3,13 +3,15 @@
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { useAdminAccess } from '@/lib/adminScope';
+import { can, useAdminAccess } from '@/lib/adminScope';
 import { useDensity } from '@/lib/consolePrefs';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   LEDGER_KIND, LEDGER_PURPOSE, cityName, formatMinor, isDate, rangeProblem, signedMoney,
 } from '@/lib/finance';
 import { canAdjustBalance } from '@/lib/financeActions';
+import { carryOverWords, type PayoutHoldRow, type RecoveryDebtRow } from '@/lib/fraud';
+import { ReleaseDrawer } from '@/components/console/fraud/FlagMoney';
 import { AdjustBalanceDrawer } from '@/components/console/FinanceActionDrawers';
 import { PageLink } from '@/components/console/PageLink';
 import { FinanceNav, Pager, RangeBar } from '@/components/console/finance';
@@ -39,7 +41,15 @@ type Memo = {
   id: string; at: string; kind: string; amount_minor: number; currency: string; note: string;
   trip_id?: number; withdrawal_id?: number;
 };
+type Deduction = { withdrawal_id: number | null; amount_minor: number; payout_gross_minor: number;
+  percent_cap: number; at: string };
+type LedgerDebt = RecoveryDebtRow & { flag_id: number; closed_at: string | null;
+  approval_request_id: number; deductions: Deduction[] };
 type Ledger = {
+  held_rewards?: { minor: number; currency: string;
+    holds: Array<{ id: number; amount_minor: number; kind: string; flag_id: number; release_at: string }> };
+  recovery?: { debts: LedgerDebt[]; max_percent_per_payout: number; remaining_minor: number };
+  payout_hold?: (PayoutHoldRow & { flag_id: number }) | null;
   driver: { id: number; driver_name: string; home_city: { code: string; name: string } | null };
   range: { from: string; to: string; timezone: string };
   has_wallet: boolean;
@@ -62,6 +72,7 @@ function LedgerInner() {
   const access = useAdminAccess();
   const [density, setDensity] = useDensity();
   const [adjusting, setAdjusting] = useState(false);
+  const [releasing, setReleasing] = useState(false);
   const [notice, setNotice] = useState<{ text: string; kind: 'pending' | 'done' } | null>(null);
   const [data, setData] = useState<Ledger | null>(null);
   const [error, setError] = useState<{ status: number; message: string } | null>(null);
@@ -165,6 +176,52 @@ function LedgerInner() {
             note={`Available balance now ${formatMinor(data.balance_minor, cur)}`} />
         </TileGrid>
       )}
+      {data && data.has_wallet && cur && (
+        data.payout_hold || (data.recovery?.debts.length ?? 0) > 0 || (data.held_rewards?.minor ?? 0) > 0
+      ) ? (
+        <Panel title="Recoveries, held rewards and payout hold">
+          {data.payout_hold ? (
+            <div className="ops-note ops-note--warn mb-3" role="status">
+              <b>Payouts are on hold until {stamp(data.payout_hold.expires_at, tz)}.</b>{' '}
+              A suspended driver, approved by a second admin (request #{data.payout_hold.approval_request_id}); it ends by
+              itself after at most {data.payout_hold.max_days} days unless it is renewed. The weekly run skips this driver
+              and lists them as held.{' '}
+              {can(access, 'finance.payout') ? (
+                <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setReleasing(true)}>
+                  Release the hold…
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {(data.held_rewards?.minor ?? 0) > 0 ? (
+            <p className="m-0 mb-3">
+              <b>{formatMinor(data.held_rewards?.minor, cur)}</b> of rewards are pending review. They stay in the wallet but
+              are left out of the next payout and of what the driver can withdraw; they are released by themselves
+              after the country&rsquo;s hold period, or when the flag is dismissed.
+            </p>
+          ) : null}
+          {(data.recovery?.debts.length ?? 0) > 0 ? (
+            <DataTable caption="Recoveries of rewards" rows={data.recovery?.debts ?? []} rowKey={(d) => d.id}
+              density="compact" maxHeight={false}
+              columns={[
+                { key: 'id', label: 'Recovery', width: '8rem', render: (d) => `#${d.id} · request #${d.approval_request_id}` },
+                { key: 'req', label: 'Approved', num: true, render: (d) => formatMinor(d.requested_minor, d.currency) },
+                { key: 'rec', label: 'Collected', num: true, render: (d) => formatMinor(d.recovered_minor, d.currency) },
+                { key: 'rem', label: 'Carry-over', num: true, render: (d) => formatMinor(d.remaining_minor, d.currency) },
+                { key: 'note', label: 'Payouts so far', hideBelow: 1100, render: (d) => (
+                  d.deductions.length === 0
+                    ? 'None yet'
+                    : `${d.deductions.map((x) => `${formatMinor(x.amount_minor, d.currency)} of ${formatMinor(x.payout_gross_minor, d.currency)}`).join(', ')} · ${carryOverWords(d, (m, c) => formatMinor(m, c))}`
+                ) },
+              ]} />
+          ) : null}
+          {(data.recovery?.debts.length ?? 0) > 0 ? (
+            <p className="help m-0 mt-2">
+              A payout is reduced by at most {data.recovery?.max_percent_per_payout}% for a recovery; the rest carries to the next one.
+            </p>
+          ) : null}
+        </Panel>
+      ) : null}
       {data && data.has_wallet && (data.unexplained_minor ?? 0) !== 0 && (
         <div className="ops-note ops-note--warn mb-4" role="alert">
           <b>The wallet and the ledger disagree.</b> The wallet holds {formatMinor(data.unexplained_minor, cur)}{' '}
@@ -225,6 +282,11 @@ function LedgerInner() {
           </Panel>
         </div>
       )}
+      {releasing && data?.payout_hold ? (
+        <ReleaseDrawer hold={data.payout_hold} path={`/payments/admin/payout-holds/${data.payout_hold.id}/release/`}
+          onClose={() => setReleasing(false)}
+          onDone={(text) => { setNotice({ text, kind: 'done' }); void load(); }} />
+      ) : null}
       {adjusting && data && cur ? (
         <AdjustBalanceDrawer
           driverId={data.driver.id} driverName={data.driver.driver_name || `Driver #${data.driver.id}`}

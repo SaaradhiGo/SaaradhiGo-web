@@ -12,6 +12,7 @@ import {
 } from '@/lib/fraud';
 import { PageLink } from '@/components/console/PageLink';
 import { FlagDecisionDrawer, type FlagAction } from '@/components/console/fraud/FlagDecisionDrawer';
+import { FlagMoney } from '@/components/console/fraud/FlagMoney';
 import { HandoffButtons } from '@/components/console/fraud/HandoffButtons';
 import { FraudNav, NoFraudAccess, SeverityPill, StatusPill } from '@/components/console/fraud/parts';
 import {
@@ -25,8 +26,9 @@ import {
  * the person and by what (masked labels; accounts outside your scope are counted, not named), the
  * trips and campaigns involved, and the timeline. Reviewers (fraud.review) can assign, note,
  * dismiss and confirm; Marketing sees the same page without the buttons. Confirming records a
- * decision and offers hand-offs to actions that already exist elsewhere; it moves no money and
- * tells the person nothing.
+ * decision and offers hand-offs to actions that already exist elsewhere; it tells the person nothing.
+ * The only money a flag moves is a reward HOLD; recovering a reward, an online-payment-only restriction
+ * and a payout hold are separate actions on the Rewards and money panel (AUDIT 27.56).
  */
 const LINK_TONE = { active: 'neutral', suspended: 'bad', inactive: 'wait' } as const;
 
@@ -210,6 +212,8 @@ export default function FlagPage() {
           </>
         )}
       </Panel>
+
+      <FlagMoney flag={data} onDone={(m) => { setNotice(m); void load(); }} />
 
       {data.status === 'confirmed' && withTaken.some((h) => h.available) ? (
         <Panel title="Take it further">

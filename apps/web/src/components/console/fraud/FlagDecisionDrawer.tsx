@@ -19,9 +19,11 @@ export const ACTION_TITLE: Record<FlagAction, string> = {
 
 const CONSEQUENCE: Record<FlagAction, string> = {
   confirm: 'Confirming records that you reviewed this and found it to be fraud. It does not suspend anyone, '
-    + 'hold or move any money, or tell the person. Anything further is a separate action in another part of the '
-    + 'console, with its own permission and, where it applies, a second approver.',
-  dismiss: 'Dismissing records that this is not fraud. The person is not told. If a rider carries a promo-abuse '
+    + 'take any money, hold a payout, or tell the person. A reward already held for this flag stays held for '
+    + 'Finance only if the reason is promotion abuse, collusion or multiple accounts; otherwise it is released. '
+    + 'Anything further is a separate action, with its own permission and, where it applies, a second approver.',
+  dismiss: 'Dismissing records that this is not fraud. The person is not told, and any reward held for this '
+    + 'flag is released at once. If a rider carries a promo-abuse '
     + 'flag from this, it is cleared with your note. The flag can be reopened later.',
   reopen: 'Puts the flag back in the queue for review. The earlier decision stays on the timeline.',
   note: 'Seen by reviewers only. The person never sees it.',

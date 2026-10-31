@@ -109,6 +109,8 @@ export type FlagDetail = Flag & {
   timeline: TimelineEvent[];
   handoffs: Handoff[];
   handoffs_taken: { kind: string; at: string; by: number }[];
+  /** Absent from an older server. */
+  money?: MoneyBlock;
 };
 
 export type Options = {
@@ -381,4 +383,104 @@ export function thresholdProblem(row: RuleThreshold, raw: string): string | null
   const n = Number(text);
   if (n < row.low || n > row.high) return `Between ${row.low} and ${row.high}.`;
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// Money actions (owner rulings 2026-10-31, AUDIT 27.56)
+// ---------------------------------------------------------------------------
+//
+// The server decides everything here (what is linked, what may be recovered, whether a payout hold
+// is allowed). The console shows it, asks for the note, and sends it. Nothing is worked out from
+// scratch except typing checks that spare a round trip.
+
+export type RewardState = 'held' | 'credited' | 'paid' | 'forfeited';
+
+export type LinkedReward = {
+  ledger_entry_id: number; kind: string; campaign_id: number | null; campaign: string;
+  amount_minor: number; currency: string; state: RewardState; held_minor: number;
+  release_at: string | null; credited_at: string;
+};
+
+export type RecoveryDebtRow = {
+  id: number; requested_minor: number; forfeited_minor: number; amount_minor: number;
+  recovered_minor: number; uncollected_minor: number; remaining_minor: number; currency: string;
+  created_at: string;
+};
+
+export type PayoutHoldRow = {
+  id: number; status: 'active' | 'released' | 'lapsed'; starts_at: string; expires_at: string;
+  max_days: number; renewal_of: number | null; note: string; released_at: string | null;
+  release_note: string; approval_request_id: number;
+};
+
+export type MoneyBlock = {
+  rewards: LinkedReward[]; currency: string | null; linked_minor: number; held_minor: number;
+  paid_minor: number; recoverable_minor: number; can_recover: boolean; hold_days: number | null;
+  debts: RecoveryDebtRow[];
+  recover: { applies: boolean; may_request: boolean; max_minor: number; reason_code: string };
+  cash: null | {
+    offered: boolean; active: boolean; set_at: string | null; may_set: boolean; note: string;
+    block_href: string;
+  };
+  payout_hold: {
+    blockers: string[]; max_days: number; serious_reasons: string[]; active: boolean;
+    holds: PayoutHoldRow[]; may_request: boolean; eligible: boolean;
+  };
+};
+
+export const REWARD_STATE_WORDS: Record<RewardState, string> = {
+  held: 'Held', credited: 'Credited, not yet paid', paid: 'Paid out', forfeited: 'Taken back',
+};
+export const rewardTone = (s: RewardState): Tone =>
+  s === 'held' ? 'wait' : s === 'forfeited' ? 'bad' : s === 'paid' ? 'good' : 'neutral';
+
+export const REWARD_KIND_WORDS: Record<string, string> = {
+  incentive_reward: 'Incentive reward', referral_reward: 'Referral reward',
+};
+
+/** Why a payout hold cannot be requested yet, in words (the server's own codes). */
+export const HOLD_BLOCKER_WORDS: Record<string, string> = {
+  flag_not_confirmed: 'The flag is not confirmed.',
+  reason_not_serious: 'It was confirmed for a reason that is not serious fraud (GPS spoofing or collusion).',
+  subject_not_driver: 'The person is not a driver.',
+  driver_not_suspended: 'The driver is not suspended. A payout hold goes together with a suspension.',
+};
+export const holdBlockers = (codes: readonly string[]) => codes.map((c) => HOLD_BLOCKER_WORDS[c] ?? c);
+
+/** The typed amount (major units) as minor units, or null when it is not an amount. */
+export function recoverAmountMinor(text: string, exponent: number): number | null {
+  const t = text.trim();
+  if (!/^\d+(\.\d+)?$/.test(t)) return null;
+  const [whole, frac = ''] = t.split('.');
+  if (frac.length > exponent) return null;
+  return Number(whole) * 10 ** exponent + Number(frac.padEnd(exponent, '0') || '0');
+}
+
+/** What is wrong with a recovery request, or null. The server re-checks the cap. */
+export function recoverProblem(amountMinor: number | null, maxMinor: number, note: string): string | null {
+  if (amountMinor === null || amountMinor <= 0) return 'Enter an amount above zero.';
+  if (amountMinor > maxMinor) return 'That is more than the linked rewards allow.';
+  const n = note.trim();
+  if (n.length < NOTE_MIN) return `The note needs at least ${NOTE_MIN} characters.`;
+  if (n.length > NOTE_MAX) return `Keep the note to ${NOTE_MAX} characters or fewer.`;
+  return null;
+}
+
+/** What is wrong with a payout-hold request or release, or null. */
+export function holdProblem(days: string, maxDays: number, note: string, needsDays = true): string | null {
+  if (needsDays) {
+    const d = days.trim();
+    if (!/^\d+$/.test(d) || Number(d) < 1 || Number(d) > maxDays) return `Days must be a whole number from 1 to ${maxDays}.`;
+  }
+  const n = note.trim();
+  if (n.length < NOTE_MIN) return `The note needs at least ${NOTE_MIN} characters.`;
+  if (n.length > NOTE_MAX) return `Keep the note to ${NOTE_MAX} characters or fewer.`;
+  return null;
+}
+
+/** The ledger carry-over line: what is left of a debt after the payouts so far. */
+export function carryOverWords(d: Pick<RecoveryDebtRow, 'remaining_minor' | 'currency'>, fmt: (m: number, c: string) => string): string {
+  return d.remaining_minor > 0
+    ? `${fmt(d.remaining_minor, d.currency)} carries to the next payout`
+    : 'Fully recovered';
 }

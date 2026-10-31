@@ -10,6 +10,7 @@ import { type RiderActionKey, type RiderActions, riderName, visibleRiderActions 
 import { cityTime, formatMinor, words } from '@/lib/trips';
 import { RiderActionDrawer } from '@/components/console/RiderActionDrawer';
 import { CreditWalletDrawer } from '@/components/console/FinanceActionDrawers';
+import { ClearRestrictionDrawer } from '@/components/console/ClearRestrictionDrawer';
 import { ButtonLink } from '@/components/sg/Button';
 import { Revealable } from '@/components/console/Revealable';
 import {
@@ -48,6 +49,8 @@ type RiderDetail = {
   flagged: boolean;
   block: { active: boolean; reason_label?: string; note?: string; created_at?: string | null; created_by?: { label?: string } | null };
   flags: Array<{ id: number; reason: string; reason_label?: string; note: string; created_at: string | null; created_by?: { label?: string } | null }>;
+  // Operator restrictions that are not a block: today, online payment only (AUDIT 27.56).
+  restrictions?: Array<{ id: number; kind: string; label: string; reason: string; set_at: string | null; set_by?: { label?: string } | null; flag_id: number | null }>;
   wallet: { balances: Array<{ currency: string; balance_minor: number }>; transactions: Record<string, WalletRow[]>; rows_per_currency: number };
   trips: { total: number; by_status: Record<string, number>; recent: TripRow[] };
   tickets: { total: number; open: number; recent: TicketRow[] };
@@ -63,7 +66,7 @@ type RiderDetail = {
   notes: Array<{ id: number; body: string; created_at: string | null; created_by?: { label?: string } | null }>;
   approval_requests: Array<{ id: number; action_key: string; status: string; requested_at: string | null }>;
   audit_trail: AuditRow[];
-  actions?: RiderActions & { wallet_credit?: boolean };
+  actions?: RiderActions & { wallet_credit?: boolean; clear_restriction?: boolean };
 };
 
 const TONE: Record<string, 'good' | 'bad' | 'wait' | 'neutral'> = {
@@ -86,6 +89,7 @@ export default function RiderDetailPage() {
   const [notice, setNotice] = useState<{ text: string; kind: 'pending' | 'done' } | null>(null);
   const [action, setAction] = useState<RiderActionKey | null>(null);
   const [crediting, setCrediting] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -282,6 +286,19 @@ export default function RiderDetailPage() {
                 {f.note || 'No note.'} ({when(f.created_at)}{f.created_by?.label ? `, ${f.created_by.label}` : ''})
               </p>
             ))}
+            {(data.restrictions ?? []).map((r) => (
+              <p key={r.id} className="ops-decide__why">
+                <strong className="block">{r.label}</strong>
+                Cash is switched off for this rider; they can still book and pay online.{' '}
+                {r.reason || 'No note.'} ({when(r.set_at)}{r.set_by?.label ? `, ${r.set_by.label}` : ''})
+                {data.actions?.clear_restriction ? (
+                  <>
+                    {' '}
+                    <button type="button" className="btn-secondary" onClick={() => setClearing(true)}>Clear…</button>
+                  </>
+                ) : null}
+              </p>
+            ))}
             {pending.map((a) => (
               <p key={a.id} className="ops-confirm">Waiting for a checker · request #{a.id} ({words(a.action_key)})</p>
             ))}
@@ -340,6 +357,10 @@ export default function RiderDetailPage() {
           onDone={(text, kind) => done(text, kind)}
         />
       )}
+      {clearing ? (
+        <ClearRestrictionDrawer riderId={data.id} riderName={name}
+          onClose={() => setClearing(false)} onDone={(text, kind) => done(text, kind)} />
+      ) : null}
       {crediting && data.wallet.balances.length > 0 ? (
         <CreditWalletDrawer
           riderId={data.id} riderName={name} currency={data.wallet.balances[0].currency}

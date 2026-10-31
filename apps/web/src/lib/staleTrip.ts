@@ -149,6 +149,14 @@ export type ReleasePreview = {
   driver_earnings_minor: number | null;
   funded_by: 'rider' | 'platform';
   driver_collects_cash: boolean;
+  /** A US (additive-tax) trip: the charged fare split into the fare before tax, the tax and the
+   * per-trip fee. Null in an inclusive-tax market (India), and absent from an older backend. */
+  pretax_fare_minor?: number | null;
+  tax_minor?: number | null;
+  per_trip_fee_minor?: number | null;
+  /** The per-trip regulatory fee the platform owes when the rider is charged 0. */
+  regulatory_fee_expense_minor?: number;
+  tax_note?: string | null;
 };
 
 export type PreviewRow = { label: string; value: string; strong?: boolean };
@@ -171,6 +179,25 @@ export function previewRows(p: ReleasePreview): PreviewRow[] {
         : money(p.capped_fare_minor),
     },
   ];
+  // Tax and the per-trip fee are on the amount actually charged, within the upfront price (US).
+  // Nothing is worked out here: the server's split, read back. A US accountant confirms the rule
+  // (go-live blocker #15), which the note says.
+  if (p.tax_minor != null && p.per_trip_fee_minor != null && p.pretax_fare_minor != null) {
+    if (p.rule === 'platform_funded') {
+      rows.push({ label: 'Tax and fee', value: 'None charged to the rider' });
+      if ((p.regulatory_fee_expense_minor ?? 0) > 0) {
+        rows.push({
+          label: 'Regulatory fee',
+          value: `${money(p.regulatory_fee_expense_minor ?? 0)} booked as a SaaradhiGo expense`,
+        });
+      }
+    } else {
+      rows.push({ label: 'Fare before tax', value: money(p.pretax_fare_minor) });
+      rows.push({ label: 'Tax on the amount charged', value: money(p.tax_minor) });
+      if (p.per_trip_fee_minor > 0) rows.push({ label: 'Per-trip fee', value: money(p.per_trip_fee_minor) });
+    }
+    if (p.tax_note) rows.push({ label: 'Note', value: p.tax_note });
+  }
   // A promo applied to a booked trip is honoured: the platform pays the discount, the driver's
   // earnings and commission stay on the full capped fare. Under the platform-funded rule there is
   // nothing to discount (the rider pays 0) and the reservation is released.

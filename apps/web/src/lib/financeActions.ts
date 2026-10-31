@@ -179,7 +179,14 @@ export type PayoutConfig = {
   stuck_payout_hours: number | null;
   payout_schedule: 'on_request' | 'weekly';
   payout_weekday: number | null;
+  /** Fraud money actions (AUDIT 27.56). Absent from an older server: the defaults then apply. */
+  reward_hold_days?: number;
+  recovery_max_percent?: number;
+  payout_hold_max_days?: number;
 };
+
+/** The seeded defaults (7, 50, 14), shown when an older server sends none. */
+export const FRAUD_MONEY_DEFAULTS = { reward_hold_days: 7, recovery_max_percent: 50, payout_hold_max_days: 14 };
 
 export function scheduleLabel(c: Pick<PayoutConfig, 'payout_schedule' | 'payout_weekday'>): string {
   if (c.payout_schedule !== 'weekly') return 'On request';
@@ -200,6 +207,9 @@ export type ConfigDraft = {
   stuckHours: string;
   schedule: 'on_request' | 'weekly';
   weekday: number;
+  rewardHoldDays: string;
+  recoveryPercent: string;
+  holdMaxDays: string;
 };
 
 export function draftFrom(c: PayoutConfig, currency: string): ConfigDraft {
@@ -209,6 +219,9 @@ export function draftFrom(c: PayoutConfig, currency: string): ConfigDraft {
     stuckHours: c.stuck_payout_hours === null ? '' : String(c.stuck_payout_hours),
     schedule: c.payout_schedule,
     weekday: c.payout_weekday ?? 0,
+    rewardHoldDays: String(c.reward_hold_days ?? FRAUD_MONEY_DEFAULTS.reward_hold_days),
+    recoveryPercent: String(c.recovery_max_percent ?? FRAUD_MONEY_DEFAULTS.recovery_max_percent),
+    holdMaxDays: String(c.payout_hold_max_days ?? FRAUD_MONEY_DEFAULTS.payout_hold_max_days),
   };
 }
 
@@ -249,6 +262,20 @@ export function configChanges(current: PayoutConfig, draft: ConfigDraft, currenc
       to: scheduleLabel({ payout_schedule: draft.schedule, payout_weekday: nextWeekday }),
     });
   }
+  const was = {
+    reward: current.reward_hold_days ?? FRAUD_MONEY_DEFAULTS.reward_hold_days,
+    recovery: current.recovery_max_percent ?? FRAUD_MONEY_DEFAULTS.recovery_max_percent,
+    hold: current.payout_hold_max_days ?? FRAUD_MONEY_DEFAULTS.payout_hold_max_days,
+  };
+  if (Number(draft.rewardHoldDays) !== was.reward) {
+    out.push({ label: 'Reward held for review', from: `${was.reward} days`, to: `${Number(draft.rewardHoldDays)} days` });
+  }
+  if (Number(draft.recoveryPercent) !== was.recovery) {
+    out.push({ label: 'Most of one payout a recovery may take', from: `${was.recovery}%`, to: `${Number(draft.recoveryPercent)}%` });
+  }
+  if (Number(draft.holdMaxDays) !== was.hold) {
+    out.push({ label: 'Longest payout hold', from: `${was.hold} days`, to: `${Number(draft.holdMaxDays)} days` });
+  }
   return out;
 }
 
@@ -264,6 +291,11 @@ export function configProblem(draft: ConfigDraft, currency: string): string | nu
     const h = Number(draft.stuckHours);
     if (!Number.isInteger(h) || h < 1 || h > 2160) return 'Stuck-after hours: a whole number from 1 to 2160, or leave empty.';
   }
+  const whole = (text: string, low: number, high: number) => /^\d+$/.test(text.trim())
+    && Number(text) >= low && Number(text) <= high;
+  if (!whole(draft.rewardHoldDays, 1, 90)) return 'Reward hold: a whole number of days from 1 to 90.';
+  if (!whole(draft.recoveryPercent, 1, 100)) return 'Recovery cap: a whole percentage from 1 to 100.';
+  if (!whole(draft.holdMaxDays, 1, 90)) return 'Longest payout hold: a whole number of days from 1 to 90.';
   return null;
 }
 
@@ -275,6 +307,9 @@ export function configBody(draft: ConfigDraft, currency: string, reason: string,
     stuck_payout_hours: draft.stuckHours.trim() === '' ? null : Number(draft.stuckHours),
     payout_schedule: draft.schedule,
     payout_weekday: draft.schedule === 'weekly' ? draft.weekday : null,
+    reward_hold_days: Number(draft.rewardHoldDays),
+    recovery_max_percent: Number(draft.recoveryPercent),
+    payout_hold_max_days: Number(draft.holdMaxDays),
     reason: reason.trim(),
     idempotency_key: key,
   };
