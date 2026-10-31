@@ -7,6 +7,13 @@
  * not offer an action that will fail.
  */
 
+import { formatMinor } from '@/lib/trips';
+
+/** Which of the owner's two rules a release reason triggers. */
+export type EndRule = 'standard' | 'platform_funded';
+
+export type ReasonCodeOption = { code: string; label: string; rule: EndRule };
+
 export type StaleActions = {
   can_resolve: boolean;
   is_stale: boolean;
@@ -14,8 +21,8 @@ export type StaleActions = {
   release_driver: boolean;
   /** A: finished trip, driver still marked busy. B: ghost trip before pickup. C: started trip. */
   release_case: 'A' | 'B' | 'C' | null;
-  refusal: { code: string; message: string } | null;
-  routes: Array<'safety' | 'support'>;
+  /** The reason codes a started trip's release needs (case C); empty otherwise. */
+  reason_codes: ReasonCodeOption[];
   reason_min_length: number;
   reason_max_length: number;
 };
@@ -35,9 +42,6 @@ export type PanelModel = {
   show: boolean;
   /** The steps to offer as buttons, in order. */
   buttons: StaleStep[];
-  /** The server's refusal for a started trip, shown as text with the routes. */
-  refusal: { code: string; message: string } | null;
-  routes: Array<'safety' | 'support'>;
   /** The operator can see the panel but holds no action (read-only role). */
   readOnly: boolean;
 };
@@ -50,7 +54,7 @@ export function panelModel(
   stale: { is_stale: boolean; reason: string | null } | null | undefined,
   actions: StaleActions | null | undefined,
 ): PanelModel {
-  const hidden: PanelModel = { show: false, buttons: [], refusal: null, routes: [], readOnly: false };
+  const hidden: PanelModel = { show: false, buttons: [], readOnly: false };
   if (!actions) return hidden;
   const isStale = Boolean(stale?.is_stale);
   // A finished trip whose driver is still marked busy is not "stale" but is offered the repair.
@@ -62,9 +66,7 @@ export function panelModel(
   return {
     show: true,
     buttons,
-    refusal: actions.refusal,
-    routes: actions.routes ?? [],
-    readOnly: buttons.length === 0 && !actions.refusal,
+    readOnly: buttons.length === 0,
   };
 }
 
@@ -103,20 +105,106 @@ export function reasonProblem(text: string, min = REASON_MIN, max = REASON_MAX):
 }
 
 /** A plain statement of what pressing the button will do, read back before it. */
-export function consequence(step: StaleStep, releaseCase: StaleActions['release_case']): string {
+export function consequence(
+  step: StaleStep, releaseCase: StaleActions['release_case'], rule?: EndRule | null,
+): string {
   if (step === 'mark_reviewed') {
     return 'The stale flag is cleared and this is recorded as reviewed by you. The trip is not changed. If the driver comes back and goes quiet again, it is flagged again.';
   }
   if (releaseCase === 'A') {
     return 'This trip is already finished, but the driver is still marked busy. The mark is cleared so the driver can take trips again. The trip is not changed.';
   }
+  if (releaseCase === 'C') {
+    if (rule === 'platform_funded') {
+      return 'The trip ends and the rider is not charged. SaaradhiGo pays the driver their earnings for the distance driven, and Finance is alerted. The driver can take trips again.';
+    }
+    if (rule === 'standard') {
+      return 'The trip ends. The rider pays the fare for the distance actually driven, never more than the upfront price. The driver earns on that fare with commission as usual, and can take trips again.';
+    }
+    return 'Choose why the trip is being ended. The reason decides what the rider pays and who pays the driver.';
+  }
   return 'The trip will be cancelled with no charge to the rider and no fee to the driver, and the driver can take trips again.';
+}
+
+/** The release preview the server computes (`GET .../stale/release-preview/`). */
+export type ReleasePreview = {
+  reason_code: string;
+  rule: EndRule;
+  currency: string;
+  payment_method: string;
+  distance_km: string;
+  distance_source: 'trail' | 'recorded' | 'none';
+  elapsed_minutes: string;
+  uncapped_fare_minor: number;
+  upfront_price_minor: number;
+  capped_fare_minor: number;
+  cap_applied: boolean;
+  rider_pays_minor: number;
+  commission_percent: string | null;
+  commission_minor: number | null;
+  driver_earnings_minor: number | null;
+  funded_by: 'rider' | 'platform';
+  driver_collects_cash: boolean;
+};
+
+export type PreviewRow = { label: string; value: string; strong?: boolean };
+
+/** The server's figures, laid out as the dialog shows them. No arithmetic here. */
+export function previewRows(p: ReleasePreview): PreviewRow[] {
+  const money = (minor: number | null) => formatMinor(minor, p.currency);
+  const km = `${p.distance_km} km`;
+  const source = p.distance_source === 'trail' ? 'from the recorded trail'
+    : p.distance_source === 'recorded' ? 'from the recorded distance'
+      : 'no trail recorded, counted as 0';
+  const rows: PreviewRow[] = [
+    { label: 'Distance driven', value: `${km} (${source})` },
+    { label: 'Time charged', value: `${p.elapsed_minutes} min, up to the driver's last activity` },
+    { label: 'Upfront price', value: money(p.upfront_price_minor) },
+    {
+      label: 'Fare for the distance driven',
+      value: p.cap_applied
+        ? `${money(p.capped_fare_minor)} (capped from ${money(p.uncapped_fare_minor)})`
+        : money(p.capped_fare_minor),
+    },
+    {
+      label: 'Rider pays',
+      value: p.rider_pays_minor > 0 ? money(p.rider_pays_minor) : 'Not charged',
+      strong: true,
+    },
+  ];
+  if (p.driver_earnings_minor == null) {
+    rows.push({ label: 'Driver earns', value: 'Worked out when the trip settles', strong: true });
+  } else {
+    rows.push({
+      label: 'Driver earns',
+      value: `${money(p.driver_earnings_minor)} after ${p.commission_percent ?? '0'}% commission`,
+      strong: true,
+    });
+  }
+  rows.push({
+    label: 'Paid by',
+    value: p.funded_by === 'platform' ? 'SaaradhiGo (platform-funded)' : 'The rider',
+  });
+  if (p.driver_collects_cash) {
+    rows.push({ label: 'Cash trip', value: 'Recorded as a normal cash trip: the driver owes the commission.' });
+  }
+  return rows;
+}
+
+/** Whether the release can be sent: a started trip also needs a reason code. */
+export function releaseReady(
+  releaseCase: StaleActions['release_case'], code: string | null, reasonText: string,
+  min = REASON_MIN, max = REASON_MAX,
+): boolean {
+  if (reasonProblem(reasonText, min, max)) return false;
+  return releaseCase !== 'C' || Boolean(code);
 }
 
 export type StaleResult = {
   trip_id: number;
   outcome: string;
   case?: string;
+  rule?: EndRule;
   driver_released?: boolean;
 };
 
@@ -124,6 +212,11 @@ export type StaleResult = {
 export function outcomeText(step: StaleStep, result: StaleResult | null | undefined): string {
   if (step === 'mark_reviewed') return 'Marked reviewed. The trip is unchanged.';
   if (!result) return 'Done.';
+  if (result.case === 'C') {
+    return result.rule === 'platform_funded'
+      ? 'Trip ended. The rider was not charged and SaaradhiGo pays the driver. Finance has been alerted and the driver can take trips again.'
+      : 'Trip ended. The rider pays the fare for the distance driven and the driver earns on it. Both have been told and the driver can take trips again.';
+  }
   if (result.case === 'B') {
     return 'Trip cancelled with no charge to the rider and no fee to the driver. The rider has been told and the driver can take trips again.';
   }

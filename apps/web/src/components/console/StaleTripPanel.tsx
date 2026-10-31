@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import {
-  type PanelModel, type StaleActions, type StaleDetail, type StaleResult, type StaleStep,
-  consequence, failureText, outcomeText, reasonProblem, silentFor, staleReasonText,
+  type EndRule, type PanelModel, type ReleasePreview, type StaleActions, type StaleDetail,
+  type StaleResult, type StaleStep,
+  consequence, failureText, outcomeText, previewRows, reasonProblem, releaseReady, silentFor,
+  staleReasonText,
 } from '@/lib/staleTrip';
 import { cityTime } from '@/lib/trips';
-import { PageButtonLink } from '@/components/console/PageLink';
 import { Drawer, Fact, Facts, Panel, Pill } from '@/components/console/ui';
 
 const TITLE: Record<StaleStep, string> = {
@@ -23,10 +24,10 @@ const PATH: Record<StaleStep, string> = {
  * The Stale trip panel on a trip's detail page.
  *
  * It says why the trip is stale and how long the driver has been silent, and it
- * offers the two actions the server said this operator can take now. A started
- * trip cannot be ended from here (it needs the fare policy), so the panel shows
- * the server's refusal as text with the Safety and Support routes instead of a
- * button that would fail.
+ * offers the two actions the server said this operator can take now. Releasing a
+ * driver from a STARTED trip asks for a reason code, which decides what the rider
+ * pays and who pays the driver; the dialog shows the server's own figures for the
+ * chosen code before anything is sent.
  */
 export function StaleTripPanel({
   model, tripId, reason, actions, detail, timeZone, onDone,
@@ -63,17 +64,6 @@ export function StaleTripPanel({
             </Fact>
           ) : null}
         </Facts>
-
-        {model.refusal ? (
-          <div className="ops-confirm mt-3" role="note">
-            <b>The driver cannot be released from a started ride here</b>
-            <span>{model.refusal.message}</span>
-            <span className="ops-form__row">
-              {model.routes.includes('safety') ? <PageButtonLink page="safety" href="/safety-ops">Open Safety</PageButtonLink> : null}
-              {model.routes.includes('support') ? <PageButtonLink page="support" href="/support">Open Support</PageButtonLink> : null}
-            </span>
-          </div>
-        ) : null}
 
         {model.readOnly ? (
           <p className="help mt-3">You can see this, but your role cannot act on stale trips.</p>
@@ -120,16 +110,38 @@ export function StaleDrawer({
   const [touched, setTouched] = useState(false);
   const [failure, setFailure] = useState<{ code: string | null; message: string } | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const started = step === 'release_driver' && actions.release_case === 'C';
+  const [code, setCode] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const [preview, setPreview] = useState<PreviewState>({ status: 'idle' });
 
   const problem = reasonProblem(text, actions.reason_min_length, actions.reason_max_length);
+  const rule: EndRule | null = actions.reason_codes.find((c) => c.code === code)?.rule ?? null;
+
+  // The figures come from the server for the chosen code, never from this page.
+  useEffect(() => {
+    if (!started || !code) { setPreview({ status: 'idle' }); return; }
+    let live = true;
+    setPreview({ status: 'loading' });
+    api.get<ReleasePreview>(
+      `/ride/admin/trips/${tripId}/stale/release-preview/?reason_code=${encodeURIComponent(code)}`,
+    ).then((data) => { if (live) setPreview({ status: 'ready', data }); })
+      .catch((err) => { if (live) setPreview({ status: 'error', message: failureText(err).message }); });
+    return () => { live = false; };
+  }, [started, code, tripId, attempt]);
+
+  const ready = started
+    ? preview.status === 'ready' && releaseReady('C', code, text, actions.reason_min_length, actions.reason_max_length)
+    : true;
 
   async function submit() {
     setTouched(true);
-    if (problem) return;
+    if (problem || (started && !ready)) return;
     setBusy(true); setFailure(null);
     try {
       const result = await api.post<StaleResult>(
-        `/ride/admin/trips/${tripId}/stale/${PATH[step]}/`, { reason: text.trim() });
+        `/ride/admin/trips/${tripId}/stale/${PATH[step]}/`,
+        started ? { reason: text.trim(), reason_code: code } : { reason: text.trim() });
       const message = outcomeText(step, result);
       setDone(message);
       onDone(message);
@@ -151,7 +163,7 @@ export function StaleDrawer({
         <>
           <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={onClose} disabled={busy}>Back</button>
           <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => void submit()} disabled={busy}>
-            {busy ? 'Working…' : TITLE[step]}
+            {busy ? 'Working…' : started ? 'End trip and release driver' : TITLE[step]}
           </button>
         </>
       )}
@@ -163,8 +175,28 @@ export function StaleDrawer({
           <>
             <div className="ops-confirm">
               <b>What will happen</b>
-              <span>{consequence(step, actions.release_case)}</span>
+              <span>{consequence(step, actions.release_case, rule)}</span>
             </div>
+            {started ? (
+              <>
+                <div className="ops-filterset">
+                  <fieldset>
+                    <legend>Why is this trip being ended? (required)</legend>
+                    {actions.reason_codes.map((c) => (
+                      <label key={c.code}>
+                        <input
+                          type="radio" name="stale-reason-code" value={c.code}
+                          checked={code === c.code} onChange={() => setCode(c.code)}
+                        />
+                        {c.label}
+                        <span className="help"> {c.rule === 'platform_funded' ? '· rider not charged, SaaradhiGo pays the driver' : '· rider pays for the distance driven'}</span>
+                      </label>
+                    ))}
+                  </fieldset>
+                </div>
+                <PreviewBlock state={preview} chosen={code !== null} onRetry={() => setAttempt((n) => n + 1)} />
+              </>
+            ) : null}
             <label className="ops-form__label" htmlFor="stale-reason">Reason (required)</label>
             <textarea
               id="stale-reason" className="input" rows={4} value={text}
@@ -181,17 +213,47 @@ export function StaleDrawer({
         )}
         {failure ? (
           <div className="alert-error" role="alert">
-            <b>{failure.code === 'started_trip_needs_policy' ? 'Not possible from here' : 'Not done'}</b>
+            <b>Not done</b>
             <div>{failure.message}</div>
-            {failure.code === 'started_trip_needs_policy' ? (
-              <div className="ops-form__row mt-2">
-                <PageButtonLink page="safety" href="/safety-ops">Open Safety</PageButtonLink>
-                <PageButtonLink page="support" href="/support">Open Support</PageButtonLink>
-              </div>
-            ) : null}
           </div>
         ) : null}
       </div>
     </Drawer>
+  );
+}
+
+type PreviewState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'ready'; data: ReleasePreview };
+
+/** What the release will do for the chosen code, in the server's own numbers. */
+function PreviewBlock({ state, chosen, onRetry }: {
+  state: PreviewState; chosen: boolean; onRetry: () => void;
+}) {
+  return (
+    <div className="ops-confirm" aria-live="polite" aria-busy={state.status === 'loading' ? true : undefined}>
+      <b>The figures</b>
+      {state.status === 'idle' ? (
+        <span className="help">{chosen ? '' : 'Choose a reason to see what the rider pays and what the driver earns.'}</span>
+      ) : null}
+      {state.status === 'loading' ? <span className="help">Working out the figures…</span> : null}
+      {state.status === 'error' ? (
+        <span role="alert">
+          {state.message}{' '}
+          <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={onRetry}>Try again</button>
+        </span>
+      ) : null}
+      {state.status === 'ready' ? (
+        <Facts>
+          {previewRows(state.data).map((row) => (
+            <Fact key={row.label} label={row.label}>
+              {row.strong ? <b>{row.value}</b> : row.value}
+            </Fact>
+          ))}
+        </Facts>
+      ) : null}
+    </div>
   );
 }
