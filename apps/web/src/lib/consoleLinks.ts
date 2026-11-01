@@ -25,7 +25,7 @@ import { AdminAccess, canAny, canAt } from '@/lib/adminScope';
 export type Page =
   | 'dashboard' | 'trips' | 'drivers' | 'riders' | 'support' | 'supportInbox'
   | 'withdrawals' | 'finance' | 'safety' | 'safetyConfig' | 'zones' | 'pricing' | 'liveops'
-  | 'notifications' | 'promotions' | 'fraud' | 'reports';
+  | 'notifications' | 'promotions' | 'fraud' | 'reports' | 'platform';
 
 export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   // The Command Centre opens for `report.read` too: Marketing keeps it with
@@ -71,6 +71,11 @@ export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   // reports need finance.read or finance.aggregate; promotion cost also opens with promo.read), and
   // the catalogue lists only the reports the operator may open.
   reports: ['report.read'],
+  // Platform settings & integrations (module 15): Markets, flags, versions and notices open with
+  // `platform.read` (Super Admin, City Ops); the settings editor needs `platform.settings`, the
+  // integrations page `platform.integrations.read` and the audit log `audit.read`. Any one opens the
+  // section; the tabs inside it are drawn from the same capabilities (lib/platform.ts).
+  platform: ['platform.read', 'platform.settings', 'platform.integrations.read', 'audit.read'],
 };
 
 /** May this operator open the page, anywhere? */

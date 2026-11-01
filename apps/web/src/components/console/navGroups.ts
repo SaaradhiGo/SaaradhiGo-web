@@ -2,7 +2,7 @@ import { AdminAccess, canAny } from '@/lib/adminScope';
 import { PAGE_NEEDS } from '@/lib/consoleLinks';
 import type { NavGroup, NavItem } from '@/components/console/Sidebar';
 import {
-  BarChart, Flag, Gauge, Gift, LifeBuoy, MapPin, Megaphone, Percent, Radar, Route, Shield, Siren, TrendUp, UserRound, Users, Wallet,
+  BarChart, Cog, Flag, Gauge, Gift, LifeBuoy, MapPin, Megaphone, Percent, Radar, Route, Shield, Siren, TrendUp, UserRound, Users, Wallet,
 } from '@/components/console/icons';
 
 /**
@@ -75,6 +75,8 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Settings',
     items: [
       { href: '/zones', label: 'Zones', Icon: MapPin, need: PAGE_NEEDS.zones },
+      // Markets, flags, app versions, notices, settings, integrations and the audit log (module 15).
+      { href: '/settings', label: 'Platform', Icon: Cog, need: PAGE_NEEDS.platform },
       // No `need`: the operator's OWN authenticator and recovery codes.
       // The endpoints behind it identify them from the token and answer
       // about nobody else, so every operator may open it.
