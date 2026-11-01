@@ -22,7 +22,9 @@
     "verify:scope": "node scripts/verify-scope.mjs",
     "shoot:console": "node scripts/shoot-console.mjs",
     "a11y:console": "node scripts/a11y-console.mjs",
-    "a11y:finance": "node scripts/a11y-finance.mjs"
+    "a11y:finance": "node scripts/a11y-finance.mjs",
+    "a11y:reports": "node scripts/a11y-reports.mjs",
+    "shoot:reports": "node scripts/shoot-reports.mjs"
   },
   "dependencies": {
     "next": "15.5.26",

@@ -2,7 +2,7 @@ import { AdminAccess, canAny } from '@/lib/adminScope';
 import { PAGE_NEEDS } from '@/lib/consoleLinks';
 import type { NavGroup, NavItem } from '@/components/console/Sidebar';
 import {
-  Flag, Gauge, Gift, LifeBuoy, MapPin, Megaphone, Percent, Radar, Route, Shield, Siren, TrendUp, UserRound, Users, Wallet,
+  BarChart, Flag, Gauge, Gift, LifeBuoy, MapPin, Megaphone, Percent, Radar, Route, Shield, Siren, TrendUp, UserRound, Users, Wallet,
 } from '@/components/console/icons';
 
 /**
@@ -30,6 +30,8 @@ export const NAV_GROUPS: NavGroup[] = [
       // The live map (module 10): dots for liveops.read, the heatmap alone for liveops.aggregate.
       { href: '/live-ops', label: 'Live Ops', Icon: Radar, need: PAGE_NEEDS.liveops },
       { href: '/trips', label: 'Trips', Icon: Route, need: PAGE_NEEDS.trips },
+      // Reports & Analytics (module 14): the catalogue of daily-rollup reports, `report.read`.
+      { href: '/reports', label: 'Reports', Icon: BarChart, need: PAGE_NEEDS.reports },
     ],
   },
   {

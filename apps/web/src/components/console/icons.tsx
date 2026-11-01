@@ -318,6 +318,16 @@ export function TrendUp({ className }: Props) {
   );
 }
 
+/** Reports: bars on a baseline. */
+export function BarChart({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M4 20h16" />
+      <path d="M7 20v-7M12 20V6M17 20v-10" />
+    </svg>
+  );
+}
+
 export function Lock({ className }: Props) {
   return (
     <svg {...base} className={className}>

@@ -170,6 +170,13 @@
   --ops-success-edge: rgba(70,201,139,0.4);
   --ops-danger-wash: rgba(255,138,107,0.1);
   --ops-danger-edge: rgba(255,138,107,0.42);
+  /* Chart series (Reports, module 14): five categorical hues, in this fixed order, validated for
+     lightness band, chroma, colour-blind separation and 3:1 contrast on the surface of each theme. */
+  --chart-1: #b08500;
+  --chart-2: #d05f8a;
+  --chart-3: #3a98c8;
+  --chart-4: #4fa35b;
+  --chart-5: #9078d8;
 }
 [data-theme="light"] {
   --ops-bg-000: #f4f4f5;
@@ -206,4 +213,11 @@
   --ops-success-edge: rgba(26,111,71,0.4);
   --ops-danger-wash: rgba(184,58,30,0.08);
   --ops-danger-edge: rgba(184,58,30,0.4);
+  /* Chart series (Reports, module 14): five categorical hues, in this fixed order, validated for
+     lightness band, chroma, colour-blind separation and 3:1 contrast on the surface of each theme. */
+  --chart-1: #8a6d00;
+  --chart-2: #a8326f;
+  --chart-3: #0a7aa0;
+  --chart-4: #2a7a3a;
+  --chart-5: #6a45c0;
 }
