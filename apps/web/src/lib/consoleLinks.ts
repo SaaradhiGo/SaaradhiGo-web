@@ -25,7 +25,7 @@ import { AdminAccess, canAny, canAt } from '@/lib/adminScope';
 export type Page =
   | 'dashboard' | 'trips' | 'drivers' | 'riders' | 'support' | 'supportInbox'
   | 'withdrawals' | 'finance' | 'safety' | 'safetyConfig' | 'zones' | 'pricing' | 'liveops'
-  | 'notifications' | 'promotions' | 'fraud';
+  | 'notifications' | 'promotions' | 'fraud' | 'reports';
 
 export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   // The Command Centre opens for `report.read` too: Marketing keeps it with
@@ -66,6 +66,11 @@ export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   // opens them (Super Admin, City Ops, Marketing read-only); reviewing a flag needs
   // `fraud.review` and changing a rule `fraud.rules`, which the pages ask for themselves.
   fraud: ['fraud.read'],
+  // Reports & Analytics (module 14): `report.read` opens the catalogue (Super Admin, City Ops,
+  // Finance, Marketing, Analyst). Each report then asks its own capability on the server (money
+  // reports need finance.read or finance.aggregate; promotion cost also opens with promo.read), and
+  // the catalogue lists only the reports the operator may open.
+  reports: ['report.read'],
 };
 
 /** May this operator open the page, anywhere? */
