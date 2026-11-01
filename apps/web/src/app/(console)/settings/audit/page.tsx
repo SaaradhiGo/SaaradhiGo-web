@@ -169,7 +169,7 @@ function EntryDrawer({ id, onClose }: { id: number; onClose: () => void }) {
               <div><dt>Who</dt><dd>{entry.actor.label ?? 'system'} · {entry.actor.role || 'no role'}</dd></div>
               <div><dt>Target</dt><dd>{entry.target_type} {entry.target_id}</dd></div>
               <div><dt>Place</dt><dd>{entry.place ?? 'none'}</dd></div>
-              <div><dt>From</dt><dd>{entry.ip_address ?? 'unknown'}</dd></div>
+              <div><dt>From</dt><dd>{entry.ip ?? 'unknown'}</dd></div>
               <div><dt>Hash</dt><dd>{entry.hash.hashed ? `${entry.hash.content}… after ${entry.hash.previous}…` : 'written before the chain'}</dd></div>
             </dl>
             <div className="nf-field">

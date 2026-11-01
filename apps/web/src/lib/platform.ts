@@ -269,7 +269,7 @@ export type AuditRow = {
   action: string; target_type: string; target_id: string; place: string | null; reason: string;
 };
 export type AuditDetail = AuditRow & {
-  before: Record<string, unknown>; after: Record<string, unknown>; ip_address: string | null; user_agent: string;
+  before: Record<string, unknown>; after: Record<string, unknown>; ip: string | null; user_agent: string;
   hash: { previous: string; content: string; hashed: boolean };
 };
 export type ChainStatus = {
