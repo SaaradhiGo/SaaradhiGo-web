@@ -179,6 +179,15 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
             </div>
           )}
 
+          {/* Console maintenance notices (module 15): a message from the platform's own admins.
+              Plain text; it informs and never blocks the console. */}
+          {(access?.notices ?? []).map((n) => (
+            <div key={n.id} className="ops-banner ops-banner--notice" role="status" data-severity={n.severity}>
+              <b>{n.severity === 'warning' ? 'Maintenance warning' : 'Notice'}</b>
+              <span>{n.message}</span>
+            </div>
+          ))}
+
           {/* A recovery code was spent at sign-in and few are left. Said
               once, here, with the way to fix it. */}
           <RecoveryLowBanner />

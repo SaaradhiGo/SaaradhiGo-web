@@ -55,6 +55,7 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
       'fraud.review', 'admin.manage', 'platform.settings', 'approval.check', 'liveops.read', 'liveops.aggregate',
       'notify.read', 'notify.template', 'notify.campaign',
       'promo.read', 'incentive.write', 'fraud.read', 'fraud.rules',
+      'platform.read', 'platform.city_pause', 'platform.integrations.read',
     ],
   },
   city_ops_manager: {
@@ -63,6 +64,7 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
       'zone.read', 'zone.write', 'pii.view', 'rider.note', 'rider.flag', 'rider.signout',
       'rider.block', 'pricing.write', 'safety.read', 'support.sla', 'support.dashboard', 'finance.aggregate',
       'liveops.read', 'notify.read', 'promo.read', 'incentive.write', 'fraud.read', 'fraud.review',
+      'platform.read', 'platform.city_pause', 'audit.read',
     ],
   },
   support_agent: {
@@ -124,8 +126,8 @@ const ROW: CityRow = {
 };
 
 const NAV = {
-  super_admin: ['/dashboard', '/live-ops', '/trips', '/reports', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/notifications', '/promotions', '/safety-ops', '/fraud', '/zones', '/settings/security'],
-  city_ops_manager: ['/dashboard', '/live-ops', '/trips', '/reports', '/drivers', '/riders', '/support', '/pricing', '/notifications', '/promotions', '/safety-ops', '/fraud', '/zones', '/settings/security'],
+  super_admin: ['/dashboard', '/live-ops', '/trips', '/reports', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/notifications', '/promotions', '/safety-ops', '/fraud', '/zones', '/settings', '/settings/security'],
+  city_ops_manager: ['/dashboard', '/live-ops', '/trips', '/reports', '/drivers', '/riders', '/support', '/pricing', '/notifications', '/promotions', '/safety-ops', '/fraud', '/zones', '/settings', '/settings/security'],
   support_agent: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/notifications', '/settings/security'],
   support_lead: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/notifications', '/settings/security'],
   safety_officer: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/safety-ops', '/settings/security'],

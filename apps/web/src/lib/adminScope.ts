@@ -80,6 +80,11 @@ export type AdminAccess = {
    * it is a prompt to act, and everyone else can do nothing about it.
    */
   super_admin_shortfall: number;
+  /**
+   * Active console maintenance notices for this operator's scope (module 15): the banner.
+   * Optional so an older backend, which does not send it, draws none.
+   */
+  notices?: { id: number; message: string; severity: 'info' | 'warning'; starts_at: string; ends_at: string; scope: string | null }[];
 };
 
 // The last answer, for pages that render after the shell has already
