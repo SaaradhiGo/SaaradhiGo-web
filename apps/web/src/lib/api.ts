@@ -15,9 +15,19 @@ export function readToken(): string | null {
   return window.localStorage.getItem(TOKEN_KEY);
 }
 
-export function writeTokens({ access, refresh }: { access: string; refresh?: string }) {
+/**
+ * Only the ACCESS token is kept (AUDIT 27.78, M4).
+ *
+ * The console never refreshes: a session ends when its access token does, and
+ * the operator signs in again with their second factor. The refresh token the
+ * login response carries was nevertheless written to localStorage, where it
+ * stayed usable for 14 days after "Sign out" -- any script on the page, or
+ * anyone with the browser profile, could mint new sessions from it. It is no
+ * longer stored; `signOutConsole` revokes one an older build left behind.
+ */
+export function writeTokens({ access }: { access: string; refresh?: string }) {
   window.localStorage.setItem(TOKEN_KEY, access);
-  if (refresh) window.localStorage.setItem(REFRESH_KEY, refresh);
+  window.localStorage.removeItem(REFRESH_KEY);
 }
 
 export function clearTokens() {
@@ -27,6 +37,39 @@ export function clearTokens() {
   // it behind would have the console greeting the previous operator by name
   // on the sign-in screen.
   window.localStorage.removeItem('saaradhi_admin_user');
+}
+
+/**
+ * Sign the console out: revoke any stored refresh token on the server, then
+ * clear this browser (AUDIT 27.78, M4).
+ *
+ * New sessions keep no refresh token (`writeTokens`), but one written by an
+ * earlier build may still be in storage. It is POSTed to `/auth/logout/`,
+ * which blacklists it, BEFORE storage is cleared -- clearing first would lose
+ * the only copy and leave it valid. Best effort and bounded: a sign-out must
+ * never hang on the network, and the local session is cleared either way.
+ */
+export async function signOutConsole(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  const access = window.localStorage.getItem(TOKEN_KEY);
+  const refresh = window.localStorage.getItem(REFRESH_KEY);
+  if (access && refresh) {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), 4000) : null;
+    try {
+      await fetch(`${BASE}/auth/logout/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${access}` },
+        body: JSON.stringify({ refresh_token: refresh }),
+        signal: controller?.signal,
+      });
+    } catch {
+      /* offline or refused: the token still goes from this browser */
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+  clearTokens();
 }
 
 export class ApiError extends Error {

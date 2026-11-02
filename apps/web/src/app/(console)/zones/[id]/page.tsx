@@ -303,7 +303,10 @@ export default function ZoneDetailPage() {
             <div className="ops-table-wrap">
               <table className="ops-table ops-table--compact ops-table--auto">
                 <caption className="sr-only">Active fare cards of {zone.name}</caption>
-                <thead><tr><th scope="col">Class</th><th scope="col" className="num">Base</th><th scope="col" className="num">Per {zone.distance_unit}</th><th scope="col" className="num">Per min</th><th scope="col" className="num">Minimum</th></tr></thead>
+                <thead><tr><th scope="col">Class</th><th scope="col" className="num">Base</th><th scope="col" className="num">
+                  {/* The rate is stored and charged per km in every market; "Per mi" put a
+                      per-km number under a per-mile heading (AUDIT 27.78, Low 6). */}
+                  Per km</th><th scope="col" className="num">Per min</th><th scope="col" className="num">Minimum</th></tr></thead>
                 <tbody>
                   {cards.map((c) => (
                     <tr key={c.id}>

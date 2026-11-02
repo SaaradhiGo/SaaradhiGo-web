@@ -1,6 +1,14 @@
+const { securityHeaders } = require('./security-headers');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
+  // CSP, HSTS, framing, referrer and sniffing rules on every route (AUDIT
+  // 27.78, M4). What the CSP allows, and why, is in security-headers.js.
+  async headers() {
+    return [{ source: '/:path*', headers: securityHeaders() }];
+  },
   // The backend serves all data via the existing REST API; we run as a
   // pure SPA-style client app, no server-side data fetching for now.
   // Switch to next-auth + server components in a later phase once we

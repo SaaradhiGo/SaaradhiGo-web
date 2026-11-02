@@ -13,6 +13,7 @@ import {
 import { RecoveryCodesScreen } from '@/components/console/RecoveryCodes';
 import { LOGIN_LOCK_AFTER, LOGIN_LOCK_MINUTES } from '@/lib/consoleEnv';
 import { useTheme } from '@/lib/consolePrefs';
+import { safeReturnTo } from '@/lib/returnTo';
 import { Logo } from '@/components/sg/Logo';
 import { EnvBadge } from '@/components/console/EnvBadge';
 import {
@@ -112,7 +113,10 @@ function LoginInner() {
   const search = useSearchParams();
   const [theme, setTheme] = useTheme();
 
-  const next = search.get('next') || '/dashboard';
+  // Only a same-origin path is followed after sign-in (AUDIT 27.78, M2): this
+  // went to `router.replace` raw, so `?next=https://evil.example` or a
+  // `/%09/evil.example` variant sent a freshly signed-in operator off-site.
+  const next = safeReturnTo(search.get('next'), '/dashboard');
   const expired = search.get('reason') === 'expired';
   const previewParam = PREVIEW_BUILT_IN ? search.get('preview') : null;
   const preview = previewParam as Step | null;
