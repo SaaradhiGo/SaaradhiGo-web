@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { AdminAccess } from './adminScope';
 import {
-  DEFAULT_FILTERS, activeFilterCount, canSeeMoneyColumns, cityTime, filtersFromSearch,
+  DEFAULT_FILTERS, activeFilterCount, canSeeMoneyColumns, cityTime, fareCardLineText,
+  fareCardSummary, filtersFromSearch,
   filtersToQuery, formatMinor, interpretWrite, parseMajorToMinor, tripsApiPath, visibleActions,
-  type TripActions,
+  type FareCard, type TripActions,
 } from './trips';
 
 const access = (permissions: string[]): AdminAccess => ({
@@ -128,3 +129,28 @@ describe('a write answered with 202', () => {
     expect(interpretWrite(null, 'Note added.')).toEqual({ kind: 'done', requestId: null, message: 'Note added.' });
   });
 });
+
+describe('the fare card (AUDIT 27.74)', () => {
+  const card: FareCard = {
+    currency: 'INR',
+    lines: [],
+    summary: [
+      { kind: 'fare', label: 'Fare', amount_minor: 15_972 },
+      { kind: 'promo', label: 'Promo', amount_minor: -2_000, funded_by: 'SaaradhiGo', note: 'paid by SaaradhiGo' },
+      { kind: 'rider_paid', label: 'Rider paid', amount_minor: 13_972, method: 'cash' },
+    ],
+    cash: null, referral_rewards: [], early_end: null,
+  };
+
+  it('reads as the money moved', () => {
+    expect(fareCardSummary(card)).toBe(
+      'Fare ₹159.72 · Promo −₹20.00 (paid by SaaradhiGo) · Rider paid ₹139.72 (cash)');
+  });
+
+  it('says who paid a referral reward', () => {
+    expect(fareCardLineText({ kind: 'referral_reward', label: 'Referral reward to the rider',
+      amount_minor: 2_500, note: 'paid by SaaradhiGo', to: 'rider' }, 'INR'))
+      .toBe('Referral reward to the rider ₹25.00 (paid by SaaradhiGo)');
+  });
+});
+

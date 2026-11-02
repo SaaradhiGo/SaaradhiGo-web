@@ -313,3 +313,42 @@ export function newIdempotencyKey(): string {
 }
 
 export const words = (s: string | null | undefined) => (s ?? '—').replace(/_/g, ' ');
+
+
+/** One line of the admin trip fare card (`fare_card.lines`, AUDIT 27.74). */
+export type FareCardLine = {
+  kind: 'fare' | 'promo' | 'rider_paid' | 'rider_owes' | 'refunded' | 'referral_reward';
+  label: string;
+  amount_minor: number;
+  method?: string;
+  funded_by?: string;
+  note?: string;
+  to?: 'rider' | 'referrer';
+};
+
+export type FareCard = {
+  currency: string;
+  lines: FareCardLine[];
+  summary: FareCardLine[];
+  cash: { collected: boolean; amount_minor: number; label: string; platform_pays_driver_minor?: number } | null;
+  referral_rewards: FareCardLine[];
+  early_end: {
+    rule: string; reason_code: string | null; fare_basis: string; min_fare_applied: boolean;
+    distance_km: string | null; platform_paid_driver_minor: number | null; funded_by: string | null;
+  } | null;
+};
+
+const METHOD_WORD: Record<string, string> = { cash: 'cash', online: 'online', wallet: 'wallet', upi: 'UPI' };
+
+/** One line of a fare card as the page shows it: "Promo −₹20.00 (paid by SaaradhiGo)". */
+export function fareCardLineText(line: FareCardLine, currency: string): string {
+  const amount = formatMinor(line.amount_minor, currency);
+  const note = line.note ? ` (${line.note})` : line.method && METHOD_WORD[line.method] ? ` (${METHOD_WORD[line.method]})` : '';
+  return `${line.label} ${amount}${note}`;
+}
+
+/** "Fare ₹159.72 · Promo −₹20.00 (paid by SaaradhiGo) · Rider paid ₹139.72 (cash)". */
+export function fareCardSummary(card: FareCard): string {
+  return card.summary.map((line) => fareCardLineText(line, card.currency)).join(' · ');
+}
+
