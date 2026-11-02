@@ -9,7 +9,8 @@ import { currentScope, getCachedAccess, useAdminAccess } from '@/lib/adminScope'
 import { timeZoneFor } from '@/lib/consoleTime';
 import { currencySymbol } from '@/lib/money';
 import {
-  type ActionKey, type TripActions, cityTime, cityZoneLabel, formatMinor, visibleActions,
+  type ActionKey, type FareCard, type TripActions, cityTime, cityZoneLabel, fareCardLineText,
+  fareCardSummary, formatMinor, visibleActions,
 } from '@/lib/trips';
 import { ActionDrawer } from '@/components/console/TripActionDrawer';
 import { StaleTripPanel } from '@/components/console/StaleTripPanel';
@@ -100,6 +101,8 @@ type TripDetail = {
   // Trips module (console module 2)
   city?: { code: string; name: string; timezone: string; country: string | null } | null;
   timeline_events?: Array<{ event: string; at: string | null; actor: { type: string; id: number | null } | null; detail?: string | null; created_by?: { label: string; role: string } | null }>;
+  /** Who paid what (AUDIT 27.74); absent on an older backend. */
+  fare_card?: FareCard;
   fare_minor?: {
     currency: string; estimated_minor: number | null; final_minor: number | null; charged_minor: number;
     cancellation_fee_minor: number; tax_minor: number | null; tax_stub: boolean;
@@ -410,6 +413,36 @@ export default function TripDetailPage() {
             )}
           </Panel>
 
+          {data.fare_card ? (
+            <Panel title="Who paid what">
+              <p className="mb-2"><b>{fareCardSummary(data.fare_card)}</b></p>
+              <Facts>
+                {data.fare_card.lines.filter((l) => l.kind === 'refunded' || l.kind === 'rider_owes').map((l) => (
+                  <Fact key={l.kind} label={l.label}>{minor(l.amount_minor)}</Fact>
+                ))}
+                {data.fare_card.cash ? (
+                  <Fact label={data.fare_card.cash.label}>
+                    {minor(data.fare_card.cash.amount_minor)}
+                    {data.fare_card.cash.platform_pays_driver_minor ? <span className="muted"> · SaaradhiGo pays the driver the {minor(data.fare_card.cash.platform_pays_driver_minor)} promo</span> : null}
+                  </Fact>
+                ) : null}
+                {data.fare_card.referral_rewards.map((r) => (
+                  <Fact key={`${r.kind}-${r.to}`} label={r.label}>{fareCardLineText(r, data.fare_card?.currency ?? cur).replace(`${r.label} `, '')}</Fact>
+                ))}
+                {data.fare_card.early_end ? (
+                  <Fact label="Ended early by an operator">
+                    Fare for {data.fare_card.early_end.fare_basis}
+                    {data.fare_card.early_end.distance_km ? ` (${data.fare_card.early_end.distance_km} km)` : ''}
+                    {data.fare_card.early_end.min_fare_applied ? ' · minimum fare applied' : ''}
+                    {data.fare_card.early_end.funded_by && data.fare_card.early_end.platform_paid_driver_minor != null
+                      ? ` · ${data.fare_card.early_end.funded_by} paid the driver ${minor(data.fare_card.early_end.platform_paid_driver_minor)}`
+                      : ''}
+                  </Fact>
+                ) : null}
+              </Facts>
+            </Panel>
+          ) : null}
+
           {data.fare_minor ? (
             <Panel title={`Fare breakdown · ${cur}`}>
               <Facts>
@@ -425,7 +458,8 @@ export default function TripDetailPage() {
                 ) : <Fact label="Breakdown"><span className="muted">No fare snapshot was recorded</span></Fact>}
                 <Fact label="Tax">{data.fare_minor.tax_minor != null ? minor(data.fare_minor.tax_minor) : '—'} <span className="muted">(GST stub, per receipt)</span></Fact>
                 {data.fare_minor.cancellation_fee_minor ? <Fact label="Cancellation fee">{minor(data.fare_minor.cancellation_fee_minor)}</Fact> : null}
-                <Fact label="Charged"><b>{minor(data.fare_minor.charged_minor)}</b>{data.fare_minor.final_minor == null ? <span className="muted"> (quoted fare)</span> : null}</Fact>
+                {/* With the fare card, what the rider paid is said there; "Charged" here read as the rider's payment on promo trips. */}
+                {data.fare_card ? null : <Fact label="Charged"><b>{minor(data.fare_minor.charged_minor)}</b>{data.fare_minor.final_minor == null ? <span className="muted"> (quoted fare)</span> : null}</Fact>}
               </Facts>
             </Panel>
           ) : data.fare.breakdown ? (
