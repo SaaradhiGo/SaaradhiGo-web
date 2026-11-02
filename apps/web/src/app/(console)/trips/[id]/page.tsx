@@ -343,7 +343,19 @@ export default function TripDetailPage() {
       ) : null}
 
       <TileGrid>
-        {data.fare_minor ? (
+        {data.fare_card ? (
+          // The fare and what the rider actually paid, never one figure called "Charged": on a promo
+          // trip the two differ (AUDIT 27.74).
+          <MetricTile
+            label="Fare" tone="money"
+            value={minor(data.fare_card.lines.find((l) => l.kind === 'fare')?.amount_minor)}
+            note={(() => {
+              const paid = data.fare_card.lines.find((l) => l.kind === 'rider_paid' || l.kind === 'rider_owes');
+              if (!paid) return undefined;
+              return paid.kind === 'rider_paid' ? `rider paid ${minor(paid.amount_minor)}` : `rider to pay ${minor(paid.amount_minor)}`;
+            })()}
+          />
+        ) : data.fare_minor ? (
           <MetricTile
             label={state === 'completed' ? 'Charged' : 'Fare'} tone="money"
             value={minor(data.fare_minor.charged_minor)}
