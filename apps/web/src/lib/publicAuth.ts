@@ -2,7 +2,8 @@
 //
 // WHAT THE BACKEND ACTUALLY OFFERS, which is what these functions mirror:
 //
-//   POST /auth/email/register/        create a rider or driver account
+//   POST /auth/otp/verify/            SMS code -> phone proof (no account, no session)
+//   POST /auth/email/register/        create a rider or driver account (needs the proof)
 //   POST /auth/email/login/           email + password -> tokens
 //   POST /auth/password/forgot/       request a reset link
 //   POST /auth/password/reset/        uid + token + new password
@@ -107,6 +108,8 @@ export type RegisterInput = {
   password: string;
   confirmPassword: string;
   role: PublicRole;
+  /** From `verifyPhoneForSignup`: proves the number (AUDIT 27.78, H4). */
+  phoneProof: string;
 };
 
 /** Sending an SMS costs money and reaches a real handset, so it is opt-in. */
@@ -200,8 +203,26 @@ export async function registerAccount(input: RegisterInput) {
     password: input.password,
     confirm_password: input.confirmPassword,
     role: input.role,
+    phone_proof: input.phoneProof,
     },
   );
+}
+
+/**
+ * Prove the number with its SMS code BEFORE the account is created
+ * (AUDIT 27.78, H4).
+ *
+ * Email sign-up used to take the number on trust, so anyone could register a
+ * stranger's number and the stranger could then never sign up. The code comes
+ * from `sendPublicOtp` (same endpoint, same QA test-phone codes); this checks
+ * it WITHOUT signing in or creating anything and returns a short-lived,
+ * single-use proof that `registerAccount` must carry.
+ */
+export async function verifyPhoneForSignup(phone: string, otp: string) {
+  return api.post<{ phone_proof: string; expires_in?: number }>('/auth/otp/verify/', {
+    phone_number: normalisePhone(phone),
+    otp: otp.trim(),
+  });
 }
 
 // ---------------------------------------------------------------------------

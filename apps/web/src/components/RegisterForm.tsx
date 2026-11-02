@@ -19,6 +19,7 @@ import {
   sendPublicOtp,
   signInWithEmail,
   updateProfile,
+  verifyPhoneForSignup,
   verifyPublicOtp,
 } from '@/lib/publicAuth';
 
@@ -49,6 +50,14 @@ type Tab = 'email' | 'mobile';
  * form field: it cannot be typed until the first step has been sent. That is
  * a verification, not a split form.
  *
+ * THE EMAIL ROUTE NOW HAS THAT STEP TOO (AUDIT 27.78, H4). The number is the
+ * account's identity, and the server used to take it on trust -- anyone could
+ * register a stranger's number. "Create account" now texts a code to the
+ * number; confirming it gets a proof from `/auth/otp/verify/` (no account, no
+ * session), and only then is the account created, carrying the proof. The
+ * proof is kept for the number it was issued for, so a refusal about another
+ * field sends the person back to fix it without a second text.
+ *
  * WHAT HAPPENS WHEN IT SUCCEEDS
  * Where the deployment can send a verification link, the screen says to open
  * it. Where it cannot, the account is already usable, so this SIGNS THE
@@ -68,6 +77,7 @@ const FIELD_MAP: Record<string, string> = {
   password: 'password',
   confirm_password: 'confirmPassword',
   phone_number: 'phone',
+  phone_proof: 'phone',
   full_name: 'fullName',
 };
 
@@ -91,6 +101,8 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
   const [otp, setOtp] = useState('');
 
   const [codeSent, setCodeSent] = useState(false);
+  // The phone proof for the email route, and the number it proves.
+  const [proof, setProof] = useState<{ phone: string; value: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -155,6 +167,26 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
     setErrors(found);
     if (Object.keys(found).length > 0) return;
 
+    const phone = toE164(market, national);
+    if (proof && proof.phone === phone) {
+      await createAccount(proof.value);
+      return;
+    }
+    // The number is proved first: text the code, then the code screen.
+    setBusy(true);
+    try {
+      setProof(null);
+      await sendPublicOtp(phone, role);
+      setOtp('');
+      setCodeSent(true);
+    } catch (err) {
+      showServerError(err, 'We could not send the code.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createAccount(phoneProof: string) {
     setBusy(true);
     try {
       const created = await registerAccount({
@@ -164,6 +196,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
         password,
         confirmPassword,
         role,
+        phoneProof,
       });
 
       if (created?.verification_required === false) {
@@ -176,6 +209,10 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
       }
       setAwaitingInbox(true);
     } catch (err) {
+      // A refused proof cannot be retried; anything else leaves it usable
+      // (the server spends it only once every other field has passed).
+      if (err instanceof ApiError && err.code.startsWith('AUTH_PHONE_PROOF')) setProof(null);
+      setCodeSent(false);
       showServerError(
         err,
         'We could not create the account. Please try again.',
@@ -183,6 +220,24 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function onConfirmEmailRouteCode(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError(null);
+    const phone = toE164(market, national);
+    setBusy(true);
+    let proved: string;
+    try {
+      proved = (await verifyPhoneForSignup(phone, otp)).phone_proof;
+      setProof({ phone, value: proved });
+    } catch (err) {
+      showServerError(err, 'That code did not work.');
+      setBusy(false);
+      return;
+    }
+    setBusy(false);
+    await createAccount(proved);
   }
 
   // -- the mobile route ----------------------------------------------------
@@ -277,7 +332,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
 
   if (codeSent) {
     return (
-      <form onSubmit={onConfirmCode} className="space-y-4" noValidate>
+      <form onSubmit={tab === 'email' ? onConfirmEmailRouteCode : onConfirmCode} className="space-y-4" noValidate>
         {formError && <Alert kind="error">{formError}</Alert>}
         <Field
           label={`Code sent to +${market?.calling_code ?? ''} ${national}`}
@@ -290,7 +345,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           autoFocus
         />
         <SubmitButton busy={busy} busyLabel="Checking…">
-          Confirm
+          {tab === 'email' ? 'Confirm and create account' : 'Confirm'}
         </SubmitButton>
         <button
           type="button"
@@ -344,7 +399,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
         label="Mobile number"
         help={
           tab === 'email'
-            ? 'Your driver calls this at the pickup. You sign in with your email.'
+            ? 'We text a code to confirm it. Your driver calls this at the pickup; you sign in with your email.'
             : smsToAnyone
               ? 'We will text you a 6-digit code to confirm your number.'
               : 'Approved QA test numbers receive a fixed code without an SMS being sent.'
@@ -385,9 +440,18 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
             error={errors.confirmPassword}
             required
           />
-          <SubmitButton busy={busy} busyLabel="Creating your account…">
+          {/* The number is proved by SMS before the account exists, so a number
+              this environment cannot text cannot sign up here either. */}
+          <SubmitButton busy={busy} busyLabel="Sending a code…" disabled={!phoneUsable}>
             Create account
           </SubmitButton>
+          {!phoneUsable && national.trim() !== '' && (
+            <p className="help">
+              {testPhones.length > 0
+                ? 'This environment texts approved QA test numbers only, and the number must be confirmed by text.'
+                : 'This environment cannot text anyone, and the number must be confirmed by text.'}
+            </p>
+          )}
         </>
       ) : (
         <>

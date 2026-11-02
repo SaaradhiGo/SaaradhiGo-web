@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { AdminAccess } from './adminScope';
 import {
   DEFAULT_DRIVER_FILTERS, activeDriverFilterCount, driverFiltersFromSearch, driverFiltersToQuery,
-  driversApiPath, queueApiPath, ratingBandValue, visibleDriverActions, waitingLabel,
+  documentViewPath, driversApiPath, queueApiPath, ratingBandValue, visibleDriverActions, waitingLabel,
   type DriverActions,
 } from './drivers';
 
@@ -98,5 +98,16 @@ describe('waiting time', () => {
     expect(waitingLabel(5 * 3600 + 12 * 60)).toBe('5h 12m');
     expect(waitingLabel(20)).toBe('1m');
     expect(waitingLabel(null)).toBe('—');
+  });
+});
+
+describe('documentViewPath (AUDIT 27.78: documents are fetched on demand)', () => {
+  it('names the driver document', () => {
+    expect(documentViewPath(42, { key: 'license_front', vehicle_id: null }))
+      .toBe('/driver/admin/42/documents/license_front/view/');
+  });
+  it('names the vehicle for a vehicle document', () => {
+    expect(documentViewPath(42, { key: 'rc', vehicle_id: 7 }))
+      .toBe('/driver/admin/42/documents/rc/view/?vehicle_id=7');
   });
 });

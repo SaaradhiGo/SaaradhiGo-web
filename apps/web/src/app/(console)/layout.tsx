@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  CONSOLE_SESSION_ENDED, clearTokens, readOperator, readToken,
+  CONSOLE_SESSION_ENDED, readOperator, readToken, signOutConsole,
 } from '@/lib/api';
 import {
   AdminAccess, can, fetchAdminAccess, isLockedOut,
@@ -117,8 +117,8 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
   }, [loadCounts, pathname]);
 
   function signOut() {
-    clearTokens();
-    router.replace('/login');
+    // Revokes a stored refresh token on the server before clearing (AUDIT 27.78).
+    void signOutConsole().finally(() => router.replace('/login'));
   }
 
   function toggleSidebar() {

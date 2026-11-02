@@ -268,3 +268,20 @@ export function waitingLabel(seconds: number | null | undefined): string {
 export function driverName(user: { full_name?: string | null } | null | undefined, id: number): string {
   return user?.full_name?.trim() || `Driver #${id}`;
 }
+
+/**
+ * Where one KYC document is opened from (AUDIT 27.78).
+ *
+ * The detail and the queue no longer carry document links: a link minted for
+ * every row was a link nobody opened and nothing recorded. The console asks
+ * for one when the operator clicks Open; the server checks pii.view at the
+ * driver's city, writes the audit row and returns a URL that lives five
+ * minutes.
+ */
+export function documentViewPath(
+  driverId: number | string,
+  doc: { key: string; vehicle_id: number | null },
+): string {
+  const base = `/driver/admin/${encodeURIComponent(String(driverId))}/documents/${encodeURIComponent(doc.key)}/view/`;
+  return doc.vehicle_id ? `${base}?vehicle_id=${encodeURIComponent(String(doc.vehicle_id))}` : base;
+}

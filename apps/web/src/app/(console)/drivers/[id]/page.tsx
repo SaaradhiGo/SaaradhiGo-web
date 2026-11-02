@@ -7,7 +7,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
 import {
-  type DriverActionKey, type DriverActions, KYC_LABEL, REVIEW_LABEL, driverName, visibleDriverActions,
+  type DriverActionKey, type DriverActions, KYC_LABEL, REVIEW_LABEL, documentViewPath, driverName,
+  visibleDriverActions,
 } from '@/lib/drivers';
 import { cityTime, words } from '@/lib/trips';
 import { DocumentReviewDrawer, DriverActionDrawer, type ReviewTarget } from '@/components/console/DriverActionDrawer';
@@ -35,7 +36,7 @@ import {
 type Doc = {
   key: string; label: string; description?: string; owner: 'driver' | 'vehicle';
   vehicle_id: number | null; present: boolean; recordable: boolean;
-  url: string | null; url_withheld: boolean; review_state: string;
+  viewable: boolean; url_withheld: boolean; review_state: string;
   review: { state: string; reason: string; reviewed_at: string | null; current: boolean;
     created_by?: { label?: string } | null } | null;
 };
@@ -150,9 +151,22 @@ export default function DriverDetailPage() {
     ]),
   ];
 
-  const openLink = (url: unknown) => (typeof url === 'string' && url
-    ? <a className="ops-doc__open" href={url} target="_blank" rel="noopener noreferrer">Open</a>
-    : <span className="ops-doc__missing">No link</span>);
+  // Fetched on click, not carried in the page (AUDIT 27.78): the server checks
+  // pii.view at the driver's city, audits the open and returns a five-minute
+  // URL. The tab is opened first, inside the click, so a popup blocker allows
+  // it, and pointed at the document once the URL arrives.
+  const openDocument = async (doc: Doc) => {
+    const tab = window.open('', '_blank');
+    if (tab) tab.opener = null;
+    try {
+      const { url } = await api.get<{ url: string }>(documentViewPath(data.id, doc));
+      if (tab) tab.location.href = url;
+      else window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      tab?.close();
+      setNotice({ text: err instanceof ApiError && err.fromServer ? err.message : 'The document could not be opened.', kind: 'done' });
+    }
+  };
 
   const tripColumns: Column<Trip>[] = [
     { key: 'id', label: 'Trip', width: '5rem', render: (t) => <PageLink page="trips" href={`/trips/${t.id}`}>#{t.id}</PageLink> },
@@ -221,7 +235,6 @@ export default function DriverDetailPage() {
               ) : docs.map((doc) => {
                 const [label, tone] = REVIEW_LABEL[doc.review_state] ?? [words(doc.review_state), 'neutral'];
                 const reviewTarget: ReviewTarget = { key: doc.key, label: doc.label, owner: doc.owner, vehicle_id: doc.vehicle_id };
-                const linkField = doc.key === 'license_back' ? 'license_doc_back_url' : 'license_doc_url';
                 return (
                   <div className="ops-doc ops-doc--review" key={`${doc.owner}-${doc.vehicle_id ?? 0}-${doc.key}`}>
                     <span className={`ops-doc__tick ${doc.present ? 'is-on' : 'is-off'}`} aria-hidden="true">{doc.present ? '✓' : '!'}</span>
@@ -233,10 +246,13 @@ export default function DriverDetailPage() {
                             : doc.present ? doc.description || 'On file' : 'Not uploaded'}
                       </span>
                     </span>
-                    {doc.present && doc.url ? openLink(doc.url)
-                      : doc.present && doc.url_withheld && doc.owner === 'driver' ? (
-                        <Revealable value={null} label={`${doc.label} link`} target={target} field={linkField} render={openLink} compact />
-                      ) : <span className="ops-doc__missing">{doc.present ? 'No link' : 'Missing'}</span>}
+                    {doc.present && doc.viewable ? (
+                      <button type="button" className="ops-doc__open" onClick={() => void openDocument(doc)}>
+                        Open<span className="sr-only"> {doc.label}</span>
+                      </button>
+                    ) : <span className="ops-doc__missing">
+                      {!doc.present ? 'Missing' : doc.url_withheld ? 'Needs PII access in this city' : 'No link'}
+                    </span>}
                     {mayReview && doc.present ? (
                       <span className="ops-form__row">
                         <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={doc.review_state === 'approved'}
