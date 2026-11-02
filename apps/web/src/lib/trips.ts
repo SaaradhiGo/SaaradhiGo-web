@@ -242,6 +242,8 @@ export type TripActions = {
   cancel: boolean; flag: boolean; note: boolean; refund: boolean;
   refund_action_key: 'support.refund' | 'finance.refund' | null;
   adjust: boolean; reveal: boolean;
+  /** Support may prompt the rider's app to show the pickup code again; the code is never sent here. */
+  resend_pickup_code?: boolean;
   cancel_reasons?: Record<string, string>;
   flag_reasons?: Record<string, string>;
 };
