@@ -49,7 +49,6 @@ import {
 type TripDetail = {
   id: number;
   status: string | null;
-  otp?: string | null;
   pickup: { address: string | null; lat: string | null; lng: string | null };
   destination: { address: string | null; lat: string | null; lng: string | null };
   timeline: Record<string, string | null>;
@@ -189,6 +188,22 @@ export default function TripDetailPage() {
     }
   }
 
+  // The pickup code is the rider's alone and is never shown here (owner ruling, AUDIT 27.74).
+  // Support can only prompt the rider's app to show it again.
+  async function resendPickupCode() {
+    setNotice(null); setActionError(null); setBusy(true);
+    try {
+      await api.post(`/ride/admin/trips/${id}/resend-pickup-code/`, {
+        reason: 'Rider asked support to re-send the pickup code',
+      });
+      setNotice('The rider was sent a notice to open the app for their pickup code.');
+    } catch (err) {
+      setActionError(err instanceof ApiError && err.fromServer ? err.message : 'The pickup code notice could not be sent.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function clearFlags() {
     setNotice(null); setActionError(null); setBusy(true);
     try {
@@ -277,6 +292,9 @@ export default function TripDetailPage() {
           <>
             <Pill tone={TONE[state] ?? 'neutral'}>{words(state)}</Pill>
             <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void resendReceipt()}>Resend receipt</button>
+            {data.actions?.resend_pickup_code ? (
+              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void resendPickupCode()}>Re-send pickup code</button>
+            ) : null}
             <ButtonLink href="/trips" variant="ghost" size="sm">All trips</ButtonLink>
           </>
         }
@@ -390,7 +408,6 @@ export default function TripDetailPage() {
                 ))}
               </Facts>
             )}
-            {data.otp ? <Facts><Fact label="Pickup OTP"><code>{data.otp}</code></Fact></Facts> : null}
           </Panel>
 
           {data.fare_minor ? (
