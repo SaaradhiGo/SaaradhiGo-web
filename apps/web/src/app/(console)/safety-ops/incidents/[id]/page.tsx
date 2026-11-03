@@ -96,6 +96,19 @@ export default function IncidentPage() {
     return () => clearInterval(t);
   }, [load]);
 
+  // "Anita is also here" (board G): this page tells the server it is open, every 30 s,
+  // and hears who else has it open.
+  const [others, setOthers] = useState<string[]>([]);
+  useEffect(() => {
+    if (!id) return undefined;
+    const path = `/safety-ops/incidents/${id}`;
+    const beat = () => api.post<{ others: string[] }>('/command-centre/admin/viewing/', { path })
+      .then((r) => setOthers(r.others ?? [])).catch(() => undefined);
+    void beat();
+    const t = setInterval(beat, 30_000);
+    return () => clearInterval(t);
+  }, [id]);
+
   const done = (message: string) => { setDrawer(null); setSosAct(null); setNotice(message); void load(); };
 
   if (!data && !error) {
@@ -153,6 +166,34 @@ export default function IncidentPage() {
         )}
       />
 
+      <CaseHead data={data} now={now} others={others} />
+      {!closed && !readOnly ? (
+        <ol className="ops-steps mb-4" aria-label="Respond">
+          <li className={`ops-step ${(data.sos.unacknowledged ?? 0) === 0 ? 'ops-step--done' : 'ops-step--next'}`}>
+            <span className="ops-step__n" aria-hidden="true">{(data.sos.unacknowledged ?? 0) === 0 ? '✓' : '1'}</span>
+            <span className="ops-step__text"><b>Acknowledge</b>
+              <span>{(data.sos.unacknowledged ?? 0) === 0 ? 'Done' : 'Tell everyone you have it'}</span></span>
+          </li>
+          <li className="ops-step">
+            <span className="ops-step__n" aria-hidden="true">2</span>
+            <span className="ops-step__text"><b>Call the rider and the driver</b>
+              <span>Reveal a number below; every reveal is logged</span></span>
+            <a href="#people" className="sg-btn sg-btn--ghost sg-btn--sm">People</a>
+          </li>
+          <li className={`ops-step${data.police_referred_at ? ' ops-step--done' : ''}`}>
+            <span className="ops-step__n" aria-hidden="true">{data.police_referred_at ? '✓' : '3'}</span>
+            <span className="ops-step__text"><b>Send to emergency services</b>
+              <span>{data.police_referred_at ? 'Referred' : emergencyLine(data.emergency)}</span></span>
+            {!data.police_referred_at && a.refer_police ? (
+              <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setDrawer('police')}>Record referral</button>
+            ) : null}
+          </li>
+          <li className="ops-step">
+            <span className="ops-step__n" aria-hidden="true">4</span>
+            <span className="ops-step__text"><b>Close it</b><span>Resolve with an outcome, or mark it a false alarm with the reason</span></span>
+          </li>
+        </ol>
+      ) : null}
       {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
       {error && <div className="alert-error mb-4" role="alert">{error} Showing the last version that loaded.</div>}
 
@@ -251,7 +292,7 @@ export default function IncidentPage() {
         )}
       </Panel>
 
-      <div className="ops-grid-2">
+      <div className="ops-grid-2" id="people">
         <Panel title="People and records">
           <ul className="ops-linklist">
             {data.people.drivers.map((d) => (
@@ -325,5 +366,29 @@ export default function IncidentPage() {
       {drawer && <IncidentActionDrawer action={drawer} incident={data} onClose={() => setDrawer(null)} onDone={done} />}
       {sosAct && <SosActionDrawer sosId={sosAct.id} action={sosAct.action} onClose={() => setSosAct(null)} onDone={done} />}
     </>
+  );
+}
+
+
+/** The red band at the top of a live SOS (board G): its ID, what and where, and the clock. */
+function CaseHead({ data, now, others }: { data: IncidentDetail; now: number; others: string[] }) {
+  const live = data.status !== 'closed' && (data.sos.active ?? 0) > 0;
+  const since = data.sos.oldest_active_at ?? data.opened_at;
+  const s = Math.max(0, Math.round((now - new Date(since).getTime()) / 1000));
+  const m = Math.floor(s / 60);
+  const clockText = m >= 120 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m}:${String(s % 60).padStart(2, '0')}`;
+  return (
+    <section className={`ops-case-head mb-4${live ? '' : ' ops-case-head--calm'}`} aria-label="Case">
+      {live ? <span className="ops-case-head__tag">SOS</span> : null}
+      <div className="ops-case-head__title">
+        <b>{data.ref} · {data.title || CATEGORY_LABEL[data.category] || data.category}{data.trip_ref ? ` · ${data.trip_ref}` : ''}</b>
+        <span>{data.anchor.node_name ?? 'Not placed'}{data.assignee ? ` · ${data.assignee.label} has it` : ' · Nobody on it'}</span>
+      </div>
+      {others.length ? <span className="ops-case-head__title"><span>{others.join(', ')} {others.length === 1 ? 'is' : 'are'} also here</span></span> : null}
+      <div className="ops-case-head__clock">
+        <b className="sg-num">{live ? clockText : 'Closed'}</b>
+        <span>{live ? 'since the first SOS' : (data.outcome ?? '').replace(/_/g, ' ')}</span>
+      </div>
+    </section>
   );
 }
