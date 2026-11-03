@@ -1,19 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
-import { useDensity } from '@/lib/consolePrefs';
-import { stamp } from '@/lib/consoleTime';
+import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   AUDIENCE_WORDS, NOTICE_MAX, NOTICE_STATE_WORDS, canReadPlatform, canWritePlatform, noticeTone, validateNotice,
   type Notice15,
 } from '@/lib/platform';
 import { NoticeBanner, messageOf, type Notice } from '@/components/console/notifications';
 import { PlatformNav, PlatformNoAccess } from '@/components/console/platform';
-import {
-  DataTable, Drawer, Empty, ErrorState, PageHeader, Panel, Pill, Skeleton, TableToolbar,
-} from '@/components/console/ui';
+import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { StatusChip } from '@/components/console/kit/StatusChip';
+import { chipToneOf } from '@/components/console/listKit';
+import { Drawer, PageHeader } from '@/components/console/ui';
 
 /**
  * Platform settings: Notices.
@@ -31,11 +31,11 @@ const localInput = (d: Date) => {
 
 export default function NoticesPage() {
   const access = useAdminAccess();
-  const [density, setDensity] = useDensity();
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [open, setOpen] = useState<Notice15 | 'new' | null>(null);
+  const [view, setView] = useState('');
 
   const load = useCallback(async () => {
     setError(null);
@@ -48,47 +48,53 @@ export default function NoticesPage() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const columns = useMemo(() => [
-    { key: 'msg', label: 'Message', render: (n: Notice15) => <b>{n.message}</b> },
-    { key: 'aud', label: 'Audience', width: '9rem', render: (n: Notice15) => AUDIENCE_WORDS[n.audience] },
-    { key: 'scope', label: 'Where', width: '10rem', hideBelow: 1100 as const, render: (n: Notice15) => n.scope_name },
-    { key: 'state', label: 'State', width: '10rem', sortValue: (n: Notice15) => n.state,
-      render: (n: Notice15) => <Pill tone={noticeTone(n.state)}>{NOTICE_STATE_WORDS[n.state]}</Pill> },
-    { key: 'sev', label: 'Severity', width: '8rem', hideBelow: 1100 as const, render: (n: Notice15) => (n.severity === 'warning' ? 'Warning' : 'Info') },
-    { key: 'win', label: 'Window', width: '16rem', hideBelow: 1280 as const, render: (n: Notice15) => `${stamp(n.starts_at)} to ${stamp(n.ends_at)}` },
-  ], []);
+  const columns: ListColumn<Notice15>[] = [
+    { key: 'msg', label: 'Message', primary: true, render: (n) => n.message },
+    { key: 'aud', label: 'Audience', render: (n) => AUDIENCE_WORDS[n.audience] },
+    { key: 'scope', label: 'Where', render: (n) => n.scope_name },
+    { key: 'state', label: 'Status', render: (n) => <StatusChip tone={chipToneOf(noticeTone(n.state))}>{NOTICE_STATE_WORDS[n.state]}</StatusChip> },
+    { key: 'sev', label: 'Severity', render: (n) => (n.severity === 'warning' ? <StatusChip tone="caution">Warning</StatusChip> : <StatusChip tone="info">Info</StatusChip>) },
+    { key: 'win', label: 'Window', render: (n) => { const tz = timeZoneFor(n.scope); return `${stamp(n.starts_at, tz)} to ${stamp(n.ends_at, tz)}`; } },
+  ];
 
   if (!canReadPlatform(access)) {
-    return (<><PageHeader title="Platform settings" /><PlatformNav /><PlatformNoAccess what="Notices" /></>);
+    return (<><PageHeader title="Notices" /><PlatformNav /><PlatformNoAccess what="Notices" /></>);
   }
+
+  const all = data?.results ?? [];
+  const rows = all.filter((n) => !view || n.state === view);
+  const STATES = ['active', 'scheduled', 'ended', 'cancelled'] as const;
 
   return (
     <>
-      <PageHeader title="Platform settings"
-        subtitle="Maintenance messages for the apps and this console. A notice informs; it never stops a booking. Pause the city for that."
-        actions={canWritePlatform(access) ? (
-          <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setOpen('new')}>New notice…</button>
-        ) : undefined} />
       <PlatformNav />
       <NoticeBanner notice={notice} />
-      <Panel title="Notices" flush>
-        <TableToolbar summary={data ? `${data.results.length} notice${data.results.length === 1 ? '' : 's'}` : null}
-          density={density} onDensity={setDensity} />
-        {error ? (
-          <ErrorState title="The notices could not be loaded" detail={error} onRetry={() => void load()} />
-        ) : data === null ? (
-          <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
-            <span className="sr-only">Loading the notices</span>
-            <Skeleton kind="row" count={4} />
-          </div>
-        ) : data.results.length === 0 ? (
-          <Empty title="No notices" detail="Nothing is posted. A notice shows between its start and end time, to one audience." />
-        ) : (
-          <DataTable caption="Maintenance notices" rows={data.results} columns={columns} rowKey={(n) => n.id}
-            density={density} onRow={canWritePlatform(access) ? (n) => setOpen(n) : undefined}
-            maxHeight={false} />
-        )}
-      </Panel>
+      <ListPage<Notice15>
+        pageKey="settings-notices"
+        title="Notices"
+        summary="Maintenance messages for the apps and this console. A notice informs; it never stops a booking. Pause the city for that."
+        actionsSlot={canWritePlatform(access) ? (
+          <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setOpen('new')}>New notice…</button>
+        ) : undefined}
+        views={[
+          { key: '', label: 'All', count: data ? all.length : undefined },
+          ...STATES.map((st) => ({ key: st, label: NOTICE_STATE_WORDS[st], count: data ? all.filter((n) => n.state === st).length : undefined })),
+        ]}
+        view={view}
+        onView={setView}
+        columns={columns}
+        rows={rows}
+        rowKey={(n) => n.id}
+        total={data ? rows.length : null}
+        page={1}
+        pageSize={Math.max(1, rows.length)}
+        onPage={() => undefined}
+        onRow={canWritePlatform(access) ? (n) => setOpen(n) : undefined}
+        activeKey={open && open !== 'new' ? open.id : null}
+        loading={data === null && !error}
+        error={error}
+        empty={all.length === 0 ? 'No notices. Nothing is posted. A notice shows between its start and end time, to one audience.' : 'No notice in this view.'}
+      />
       {open ? (
         <NoticeDrawer notice={open === 'new' ? null : open} onClose={() => setOpen(null)}
           onDone={(n) => { setOpen(null); setNotice(n); void load(); }} />
