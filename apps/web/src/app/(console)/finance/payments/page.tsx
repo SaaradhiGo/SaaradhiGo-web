@@ -1,27 +1,26 @@
 'use client';
 
-import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
-import { useDensity } from '@/lib/consolePrefs';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
-  PAYMENT_METHODS, PAYMENT_STATUSES, type ListFilters, activeFilterCount, apiPath, cityName,
-  formatMinor, formatWhole, paymentTone,
+  PAYMENT_METHODS, PAYMENT_STATUSES, type ListFilters, apiPath, cityName, filtersFromSearch,
+  filtersToQuery, formatWhole,
 } from '@/lib/finance';
 import { useFinanceList } from '@/lib/useFinanceList';
 import { PageLink } from '@/components/console/PageLink';
-import { ExportButton, FinanceNav, Pager, RangeBar } from '@/components/console/finance';
-import {
-  Column, DataTable, Drawer, Empty, ErrorState, PageHeader, Panel, Pill, Skeleton, TableToolbar,
-} from '@/components/console/ui';
+import { ExportButton, FinanceNav, RangeBar } from '@/components/console/finance';
+import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { StatusChip } from '@/components/console/kit/StatusChip';
+import { CurrencyTotals, financeChips, paymentChipTone, savedQuery, statusViews, words } from '@/components/console/money/moneyKit';
+import { PaymentRecord } from '@/components/console/money/PaymentRecord';
+import { Drawer, Skeleton } from '@/components/console/ui';
 
 /**
- * Rider charges, newest first.
+ * Rider charges, newest first, with the charge opened beside the list.
  *
  * A payment is anchored at the trip's city. The gateway ids are shown by
- * their last four characters only (enough to find one at the gateway, not to
- * use it), and nothing the gateway sent is shown here: no signature, no
- * customer details, no raw webhook.
+ * reference only, and nothing the gateway sent is shown here: no signature,
+ * no customer details, no raw webhook.
  */
 type PaymentRow = {
   id: number;
@@ -41,97 +40,74 @@ type PaymentRow = {
 type Totals = { totals: Array<{ currency: string; count: number; amount_minor: number }> };
 
 function PaymentsInner() {
-  const { filters, data, error, reload, go } = useFinanceList<PaymentRow, Totals>('/payments/admin/payments/');
-  const [density, setDensity] = useDensity();
+  const { filters, data, error, go } = useFinanceList<PaymentRow, Totals>('/payments/admin/payments/');
   const [open, setOpen] = useState(false);
+  const [openId, setOpenId] = useState<number | null>(null);
   const [draft, setDraft] = useState<ListFilters>(filters);
   useEffect(() => setDraft(filters), [filters.status, filters.method, filters.currency, filters.q]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const columns: Column<PaymentRow>[] = [
+  const columns: ListColumn<PaymentRow>[] = [
+    { key: 'id', label: 'Payment', width: '6rem', primary: true, render: (p) => `#${p.id}` },
     {
-      key: 'id', label: 'Payment', width: '6.5rem', sortValue: (p) => p.id,
-      render: (p) => <Link href={`/finance/payments/${p.id}`}>#{p.id}</Link>,
+      key: 'trip', label: 'Trip', width: '7rem',
+      render: (p) => <PageLink page="trips" href={`/trips/${p.trip_id}`}>T-{p.trip_id}</PageLink>,
     },
-    {
-      key: 'trip', label: 'Trip', width: '6rem', sortValue: (p) => p.trip_id,
-      render: (p) => <PageLink page="trips" href={`/trips/${p.trip_id}`}>#{p.trip_id}</PageLink>,
-    },
-    { key: 'city', label: 'City', sortValue: (p) => cityName(p.city), render: (p) => cityName(p.city), hideBelow: 1100 },
-    { key: 'rider', label: 'Rider', sortValue: (p) => p.rider_name, render: (p) => p.rider_name || '—', hideBelow: 1280 },
-    {
-      key: 'amount', label: 'Amount', num: true, width: '9rem', sortValue: (p) => p.amount_minor,
-      render: (p) => formatWhole(p.amount_minor, p.currency),
-    },
-    { key: 'method', label: 'Method', width: '6rem', render: (p) => p.method },
-    {
-      key: 'status', label: 'Status', width: '7.5rem',
-      render: (p) => <Pill tone={paymentTone(p.status)}>{p.status}</Pill>,
-    },
-    { key: 'gateway', label: 'Gateway ref', width: '9rem', hideBelow: 1280, render: (p) => p.gateway_order_id || '—' },
-    {
-      key: 'when', label: 'Created', num: true, width: '9.5rem', sortValue: (p) => p.created_at,
-      render: (p) => stamp(p.created_at, timeZoneFor(p.city?.code)),
-    },
+    { key: 'city', label: 'City', render: (p) => cityName(p.city) },
+    { key: 'rider', label: 'Rider', render: (p) => p.rider_name || '—' },
+    { key: 'amount', label: 'Amount', num: true, render: (p) => formatWhole(p.amount_minor, p.currency) },
+    { key: 'method', label: 'Method', render: (p) => words(p.method) },
+    { key: 'status', label: 'Status', render: (p) => <StatusChip tone={paymentChipTone(p.status)}>{words(p.status)}</StatusChip> },
+    { key: 'gateway', label: 'Gateway ref', render: (p) => p.gateway_order_id || '—' },
+    { key: 'when', label: 'Created', num: true, render: (p) => stamp(p.created_at, timeZoneFor(p.city?.code)) },
   ];
 
   const rows = data?.results ?? [];
   const exportPath = apiPath('/payments/admin/export/payments/', { ...filters, page: 1 });
-  const hasDates = Boolean(filters.from && filters.to);
+  const query = savedQuery(filtersToQuery(filters));
 
   return (
     <>
-      <PageHeader title="Finance" subtitle="Rider charges, with their gateway and any refunds." />
       <FinanceNav />
-      <Panel flush>
-        <RangeBar from={filters.from} to={filters.to} idPrefix="payments"
-          onApply={(r) => go({ ...filters, ...r, page: 1 })} />
-        <TableToolbar
-          summary={data ? `${data.count} payment${data.count === 1 ? '' : 's'}${hasDates ? ` · ${filters.from} to ${filters.to}` : ''}` : null}
-          density={density}
-          onDensity={setDensity}
-          onFilters={() => setOpen(true)}
-          filtersActive={activeFilterCount(filters, ['from', 'to'])}
-        >
-          {hasDates && (
-            <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm"
-              onClick={() => go({ ...filters, from: '', to: '', page: 1 })}>All dates</button>
+      <div className={openId !== null ? 'ops-split' : undefined}>
+        <ListPage<PaymentRow>
+          pageKey="finance-payments"
+          title="Payments"
+          summary={data ? <CurrencyTotals totals={data.totals ?? []} noun="payment" amount="amount_minor" /> : 'Rider charges, with their gateway and any refunds.'}
+          views={statusViews(PAYMENT_STATUSES, filters.status, data?.count)}
+          view={filters.status}
+          onView={(status) => go({ ...filters, status, page: 1 })}
+          chips={financeChips(filters, go, { qLabel: 'Gateway id' })}
+          filterSlot={(
+            <>
+              <RangeBar from={filters.from} to={filters.to} idPrefix="payments"
+                onApply={(r) => go({ ...filters, ...r, page: 1 })} />
+              <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setOpen(true)}>More filters</button>
+              <ExportButton path={exportPath} />
+            </>
           )}
-          <ExportButton path={exportPath} />
-        </TableToolbar>
-        {data === null && !error ? (
-          <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
-            <span className="sr-only">Loading payments</span>
-            <Skeleton kind="row" count={6} />
-          </div>
-        ) : error ? (
-          <div className="p-4">
-            <ErrorState title="Payments could not be loaded"
-              detail={`${error} This is not the same as there being no payments.`} onRetry={() => void reload()} />
-          </div>
-        ) : rows.length === 0 ? (
-          <Empty title="No payments match" detail="Nothing in your scope matches these filters." />
-        ) : (
-          <>
-            <DataTable caption="Payments" rows={rows} columns={columns} rowKey={(p) => p.id} density={density} />
-            <div className="ops-totals" aria-label="Totals of the matching payments, per currency">
-              {(data?.totals ?? []).map((t) => (
-                <div className="ops-totals__group" key={t.currency}>
-                  <b>{formatMinor(t.amount_minor, t.currency)}</b>
-                  <span>{t.currency} · {t.count} payment{t.count === 1 ? '' : 's'}</span>
-                </div>
-              ))}
-            </div>
-            <Pager page={data?.page ?? 1} totalPages={data?.total_pages ?? 1}
-              onPage={(p) => go({ ...filters, page: p })} />
-          </>
-        )}
-      </Panel>
+          columns={columns}
+          rows={rows}
+          rowKey={(p) => p.id}
+          total={data ? data.count : null}
+          page={data?.page ?? filters.page}
+          pageSize={data?.page_size ?? 25}
+          onPage={(p) => go({ ...filters, page: p })}
+          onRow={(p) => setOpenId(p.id)}
+          activeKey={openId}
+          loading={data === null && !error}
+          error={error ? `Payments could not be loaded. ${error} This is not the same as there being no payments.` : null}
+          empty="No payments in your scope match these filters."
+          currentQuery={query || undefined}
+          onSavedView={(q) => go(filtersFromSearch(new URLSearchParams(q)))}
+        />
+        {openId !== null ? <PaymentRecord id={openId} onClose={() => setOpenId(null)} /> : null}
+      </div>
 
       <Drawer open={open} title="Filter payments" onClose={() => setOpen(false)}
         footer={
           <>
             <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm"
-              onClick={() => setDraft({ ...draft, status: '', method: '', currency: '', q: '' })}>Reset</button>
+              onClick={() => setDraft({ ...draft, method: '', currency: '', q: '' })}>Reset</button>
             <button type="button" className="sg-btn sg-btn--primary sg-btn--sm"
               onClick={() => { go({ ...draft, page: 1 }); setOpen(false); }}>Show payments</button>
           </>
@@ -139,19 +115,11 @@ function PaymentsInner() {
       >
         <div className="ops-form">
           <div className="ops-form__row">
-            <label className="ops-form__label" htmlFor="pf-status">Status</label>
-            <select id="pf-status" className="ops-select" value={draft.status}
-              onChange={(e) => setDraft({ ...draft, status: e.target.value })}>
-              <option value="">Any</option>
-              {PAYMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-          <div className="ops-form__row">
             <label className="ops-form__label" htmlFor="pf-method">Method</label>
             <select id="pf-method" className="ops-select" value={draft.method}
               onChange={(e) => setDraft({ ...draft, method: e.target.value })}>
               <option value="">Any</option>
-              {PAYMENT_METHODS.map((s) => <option key={s} value={s}>{s}</option>)}
+              {PAYMENT_METHODS.map((s) => <option key={s} value={s}>{words(s)}</option>)}
             </select>
           </div>
           <div className="ops-form__row">
