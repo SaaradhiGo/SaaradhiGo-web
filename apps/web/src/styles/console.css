@@ -2191,9 +2191,10 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .ops-list__select { height: 30px; min-width: 10rem; width: auto; font-size: 12.5px; }
 .ops-list__search { height: 30px; min-width: 14rem; width: auto; font-size: 12.5px; }
 .ops-list__filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.ops-list__table .ops-tree--1 td.primary { padding-left: 26px; }
-.ops-list__table .ops-tree--2 td.primary { padding-left: 42px; font-weight: 600; }
-.ops-list__table .ops-tree--0 td { background: var(--ops-wash); }
+.ops-tree { display: inline-block; }
+.ops-tree--0 { font-weight: 800; }
+.ops-tree--1 { padding-left: 16px; font-weight: 700; }
+.ops-tree--2 { padding-left: 32px; font-weight: 600; }
 .ops-matrix td.is-override { font-weight: 700; color: var(--ink); }
 .ops-matrix td.is-default { color: var(--ops-ink-3); }
 .ops-list__total { display: block; margin-top: 2px; font-weight: 700; color: var(--ink); }
