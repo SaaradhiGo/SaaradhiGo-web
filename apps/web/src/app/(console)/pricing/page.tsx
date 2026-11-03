@@ -200,7 +200,10 @@ function CountryPanel({ cfg, matrix, onCell, onDefault, onEditConfig }: {
   const mine = matrix.rows.filter((r) => r.country === cfg.country);
   // The country's rate per class: what a city with no rule of its own gets.
   const countryCell = (vt: number) => mine.find((r) => r.vehicle_type === vt && r.percent !== null && !OWN.has(r.source ?? '')) ?? null;
-  const overriding = grid.cities.filter((c) => mine.some((r) => r.city === c.code && overrides(r)));
+  // A missing city rate is an exception only where the country HAS a rate for that class;
+  // with no country rate at all the banner already says so, once (not once per city).
+  const differs = (r: MatrixRow) => (r.percent === null ? countryCell(r.vehicle_type) !== null : overrides(r));
+  const overriding = grid.cities.filter((c) => mine.some((r) => r.city === c.code && differs(r)));
   const shown = lookup && !overriding.some((c) => c.code === lookup)
     ? [...overriding, ...grid.cities.filter((c) => c.code === lookup)] : overriding;
   const inheriting = grid.cities.length - overriding.length;
