@@ -1,9 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
-import { useDensity } from '@/lib/consolePrefs';
 import { stamp } from '@/lib/consoleTime';
 import {
   canReadPlatform, canWritePlatform, validateFlagKey, type Flag, type FlagHistory, type Pending,
@@ -12,8 +11,10 @@ import { NoticeBanner, messageOf, type Notice } from '@/components/console/notif
 import {
   PendingRequests, PlatformNav, PlatformNoAccess, outcomeNotice,
 } from '@/components/console/platform';
+import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { StatusChip } from '@/components/console/kit/StatusChip';
 import {
-  DataTable, Drawer, Empty, ErrorState, PageHeader, Panel, Pill, Skeleton, TableToolbar,
+  Drawer, ErrorState, PageHeader, Skeleton,
 } from '@/components/console/ui';
 
 /**
@@ -28,11 +29,12 @@ type Payload = { results: Flag[]; pending: Pending[]; note: string };
 
 export default function FlagsPage() {
   const access = useAdminAccess();
-  const [density, setDensity] = useDensity();
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [open, setOpen] = useState<string | 'new' | null>(null);
+  const [view, setView] = useState('');
+  const [q, setQ] = useState('');
 
   const load = useCallback(async () => {
     setError(null);
@@ -45,52 +47,70 @@ export default function FlagsPage() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const columns = useMemo(() => [
-    { key: 'key', label: 'Flag', sortValue: (f: Flag) => f.key,
-      render: (f: Flag) => <><b>{f.key}</b> <span className="muted">v{f.version}</span></> },
-    { key: 'def', label: 'Default', width: '7rem', render: (f: Flag) => <Pill tone={f.default_enabled ? 'good' : 'neutral'}>{f.default_enabled ? 'On' : 'Off'}</Pill> },
-    { key: 'ov', label: 'Overrides', width: '10rem', hideBelow: 1100 as const,
-      render: (f: Flag) => (Object.keys(f.overrides).length ? Object.entries(f.overrides).map(([k, v]) => `${k}: ${v ? 'on' : 'off'}`).join(', ') : <span className="muted">none</span>) },
-    { key: 'kind', label: 'Needs a checker', width: '12rem', hideBelow: 1100 as const,
-      render: (f: Flag) => (f.money_affecting ? 'Money-affecting' : f.safety ? 'Safety' : <span className="muted">No</span>) },
-    { key: 'area', label: 'Owner', width: '8rem', hideBelow: 1280 as const, render: (f: Flag) => f.owner_area },
-    { key: 'when', label: 'Changed', width: '10rem', hideBelow: 1280 as const, sortValue: (f: Flag) => f.updated_at ?? '', render: (f: Flag) => stamp(f.updated_at) },
-  ], []);
+  const columns: ListColumn<Flag>[] = [
+    { key: 'key', label: 'Flag', primary: true, render: (f) => <>{f.key} <span className="muted">v{f.version}</span></> },
+    { key: 'def', label: 'Default', render: (f) => <StatusChip tone={f.default_enabled ? 'good' : 'neutral'}>{f.default_enabled ? 'On' : 'Off'}</StatusChip> },
+    {
+      key: 'ov', label: 'Overrides',
+      render: (f) => (Object.keys(f.overrides).length ? Object.entries(f.overrides).map(([k, v]) => `${k}: ${v ? 'on' : 'off'}`).join(', ') : <span className="muted">none</span>),
+    },
+    { key: 'kind', label: 'Needs a checker', render: (f) => (f.money_affecting ? 'Money-affecting' : f.safety ? 'Safety' : <span className="muted">No</span>) },
+    { key: 'area', label: 'Owner', render: (f) => f.owner_area },
+    { key: 'when', label: 'Changed', render: (f) => stamp(f.updated_at) },
+  ];
 
   if (!canReadPlatform(access)) {
-    return (<><PageHeader title="Platform settings" /><PlatformNav /><PlatformNoAccess what="Feature flags" /></>);
+    return (<><PageHeader title="Feature flags" /><PlatformNav /><PlatformNoAccess what="Feature flags" /></>);
   }
+
+  const all = [...(data?.results ?? [])].sort((x, y) => x.key.localeCompare(y.key));
+  const inView = (f: Flag) => (view === 'on' ? f.default_enabled : view === 'off' ? !f.default_enabled
+    : view === 'checked' ? (f.money_affecting || f.safety) : true);
+  const needle = q.trim().toLowerCase();
+  const rows = all.filter((f) => inView(f) && (!needle || f.key.toLowerCase().includes(needle)));
 
   return (
     <>
-      <PageHeader title="Platform settings"
-        subtitle="Switches that gate behaviour, by default, country or city. Money-affecting and safety flags change only through a second admin."
-        actions={canWritePlatform(access) ? (
-          <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setOpen('new')}>New flag…</button>
-        ) : undefined} />
       <PlatformNav />
       <NoticeBanner notice={notice} />
       {data ? <PendingRequests items={data.pending} onDecided={(n) => { setNotice(n); void load(); }}
         describe={(p) => `Change flag ${p.target}`} /> : null}
-
-      <Panel title="Feature flags" flush>
-        <TableToolbar summary={data ? `${data.results.length} flag${data.results.length === 1 ? '' : 's'}` : null}
-          density={density} onDensity={setDensity} />
-        {error ? (
-          <ErrorState title="The feature flags could not be loaded" detail={error} onRetry={() => void load()} />
-        ) : data === null ? (
-          <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
-            <span className="sr-only">Loading the feature flags</span>
-            <Skeleton kind="row" count={4} />
-          </div>
-        ) : data.results.length === 0 ? (
-          <Empty title="No feature flags yet" detail={data.note} />
-        ) : (
-          <DataTable caption="Feature flags" rows={data.results} columns={columns} rowKey={(f) => f.key}
-            density={density} onRow={(f) => setOpen(f.key)} selectedKey={open === 'new' ? null : open}
-            defaultSort={{ key: 'key', dir: 'asc' }} maxHeight={false} />
+      <ListPage<Flag>
+        pageKey="settings-flags"
+        title="Feature flags"
+        summary="Switches that gate behaviour, by default, country or city. Money-affecting and safety flags change only through a second admin."
+        actionsSlot={canWritePlatform(access) ? (
+          <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setOpen('new')}>New flag…</button>
+        ) : undefined}
+        views={[
+          { key: '', label: 'All', count: data ? all.length : undefined },
+          { key: 'on', label: 'On by default', count: data ? all.filter((f) => f.default_enabled).length : undefined },
+          { key: 'off', label: 'Off by default', count: data ? all.filter((f) => !f.default_enabled).length : undefined },
+          { key: 'checked', label: 'Needs a checker', count: data ? all.filter((f) => f.money_affecting || f.safety).length : undefined },
+        ]}
+        view={view}
+        onView={setView}
+        chips={q.trim() ? [{ key: 'q', label: `Search: ${q.trim()}`, onRemove: () => setQ('') }] : []}
+        filterSlot={(
+          <>
+            <label className="sr-only" htmlFor="fl-q">Search flags</label>
+            <input id="fl-q" className="input ops-list__search" type="search" placeholder="Search a flag" value={q}
+              onChange={(e) => setQ(e.target.value)} />
+          </>
         )}
-      </Panel>
+        columns={columns}
+        rows={rows}
+        rowKey={(f) => f.key}
+        total={data ? rows.length : null}
+        page={1}
+        pageSize={Math.max(1, rows.length)}
+        onPage={() => undefined}
+        onRow={(f) => setOpen(f.key)}
+        activeKey={open === 'new' ? null : open}
+        loading={data === null && !error}
+        error={error}
+        empty={data && data.results.length === 0 ? `No feature flags yet. ${data.note}` : 'No flag matches.'}
+      />
 
       {open ? (
         <FlagDrawer flagKey={open === 'new' ? null : open} onClose={() => setOpen(null)}

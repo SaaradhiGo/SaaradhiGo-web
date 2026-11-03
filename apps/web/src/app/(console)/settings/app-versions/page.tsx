@@ -1,9 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
-import { useDensity } from '@/lib/consolePrefs';
 import { stamp } from '@/lib/consoleTime';
 import {
   canReadPlatform, canWritePlatform, isMinimumRaise, validateVersionSlot, type Pending, type VersionSlot,
@@ -12,9 +11,9 @@ import { NoticeBanner, messageOf, type Notice } from '@/components/console/notif
 import {
   PendingRequests, PlatformNav, PlatformNoAccess, outcomeNotice,
 } from '@/components/console/platform';
-import {
-  DataTable, Drawer, ErrorState, PageHeader, Panel, Skeleton, TableToolbar,
-} from '@/components/console/ui';
+import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { StatusChip } from '@/components/console/kit/StatusChip';
+import { Drawer, PageHeader } from '@/components/console/ui';
 
 /**
  * Platform settings: App versions.
@@ -31,11 +30,11 @@ const PLATFORM_WORDS = { android: 'Android', ios: 'iOS' } as const;
 
 export default function AppVersionsPage() {
   const access = useAdminAccess();
-  const [density, setDensity] = useDensity();
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [open, setOpen] = useState<VersionSlot | null>(null);
+  const [view, setView] = useState('');
 
   const load = useCallback(async () => {
     setError(null);
@@ -47,44 +46,60 @@ export default function AppVersionsPage() {
     }
   }, []);
   useEffect(() => { void load(); }, [load]);
+  const pendingTargets = new Set((data?.pending ?? []).map((p) => String(p.target)));
 
-  const columns = useMemo(() => [
-    { key: 'app', label: 'App', render: (s: VersionSlot) => <b>{APP_WORDS[s.app]}</b> },
-    { key: 'platform', label: 'Platform', width: '8rem', render: (s: VersionSlot) => PLATFORM_WORDS[s.platform] },
-    { key: 'min', label: 'Minimum', width: '8rem', render: (s: VersionSlot) => s.minimum_version },
-    { key: 'latest', label: 'Latest', width: '8rem', render: (s: VersionSlot) => s.latest_version },
-    { key: 'url', label: 'Store link', hideBelow: 1100 as const, render: (s: VersionSlot) => s.store_url || <span className="muted">not set</span> },
-    { key: 'when', label: 'Changed', width: '10rem', hideBelow: 1280 as const, render: (s: VersionSlot) => (s.updated_at ? stamp(s.updated_at) : '—') },
-  ], []);
+  const columns: ListColumn<VersionSlot>[] = [
+    { key: 'app', label: 'App', primary: true, render: (s) => APP_WORDS[s.app] },
+    { key: 'platform', label: 'Platform', render: (s) => PLATFORM_WORDS[s.platform] },
+    { key: 'min', label: 'Minimum', num: true, render: (s) => s.minimum_version },
+    { key: 'latest', label: 'Latest', num: true, render: (s) => s.latest_version },
+    {
+      key: 'status', label: 'Status',
+      render: (s) => (pendingTargets.has(`${s.app}:${s.platform}`) || pendingTargets.has(`${s.app}-${s.platform}`)
+        ? <StatusChip tone="info">Raise waiting for a checker</StatusChip>
+        : s.minimum_version === s.latest_version ? <StatusChip tone="caution">Everyone must be on the latest</StatusChip>
+          : <StatusChip tone="good">Older builds allowed</StatusChip>),
+    },
+    { key: 'url', label: 'Store link', render: (s) => s.store_url || <span className="muted">not set</span> },
+    { key: 'when', label: 'Changed', render: (s) => (s.updated_at ? stamp(s.updated_at) : '—') },
+  ];
 
   if (!canReadPlatform(access)) {
-    return (<><PageHeader title="Platform settings" /><PlatformNav /><PlatformNoAccess what="App versions" /></>);
+    return (<><PageHeader title="App versions" /><PlatformNav /><PlatformNoAccess what="App versions" /></>);
   }
+
+  const rows = (data?.results ?? []).filter((s) => !view || s.app === view);
 
   return (
     <>
-      <PageHeader title="Platform settings"
-        subtitle="The minimum and latest version of each app. Raising a minimum forces users off older builds, so it needs a second admin." />
       <PlatformNav />
       <NoticeBanner notice={notice} />
       {data ? <PendingRequests items={data.pending} onDecided={(n) => { setNotice(n); void load(); }}
         describe={(p) => `Raise the minimum version of ${p.target}`} /> : null}
 
-      <Panel title="App versions" flush>
-        <TableToolbar summary="2 apps, 2 platforms" density={density} onDensity={setDensity} />
-        {error ? (
-          <ErrorState title="The app versions could not be loaded" detail={error} onRetry={() => void load()} />
-        ) : data === null ? (
-          <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
-            <span className="sr-only">Loading the app versions</span>
-            <Skeleton kind="row" count={4} />
-          </div>
-        ) : (
-          <DataTable caption="App version policy" rows={data.results} columns={columns}
-            rowKey={(s) => `${s.app}-${s.platform}`} density={density}
-            onRow={canWritePlatform(access) ? (s) => setOpen(s) : undefined} maxHeight={false} />
-        )}
-      </Panel>
+      <ListPage<VersionSlot>
+        pageKey="settings-app-versions"
+        title="App versions"
+        summary="The minimum and latest version of each app. Raising a minimum forces users off older builds, so it needs a second admin."
+        views={[
+          { key: '', label: 'All', count: data ? data.results.length : undefined },
+          { key: 'rider', label: 'Rider app' },
+          { key: 'driver', label: 'Driver app' },
+        ]}
+        view={view}
+        onView={setView}
+        columns={columns}
+        rows={rows}
+        rowKey={(s) => `${s.app}-${s.platform}`}
+        total={data ? rows.length : null}
+        page={1}
+        pageSize={Math.max(1, rows.length)}
+        onPage={() => undefined}
+        onRow={canWritePlatform(access) ? (s) => setOpen(s) : undefined}
+        loading={data === null && !error}
+        error={error}
+        empty="No app version is set."
+      />
 
       {open ? (
         <SlotDrawer slot={open} onClose={() => setOpen(null)}
