@@ -3,26 +3,25 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { withScope } from '@/lib/adminScope';
-import { useDensity } from '@/lib/consolePrefs';
+import { useAdminAccess, withScope } from '@/lib/adminScope';
 import {
-  OVERVIEW_COLUMNS, type OverviewRow, cityName, formatMinor, formatWhole, isDate, presetRange, rangeProblem,
+  OVERVIEW_COLUMNS, type OverviewRow, canExport, cityName, formatMinor, formatWhole, isDate,
+  presetRange, rangeProblem,
 } from '@/lib/finance';
 import { FinanceNav, RangeBar } from '@/components/console/finance';
-import {
-  Column, DataTable, Empty, ErrorState, MetricTile, PageHeader, Panel, Skeleton, TableToolbar,
-  TileGrid,
-} from '@/components/console/ui';
+import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { MetricCard } from '@/components/console/kit/MetricCard';
+import { RecordPanel } from '@/components/console/kit/RecordPanel';
+import { Skeleton } from '@/components/console/ui';
 
 /**
- * Finance overview: per city, per currency, per day, for a range.
- *
- * TABLE FIRST. The figures an operator can reconcile against are rows, so the
- * rows lead and the totals sit above them as one tile set per currency.
+ * Money overview: one row per place and currency for the range, whole units,
+ * with the day-by-day figures one click away (the place opens beside the
+ * table) or as a view of their own.
  *
  * NO CROSS-CURRENCY TOTAL, ANYWHERE. Rupees and dollars are different money:
- * every total here is the server's per-currency total, and a currency with
- * nothing in the range simply has no tile. A day is a day in the city's own
+ * a place's row adds only its own currency's days, and every headline figure
+ * is the server's per-currency total. A day is a day in the city's own
  * timezone; the server decides which instants those are.
  */
 type Overview = {
@@ -45,16 +44,45 @@ type Overview = {
   };
 };
 
+type MoneyKey = (typeof OVERVIEW_COLUMNS)[number][0];
+type PlaceRow = { key: string; city: OverviewRow['city']; currency: string; days: number } & Record<MoneyKey, number>;
+
+const placeKey = (r: { city: OverviewRow['city']; currency: string }) => `${r.city?.code ?? 'none'}|${r.currency}`;
+
+/** One row per place and currency: integer sums of the same currency only. */
+function byPlace(rows: readonly OverviewRow[]): PlaceRow[] {
+  const out = new Map<string, PlaceRow>();
+  for (const r of rows) {
+    const k = placeKey(r);
+    let p = out.get(k);
+    if (!p) {
+      p = { key: k, city: r.city, currency: r.currency, days: 0 } as PlaceRow;
+      for (const [c] of OVERVIEW_COLUMNS) p[c] = 0;
+      out.set(k, p);
+    }
+    p.days += 1;
+    for (const [c] of OVERVIEW_COLUMNS) p[c] += r[c] ?? 0;
+  }
+  return [...out.values()].sort((a, b) => a.currency.localeCompare(b.currency) || b.gross_minor - a.gross_minor);
+}
+
+function csvCell(v: string | number): string {
+  const s = String(v);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
 function OverviewInner() {
   const router = useRouter();
   const search = useSearchParams();
+  const access = useAdminAccess();
   const fallback = useMemo(() => presetRange(14), []);
   const from = isDate(search.get('from')) ? (search.get('from') as string) : fallback.from;
   const to = isDate(search.get('to')) ? (search.get('to') as string) : fallback.to;
+  const view = search.get('view') === 'days' ? 'days' : 'places';
 
-  const [density, setDensity] = useDensity();
   const [data, setData] = useState<Overview | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [openPlace, setOpenPlace] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setData(null);
@@ -65,48 +93,91 @@ function OverviewInner() {
       setData(await api.get<Overview>(withScope(`/payments/admin/overview/?from=${from}&to=${to}`)));
     } catch (err) {
       setError(err instanceof ApiError && err.fromServer
-        ? err.message : 'We could not load the finance overview.');
+        ? err.message : 'We could not load the money overview.');
     }
   }, [from, to]);
 
   useEffect(() => { void load(); }, [load]);
 
-  const money = (key: (typeof OVERVIEW_COLUMNS)[number][0]) => (r: OverviewRow) =>
-    formatWhole(r[key], r.currency);
+  const rows = useMemo(() => data?.rows ?? [], [data]);
+  const places = useMemo(() => byPlace(rows), [rows]);
+  const go = (patch: { from?: string; to?: string; view?: string }) => {
+    const q = new URLSearchParams({ from: patch.from ?? from, to: patch.to ?? to });
+    const v = patch.view ?? view;
+    if (v === 'days') q.set('view', 'days');
+    router.push(`/finance?${q}`);
+  };
 
-  const columns: Column<OverviewRow>[] = [
-    { key: 'city', label: 'City', sortValue: (r) => cityName(r.city), render: (r) => cityName(r.city) },
-    { key: 'day', label: 'Day', width: '7.5rem', sortValue: (r) => r.day, render: (r) => r.day },
-    { key: 'currency', label: 'Currency', width: '7rem', sortValue: (r) => r.currency, render: (r) => r.currency },
-    ...OVERVIEW_COLUMNS.map(([key, label], i): Column<OverviewRow> => ({
-      key, label, num: true, sortValue: (r) => r[key], render: money(key),
-      hideBelow: i >= 4 ? 1280 : undefined,
-    })),
+  const moneyCols = <T extends Record<MoneyKey, number> & { currency: string }>(): ListColumn<T>[] =>
+    OVERVIEW_COLUMNS.map(([key, label]) => ({ key, label, num: true, render: (r: T) => formatWhole(r[key], r.currency) }));
+  const placeColumns: ListColumn<PlaceRow>[] = [
+    { key: 'city', label: 'Place', primary: true, render: (r) => cityName(r.city) },
+    { key: 'currency', label: 'Currency', render: (r) => r.currency },
+    ...moneyCols<PlaceRow>(),
+  ];
+  const dayColumns: ListColumn<OverviewRow>[] = [
+    { key: 'city', label: 'Place', primary: true, render: (r) => cityName(r.city) },
+    { key: 'day', label: 'Day', render: (r) => r.day },
+    { key: 'currency', label: 'Currency', render: (r) => r.currency },
+    ...moneyCols<OverviewRow>(),
   ];
 
-  const rows = data?.rows ?? [];
-  const go = (range: { from: string; to: string }) =>
-    router.push(`/finance?from=${range.from}&to=${range.to}`);
+  const exportCsv = () => {
+    const head = view === 'days' ? ['Place', 'Day', 'Currency'] : ['Place', 'Currency'];
+    const lines = [[...head, ...OVERVIEW_COLUMNS.map(([, l]) => `${l} (minor units)`)].map(csvCell).join(',')];
+    const source: Array<OverviewRow | PlaceRow> = view === 'days' ? rows : places;
+    for (const r of source) {
+      const lead = view === 'days' ? [cityName(r.city), (r as OverviewRow).day, r.currency] : [cityName(r.city), r.currency];
+      lines.push([...lead, ...OVERVIEW_COLUMNS.map(([k]) => r[k])].map(csvCell).join(','));
+    }
+    const blob = new Blob([`${lines.join('\n')}\n`], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `money-${view}-${from}-to-${to}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const open = openPlace ? places.find((p) => p.key === openPlace) ?? null : null;
+  const openDays = open ? rows.filter((r) => placeKey(r) === open.key) : [];
+  const common = {
+    pageKey: 'finance-overview',
+    title: 'Money overview',
+    summary: `Money collected, kept and paid out, by place and currency · ${from} to ${to}`,
+    views: [
+      { key: 'places', label: 'By place', count: data ? places.length : undefined },
+      { key: 'days', label: 'By place and day', count: data ? rows.length : undefined },
+    ],
+    view,
+    onView: (v: string) => go({ view: v }),
+    filterSlot: <RangeBar from={from} to={to} onApply={(r) => go(r)} idPrefix="overview" />,
+    page: 1,
+    onPage: () => undefined,
+    onExport: canExport(access) && data && rows.length > 0 ? exportCsv : undefined,
+    loading: data === null && !error,
+    error: error ? `The overview could not be loaded. ${error} This is not the same as there being no money in the range.` : null,
+    empty: 'No money moved in this range. Nothing was settled, refunded or paid out in your scope between these dates.',
+  };
 
   return (
     <>
-      <PageHeader
-        title="Finance"
-        subtitle="Money collected, kept and paid out, by city and currency."
-      />
       <FinanceNav />
 
       {data && data.totals.length > 0 && (
-        <TileGrid>
+        <div className="ops-metrics mb-4">
           {data.totals.flatMap((t) => [
-            <MetricTile key={`${t.currency}-gross`} label={`Gross collected · ${t.currency}`} tone="money"
+            <MetricCard key={`${t.currency}-gross`} label={`Gross collected · ${t.currency}`}
               value={formatWhole(Number(t.gross_minor), t.currency)}
               note={`Commission ${formatWhole(Number(t.commission_minor), t.currency)} · driver net ${formatWhole(Number(t.driver_net_minor), t.currency)}`} />,
-            <MetricTile key={`${t.currency}-pending`} label={`Payouts pending · ${t.currency}`} tone="wait"
+            <MetricCard key={`${t.currency}-pending`} label={`Payouts pending · ${t.currency}`}
+              tone={Number(t.payouts_failed_minor) > 0 ? 'caution' : 'neutral'}
               value={formatWhole(Number(t.payouts_pending_minor), t.currency)}
               note={`Paid ${formatWhole(Number(t.payouts_paid_minor), t.currency)} · failed ${formatWhole(Number(t.payouts_failed_minor), t.currency)} · refunds ${formatWhole(Number(t.refunds_minor), t.currency)}`} />,
           ])}
-        </TileGrid>
+        </div>
       )}
 
       {(data?.skipped_in_latest_run ?? []).map((r) => {
@@ -122,7 +193,8 @@ function OverviewInner() {
       })}
 
       {(data?.platform_funded_trip_ends?.count ?? 0) > 0 ? (
-        <Panel title="Trips ended by SaaradhiGo this week (the rider was not charged)">
+        <section className="ops-card mb-4" aria-labelledby="pf-ends">
+          <header className="ops-card__head"><h2 id="pf-ends">Trips ended by SaaradhiGo this week (the rider was not charged)</h2></header>
           <ul className="fr-evidence" aria-label="Platform-funded trip ends">
             {(data?.platform_funded_trip_ends?.totals ?? []).map((t) => (
               <li key={t.currency}>
@@ -139,41 +211,58 @@ function OverviewInner() {
             {data?.platform_funded_trip_ends?.regulatory_fee_expenses?.note
               ?? 'No tax or fee is charged to the rider on these trips.'}
           </p>
-        </Panel>
+        </section>
       ) : null}
 
-      <Panel flush>
-        <RangeBar from={from} to={to} onApply={go} idPrefix="overview" />
-        <TableToolbar
-          summary={data ? `${rows.length} row${rows.length === 1 ? '' : 's'} · ${from} to ${to}` : null}
-          density={density}
-          onDensity={setDensity}
-        />
-        {data === null && !error ? (
-          <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
-            <span className="sr-only">Loading the finance overview</span>
-            <Skeleton kind="row" count={6} />
-          </div>
-        ) : error ? (
-          <div className="p-4">
-            <ErrorState title="The overview could not be loaded"
-              detail={`${error} This is not the same as there being no money in the range.`}
-              onRetry={() => void load()} />
-          </div>
-        ) : rows.length === 0 ? (
-          <Empty title="No money moved in this range"
-            detail="Nothing was settled, refunded or paid out in your scope between these dates." />
+      <div className={open ? 'ops-split' : undefined}>
+        {view === 'days' ? (
+          <ListPage<OverviewRow> {...common} columns={dayColumns} rows={rows}
+            rowKey={(r) => `${placeKey(r)}|${r.day}`} total={data ? rows.length : null} pageSize={Math.max(1, rows.length)}
+            onRow={(r) => setOpenPlace(placeKey(r))} activeKey={null} />
         ) : (
-          <DataTable
-            caption="Finance by city, currency and day"
-            rows={rows}
-            columns={columns}
-            rowKey={(r) => `${r.city?.code ?? 'none'}|${r.day}|${r.currency}`}
-            density={density}
-            defaultSort={{ key: 'day', dir: 'desc' }}
-          />
+          <ListPage<PlaceRow> {...common} columns={placeColumns} rows={places}
+            rowKey={(r) => r.key} total={data ? places.length : null} pageSize={Math.max(1, places.length)}
+            onRow={(r) => setOpenPlace(r.key)} activeKey={openPlace} />
         )}
-      </Panel>
+        {open ? (
+          <RecordPanel
+            label="Place"
+            title={cityName(open.city)}
+            refId={open.currency}
+            subtitle={`${from} to ${to} · ${open.days} day${open.days === 1 ? '' : 's'} with money moving`}
+            onClose={() => setOpenPlace(null)}
+            tabs={[
+              {
+                key: 'totals', label: 'Totals', content: (
+                  <dl className="ops-money">
+                    {OVERVIEW_COLUMNS.map(([k, label]) => (
+                      <div key={k}><dt>{label}</dt><dd className="sg-num">{formatMinor(open[k], open.currency)}</dd></div>
+                    ))}
+                  </dl>
+                ),
+              },
+              {
+                key: 'days', label: 'By day', content: (
+                  <table className="ops-table ops-table--compact">
+                    <caption className="sr-only">{cityName(open.city)} by day</caption>
+                    <thead><tr><th scope="col">Day</th><th scope="col" className="num">Gross</th><th scope="col" className="num">Commission</th><th scope="col" className="num">Payouts pending</th></tr></thead>
+                    <tbody>
+                      {openDays.map((d) => (
+                        <tr key={d.day}>
+                          <td>{d.day}</td>
+                          <td className="num">{formatWhole(d.gross_minor, d.currency)}</td>
+                          <td className="num">{formatWhole(d.commission_minor, d.currency)}</td>
+                          <td className="num">{formatWhole(d.payouts_pending_minor, d.currency)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ),
+              },
+            ]}
+          />
+        ) : null}
+      </div>
       <p className="muted mt-3">
         Payouts pending are open requests (pending, approved, processing or unresolved) counted on the
         day they were requested. Days are the city&rsquo;s own calendar days.
