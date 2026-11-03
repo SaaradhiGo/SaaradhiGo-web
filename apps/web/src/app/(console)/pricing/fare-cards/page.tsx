@@ -11,8 +11,10 @@ import {
 } from '@/lib/pricing';
 import { interpretWrite } from '@/lib/trips';
 import { PricingNav } from '@/components/console/pricing';
+import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { StatusChip } from '@/components/console/kit/StatusChip';
 import {
-  DataTable, Drawer, Empty, ErrorState, PageHeader, Panel, Pill, Skeleton, type PillTone,
+  DataTable, Drawer, Empty, ErrorState, Pill, Skeleton, type PillTone,
 } from '@/components/console/ui';
 
 /**
@@ -41,6 +43,8 @@ function FareCardsInner() {
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<{ zone: FareZone; cls: FareClass } | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [view, setView] = useState('');
+  const [q, setQ] = useState('');
 
   const load = useCallback(async () => {
     setError(null);
@@ -53,51 +57,72 @@ function FareCardsInner() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
+  const zones = data?.zones ?? [];
+  const classes: { id: number; name: string }[] = [];
+  for (const z of zones) for (const c of z.classes) if (!classes.some((x) => x.id === c.vehicle_type)) classes.push({ id: c.vehicle_type, name: c.vehicle_type_name });
+  const needle = q.trim().toLowerCase();
+  const gaps = (z: FareZone) => z.classes.filter((c) => !c.live).length;
+  const scheduled = (z: FareZone) => z.classes.filter((c) => c.scheduled).length;
+  const rows = zones.filter((z) => (view === 'gaps' ? gaps(z) > 0 : view === 'scheduled' ? scheduled(z) > 0 : true)
+    && (!needle || [z.name, z.code, z.country].some((t) => t.toLowerCase().includes(needle))));
+  const columns: ListColumn<FareZone>[] = [
+    { key: 'zone', label: 'Zone', primary: true, render: (z) => <>{z.name} <span className="muted">{z.code}</span></> },
+    { key: 'cur', label: 'Currency', render: (z) => z.currency },
+    ...classes.map((k): ListColumn<FareZone> => ({
+      key: `c${k.id}`, label: k.name, num: true,
+      render: (z) => {
+        const c = z.classes.find((x) => x.vehicle_type === k.id);
+        if (!c) return <span className="muted">—</span>;
+        return (
+          <button type="button" className="ops-linkbtn" onClick={() => setOpen({ zone: z, cls: c })}
+            aria-label={`${z.name}, ${c.vehicle_type_name}: ${c.live ? `version ${c.live.version}` : 'no card'}`}>
+            {c.live ? <>{money(z, c.live.base_fare)} + {money(z, c.live.per_km_fare)}/km <span className="muted">v{c.live.version}</span></>
+              : <StatusChip tone="caution">No card</StatusChip>}
+            {c.scheduled ? <> <StatusChip tone="info">v{c.scheduled.version} scheduled</StatusChip></> : null}
+          </button>
+        );
+      },
+    })),
+  ];
+
   return (
     <>
-      <PageHeader title="Pricing"
-        subtitle="Fare cards by zone and vehicle class. A change is a request a second admin approves; a card is never edited in place." />
       <PricingNav />
       {notice && (
         <div className={notice.kind === 'pending' ? 'ops-confirm mb-4' : 'alert-success mb-4'} role="status">
           <b>{notice.text}</b>
         </div>
       )}
-      {data === null && !error ? (
-        <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
-          <span className="sr-only">Loading the fare cards</span>
-          <Skeleton kind="row" count={5} />
-        </div>
-      ) : error ? (
-        <ErrorState title="The fare cards could not be loaded" detail={error} onRetry={() => void load()} />
-      ) : data && data.zones.length === 0 ? (
-        <Empty title="No service zones in your scope" detail="Fare cards belong to a zone. Nothing is assigned to your account." />
-      ) : (
-        <div className="grid gap-4">
-          {data?.zones.map((z) => (
-            <Panel key={z.zone} title={`${z.name} · ${z.code} · ${z.currency}`} flush>
-              <DataTable
-                caption={`Fare cards in ${z.name}`} rows={z.classes} rowKey={(c) => c.vehicle_type}
-                density="compact" maxHeight={false}
-                onRow={(c) => setOpen({ zone: z, cls: c })}
-                columns={[
-                  { key: 'class', label: 'Vehicle class', render: (c) => <b>{c.vehicle_type_name}</b> },
-                  { key: 'v', label: 'Version', width: '13rem', render: (c) => (c.live
-                    ? <>v{c.live.version} {c.scheduled ? <Pill tone="wait">v{c.scheduled.version} scheduled</Pill> : null}</>
-                    : <Pill tone="bad">no card</Pill>) },
-                  { key: 'base', label: 'Base', num: true, render: (c) => money(z, c.live?.base_fare) },
-                  { key: 'km', label: z.distance_unit === 'mi' ? 'Per km (priced per km)' : 'Per km', num: true, hideBelow: 1100, render: (c) => money(z, c.live?.per_km_fare) },
-                  { key: 'min', label: 'Per min', num: true, hideBelow: 1100, render: (c) => money(z, c.live?.per_min_fare) },
-                  { key: 'minf', label: 'Minimum', num: true, render: (c) => money(z, c.live?.min_fare) },
-                  { key: 'night', label: 'Night', num: true, hideBelow: 1280, render: (c) => (c.live ? `×${Number(c.live.night_surge_multiplier)}` : '—') },
-                  { key: 'cap', label: 'Surge cap', num: true, hideBelow: 1280, render: (c) => (c.live ? `×${Number(c.live.surge_cap_multiplier)}` : '—') },
-                  { key: 'from', label: 'In force since', hideBelow: 1100, render: (c) => (c.live ? stamp(c.live.effective_from) : '—') },
-                ]}
-              />
-            </Panel>
-          ))}
-        </div>
-      )}
+      <ListPage<FareZone>
+        pageKey="pricing-fare-cards"
+        title="Fare cards"
+        summary="One row per zone, one column per vehicle class: base fare plus the per-km rate in force. Open a cell for the full card, its history and a draft. A change is a request a second admin approves; a card is never edited in place."
+        views={[
+          { key: '', label: 'All zones', count: data ? zones.length : undefined },
+          { key: 'gaps', label: 'Missing a card', count: data ? zones.filter((z) => gaps(z) > 0).length : undefined },
+          { key: 'scheduled', label: 'Change scheduled', count: data ? zones.filter((z) => scheduled(z) > 0).length : undefined },
+        ]}
+        view={view}
+        onView={setView}
+        chips={q.trim() ? [{ key: 'q', label: `Search: ${q.trim()}`, onRemove: () => setQ('') }] : []}
+        filterSlot={(
+          <>
+            <label className="sr-only" htmlFor="fc-q">Search zones</label>
+            <input id="fc-q" className="input ops-list__search" type="search" placeholder="Search a zone or country" value={q}
+              onChange={(e) => setQ(e.target.value)} />
+          </>
+        )}
+        columns={columns}
+        rows={rows}
+        rowKey={(z) => z.zone}
+        total={data ? rows.length : null}
+        page={1}
+        pageSize={Math.max(1, rows.length)}
+        onPage={() => undefined}
+        loading={data === null && !error}
+        error={error}
+        empty={data && zones.length === 0 ? 'No service zones in your scope. Fare cards belong to a zone.' : 'No zone matches.'}
+      />
       {open ? (
         <CardDrawer zone={open.zone} cls={open.cls} may={may} onClose={() => setOpen(null)}
           onDone={(text, kind) => { setOpen(null); setNotice({ text, kind }); void load(); }} />
