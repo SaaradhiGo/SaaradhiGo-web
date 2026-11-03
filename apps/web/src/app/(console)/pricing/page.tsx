@@ -3,19 +3,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
-import { useDensity } from '@/lib/consolePrefs';
-import { stamp } from '@/lib/consoleTime';
+import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   LEVEL_WORDS, STATE_WORDS, canDraftPricing, capWords, draftBody, gridOf, isIncrease, noticeWords, pct,
   previewLines, previewSentence, ruleProblem, unconfiguredCells,
   type CountryConfig, type EarningsPreview, type Matrix, type MatrixRow, type Rule, type RuleDetail,
-  type RuleDraft,
+  type RuleDraft, type RuleStatus,
 } from '@/lib/pricing';
 import { interpretWrite } from '@/lib/trips';
 import { PricingNav } from '@/components/console/pricing';
+import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
 import {
-  DataTable, Drawer, Empty, ErrorState, Fact, Facts, PageHeader, Panel, Pill, Skeleton, TableToolbar,
-  type PillTone,
+  DataTable, Drawer, Empty, ErrorState, Fact, Facts, Skeleton,
 } from '@/components/console/ui';
 
 /**
@@ -31,57 +31,68 @@ import {
 type RulesPayload = { count: number; results: Rule[] };
 type Notice = { text: string; kind: 'pending' | 'done' };
 
-const TONE: Record<Rule['state'], PillTone> = {
-  draft: 'neutral', pending_approval: 'wait', scheduled: 'wait', live: 'good', superseded: 'neutral',
+const RULE_TONE: Record<Rule['state'], ChipTone> = {
+  draft: 'neutral', pending_approval: 'info', scheduled: 'info', live: 'good', superseded: 'neutral',
 };
+const RULE_STATUSES: Array<{ key: '' | RuleStatus; label: string }> = [
+  { key: '', label: 'All' }, { key: 'active', label: 'Active' }, { key: 'pending_approval', label: 'Waiting for approval' },
+  { key: 'draft', label: 'Draft' }, { key: 'archived', label: 'Archived' },
+];
 
 function PricingInner() {
   const access = useAdminAccess();
-  const [density, setDensity] = useDensity();
   const [matrix, setMatrix] = useState<Matrix | null>(null);
-  const [rules, setRules] = useState<Rule[] | null>(null);
+  const [rules, setRules] = useState<RulesPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rulesError, setRulesError] = useState<string | null>(null);
+  const [status, setStatus] = useState<'' | RuleStatus>('');
   const [openRule, setOpenRule] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [editingConfig, setEditingConfig] = useState<CountryConfig | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const may = canDraftPricing(access);
 
-  const load = useCallback(async () => {
+  const loadMatrix = useCallback(async () => {
     setError(null);
     try {
-      const [m, r] = await Promise.all([
-        api.get<Matrix>(withScope('/pricing/admin/commission/matrix/')),
-        api.get<RulesPayload>(withScope('/pricing/admin/commission/rules/')),
-      ]);
-      setMatrix(m);
-      setRules(r.results);
+      setMatrix(await api.get<Matrix>(withScope('/pricing/admin/commission/matrix/')));
     } catch (err) {
       setMatrix(null);
-      setRules([]);
       setError(err instanceof ApiError && err.fromServer ? err.message : 'The commission rates could not be loaded.');
     }
   }, []);
-  useEffect(() => { void load(); }, [load]);
+  const loadRules = useCallback(async () => {
+    setRulesError(null);
+    setRules(null);
+    try {
+      setRules(await api.get<RulesPayload>(withScope(`/pricing/admin/commission/rules/${status ? `?status=${status}` : ''}`)));
+    } catch (err) {
+      setRules({ count: 0, results: [] });
+      setRulesError(err instanceof ApiError && err.fromServer ? err.message : 'The commission rules could not be loaded.');
+    }
+  }, [status]);
+  useEffect(() => { void loadMatrix(); }, [loadMatrix]);
+  useEffect(() => { void loadRules(); }, [loadRules]);
+  const load = () => { void loadMatrix(); void loadRules(); };
 
   const loading = matrix === null && !error;
-  const done = (text: string, kind: Notice['kind']) => { setNotice({ text, kind }); void load(); };
+  const done = (text: string, kind: Notice['kind']) => { setNotice({ text, kind }); load(); };
 
-  const ruleColumns = useMemo(() => [
-    { key: 'scope', label: 'Scope', sortValue: (r: Rule) => `${r.country} ${r.city ?? ''} ${r.vehicle_type_name ?? ''}`,
-      render: (r: Rule) => <><b>{r.country}</b> {r.city_name ?? 'whole country'} · {r.vehicle_type_name ?? 'all classes'}</> },
-    { key: 'level', label: 'Layer', hideBelow: 1100 as const, render: (r: Rule) => LEVEL_WORDS[r.level] },
-    { key: 'pct', label: 'Rate', num: true, width: '6rem', sortValue: (r: Rule) => Number(r.percent), render: (r: Rule) => pct(r.percent) },
-    { key: 'v', label: 'Version', num: true, width: '6rem', render: (r: Rule) => `v${r.version}` },
-    { key: 'state', label: 'State', width: '12rem', sortValue: (r: Rule) => r.state,
-      render: (r: Rule) => <Pill tone={TONE[r.state]}>{STATE_WORDS[r.state]}</Pill> },
-    { key: 'from', label: 'Effective from', width: '9rem', sortValue: (r: Rule) => r.effective_from, render: (r: Rule) => stamp(r.effective_from) },
-  ], []);
+  const ruleColumns: ListColumn<Rule>[] = [
+    {
+      key: 'scope', label: 'Scope', primary: true,
+      render: (r) => <>{r.country} {r.city_name ?? 'whole country'} · {r.vehicle_type_name ?? 'all classes'}</>,
+    },
+    { key: 'level', label: 'Layer', render: (r) => LEVEL_WORDS[r.level] },
+    { key: 'pct', label: 'Rate', num: true, render: (r) => pct(r.percent) },
+    { key: 'v', label: 'Version', num: true, render: (r) => `v${r.version}` },
+    { key: 'state', label: 'Status', render: (r) => <StatusChip tone={RULE_TONE[r.state]}>{STATE_WORDS[r.state]}</StatusChip> },
+    { key: 'from', label: 'Effective from', num: true, render: (r) => stamp(r.effective_from, timeZoneFor(r.city ?? r.country)) },
+  ];
+  const ruleRows = rules?.results ?? [];
 
   return (
     <>
-      <PageHeader title="Pricing"
-        subtitle="Commission by country, city and vehicle class. A change is a request a second admin approves, and never reaches a trip already booked." />
       <PricingNav />
       {notice && (
         <div className={notice.kind === 'pending' ? 'ops-confirm mb-4' : 'alert-success mb-4'} role="status">
@@ -89,13 +100,20 @@ function PricingInner() {
         </div>
       )}
 
+      <header className="ops-list__head mb-3">
+        <div>
+          <h1>Commission</h1>
+          <p>Each country&rsquo;s default, and only the cities that override it. A change is a request a second admin approves, and never reaches a trip already booked.</p>
+        </div>
+      </header>
+
       {loading ? (
         <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
           <span className="sr-only">Loading the commission rates</span>
           <Skeleton kind="row" count={5} />
         </div>
       ) : error ? (
-        <ErrorState title="The commission rates could not be loaded" detail={error} onRetry={() => void load()} />
+        <ErrorState title="The commission rates could not be loaded" detail={error} onRetry={() => void loadMatrix()} />
       ) : matrix && matrix.config.length === 0 ? (
         <Empty title="No countries in your scope" detail="Nothing is assigned to your account for pricing." />
       ) : matrix ? (
@@ -107,7 +125,8 @@ function PricingInner() {
               onEditConfig={may ? () => setEditingConfig(cfg) : undefined} />
           ))}
 
-          <Panel title="Rule types">
+          <section className="ops-card" aria-labelledby="pr-kinds">
+            <header className="ops-card__head"><h2 id="pr-kinds">Rule types</h2></header>
             <ul className="ops-kinds m-0 p-0 list-none flex flex-wrap gap-3">
               {matrix.kinds.map((k) => (
                 <li key={k.kind} className={k.supported ? '' : 'muted'}>
@@ -116,27 +135,35 @@ function PricingInner() {
                 </li>
               ))}
             </ul>
-          </Panel>
-
-          <Panel title="Rules and drafts" flush
-            action={may ? (
-              <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setCreating(true)}>
-                New draft…
-              </button>
-            ) : undefined}>
-            <TableToolbar summary={rules ? `${rules.length} rule${rules.length === 1 ? '' : 's'}` : null}
-              density={density} onDensity={setDensity} />
-            {rules && rules.length === 0 ? (
-              <Empty title="No commission rules yet"
-                detail="Without a rule, trips in this scope cannot be settled and a city cannot go live. Start a draft." />
-            ) : rules ? (
-              <DataTable caption="Commission rules" rows={rules} columns={ruleColumns} rowKey={(r) => r.id}
-                density={density} onRow={(r) => setOpenRule(r.id)} selectedKey={openRule}
-                defaultSort={{ key: 'from', dir: 'desc' }} maxHeight={false} />
-            ) : null}
-          </Panel>
+          </section>
         </div>
       ) : null}
+
+      <div className="mt-4">
+        <ListPage<Rule>
+          pageKey="pricing-rules"
+          title="Rules and drafts"
+          summary="Every commission rule, newest first. Open one for its history, its earnings preview and the next step."
+          actionsSlot={may && matrix ? (
+            <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setCreating(true)}>New draft…</button>
+          ) : undefined}
+          views={RULE_STATUSES.map((s) => ({ key: s.key, label: s.label, count: s.key === status ? rules?.count ?? null : undefined }))}
+          view={status}
+          onView={(v) => setStatus(v as '' | RuleStatus)}
+          columns={ruleColumns}
+          rows={ruleRows}
+          rowKey={(r) => r.id}
+          total={rules ? ruleRows.length : null}
+          page={1}
+          pageSize={Math.max(1, ruleRows.length)}
+          onPage={() => undefined}
+          onRow={(r) => setOpenRule(r.id)}
+          activeKey={openRule}
+          loading={rules === null}
+          error={rulesError}
+          empty={status ? 'No rules in this view.' : 'No commission rules yet. Without a rule, trips in this scope cannot be settled and a city cannot go live. Start a draft.'}
+        />
+      </div>
 
       {openRule !== null ? (
         <RuleDrawer ruleId={openRule} may={may} onClose={() => setOpenRule(null)}
@@ -144,7 +171,7 @@ function PricingInner() {
       ) : null}
       {creating && matrix ? (
         <NewDraftDrawer matrix={matrix} onClose={() => setCreating(false)}
-          onCreated={(id) => { setCreating(false); void load(); setOpenRule(id); }} />
+          onCreated={(id) => { setCreating(false); load(); setOpenRule(id); }} />
       ) : null}
       {editingConfig ? (
         <ConfigDrawer cfg={editingConfig} onClose={() => setEditingConfig(null)}
@@ -155,82 +182,91 @@ function PricingInner() {
 }
 
 // ---------------------------------------------------------------------------
-// One country: its default, its cap and notice, and the grid
+// One country: its default, its cap and notice, and only the cities that override it
 // ---------------------------------------------------------------------------
+
+/** A city's own rule (or a gap) rather than the country's. */
+const OWN = new Set(['city override', 'city + vehicle-class override']);
+const overrides = (r: MatrixRow) => r.percent === null || OWN.has(r.source ?? '');
 
 function CountryPanel({ cfg, matrix, onCell, onDefault, onEditConfig }: {
   cfg: CountryConfig; matrix: Matrix; onCell: (r: MatrixRow) => void; onDefault: (ruleId: number) => void;
   onEditConfig?: () => void;
 }) {
+  const [lookup, setLookup] = useState('');
   const grid = gridOf(matrix.rows, cfg.country);
   const def = matrix.country_defaults.find((d) => d.country === cfg.country)?.rule ?? null;
   const missing = unconfiguredCells(matrix.rows, cfg.country);
-  return (
-    <Panel title={`${cfg.country} · commission`} action={onEditConfig ? (
-      <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={onEditConfig}>
-        Cap and notice…
+  const mine = matrix.rows.filter((r) => r.country === cfg.country);
+  // The country's rate per class: what a city with no rule of its own gets.
+  const countryCell = (vt: number) => mine.find((r) => r.vehicle_type === vt && r.percent !== null && !OWN.has(r.source ?? '')) ?? null;
+  const overriding = grid.cities.filter((c) => mine.some((r) => r.city === c.code && overrides(r)));
+  const shown = lookup && !overriding.some((c) => c.code === lookup)
+    ? [...overriding, ...grid.cities.filter((c) => c.code === lookup)] : overriding;
+  const inheriting = grid.cities.length - overriding.length;
+  const tz = timeZoneFor(cfg.country);
+
+  const cellView = (cell: MatrixRow | null, label: string, own: boolean) => {
+    if (!cell || cell.percent === null) return <StatusChip tone="caution">No rule</StatusChip>;
+    return (
+      <button type="button" className="ops-linkbtn" onClick={() => onCell(cell)}
+        title={`${cell.source ?? ''}, v${cell.version ?? ''} since ${stamp(cell.effective_from, tz)}${cell.next_change ? `; then ${pct(cell.next_change.percent)} on ${stamp(cell.next_change.effective_from, tz)}` : ''}`}
+        aria-label={`${label}: ${pct(cell.percent)}, ${cell.source}, version ${cell.version}`}>
+        {own ? <b>{pct(cell.percent)}</b> : <span className="muted">{pct(cell.percent)}</span>}
+        {cell.next_change ? <span className="block text-xs">then {pct(cell.next_change.percent)}</span> : null}
       </button>
-    ) : undefined}>
-      <Facts>
-        <Fact label="Country default">
-          {def ? (
-            <button type="button" className="ops-linkbtn" onClick={() => onDefault(def.id)}>
-              {pct(def.percent)} · v{def.version}
-            </button>
-          ) : <Pill tone="bad">No rule</Pill>}
-        </Fact>
-        <Fact label="Maximum allowed">{cfg.max_percent === null ? <span className="muted">{capWords(cfg)}</span> : pct(cfg.max_percent)}</Fact>
-        <Fact label="Driver notice">{noticeWords(cfg.notice_days)}</Fact>
-      </Facts>
+    );
+  };
+
+  return (
+    <section className="ops-card" aria-labelledby={`pr-${cfg.country}`}>
+      <header className="ops-card__head">
+        <div>
+          <h2 id={`pr-${cfg.country}`}>{cfg.country} · commission</h2>
+          <p>
+            Default {def ? <button type="button" className="ops-linkbtn" onClick={() => onDefault(def.id)}>{pct(def.percent)} · v{def.version}</button> : 'not set'}
+            {' · '}maximum {cfg.max_percent === null ? capWords(cfg) : pct(cfg.max_percent)}
+            {' · '}driver notice {noticeWords(cfg.notice_days)}
+          </p>
+        </div>
+        {onEditConfig ? (
+          <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={onEditConfig}>Cap and notice…</button>
+        ) : null}
+      </header>
       {!def ? (
-        <div className="ops-note ops-note--warn mt-3" role="status">
+        <div className="ops-note ops-note--warn" role="status">
           <b>No active commission rule for {cfg.country}.</b> Trips cannot be settled there and no city in it can
           go live until a country rule is approved.
         </div>
       ) : missing > 0 ? (
-        <div className="ops-note ops-note--warn mt-3" role="status">
-          <b>{missing} cell{missing === 1 ? '' : 's'} below have no rule.</b>
+        <div className="ops-note ops-note--warn" role="status">
+          <b>{missing} place and class pair{missing === 1 ? ' has' : 's have'} no rule.</b> They are listed below.
         </div>
       ) : null}
 
-      {grid.cities.length === 0 ? (
-        <p className="help mt-3 mb-0">No cities in {cfg.country} are in your scope yet, so there is no grid to show. The country default above applies to all of them.</p>
+      {grid.classes.length === 0 ? (
+        <p className="help m-0">No cities in {cfg.country} are in your scope yet. The country default applies to all of them.</p>
       ) : (
-        <div className="ops-table-wrap mt-3">
-          <table className="ops-table ops-table--compact ops-table--auto">
-            <caption className="sr-only">Effective commission by city and vehicle class in {cfg.country}</caption>
+        <div className="ops-list__table">
+          <table className="ops-table ops-table--compact ops-table--auto ops-matrix">
+            <caption className="sr-only">Commission in {cfg.country}: the country rates and the cities that override them</caption>
             <thead>
               <tr>
-                <th scope="col">City</th>
+                <th scope="col">Place</th>
                 {grid.classes.map((c) => <th scope="col" key={c.id} className="num">{c.name}</th>)}
               </tr>
             </thead>
             <tbody>
-              {grid.cities.map((city) => (
+              <tr>
+                <th scope="row">All of {cfg.country}</th>
+                {grid.classes.map((c) => <td key={c.id} className="num">{cellView(countryCell(c.id), `${cfg.country}, ${c.name}`, true)}</td>)}
+              </tr>
+              {shown.map((city) => (
                 <tr key={city.code}>
-                  <th scope="row">{city.name}</th>
+                  <th scope="row"><span className="ops-tree ops-tree--1">{city.name}</span></th>
                   {grid.classes.map((c) => {
                     const cell = grid.cell(city.code, c.id);
-                    return (
-                      <td key={c.id} className="num">
-                        {cell && cell.percent !== null ? (
-                          <button type="button" className="ops-linkbtn" onClick={() => onCell(cell)}
-                            aria-label={`${city.name}, ${c.name}: ${pct(cell.percent)}, ${cell.source}, version ${cell.version}`}>
-                            <b>{pct(cell.percent)}</b>
-                          </button>
-                        ) : <Pill tone="bad">none</Pill>}
-                        {cell && cell.percent !== null ? (
-                          <span className="block muted text-xs">
-                            {cell.source}<br />v{cell.version} · since {stamp(cell.effective_from)}
-                          </span>
-                        ) : null}
-                        {cell?.next_change ? (
-                          <span className="block text-xs">
-                            then {pct(cell.next_change.percent)} on {stamp(cell.next_change.effective_from)}
-                          </span>
-                        ) : null}
-                      </td>
-                    );
+                    return <td key={c.id} className="num">{cellView(cell, `${city.name}, ${c.name}`, Boolean(cell && overrides(cell)))}</td>;
                   })}
                 </tr>
               ))}
@@ -238,7 +274,20 @@ function CountryPanel({ cfg, matrix, onCell, onDefault, onEditConfig }: {
           </table>
         </div>
       )}
-    </Panel>
+      {grid.cities.length > 0 ? (
+        <div className="ops-list__filters">
+          <span className="muted">
+            {inheriting > 0 ? `${inheriting} cit${inheriting === 1 ? 'y uses' : 'ies use'} the country rates.` : 'Every city has a rule of its own.'}
+            {' '}A rate in bold is set for that place; grey is inherited.
+          </span>
+          <label className="sr-only" htmlFor={`pr-city-${cfg.country}`}>Look up a city</label>
+          <select id={`pr-city-${cfg.country}`} className="ops-select ops-list__select" value={lookup} onChange={(e) => setLookup(e.target.value)}>
+            <option value="">Look up a city…</option>
+            {grid.cities.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+          </select>
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -348,7 +397,7 @@ function RuleDrawer({ ruleId, may, onClose, onDone }: {
           <div className="grid gap-5">
             <Facts>
               <Fact label="Rate">{pct(rule.percent)} <span className="muted">kind: {rule.kind}</span></Fact>
-              <Fact label="State"><Pill tone={TONE[rule.state]}>{STATE_WORDS[rule.state]}</Pill></Fact>
+              <Fact label="State"><StatusChip tone={RULE_TONE[rule.state]}>{STATE_WORDS[rule.state]}</StatusChip></Fact>
               <Fact label="Layer">{LEVEL_WORDS[rule.level]}</Fact>
               <Fact label="Version">v{rule.version}</Fact>
               <Fact label="Effective from">{stamp(rule.effective_from)}{rule.effective_from_adjusted ? ' (moved to honour the notice period)' : ''}</Fact>
@@ -420,7 +469,7 @@ function RuleDrawer({ ruleId, may, onClose, onDone }: {
                 columns={[
                   { key: 'v', label: 'Version', width: '6rem', render: (h) => `v${h.version}` },
                   { key: 'p', label: 'Rate', num: true, render: (h) => pct(h.percent) },
-                  { key: 's', label: 'State', render: (h) => <Pill tone={TONE[h.state]}>{STATE_WORDS[h.state]}</Pill> },
+                  { key: 's', label: 'State', render: (h) => <StatusChip tone={RULE_TONE[h.state]}>{STATE_WORDS[h.state]}</StatusChip> },
                   { key: 'f', label: 'From', render: (h) => stamp(h.effective_from) },
                   { key: 't', label: 'Until', render: (h) => (h.effective_to ? stamp(h.effective_to) : '—') },
                   { key: 'b', label: 'Asked by', hideBelow: 1100, render: (h) => h.created_by.label || '—' },
