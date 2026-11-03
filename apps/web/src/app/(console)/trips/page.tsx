@@ -137,14 +137,15 @@ const TIMELINE_LABEL: Record<string, string> = {
 type BulkAction = 'cancel' | 'flag';
 type BulkResult = { results: Array<{ id: number; result: string }>; counts: Record<string, number> };
 
-type View = 'all' | 'active' | 'stuck' | 'sos' | 'cancelled' | 'unfulfilled';
+type View = 'all' | 'today' | 'active' | 'stuck' | 'sos' | 'cancelled' | 'unfulfilled';
 const VIEW_LABELS: Array<[View, string]> = [
-  ['all', 'All'], ['active', 'Active now'], ['stuck', 'Stuck'], ['sos', 'With SOS'],
+  ['all', 'All'], ['today', 'Today'], ['active', 'Active now'], ['stuck', 'Stuck'], ['sos', 'With SOS'],
   ['cancelled', 'Cancelled today'], ['unfulfilled', 'Unfulfilled today'],
 ];
 
 function presetFor(view: View, today: string): Partial<TripFilters> {
   switch (view) {
+    case 'today': return { dateFrom: today, dateTo: today };
     case 'active': return { status: [...ACTIVE] };
     case 'stuck': return { stuck: true };
     case 'sos': return { hasSos: true };
@@ -161,6 +162,7 @@ function viewOf(f: TripFilters, today: string): View {
   const only = (s: string) => f.status.length === 1 && f.status[0] === s && f.dateFrom === today && f.dateTo === today;
   if (only('cancelled')) return f.unaccepted ? 'unfulfilled' : 'cancelled';
   if (f.status.length === ACTIVE.length && ACTIVE.every((s) => f.status.includes(s))) return 'active';
+  if (f.status.length === 0 && f.dateFrom === today && f.dateTo === today && !f.unaccepted) return 'today';
   return 'all';
 }
 
