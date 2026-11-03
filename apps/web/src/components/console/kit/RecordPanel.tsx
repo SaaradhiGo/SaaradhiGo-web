@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useId, useState } from 'react';
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
 
 /**
  * The everyday pattern, record half (design board B): everything about one
@@ -32,7 +32,15 @@ export function RecordPanel({
 }) {
   const [tab, setTab] = useState(tabs[0]?.key ?? '');
   const id = useId();
-  useEffect(() => { setTab(tabs[0]?.key ?? ''); }, [title, refId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Back to the first tab when a DIFFERENT record opens -- not on mount: the effect can
+  // run after the first paint, and resetting then undid a tab the operator had already clicked.
+  const shown = useRef(`${title}|${refId ?? ''}`);
+  useEffect(() => {
+    const now = `${title}|${refId ?? ''}`;
+    if (shown.current === now) return;
+    shown.current = now;
+    setTab(tabs[0]?.key ?? '');
+  }, [title, refId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!onClose) return undefined;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };

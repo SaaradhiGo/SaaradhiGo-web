@@ -180,7 +180,7 @@
 .sg-map .car { fill: var(--champagne); stroke: var(--gold-700); stroke-width: 1.5; }
 .sg-map .ring { fill: none; stroke: var(--pickup); stroke-width: 2; }
 .sg-maplabel { position: absolute; transform: translate(-50%, calc(-100% - 18px)); background: var(--noir); color: var(--on-noir);
-  font: 700 12px/16px var(--font-sans); padding: 7px 12px; border-radius: var(--radius-pill); white-space: nowrap; max-width: min(240px, 64vw); overflow: hidden; text-overflow: ellipsis; box-shadow: var(--shadow-panel); border: 1px solid rgba(255,215,0,0.35); }
+  font: 700 12px/16px var(--font-sans); padding: 7px 12px; border-radius: var(--radius-pill); white-space: nowrap; --x: 50%; max-width: min(240px, calc(2 * (100% - var(--x)) - 16px), calc(2 * var(--x) - 16px)); overflow: hidden; text-overflow: ellipsis; box-shadow: var(--shadow-panel); border: 1px solid rgba(255,215,0,0.35); }
 .sg-maplabel b { color: var(--gold-500); }
 
 .sg-sheet { background: var(--bg-100); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: var(--space-3) var(--space-4) var(--space-5);

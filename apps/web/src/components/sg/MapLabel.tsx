@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 /**
  * A floating pill over the map: "Pickup · 4 min", "Jubilee Hills · ₹248".
@@ -13,6 +13,11 @@ import type { ReactNode } from 'react';
  * is resized. This is a LABEL, not a marker: it does not track a coordinate,
  * and it is `aria-hidden` because the same information is in the panel beside
  * the map, in text a screen reader can reach in reading order.
+ *
+ * The pill is centred on `left`, so its widest fit is twice the distance to the
+ * nearer edge of the map. `--x` hands that position to the stylesheet, which caps the
+ * width to it (an ellipsis beyond): on a 375px phone a label at 72% is at most
+ * about 200px rather than running off the screen.
  */
 export function MapLabel({
   left,
@@ -26,7 +31,7 @@ export function MapLabel({
   children: ReactNode;
 }) {
   return (
-    <span className="sg-maplabel" style={{ left, top }} aria-hidden="true">
+    <span className="sg-maplabel" style={{ left, top, '--x': left } as CSSProperties} aria-hidden="true">
       {children}
     </span>
   );
