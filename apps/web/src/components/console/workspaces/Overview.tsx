@@ -18,6 +18,7 @@ import { HealthChip, StatusChip } from '@/components/console/kit/StatusChip';
 import { MetricCard } from '@/components/console/kit/MetricCard';
 import { NeedsActionInbox } from '@/components/console/kit/NeedsActionInbox';
 import { SuperAdminBanner } from '@/components/console/command-centre/SuperAdminBanner';
+import { SelfApprovalNotice } from '@/components/console/SelfApprovalNotice';
 import { ErrorState, Skeleton } from '@/components/console/ui';
 
 /**
@@ -109,6 +110,7 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
   return (
     <div className="ops-ws">
       <SuperAdminBanner access={access} />
+      <SelfApprovalNotice />
       <header className="ops-ws__head">
         <div>
           <nav className="ops-crumbs" aria-label="Place">

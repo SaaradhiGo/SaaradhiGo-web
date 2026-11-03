@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type ReactNode, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { SELF_APPROVAL_LINE, SELF_APPROVAL_MIN_REASON } from '@/components/console/SelfApprovalNotice';
 import { ApiError, api } from '@/lib/api';
 import { currentScope, useAdminAccess, withScope } from '@/lib/adminScope';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
@@ -436,6 +437,14 @@ function PayoutsInner() {
   );
 }
 
+/** The parts of an approval request the drawer needs to offer "Approve now". */
+type SelfCheck = { id: number; status: string; can_decide: boolean; self_approval?: boolean; blockers: string[]; error?: string };
+
+/** Open, decidable by this maker under the sole-Super-Admin exception, and not blocked. */
+function selfApprovable(req: SelfCheck | null): boolean {
+  return !!req && req.status === 'requested' && req.can_decide && !!req.self_approval && req.blockers.length === 0;
+}
+
 function PayoutRecord({ row, onClose, onChanged }: {
   row: Row; onClose: () => void; onChanged: (notice: Notice) => Promise<void>;
 }) {
@@ -446,11 +455,25 @@ function PayoutRecord({ row, onClose, onChanged }: {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  // The open request this operator may approve themselves (owner, 2026-11-03).
+  const [selfId, setSelfId] = useState<number | null>(null);
+  const [selfReason, setSelfReason] = useState('');
+
+  async function offerSelfApproval(requestId: number): Promise<boolean> {
+    const req = await api.get<SelfCheck>(`/approvals/admin/requests/${requestId}/`).catch(() => null);
+    if (!selfApprovable(req)) return false;
+    setSelfId(requestId);
+    return true;
+  }
 
   useEffect(() => {
     let live = true;
     api.get<Detail>(`/payments/admin/payouts/${row.id}/`)
-      .then((d) => { if (live) setDetail(d); })
+      .then((d) => {
+        if (!live) return;
+        setDetail(d);
+        if (d.approval && d.approval.status === 'requested') void offerSelfApproval(d.approval.id);
+      })
       .catch((err) => { if (live) setDetailError(err instanceof ApiError && err.fromServer ? err.message : 'We could not load this payout.'); });
     return () => { live = false; };
   }, [row.id]);
@@ -478,12 +501,33 @@ function PayoutRecord({ row, onClose, onChanged }: {
         const outcome = interpretWrite(body as never, kind === 'approve'
           ? `Released ${amount} to ${who}.`
           : `Rejected ${amount}; the amount went back to the driver's balance.`);
+        if (outcome.kind === 'pending' && kind === 'approve' && await offerSelfApproval(outcome.requestId)) {
+          setActing(null);
+          setNote('');
+          return;
+        }
         await onChanged(outcome.kind === 'pending'
           ? { kind: 'pending', text: aprNotice(outcome.requestId, `${amount} to ${who}. Nothing is released until a second finance admin decides it.`) }
           : { kind: 'done', text: outcome.message });
       }
     } catch (err) {
       setActionError(failureText(err, 'That did not go through. Nothing was changed.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function approveNow() {
+    if (selfId === null) return;
+    setBusy(true);
+    setActionError(null);
+    try {
+      const done = await api.post<SelfCheck>(`/approvals/admin/requests/${selfId}/approve/`, { reason: selfReason.trim() });
+      await onChanged(done.status === 'executed'
+        ? { kind: 'done', text: `Released ${amount} to ${who}. Recorded as self-approved (APR-${selfId}).` }
+        : { kind: 'done', text: `APR-${selfId} was approved, but the payout did not go out${done.error ? `: ${done.error}` : '.'}` });
+    } catch (err) {
+      setActionError(failureText(err, 'That did not go through. Nothing was released.'));
     } finally {
       setBusy(false);
     }
@@ -502,7 +546,7 @@ function PayoutRecord({ row, onClose, onChanged }: {
       onClose={onClose}
       subtitle={<>D-{row.driver_id} · {cityName(row.city)}</>}
       status={<PayoutStatus w={current} />}
-      actions={acting === null ? (
+      actions={acting === null && selfId === null ? (
         <>
           {can.approve && (
             <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" disabled={busy}
@@ -534,7 +578,27 @@ function PayoutRecord({ row, onClose, onChanged }: {
                   This payout cannot be released from the console until the owner configures an approval policy
                   for this country. You can still reject it, which returns the amount to the driver.</div>
               )}
-              {can.awaitingChecker && (
+              {selfId !== null && (
+                <div className="ops-confirm">
+                  <b>Approve now: release {amount} to {who}</b>
+                  <span>{SELF_APPROVAL_LINE}</span>
+                  <label className="sr-only" htmlFor="payout-self-reason">Reason (required)</label>
+                  <textarea id="payout-self-reason" className="input" rows={3} value={selfReason}
+                    onChange={(e) => setSelfReason(e.target.value)}
+                    placeholder={`Reason (required, at least ${SELF_APPROVAL_MIN_REASON} characters)`} />
+                  {actionError && <div className="alert-error" role="alert">{actionError}</div>}
+                  <div>
+                    <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={busy}
+                      onClick={() => void onChanged({ kind: 'pending', text: aprNotice(selfId, `${amount} to ${who}. Nothing is released until it is approved.`) })}>
+                      Not now
+                    </button>{' '}
+                    <button type="button" className="sg-btn sg-btn--primary sg-btn--sm"
+                      disabled={busy || selfReason.trim().length < SELF_APPROVAL_MIN_REASON}
+                      onClick={() => void approveNow()}>{busy ? 'Working…' : 'Approve now'}</button>
+                  </div>
+                </div>
+              )}
+              {can.awaitingChecker && selfId === null && (
                 <div className="ops-confirm" role="status"><b>Waiting for a second finance admin.</b>{' '}
                   The request is open; nothing has been released.</div>
               )}

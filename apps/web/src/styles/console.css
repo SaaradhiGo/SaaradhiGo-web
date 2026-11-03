@@ -2231,3 +2231,6 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .ops-list__total { display: block; margin-top: 2px; font-weight: 700; color: var(--ink); }
 .ops-split--map { grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr); }
 @media (max-width: 1100px) { .ops-split--map { grid-template-columns: minmax(0, 1fr); } }
+
+/* The self-approval sentence, on its own line above the decision buttons. */
+.ops-record__note { flex-basis: 100%; margin: 0 0 4px; }
