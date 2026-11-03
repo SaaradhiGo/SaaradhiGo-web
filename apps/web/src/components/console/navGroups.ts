@@ -41,7 +41,9 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'People',
     items: [
-      { href: '/drivers', label: 'Drivers', Icon: Users, need: PAGE_NEEDS.drivers, countKey: 'drivers' },
+      { href: '/drivers', label: 'Drivers', Icon: Users, need: PAGE_NEEDS.drivers },
+      // The KYC review queue (board E); its count is the queue's own, so the badge matches the page.
+      { href: '/kyc', label: 'Onboarding and KYC', Icon: Shield, need: PAGE_NEEDS.drivers, countKey: 'drivers' },
       { href: '/riders', label: 'Riders', Icon: UserRound, need: PAGE_NEEDS.riders },
     ],
   },
