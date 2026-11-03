@@ -330,6 +330,7 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
 
   return (
     <div className="ops-ws">
+      <SelfApprovalNotice />
       <header className="ops-ws__head">
         <div>
           <nav className="ops-crumbs" aria-label="Place">
