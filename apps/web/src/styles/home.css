@@ -31,8 +31,8 @@
 }
 
 /* 96px between sections, which is the top of the spacing scale. */
-.hp-section { padding: 96px 0; }
-.hp-section--tight { padding: 64px 0; }
+.hp-section { padding-top: 96px; padding-bottom: 96px; }
+.hp-section--tight { padding-top: 64px; padding-bottom: 64px; }
 .hp-section + .hp-section { padding-top: 0; }
 
 .hp-h2 {
@@ -276,7 +276,7 @@
   .hp-nav__links { display: none; }
   .hp-nav__session { display: none; }
   .hp-nav__toggle { display: inline-flex; }
-  .hp-section { padding: 64px 0; }
+  .hp-section { padding-top: 64px; padding-bottom: 64px; }
   .hp-section + .hp-section { padding-top: 0; }
   .hp-closing { padding: 64px 0; }
   .hp-steps { grid-template-columns: 1fr; gap: 32px; }

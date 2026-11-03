@@ -386,8 +386,8 @@
 /* The booking / live-trip workspace: a floating 430px panel over the map. */
 .sg-ws { position: relative; min-height: calc(100vh - 80px); padding: 36px var(--space-7); overflow: hidden; }
 .sg-ws__map { position: absolute; inset: 0; z-index: 0; }
-.sg-ws__panel { position: relative; z-index: 2; width: 430px; max-width: 100%; display: grid; gap: var(--space-5); align-content: start; }
-.sg-ws .sg-panel { display: grid; gap: var(--space-4); }
+.sg-ws__panel { position: relative; z-index: 2; width: 430px; max-width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-content: start; }
+.sg-ws .sg-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
 .sg-ws .sg-panel__title { margin: 0; }
 
 /* A journey recap: two rows, each with its own marker shape. */

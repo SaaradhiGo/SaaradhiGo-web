@@ -110,8 +110,12 @@ function amountOf(row: ApprovalRow, exact = false): string {
   return exact ? formatMinor(row.amount, row.currency) : formatWhole(row.amount, row.currency);
 }
 
-const listPath = (view: View, page: number, size = PAGE_SIZE) =>
-  withScope(`/approvals/admin/requests/?${VIEWS.find((v) => v.key === view)?.query ?? ''}&page=${page}&page_size=${size}`);
+/** Column sorts the server accepts (`?ordering=`); anything else falls back to newest first. */
+const SORTABLE = /^-?(id|requested|decided|amount|status|action|maker)$/;
+const DEFAULT_ORDERING = '-requested';
+
+const listPath = (view: View, page: number, size = PAGE_SIZE, ordering = DEFAULT_ORDERING) =>
+  withScope(`/approvals/admin/requests/?${VIEWS.find((v) => v.key === view)?.query ?? ''}&ordering=${ordering}&page=${page}&page_size=${size}`);
 
 function ApprovalsPage() {
   const params = useSearchParams();
@@ -119,6 +123,7 @@ function ApprovalsPage() {
   const view: View = (VIEWS.find((v) => v.key === params.get('view'))?.key) ?? 'waiting';
   const pageNo = Math.max(1, Number(params.get('page')) || 1);
   const openId = /^\d+$/.test(params.get('id') ?? '') ? Number(params.get('id')) : null;
+  const ordering = SORTABLE.test(params.get('ordering') ?? '') ? (params.get('ordering') as string) : DEFAULT_ORDERING;
 
   const [data, setData] = useState<Page | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -130,21 +135,23 @@ function ApprovalsPage() {
     setError(null);
     setData(null);
     try {
-      setData(await api.get<Page>(listPath(view, pageNo)));
+      setData(await api.get<Page>(listPath(view, pageNo, PAGE_SIZE, ordering)));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Approvals could not be loaded.');
     }
-  }, [view, pageNo]);
+  }, [view, pageNo, ordering]);
   useEffect(() => { void load(); }, [load]);
 
   const countPaths = useMemo(() => Object.fromEntries(VIEWS.map((v) => [v.key, listPath(v.key, 1, 1)])), []);
   const counts = useViewCounts(countPaths, reloads);
 
   /** The list's own state in the URL, with or without an open request. */
-  const href = (next: { view?: View; page?: number; id?: number | null }) => {
+  const href = (next: { view?: View; page?: number; id?: number | null; ordering?: string }) => {
     const q = new URLSearchParams();
     const v = next.view ?? view;
     if (v !== 'waiting') q.set('view', v);
+    const o = next.ordering ?? ordering;
+    if (o !== DEFAULT_ORDERING) q.set('ordering', o);
     const p = next.page ?? pageNo;
     if (p > 1) q.set('page', String(p));
     const id = next.id === undefined ? openId : next.id;
@@ -154,21 +161,21 @@ function ApprovalsPage() {
   };
 
   const columns: ListColumn<ApprovalRow>[] = [
-    { key: 'ref', label: 'Request', primary: true, render: (r) => <span className="sg-num">{r.ref}</span> },
+    { key: 'ref', label: 'Request', primary: true, sortKey: 'id', render: (r) => <span className="sg-num">{r.ref}</span> },
     {
-      key: 'title', label: 'What', render: (r) => (
+      key: 'title', label: 'What', sortKey: 'action', render: (r) => (
         <span title={r.title} className="ops-chips">
           {r.title}
           {r.blockers.length ? <StatusChip tone="caution">Blocked</StatusChip> : null}
         </span>
       ),
     },
-    { key: 'amount', label: 'Amount', num: true, render: (r) => amountOf(r) },
+    { key: 'amount', label: 'Amount', num: true, sortKey: 'amount', render: (r) => amountOf(r) },
     { key: 'place', label: 'Place', render: (r) => r.scope ?? r.country },
-    { key: 'maker', label: 'Raised by', render: (r) => <span title={r.maker?.email}>{r.maker?.label || r.maker?.email || '—'}</span> },
+    { key: 'maker', label: 'Raised by', sortKey: 'maker', render: (r) => <span title={r.maker?.email}>{r.maker?.label || r.maker?.email || '—'}</span> },
     { key: 'age', label: 'Waiting', num: true, render: (r) => (r.status === 'requested' ? waitingFor(r.requested_at) : '—') },
     {
-      key: 'status', label: 'Status', render: (r) => (
+      key: 'status', label: 'Status', sortKey: 'status', render: (r) => (
         <span className="ops-chips">
           <StatusChip tone={statusTone(r.status)}>{STATUS_WORDS[r.status] ?? r.status}</StatusChip>
           {r.self_approved ? <StatusChip tone="caution">Self-approved</StatusChip> : null}
@@ -180,7 +187,7 @@ function ApprovalsPage() {
   async function exportView() {
     setExporting(true);
     try {
-      const { rows, truncated } = await fetchAllPages<ApprovalRow>((p, size) => listPath(view, p, size));
+      const { rows, truncated } = await fetchAllPages<ApprovalRow>((p, size) => listPath(view, p, size, ordering));
       const header = ['Request', 'What', 'Amount', 'Currency', 'Place', 'Raised by', 'Raised', 'Status', 'Decided by', 'Decision reason'];
       const body = rows.map((r) => [
         r.ref, r.title, amountOf(r), r.currency ?? '', r.scope ?? r.country, r.maker?.label || r.maker?.email || '',
@@ -219,6 +226,8 @@ function ApprovalsPage() {
           onPage={(p) => router.push(href({ page: p }))}
           onExport={exporting ? undefined : () => void exportView()}
           onRow={(r) => router.replace(href({ id: r.id }))}
+          ordering={ordering}
+          onOrdering={(o) => router.push(href({ ordering: o, page: 1 }))}
           activeKey={openId}
           loading={data === null && !error}
           error={error}

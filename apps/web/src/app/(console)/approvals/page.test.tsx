@@ -111,3 +111,14 @@ describe('approvals', () => {
     expect((await screen.findAllByText('Self-approved')).length).toBeGreaterThan(0);
   });
 });
+
+describe('approvals sorting', () => {
+  it('asks the server for the sort and puts a header click in the URL', async () => {
+    query = 'ordering=-amount';
+    const fetchMock = routeFetch();
+    render(<ApprovalsPage />);
+    await waitFor(() => expect(fetchMock.mock.calls.some((c) => String(c[0]).includes('ordering=-amount'))).toBe(true));
+    fireEvent.click(await screen.findByRole('button', { name: /^Amount ↓/ }));
+    expect(router.push).toHaveBeenCalledWith('/approvals?ordering=amount');
+  });
+});
