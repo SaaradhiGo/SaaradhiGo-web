@@ -177,6 +177,13 @@ export const DEFAULT_SUPPORT_FILTERS: SupportFilters = {
   q: '', dateFrom: '', dateTo: '', ordering: '-created', page: 1, pageSize: 50,
 };
 
+/** Every field the server sorts by; either direction is accepted (a column header flips it). */
+export const SUPPORT_SORT_KEYS = ['created', 'updated', 'resolution_due', 'priority'] as const;
+
+export function isSupportSort(v: string | null | undefined): v is string {
+  return Boolean(v) && (SUPPORT_SORT_KEYS as readonly string[]).includes((v as string).replace(/^-/, ''));
+}
+
 export const SUPPORT_SORT_OPTIONS = [
   ['-created', 'Newest first'],
   ['created', 'Oldest first'],
@@ -192,7 +199,6 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 /** Filters from the page URL. Anything malformed is dropped, not guessed. */
 export function supportFiltersFromSearch(params: URLSearchParams): SupportFilters {
   const queues = new Set<string>(QUEUE_TABS.map((t) => t.key));
-  const sorts = new Set<string>(SUPPORT_SORT_OPTIONS.map(([v]) => v));
   const date = (v: string | null) => (v && DATE.test(v) ? v : '');
   const page = Number(params.get('page'));
   const size = Number(params.get('page_size'));
@@ -210,7 +216,7 @@ export function supportFiltersFromSearch(params: URLSearchParams): SupportFilter
     q: (params.get('q') ?? '').trim().slice(0, 40),
     dateFrom: date(params.get('date_from')),
     dateTo: date(params.get('date_to')),
-    ordering: sorts.has(params.get('ordering') ?? '') ? (params.get('ordering') as string) : DEFAULT_SUPPORT_FILTERS.ordering,
+    ordering: isSupportSort(params.get('ordering')) ? (params.get('ordering') as string) : DEFAULT_SUPPORT_FILTERS.ordering,
     page: Number.isInteger(page) && page > 0 ? page : 1,
     pageSize: (SUPPORT_PAGE_SIZES as readonly number[]).includes(size) ? size : DEFAULT_SUPPORT_FILTERS.pageSize,
   };
