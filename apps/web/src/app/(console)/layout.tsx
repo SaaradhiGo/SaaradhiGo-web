@@ -14,6 +14,8 @@ import {
   readSidebarCollapsed, useTheme, writeSidebarCollapsed,
 } from '@/lib/consolePrefs';
 import { Sidebar } from '@/components/console/Sidebar';
+import { landingFor } from '@/lib/landing';
+import { SosBar } from '@/components/console/shell/SosBar';
 import { TopBar } from '@/components/console/TopBar';
 import { RecoveryLowBanner } from '@/components/console/RecoveryLowBanner';
 import '@/styles/console.css';
@@ -149,7 +151,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
         collapsed={collapsed}
         onToggle={toggleSidebar}
         isCurrent={isCurrent}
-        home={homeFor(groups)}
+        home={access ? landingFor(access) : homeFor(groups)}
       />
 
       <div className="ops__main">
@@ -162,6 +164,8 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
           onTheme={setTheme}
           onSignOut={signOut}
         />
+
+        <SosBar access={access ?? null} />
 
         <main className="ops__content" id="ops-content" tabIndex={-1}>
           {/* Console maintenance notices (module 15): a message from the platform's own admins.

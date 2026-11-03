@@ -7,6 +7,9 @@
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
+/** Fired on `window` after every successful console GET (the shell's freshness line). */
+export const CONSOLE_DATA_LOADED = 'sg:console-data-loaded';
+
 export const TOKEN_KEY = 'saaradhi_admin_access_token';
 export const REFRESH_KEY = 'saaradhi_admin_refresh_token';
 
@@ -150,6 +153,10 @@ async function call<T>(
   }
   // Standard backend envelope: {status, data} for success
   // or DRF pagination response (results / next / previous).
+  // The console's "Updated N s ago": the last time any console read came back.
+  if (method === 'GET' && authToken === undefined && typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(CONSOLE_DATA_LOADED, { detail: Date.now() }));
+  }
   return (json?.data ?? json) as T;
 }
 
