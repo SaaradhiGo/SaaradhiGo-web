@@ -53,6 +53,13 @@ export const KYC_STATE_OPTIONS = [
   ['expired', 'Expired documents'],
 ] as const;
 
+/** Every field the server sorts by; either direction is accepted (a column header flips it). */
+export const DRIVER_SORT_KEYS = ['id', 'joined', 'rating', 'trips', 'waiting', 'license_expiry'] as const;
+
+export function isDriverSort(v: string | null | undefined): v is string {
+  return Boolean(v) && (DRIVER_SORT_KEYS as readonly string[]).includes((v as string).replace(/^-/, ''));
+}
+
 export const DRIVER_SORT_OPTIONS = [
   ['-id', 'Newest first'],
   ['-joined', 'Joined (newest)'],
@@ -83,7 +90,6 @@ const RATING = /^\d(\.\d{1,2})?$/;
 /** Filters from the page URL. Anything malformed is dropped, not guessed. */
 export function driverFiltersFromSearch(params: URLSearchParams): DriverFilters {
   const states = new Set<string>(KYC_STATE_OPTIONS.map(([v]) => v));
-  const sorts = new Set<string>(DRIVER_SORT_OPTIONS.map(([v]) => v));
   const windows = new Set<string>(EXPIRY_WINDOWS.map(([v]) => v));
   const date = (v: string | null) => (v && DATE.test(v) ? v : '');
   const rating = (v: string | null) => (v && RATING.test(v) && Number(v) <= 5 ? v : '');
@@ -107,7 +113,7 @@ export function driverFiltersFromSearch(params: URLSearchParams): DriverFilters 
     approved: approved === 'true' || approved === 'false' ? approved : '',
     status: /^[a-z ]{1,20}$/.test(params.get('status') ?? '') ? (params.get('status') as string) : '',
     id: ID.test(params.get('id') ?? '') ? (params.get('id') as string) : '',
-    ordering: sorts.has(params.get('ordering') ?? '') ? (params.get('ordering') as string) : DEFAULT_DRIVER_FILTERS.ordering,
+    ordering: isDriverSort(params.get('ordering')) ? (params.get('ordering') as string) : DEFAULT_DRIVER_FILTERS.ordering,
     page: Number.isInteger(page) && page > 0 ? page : 1,
     pageSize: (DRIVER_PAGE_SIZES as readonly number[]).includes(size) ? size : DEFAULT_DRIVER_FILTERS.pageSize,
   };

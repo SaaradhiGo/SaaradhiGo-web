@@ -2177,3 +2177,34 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .ops-kyc__decide-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .ops-kyc__hint { margin: 0; font: 500 12px/1.45 var(--font-sans); color: var(--ops-ink-3); }
 .ops-kyc__hint kbd { display: inline-block; min-width: 1.4em; padding: 0 4px; border: 1px solid var(--ops-line-strong); border-radius: 4px; text-align: center; font: 700 11px/1.5 var(--font-sans); color: var(--ops-ink-2); }
+
+/* List + record pages (board B): the parts the six everyday pages share ------ */
+.ops-more { position: relative; }
+.ops-more__toggle { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; border: 1px dashed var(--ops-line-strong); font: 700 12px/1 var(--font-sans); color: var(--ops-ink-2); cursor: pointer; list-style: none; }
+.ops-more__toggle::-webkit-details-marker { display: none; }
+.ops-more[open] .ops-more__toggle { border-style: solid; border-color: var(--ops-gold-edge); background: var(--ops-gold-wash); color: var(--ink); }
+.ops-more__body { margin-top: 8px; padding: 12px; border-radius: 12px; border: 1px solid var(--ops-hairline); background: var(--ops-bg-100); }
+.ops-more[open] { flex-basis: 100%; }
+.ops-notice { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.ops-search { display: flex; align-items: center; gap: 6px; }
+.ops-chips { display: inline-flex; gap: 4px; flex-wrap: nowrap; align-items: center; }
+.ops-ref { font-weight: 600; font-size: 11.5px; color: var(--ops-ink-3); }
+.ops-recstats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; }
+.ops-recfacts { display: grid; gap: 6px; margin: 0; }
+.ops-recfacts div { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: 10px; font: 500 12.5px/1.45 var(--font-sans); }
+.ops-recfacts dt { color: var(--ops-ink-3); }
+.ops-recfacts dd { margin: 0; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
+.ops-recsec { display: flex; flex-direction: column; gap: 8px; }
+.ops-recsec__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ops-recsec__head h3 { margin: 0; font: 700 10.5px/1.4 var(--font-sans); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ops-ink-3); }
+.ops-reclist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ops-reclist li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font: 500 12.5px/1.4 var(--font-sans); color: var(--ink); padding-bottom: 6px; border-bottom: 1px solid var(--ops-hairline); }
+.ops-reclist li:last-child { border-bottom: 0; }
+.ops-record__call { display: inline-flex; align-items: center; gap: 4px; font: 600 12.5px/1 var(--font-sans); color: var(--ops-ink-2); }
+.ops-thread { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ops-thread li { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--ops-hairline); background: var(--ops-bg-200); font: 500 12.5px/1.45 var(--font-sans); color: var(--ink); }
+.ops-thread li.is-ours { border-color: var(--ops-gold-edge); background: var(--ops-gold-wash); }
+.ops-thread li.is-internal { border-style: dashed; }
+.ops-thread__meta { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; color: var(--ops-ink-3); }
+.ops-thread p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ops-record__note { width: 100%; }

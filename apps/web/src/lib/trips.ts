@@ -26,6 +26,8 @@ export type TripFilters = {
   stale: boolean;
   flagged: boolean;
   hasSos: boolean;
+  /** The operator's "Stuck" view: active trips the server judges stuck (`ride.stuck`). */
+  stuck: boolean;
   id: string;
   ordering: string;
   page: number;
@@ -34,7 +36,7 @@ export type TripFilters = {
 
 export const DEFAULT_FILTERS: TripFilters = {
   status: [], dateFrom: '', dateTo: '', scope: '', paymentMethod: '', vehicleType: '',
-  stale: false, flagged: false, hasSos: false, id: '', ordering: '-requested_at',
+  stale: false, flagged: false, hasSos: false, stuck: false, id: '', ordering: '-requested_at',
   page: 1, pageSize: 50,
 };
 
@@ -46,6 +48,13 @@ export const STATUS_OPTIONS = [
   ['completed', 'Completed'],
   ['cancelled', 'Cancelled'],
 ] as const;
+
+/** Every field the server sorts by; either direction is accepted (a column header flips it). */
+export const TRIP_SORT_KEYS = ['requested_at', 'completed_at', 'fare', 'status', 'id'] as const;
+
+export function isTripSort(v: string | null | undefined): v is string {
+  return Boolean(v) && (TRIP_SORT_KEYS as readonly string[]).includes((v as string).replace(/^-/, ''));
+}
 
 export const SORT_OPTIONS = [
   ['-requested_at', 'Newest first'],
@@ -63,7 +72,6 @@ const ID = /^\d+$/;
 /** Filters from the page URL. Anything malformed is dropped, not guessed. */
 export function filtersFromSearch(params: URLSearchParams): TripFilters {
   const known = new Set<string>(STATUS_OPTIONS.map(([v]) => v));
-  const sorts = new Set<string>(SORT_OPTIONS.map(([v]) => v));
   const date = (v: string | null) => (v && DATE.test(v) ? v : '');
   const page = Number(params.get('page'));
   const size = Number(params.get('page_size'));
@@ -77,8 +85,9 @@ export function filtersFromSearch(params: URLSearchParams): TripFilters {
     stale: params.get('stale') === 'true',
     flagged: params.get('flagged') === 'true',
     hasSos: params.get('has_sos') === 'true',
+    stuck: params.get('stuck') === 'true' || params.get('stuck') === '1',
     id: ID.test(params.get('id') ?? '') ? (params.get('id') as string) : '',
-    ordering: sorts.has(params.get('ordering') ?? '') ? (params.get('ordering') as string) : DEFAULT_FILTERS.ordering,
+    ordering: isTripSort(params.get('ordering')) ? (params.get('ordering') as string) : DEFAULT_FILTERS.ordering,
     page: Number.isInteger(page) && page > 0 ? page : 1,
     pageSize: (PAGE_SIZES as readonly number[]).includes(size) ? size : DEFAULT_FILTERS.pageSize,
   };
@@ -99,6 +108,7 @@ export function filtersToQuery(f: TripFilters): string {
   if (f.stale) q.set('stale', 'true');
   if (f.flagged) q.set('flagged', 'true');
   if (f.hasSos) q.set('has_sos', 'true');
+  if (f.stuck) q.set('stuck', 'true');
   if (f.id.trim()) q.set('id', f.id.trim());
   if (f.ordering && f.ordering !== DEFAULT_FILTERS.ordering) q.set('ordering', f.ordering);
   if (f.page > 1) q.set('page', String(f.page));
@@ -117,7 +127,7 @@ export function tripsApiPath(f: TripFilters): string {
 export function activeFilterCount(f: TripFilters): number {
   return [
     f.status.length > 0, Boolean(f.dateFrom || f.dateTo), Boolean(f.scope),
-    Boolean(f.paymentMethod), Boolean(f.vehicleType), f.stale, f.flagged, f.hasSos,
+    Boolean(f.paymentMethod), Boolean(f.vehicleType), f.stale, f.flagged, f.hasSos, f.stuck,
     Boolean(f.id.trim()),
   ].filter(Boolean).length;
 }
