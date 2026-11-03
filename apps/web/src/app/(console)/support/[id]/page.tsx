@@ -157,7 +157,7 @@ export default function SupportTicketPage() {
     return (
       <div aria-busy="true" aria-live="polite">
         <span className="sr-only">Loading the ticket</span>
-        <PageHeader title={`Ticket #${id}`} />
+        <PageHeader title={`TKT-${id}`} />
         <div className="ops-review"><Skeleton kind="block" /><Skeleton kind="block" /></div>
       </div>
     );
@@ -165,7 +165,7 @@ export default function SupportTicketPage() {
   if (error || !ticket) {
     return (
       <>
-        <PageHeader title={`Ticket #${id}`} actions={<ButtonLink href="/support" variant="ghost" size="sm">All tickets</ButtonLink>} />
+        <PageHeader title={`TKT-${id}`} actions={<ButtonLink href="/support" variant="ghost" size="sm">All tickets</ButtonLink>} />
         <ErrorState title="This ticket could not be loaded" detail={error ?? undefined} onRetry={() => void load()} />
       </>
     );
@@ -217,7 +217,7 @@ function TicketView({
   return (
     <>
       <PageHeader
-        title={`Ticket #${ticket.id}`}
+        title={`TKT-${ticket.id}`}
         subtitle={
           <>
             {ticket.issue_label ?? ISSUE_LABEL[ticket.issue_type] ?? words(ticket.issue_type)}
@@ -763,7 +763,7 @@ function TripPanel({
 
       {onReview ? (
         <div className="ops-form__row">
-          <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={onReview}>Review fare…</button>
+          <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={onReview}>Refund the fare…</button>
           {refund?.policy?.maker_limit != null && !refund.policy.always_checker ? (
             <span className="help">
               You can refund up to {formatMinor(refund.policy.maker_limit, refund.policy.currency || cur)} on your own; more goes to a second admin.

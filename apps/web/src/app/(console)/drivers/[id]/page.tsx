@@ -169,7 +169,7 @@ export default function DriverDetailPage() {
   };
 
   const tripColumns: Column<Trip>[] = [
-    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <PageLink page="trips" href={`/trips/${t.id}`}>#{t.id}</PageLink> },
+    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <PageLink page="trips" href={`/trips/${t.id}`}>T-{t.id}</PageLink> },
     { key: 'status', label: 'Status', width: '8rem', render: (t) => <Pill tone={TRIP_TONE[t.status ?? ''] ?? 'neutral'}>{words(t.status)}</Pill> },
     { key: 'route', label: 'Pickup → drop', render: (t) => <span>{t.pickup_address || '—'} <span className="muted">→</span> {t.destination_address || '—'}</span> },
     { key: 'when', label: 'Requested', num: true, width: '10rem', render: (t) => cityTime(t.requested_at, tz) },

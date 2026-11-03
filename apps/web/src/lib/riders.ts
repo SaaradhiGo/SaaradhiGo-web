@@ -43,6 +43,13 @@ export const DEFAULT_RIDER_FILTERS: RiderFilters = {
   lowRating: false, id: '', ordering: '-id', page: 1, pageSize: 50,
 };
 
+/** Every field the server sorts by; either direction is accepted (a column header flips it). */
+export const RIDER_SORT_KEYS = ['id', 'joined', 'trips', 'last_trip', 'rating'] as const;
+
+export function isRiderSort(v: string | null | undefined): v is string {
+  return Boolean(v) && (RIDER_SORT_KEYS as readonly string[]).includes((v as string).replace(/^-/, ''));
+}
+
 export const RIDER_SORT_OPTIONS = [
   ['-id', 'Newest first'],
   ['-joined', 'Joined (newest)'],
@@ -70,7 +77,6 @@ const COUNT = /^\d{1,6}$/;
 
 /** Filters from the page URL. Anything malformed is dropped, not guessed. */
 export function riderFiltersFromSearch(params: URLSearchParams): RiderFilters {
-  const sorts = new Set<string>(RIDER_SORT_OPTIONS.map(([v]) => v));
   const date = (v: string | null) => (v && DATE.test(v) ? v : '');
   const count = (v: string | null) => (v && COUNT.test(v) ? v : '');
   const page = Number(params.get('page'));
@@ -89,7 +95,7 @@ export function riderFiltersFromSearch(params: URLSearchParams): RiderFilters {
     flagged: params.get('flagged') === 'true',
     lowRating: params.get('low_rating') === 'true',
     id: ID.test(params.get('id') ?? '') ? (params.get('id') as string) : '',
-    ordering: sorts.has(params.get('ordering') ?? '') ? (params.get('ordering') as string) : DEFAULT_RIDER_FILTERS.ordering,
+    ordering: isRiderSort(params.get('ordering')) ? (params.get('ordering') as string) : DEFAULT_RIDER_FILTERS.ordering,
     page: Number.isInteger(page) && page > 0 ? page : 1,
     pageSize: (RIDER_PAGE_SIZES as readonly number[]).includes(size) ? size : DEFAULT_RIDER_FILTERS.pageSize,
   };

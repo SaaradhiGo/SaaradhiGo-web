@@ -155,7 +155,7 @@ export function StaleDrawer({
   return (
     <Drawer
       open
-      title={`${TITLE[step]} · trip #${tripId}`}
+      title={`${TITLE[step]} · T-${tripId}`}
       onClose={onClose}
       footer={done || failure?.code ? (
         <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={onClose}>Close</button>

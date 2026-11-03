@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { AdminAccess } from '@/lib/adminScope';
 import { Search } from '@/components/console/icons';
+import { commandsFor } from '@/lib/commands';
 import {
   DEBOUNCE_MS, EMPTY_STATE, SearchState, allForbidden, describeHit,
   flattenOptions, isLoading, isUsableTerm, moveActive, runSearch, summarize,
@@ -50,6 +51,13 @@ export function GlobalSearch({ access }: { access: AdminAccess | null }) {
   // The slash shortcut.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Ctrl K (Cmd K) from anywhere; `/` from anywhere that is not a text field.
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        input.current?.focus();
+        input.current?.select();
+        return;
+      }
       if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
       const t = e.target as HTMLElement | null;
       const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA'
@@ -96,10 +104,16 @@ export function GlobalSearch({ access }: { access: AdminAccess | null }) {
     return () => document.removeEventListener('mousedown', onDoc);
   }, [open]);
 
-  const options = useMemo(() => (state ? flattenOptions(state) : []), [state]);
+  const commands = useMemo(() => commandsFor(term, access), [term, access]);
+  const found = useMemo(() => (state ? flattenOptions(state) : []), [state]);
+  // Commands come first; search hits follow, their indexes shifted past them.
+  const options = useMemo(
+    () => found.map((o) => ({ ...o, index: o.index + commands.length })), [found, commands.length]);
+  const total = commands.length + options.length;
   const loading = state ? isLoading(state) : false;
-  const showList = open && usable && state !== null;
-  const activeOption = active >= 0 && active < options.length ? options[active] : null;
+  const showList = open && ((usable && state !== null) || commands.length > 0);
+  const activeOption = active >= commands.length && active < total ? options[active - commands.length] : null;
+  const activeCommand = active >= 0 && active < commands.length ? commands[active] : null;
   const optionId = (i: number) => `${listId}-opt-${i}`;
 
   const go = useCallback((href: string | null) => {
@@ -117,25 +131,26 @@ export function GlobalSearch({ access }: { access: AdminAccess | null }) {
       case 'ArrowDown':
         e.preventDefault();
         if (!open && state) { setOpen(true); return; }
-        setActive((a) => moveActive(a, 1, options.length));
+        setActive((a) => moveActive(a, 1, total));
         return;
       case 'ArrowUp':
         e.preventDefault();
-        setActive((a) => moveActive(a, -1, options.length));
+        setActive((a) => moveActive(a, -1, total));
         return;
       case 'Home':
-        if (!showList || options.length === 0) return;
+        if (!showList || total === 0) return;
         e.preventDefault();
         setActive(0);
         return;
       case 'End':
-        if (!showList || options.length === 0) return;
+        if (!showList || total === 0) return;
         e.preventDefault();
-        setActive(options.length - 1);
+        setActive(total - 1);
         return;
       case 'Enter': {
         e.preventDefault();
-        const target = activeOption ?? options[0] ?? null;
+        if (activeCommand) { go(activeCommand.href); return; }
+        const target = activeOption ?? commands[0] ?? options[0] ?? null;
         if (target) go(target.href);
         return;
       }
@@ -170,25 +185,47 @@ export function GlobalSearch({ access }: { access: AdminAccess | null }) {
         onChange={(e) => { setValue(e.target.value); setOpen(true); }}
         onFocus={() => { if (state) setOpen(true); }}
         onKeyDown={onKeyDown}
-        placeholder="Trip ID, phone, plate or name"
-        aria-label="Search trips, drivers, riders and vehicles"
+        placeholder="Find T-, D-, R-, SOS-, a phone, plate or name, or a page"
+        aria-label="Search records and pages (Ctrl K)"
         role="combobox"
         aria-autocomplete="list"
         aria-haspopup="listbox"
         aria-expanded={showList}
         aria-controls={showList ? listId : undefined}
-        aria-activedescendant={showList && activeOption ? optionId(activeOption.index) : undefined}
+        aria-activedescendant={showList && active >= 0 && active < total ? optionId(active) : undefined}
         autoComplete="off"
         spellCheck={false}
         enterKeyHint="search"
       />
-      <kbd aria-hidden="true">/</kbd>
+      <kbd aria-hidden="true">Ctrl K</kbd>
 
       <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">{status}</div>
 
-      {showList && state && (
+      {showList && (
         <div className="ops-search-pop" aria-busy={loading || undefined}>
-          {allForbidden(state) ? (
+          {commands.length > 0 && (
+            <div role="listbox" id={`${listId}-cmd`} aria-label="Commands" className="ops-search-list">
+              <div role="group" aria-label="Go to" className="ops-search-group">
+                <div role="presentation" className="ops-search-group__label">Go to</div>
+                {commands.map((c, i) => (
+                  <div
+                    key={c.key}
+                    role="option"
+                    id={optionId(i)}
+                    aria-selected={active === i}
+                    className={`ops-search-opt ${active === i ? 'ops-search-opt--active' : ''}`}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseMove={() => { if (active !== i) setActive(i); }}
+                    onClick={() => go(c.href)}
+                  >
+                    <span className="ops-search-opt__title">{c.label}</span>
+                    <span className="ops-search-opt__meta">{c.detail}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {!state || !usable ? null : allForbidden(state) ? (
             <p className="ops-search-msg">You do not have access to search.</p>
           ) : options.length === 0 && loading ? (
             <p className="ops-search-msg ops-search-msg--quiet">Searching…</p>
@@ -235,7 +272,7 @@ export function GlobalSearch({ access }: { access: AdminAccess | null }) {
                   {g.label} could not be searched. {state[g.key].error}
                 </p>
               ))}
-              {options.length === 0 && !loading
+              {options.length === 0 && commands.length === 0 && !loading
                 && visibleGroups(state).every((g) => state[g.key].status !== 'error') && (
                 <p className="ops-search-msg">
                   Nothing matches “{term}”.

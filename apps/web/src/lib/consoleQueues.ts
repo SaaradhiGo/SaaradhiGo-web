@@ -53,7 +53,8 @@ async function countOf(path: string): Promise<number | null> {
 
 export const QUEUES = {
   // Not a status: a driver awaiting review is one that is not approved.
-  driversAwaiting: '/driver/admin/?approved=false&page_size=1',
+  // The KYC review queue: documents sent and waiting (the /kyc page lists exactly these).
+  driversAwaiting: '/driver/admin/kyc-queue/?page_size=1',
   withdrawalsPending: '/driver/admin/withdrawals/?status=pending&page_size=1',
   // UPPERCASE. See the note above — lowercase silently matches nothing.
   supportOpen: '/support/admin/tickets/?status=OPEN&page_size=1',

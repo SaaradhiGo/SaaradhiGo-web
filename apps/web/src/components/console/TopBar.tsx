@@ -5,7 +5,8 @@ import type { OperatorUser } from '@/lib/api';
 import { AdminAccess } from '@/lib/adminScope';
 import { canOpen } from '@/lib/consoleLinks';
 import type { Theme } from '@/lib/consolePrefs';
-import { ScopeSwitcher } from '@/components/console/ScopeSwitcher';
+import { PlacePicker } from '@/components/console/shell/PlacePicker';
+import { Freshness } from '@/components/console/shell/Freshness';
 import { GlobalSearch } from '@/components/console/GlobalSearch';
 import { EnvBadge } from '@/components/console/EnvBadge';
 import { ProfileMenu } from '@/components/console/ProfileMenu';
@@ -45,10 +46,11 @@ export function TopBar({
   return (
     <header className="ops__top">
       <div className="ops__top-left">
-        <ScopeSwitcher access={access} />
+        <PlacePicker access={access} />
       </div>
       <GlobalSearch access={access} />
       <div className="ops__top-right">
+        <Freshness />
         <EnvBadge />
         {inbox && (
           <Link

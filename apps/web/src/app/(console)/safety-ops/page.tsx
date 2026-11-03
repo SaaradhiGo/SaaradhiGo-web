@@ -24,6 +24,7 @@ import {
   TableToolbar,
 } from '@/components/console/ui';
 import { SosActions } from '@/components/console/safety/SosActions';
+import { SafetyBoard } from '@/components/console/safety/SafetyBoard';
 
 /**
  * Safety: the live queue.
@@ -357,7 +358,7 @@ function DismissDrawer({ signal, onClose, onDone }: {
     setError(null);
     try {
       await api.post(`/safety/admin/signals/${signal.id}/dismiss/`, { reason: reason.trim() });
-      onDone(`${SIGNAL_LABEL[signal.kind] ?? 'Signal'} on trip #${signal.trip_id} dismissed.`);
+      onDone(`${SIGNAL_LABEL[signal.kind] ?? 'Signal'} on T-${signal.trip_id} dismissed.`);
     } catch (err) {
       setError(err instanceof ApiError && err.fromServer ? err.message : 'That did not go through.');
     } finally {
@@ -368,7 +369,7 @@ function DismissDrawer({ signal, onClose, onDone }: {
   return (
     <Drawer
       open
-      title={`Dismiss ${SIGNAL_LABEL[signal.kind] ?? 'signal'} · trip #${signal.trip_id}`}
+      title={`Dismiss ${SIGNAL_LABEL[signal.kind] ?? 'signal'} · T-${signal.trip_id}`}
       onClose={onClose}
       footer={(
         <>
@@ -392,10 +393,17 @@ function DismissDrawer({ signal, onClose, onDone }: {
   );
 }
 
+/** The board (design board F) unless a list tab was asked for (?tab=incidents|closed|signals|sos). */
+function SafetyRoute() {
+  const search = useSearchParams();
+  const access = useAdminAccess();
+  return search.get('tab') ? <SafetyInner /> : <SafetyBoard access={access} />;
+}
+
 export default function SafetyPage() {
   return (
     <Suspense fallback={<div className="ops-skel-rows" aria-busy="true"><Skeleton kind="row" count={6} /></div>}>
-      <SafetyInner />
+      <SafetyRoute />
     </Suspense>
   );
 }

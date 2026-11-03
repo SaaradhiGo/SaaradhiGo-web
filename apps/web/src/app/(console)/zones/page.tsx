@@ -4,177 +4,209 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { useAdminAccess } from '@/lib/adminScope';
-import { useDensity } from '@/lib/consolePrefs';
+import { useAdminAccess, withScope } from '@/lib/adminScope';
 import { stamp } from '@/lib/consoleTime';
 import { canDraftZones, outerRings, requestWords, TYPE_WORDS, type PendingRequest, type Zone } from '@/lib/zones';
+import { PageLink } from '@/components/console/PageLink';
 import { ZoneMap, type MapZone } from '@/components/console/zones/ZoneMap';
-import {
-  Column, DataTable, Empty, ErrorState, PageHeader, Panel, Pill, Skeleton, TableToolbar,
-} from '@/components/console/ui';
+import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { StatusChip } from '@/components/console/kit/StatusChip';
 
 /**
- * Service zones: where we operate, drawn.
+ * Service zones: a searchable list paged on the server, beside the map of every zone in scope.
  *
- * READ FIRST, CHANGE BY REQUEST. This page shows every zone in the operator's scope on one
- * map and in a table; a zone opens to its polygon, settings, history and pending requests.
- * Creating or changing a zone is a request that a second admin approves (`zone.change`);
- * nothing on this page edits a polygon directly. Fares and commission are under Pricing.
+ * READ FIRST, CHANGE BY REQUEST. A zone opens to its polygon, settings, history and pending
+ * requests. Creating or changing a zone is a request that a second admin approves
+ * (`zone.change`, decided in Approvals); nothing on this page edits a polygon directly. Fares and
+ * commission are under Pricing.
+ *
+ * The server pages the zones (limit and offset) but cannot search or filter them, so a search or
+ * a status view narrows the full set the map already holds, and is paged here.
  */
-function asList<T>(r: unknown): T[] {
-  const o = r as { results?: T[]; data?: T[] } | T[];
-  if (Array.isArray(o)) return o;
-  if (Array.isArray(o?.results)) return o.results;
-  if (Array.isArray(o?.data)) return o.data;
-  return [];
+type Paged<T> = { count?: number; results?: T[] } | T[];
+
+function asPage<T>(r: unknown): { count: number; results: T[] } {
+  const o = r as Paged<T> & { data?: T[] };
+  if (Array.isArray(o)) return { count: o.length, results: o };
+  const results = Array.isArray(o?.results) ? o.results : Array.isArray(o?.data) ? o.data : [];
+  return { count: typeof o?.count === 'number' ? o.count : results.length, results };
 }
+
+const PAGE_SIZE = 20;
+/** Enough for the map to hold every zone a scope can have. */
+const MAP_LIMIT = 1000;
 
 export default function ZonesPage() {
   const router = useRouter();
   const access = useAdminAccess();
-  const [density, setDensity] = useDensity();
-  const [zones, setZones] = useState<Zone[] | null>(null);
+  const [all, setAll] = useState<Zone[] | null>(null);
+  const [pageRows, setPageRows] = useState<{ count: number; results: Zone[] } | null>(null);
   const [pending, setPending] = useState<PendingRequest[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState('');
+  const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
   const may = canDraftZones(access);
 
-  const load = useCallback(async () => {
-    setZones(null);
+  const loadAll = useCallback(async () => {
+    setAll(null);
     setError(null);
     try {
       const [z, p] = await Promise.all([
-        api.get<unknown>('/pricing/admin/zones/'),
-        api.get<{ results: PendingRequest[] }>('/pricing/admin/zones/pending/').catch(() => ({ results: [] })),
+        api.get<unknown>(withScope(`/pricing/admin/zones/?limit=${MAP_LIMIT}`)),
+        api.get<{ results: PendingRequest[] }>(withScope('/pricing/admin/zones/pending/')).catch(() => ({ results: [] })),
       ]);
-      setZones(asList<Zone>(z));
+      setAll(asPage<Zone>(z).results);
       setPending(p.results ?? []);
     } catch (err) {
       setError(err instanceof ApiError && err.fromServer ? err.message : 'We could not load the zones.');
-      setZones([]);
+      setAll([]);
     }
   }, []);
+  useEffect(() => { void loadAll(); }, [loadAll]);
 
-  useEffect(() => { void load(); }, [load]);
+  const narrowed = view !== '' || q.trim() !== '';
+  const loadPage = useCallback(async () => {
+    if (narrowed) return;
+    setPageRows(null);
+    try {
+      setPageRows(asPage<Zone>(await api.get<unknown>(withScope(`/pricing/admin/zones/?limit=${PAGE_SIZE}&offset=${(page - 1) * PAGE_SIZE}`))));
+    } catch (err) {
+      setError(err instanceof ApiError && err.fromServer ? err.message : 'We could not load the zones.');
+      setPageRows({ count: 0, results: [] });
+    }
+  }, [page, narrowed]);
+  useEffect(() => { void loadPage(); }, [loadPage]);
 
-  const byId = useMemo(() => new Map((zones ?? []).map((z) => [String(z.id), z])), [zones]);
+  const byId = useMemo(() => new Map((all ?? []).map((z) => [String(z.id), z])), [all]);
   const pendingFor = useMemo(() => {
     const m = new Map<string, number>();
     for (const r of pending) m.set(r.target_id, (m.get(r.target_id) ?? 0) + 1);
     return m;
   }, [pending]);
 
-  const mapZones = useMemo<MapZone[]>(() => (zones ?? []).map((z) => ({
-    key: String(z.id), label: `${z.name} (${z.code})`, rings: outerRings(z.polygon_geojson),
-    tone: z.is_active ? 'live' : 'inactive',
-  })), [zones]);
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return (all ?? []).filter((z) => (view === 'active' ? z.is_active : view === 'inactive' ? !z.is_active
+      : view === 'pending' ? pendingFor.has(String(z.id)) : true)
+      && (!needle || [z.name, z.code, z.city, z.state_code, z.country].some((t) => (t ?? '').toLowerCase().includes(needle))));
+  }, [all, view, q, pendingFor]);
 
-  // The map keys zones by id (an inactive and an active zone can share a code over time); the
-  // outline labels them by code, so give it the code as the visible key.
-  const labelled = useMemo(() => mapZones.map((m) => ({ ...m, key: byId.get(m.key)?.code ?? m.key })), [mapZones, byId]);
-  const open = (code: string) => {
-    const z = (zones ?? []).find((q) => q.code === code);
+  // The map labels zones by code; an inactive and an active zone can share a code over time, so
+  // the id stays the row key and the code is the visible key.
+  const mapZones = useMemo<MapZone[]>(() => (all ?? []).map((z) => ({
+    key: z.code, label: `${z.name} (${z.code})`, rings: outerRings(z.polygon_geojson),
+    tone: z.is_active ? 'live' : 'inactive',
+  })), [all]);
+  const openCode = (code: string) => {
+    const z = (all ?? []).find((x) => x.code === code);
     if (z) router.push(`/zones/${z.id}`);
   };
 
-  const columns: Column<Zone>[] = [
+  const columns: ListColumn<Zone>[] = [
     {
-      key: 'name', label: 'Zone', sortValue: (z) => z.name,
-      render: (z) => (
-        <>
-          <Link href={`/zones/${z.id}`} className="ops-linkbtn" onClick={(e) => e.stopPropagation()}><b>{z.name}</b></Link>{' '}
-          <span className="muted">{z.code}</span>
-        </>
-      ),
+      key: 'name', label: 'Zone', primary: true,
+      render: (z) => <><Link href={`/zones/${z.id}`}>{z.name}</Link> <span className="muted">{z.code}</span></>,
     },
-    { key: 'where', label: 'Where', hideBelow: 1100, sortValue: (z) => `${z.country} ${z.state_code} ${z.city}`, render: (z) => `${z.city}, ${z.state_code}, ${z.country}` },
-    { key: 'type', label: 'Type', width: '8rem', hideBelow: 1100, sortValue: (z) => z.zone_type, render: (z) => <span className="capitalize">{(TYPE_WORDS[z.zone_type] ?? z.zone_type).split(' (')[0]}</span> },
-    { key: 'priority', label: 'Priority', num: true, width: '6rem', sortValue: (z) => z.priority, render: (z) => z.priority },
-    { key: 'area', label: 'Area', num: true, width: '7rem', sortValue: (z) => z.area_km2 ?? 0, render: (z) => (z.area_km2 === null ? '—' : `${z.area_km2.toLocaleString('en')} km²`) },
-    { key: 'version', label: 'Version', num: true, width: '6rem', hideBelow: 1100, sortValue: (z) => z.version, render: (z) => `v${z.version}` },
+    { key: 'where', label: 'Where', render: (z) => `${z.city}, ${z.state_code}, ${z.country}` },
+    { key: 'type', label: 'Type', render: (z) => (TYPE_WORDS[z.zone_type] ?? z.zone_type).split(' (')[0] },
+    { key: 'priority', label: 'Priority', num: true, render: (z) => z.priority },
+    { key: 'area', label: 'Area', num: true, render: (z) => (z.area_km2 === null ? '—' : `${z.area_km2.toLocaleString('en')} km²`) },
+    { key: 'version', label: 'Version', num: true, render: (z) => `v${z.version}` },
     {
-      key: 'status', label: 'Status', width: '11rem', sortValue: (z) => (z.is_active ? 1 : 0),
+      key: 'status', label: 'Status',
       render: (z) => (
         <>
-          {z.is_active ? <Pill tone="good">Active</Pill> : <Pill tone="neutral">Inactive</Pill>}
-          {pendingFor.get(String(z.id)) ? <> <Pill tone="wait">{pendingFor.get(String(z.id))} pending</Pill></> : null}
+          {z.is_active ? <StatusChip tone="good">Active</StatusChip> : <StatusChip tone="neutral">Inactive</StatusChip>}
+          {pendingFor.get(String(z.id)) ? <> <StatusChip tone="info">{pendingFor.get(String(z.id))} waiting</StatusChip></> : null}
         </>
       ),
     },
   ];
 
+  const rows = narrowed ? filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : pageRows?.results ?? [];
+  const total = narrowed ? (all ? filtered.length : null) : pageRows ? pageRows.count : null;
+  const allZones = all ?? [];
+
   return (
-    <>
-      <PageHeader
-        title="Zones"
-        subtitle="Where we operate. A change is a request a second admin approves, and never reaches a trip already booked. Fares and commission are under Pricing."
-        actions={may ? <Link href="/zones/new" className="sg-btn sg-btn--primary sg-btn--sm">New zone…</Link> : undefined}
-      />
-
-      <div className="grid gap-4">
-        <Panel title="Map of zones">
-          {zones === null ? (
-            <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
-              <span className="sr-only">Loading the map of zones</span>
-              <Skeleton kind="row" count={4} />
-            </div>
-          ) : error ? (
-            <ErrorState title="The zones could not be loaded" detail={error} onRetry={() => void load()} />
-          ) : zones.length === 0 ? (
-            <Empty title="No service zones" detail="Nothing is configured in your scope yet." />
-          ) : (
-            <ZoneMap caption="Every zone in your scope" zones={labelled} onZone={open} />
+    <div className="grid gap-4">
+      <div className="ops-split ops-split--map">
+        <ListPage<Zone>
+          pageKey="zones"
+          title="Zones"
+          summary="Where we operate. A change is a request a second admin approves, and never reaches a trip already booked. Fares and commission are under Pricing."
+          actionsSlot={may ? <Link href="/zones/new" className="sg-btn sg-btn--primary sg-btn--sm">New zone…</Link> : undefined}
+          views={[
+            { key: '', label: 'All', count: all ? allZones.length : undefined },
+            { key: 'active', label: 'Active', count: all ? allZones.filter((z) => z.is_active).length : undefined },
+            { key: 'inactive', label: 'Inactive', count: all ? allZones.filter((z) => !z.is_active).length : undefined },
+            { key: 'pending', label: 'Waiting for a checker', count: all ? allZones.filter((z) => pendingFor.has(String(z.id))).length : undefined },
+          ]}
+          view={view}
+          onView={(v) => { setView(v); setPage(1); }}
+          chips={q.trim() ? [{ key: 'q', label: `Search: ${q.trim()}`, onRemove: () => { setQ(''); setPage(1); } }] : []}
+          filterSlot={(
+            <>
+              <label className="sr-only" htmlFor="zn-q">Search zones</label>
+              <input id="zn-q" className="input ops-list__search" type="search" placeholder="Search a zone, code or city"
+                value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} />
+            </>
           )}
-        </Panel>
-
-        {pending.length > 0 ? (
-          <Panel title={`Waiting for a checker (${pending.length})`} flush>
-            <DataTable
-              caption="Zone changes waiting for approval" density={density} maxHeight={false}
-              rows={pending} rowKey={(r) => r.id}
-              onRow={(r) => { const z = byId.get(r.target_id); if (z) router.push(`/zones/${z.id}`); }}
-              columns={[
-                { key: 'id', label: 'Request', width: '7rem', render: (r) => `#${r.id}` },
-                { key: 'zone', label: 'Zone', render: (r) => byId.get(r.target_id)?.name ?? r.payload?.zone_code ?? r.target_id },
-                { key: 'what', label: 'What', render: (r) => requestWords(r) },
-                { key: 'who', label: 'Asked by', hideBelow: 1100, render: (r) => r.maker?.label || r.maker?.email || '—' },
-                { key: 'when', label: 'When', width: '9rem', render: (r) => stamp(r.requested_at) },
-              ] as Column<PendingRequest>[]}
-            />
-          </Panel>
-        ) : null}
-
-        <Panel flush title="Service zones">
-          <TableToolbar
-            summary={zones ? `${zones.length} zone${zones.length === 1 ? '' : 's'} · ${zones.filter((z) => z.is_active).length} active` : null}
-            density={density}
-            onDensity={setDensity}
-          />
-          {zones === null ? (
-            <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
-              <span className="sr-only">Loading zones</span>
-              <Skeleton kind="row" count={5} />
-            </div>
-          ) : error ? (
-            <div className="p-4"><ErrorState title="The zones could not be loaded" detail={error} onRetry={() => void load()} /></div>
-          ) : zones.length === 0 ? (
-            <Empty
-              title="No service zones"
-              detail={may ? 'Nothing is configured in your scope yet. Draw the first one.' : 'Nothing is configured in your scope yet.'}
-            />
+          columns={columns}
+          rows={rows}
+          rowKey={(z) => z.id}
+          total={total}
+          page={page}
+          pageSize={PAGE_SIZE}
+          onPage={setPage}
+          onRow={(z) => router.push(`/zones/${z.id}`)}
+          loading={narrowed ? all === null : pageRows === null}
+          error={error}
+          empty={narrowed ? 'No zone matches.' : may ? 'No service zones in your scope yet. Draw the first one.' : 'No service zones in your scope yet.'}
+        />
+        <section className="ops-card ops-card--map" aria-label="Map of zones">
+          {all === null ? (
+            <p className="ops-record__empty" aria-busy="true">Loading the map of zones…</p>
+          ) : allZones.length === 0 ? (
+            <p className="ops-record__empty">Nothing is configured in your scope yet.</p>
           ) : (
-            <DataTable
-              caption="Service zones"
-              rows={zones}
-              columns={columns}
-              rowKey={(z) => z.id}
-              density={density}
-              onRow={(z) => router.push(`/zones/${z.id}`)}
-              defaultSort={{ key: 'where', dir: 'asc' }}
-              maxHeight={false}
-            />
+            <ZoneMap caption="Every zone in your scope" zones={mapZones} onZone={openCode} />
           )}
-        </Panel>
+        </section>
       </div>
-    </>
+
+      {pending.length > 0 ? (
+        <section className="ops-card" aria-labelledby="zn-pending">
+          <header className="ops-card__head">
+            <div>
+              <h2 id="zn-pending">Waiting for a checker ({pending.length})</h2>
+              <p>A second admin decides these in Approvals.</p>
+            </div>
+          </header>
+          <div className="ops-list__table">
+            <table className="ops-table ops-table--compact">
+              <caption className="sr-only">Zone changes waiting for approval</caption>
+              <thead>
+                <tr><th scope="col">Request</th><th scope="col">Zone</th><th scope="col">What</th><th scope="col">Asked by</th><th scope="col">When</th></tr>
+              </thead>
+              <tbody>
+                {pending.map((r) => {
+                  const z = byId.get(r.target_id);
+                  return (
+                    <tr key={r.id}>
+                      <td><PageLink page="approvals" href={`/approvals?id=${r.id}`}>APR-{r.id}</PageLink></td>
+                      <td>{z ? <Link href={`/zones/${z.id}`}>{z.name}</Link> : r.payload?.zone_code ?? r.target_id}</td>
+                      <td>{requestWords(r)}</td>
+                      <td>{r.maker?.label || r.maker?.email || '—'}</td>
+                      <td>{stamp(r.requested_at, z?.timezone_name)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+    </div>
   );
 }

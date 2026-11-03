@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import {
-  type ActionKey, type ApprovalBody, formatMinor, interpretWrite, newIdempotencyKey, parseMajorToMinor,
+  type ActionKey, type ApprovalBody, formatMinor, interpretWrite, newIdempotencyKey, parseMajorToMinor, exponentOf,
 } from '@/lib/trips';
 import { Drawer } from '@/components/console/ui';
 
@@ -39,7 +39,13 @@ export function ActionDrawer({
     : action === 'flag' ? (flagReasons ?? FALLBACK_FLAG) : null;
   const [code, setCode] = useState(reasons ? Object.keys(reasons)[0] : '');
   const [text, setText] = useState('');
-  const [amount, setAmount] = useState('');
+  // A refund starts at what is left to refund (the usual case: the whole fare back);
+  // the operator can lower it before sending.
+  const [amount, setAmount] = useState(() => {
+    if (action !== 'refund' || refundable === null || refundable <= 0) return '';
+    const exp = exponentOf(currency);
+    return (refundable / 10 ** exp).toFixed(exp);
+  });
   const [waive, setWaive] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +96,7 @@ export function ActionDrawer({
   return (
     <Drawer
       open
-      title={`${TITLE[action]} · trip #${tripId}`}
+      title={`${TITLE[action]} · T-${tripId}`}
       onClose={onClose}
       footer={outcome ? (
         <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={onClose}>Close</button>

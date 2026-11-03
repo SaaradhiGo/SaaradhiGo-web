@@ -11,6 +11,7 @@ import { interpretWrite } from '@/lib/trips';
 import {
   KIND_WORDS, TYPE_WORDS, canDraftZones, outerRings, requestWords, type History, type Revision, type Zone,
 } from '@/lib/zones';
+import { PageLink } from '@/components/console/PageLink';
 import { ZoneMap, type MapZone, type PointMark } from '@/components/console/zones/ZoneMap';
 import { ZoneEditor } from '@/components/console/zones/ZoneEditor';
 import { PointTester } from '@/components/console/zones/PointTester';
@@ -267,11 +268,11 @@ export default function ZoneDetailPage() {
               caption="Requests waiting for approval for this zone" maxHeight={false} density="compact"
               rows={pending} rowKey={(r) => r.id}
               columns={[
-                { key: 'id', label: 'Request', width: '7rem', render: (r) => `#${r.id}` },
+                { key: 'id', label: 'Request', width: '7rem', render: (r) => <PageLink page="approvals" href={`/approvals?id=${r.id}`}>APR-{r.id}</PageLink> },
                 { key: 'what', label: 'What', render: (r) => requestWords(r) },
                 { key: 'who', label: 'Asked by', hideBelow: 1100, render: (r) => r.maker?.label || r.maker?.email || '—' },
                 { key: 'why', label: 'Reason', hideBelow: 1100, render: (r) => r.request_reason || '—' },
-                { key: 'when', label: 'When', width: '9rem', render: (r) => stamp(r.requested_at) },
+                { key: 'when', label: 'When', width: '9rem', render: (r) => stamp(r.requested_at, zone?.timezone_name) },
               ] as Column<(typeof pending)[number]>[]}
             />
           </Panel>

@@ -1,12 +1,13 @@
 'use client';
 
-import { CommandCentre } from '@/components/console/command-centre/CommandCentre';
+import { useAdminAccess } from '@/lib/adminScope';
+import { Overview } from '@/components/console/workspaces/Overview';
 
 /**
- * The Command Centre route. The page itself lives in
- * `components/console/command-centre` so it can be rendered in a test
- * without the App Router; this file only mounts it.
+ * The Overview route: Global, a country, a state or a city, by the operator's
+ * place (design boards C and D). The page lives in `workspaces/Overview`.
  */
 export default function DashboardPage() {
-  return <CommandCentre />;
+  const access = useAdminAccess();
+  return <Overview access={access} />;
 }
