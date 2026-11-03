@@ -216,6 +216,7 @@ export function ListPage<T>({
             })}
           </tbody>
         </table>
+        {loading && rows.length === 0 ? <p className="ops-list__empty" role="status" aria-live="polite">Loading…</p> : null}
         {!loading && rows.length === 0 && !error ? <p className="ops-list__empty">{empty}</p> : null}
       </div>
 

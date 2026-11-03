@@ -122,3 +122,15 @@ export function againstUsual(value: number | null, band: Band, unit = ''): strin
   if (value > band.high) return `Above usual ${range}`;
   return `Within usual ${range}`;
 }
+
+/**
+ * An SOS clock that reads one way: "1:40" under an hour, "1 h 55 min" after,
+ * "3 d" after two days. "115:14" read as hours to the new-hire run.
+ */
+export function sosClock(seconds: number): string {
+  const s = Math.max(0, Math.round(seconds));
+  const m = Math.floor(s / 60);
+  if (m >= 2880) return `${Math.floor(m / 1440)} d`;
+  if (m >= 60) return `${Math.floor(m / 60)} h ${m % 60} min`;
+  return `${m}:${String(s % 60).padStart(2, '0')}`;
+}

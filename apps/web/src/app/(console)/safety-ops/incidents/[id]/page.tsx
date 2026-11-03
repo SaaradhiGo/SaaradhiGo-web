@@ -21,6 +21,7 @@ import {
 } from '@/components/console/ui';
 import { useAdminAccess } from '@/lib/adminScope';
 import { SosActions } from '@/components/console/safety/SosActions';
+import { sosClock } from '@/lib/workspace';
 
 /**
  * One incident: the case file.
@@ -375,9 +376,7 @@ export default function IncidentPage() {
 function CaseHead({ data, now, others }: { data: IncidentDetail; now: number; others: string[] }) {
   const live = data.status !== 'closed' && (data.sos.active ?? 0) > 0;
   const since = data.sos.oldest_active_at ?? data.opened_at;
-  const s = Math.max(0, Math.round((now - new Date(since).getTime()) / 1000));
-  const m = Math.floor(s / 60);
-  const clockText = m >= 2880 ? `${Math.floor(m / 1440)} d` : m >= 120 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m}:${String(s % 60).padStart(2, '0')}`;
+  const clockText = sosClock((now - new Date(since).getTime()) / 1000);
   return (
     <section className={`ops-case-head mb-4${live ? '' : ' ops-case-head--calm'}`} aria-label="Case">
       {live ? <span className="ops-case-head__tag">SOS</span> : null}

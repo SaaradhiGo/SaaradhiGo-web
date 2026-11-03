@@ -182,6 +182,9 @@ export default function KycReviewPage() {
   const everyApproved = allApproved(docs);
   const offerDriverApproval = everyApproved && mayApprove && !detail?.approved;
   const canDecide = Boolean(doc && mayReview && isReviewable(doc) && !busy);
+  // Approving needs eyes on the file: a document that would not open can be
+  // rejected (with the reason) but never approved (owner's new-hire run).
+  const canApprove = canDecide && view.status === 'ready';
 
   const decide = useCallback(async (decision: 'approve' | 'reject', sent: string) => {
     if (!detail || !doc) return;
@@ -231,8 +234,8 @@ export default function KycReviewPage() {
   const onApprove = useCallback(() => {
     if (busy) return;
     if (offerDriverApproval && blockers.length === 0) { void approveDriver(); return; }
-    if (canDecide && doc?.review_state !== 'approved') void decide('approve', '');
-  }, [busy, offerDriverApproval, blockers.length, approveDriver, canDecide, doc, decide]);
+    if (canApprove && doc?.review_state !== 'approved') void decide('approve', '');
+  }, [busy, offerDriverApproval, blockers.length, approveDriver, canApprove, doc, decide]);
   const onReject = useCallback(() => {
     if (!canDecide) return;
     if (!reasonReady(reason)) { askReason(); return; }
@@ -461,7 +464,7 @@ export default function KycReviewPage() {
                 <>
                   <button
                     type="button" className="sg-btn sg-btn--primary ops-kyc__primary" onClick={onApprove}
-                    disabled={!canDecide || doc?.review_state === 'approved'}
+                    disabled={!canApprove || doc?.review_state === 'approved'}
                   >
                     {busy ? 'Working…' : `Approve ${docLabel} · A`}
                   </button>
@@ -470,13 +473,14 @@ export default function KycReviewPage() {
                     <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={onReupload} disabled={!canDecide}>Ask to re-upload · U</button>
                   </div>
                   {doc && !isReviewable(doc) ? <p className="ops-kyc__hint">There is no file to decide on yet.</p> : null}
+                  {doc && isReviewable(doc) && view.status === 'error' ? <p className="ops-kyc__hint">The file did not open, so it cannot be approved. Reject it or ask for a new upload.</p> : null}
                   {doc && isDecided(doc) ? <p className="ops-kyc__hint">Already decided. You can change the decision.</p> : null}
                   <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={nextDriver} disabled={busy}>Skip to next driver</button>
                 </>
               )}
               <p className="ops-kyc__hint"><kbd>J</kbd> / <kbd>K</kbd> next and previous document</p>
               {mayReview && !offerDriverApproval ? (
-                <p className="ops-kyc__hint">{nextLabel ? `Approving moves to ${nextLabel}` : 'Approving finishes this driver'}</p>
+                <p className="ops-kyc__hint">{nextLabel ? `Approving moves to ${nextLabel}` : blockers.length ? `Still needed before this driver can drive: ${blockers.length} more` : 'Approving finishes this driver'}</p>
               ) : null}
             </section>
           </aside>

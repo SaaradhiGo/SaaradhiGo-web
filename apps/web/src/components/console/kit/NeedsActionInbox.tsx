@@ -4,15 +4,11 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { type AdminAccess, withScope } from '@/lib/adminScope';
-import { type NeedsItem, type NeedsResponse, waited } from '@/lib/workspace';
+import { type NeedsItem, type NeedsResponse, sosClock, waited } from '@/lib/workspace';
 import { SeverityChip } from '@/components/console/kit/StatusChip';
 
 type Tab = 'all' | 'mine' | 'nobody';
 
-function clock(seconds: number): string {
-  const s = Math.max(0, seconds);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-}
 
 /** The incident id an SOS item links to (`/safety-ops/incidents/<id>`), or null. */
 function incidentId(item: NeedsItem): number | null {
@@ -123,7 +119,7 @@ export function NeedsActionInbox({
               </div>
               {left !== null ? (
                 <div className={`ops-inbox__timer${left < 0 ? ' ops-inbox__timer--late' : ''}`}>
-                  <span className="sg-num">{left >= 0 ? `${clock(left)} to target` : `${clock(-left)} past target`}</span>
+                  <span className="sg-num">{left >= 0 ? `${sosClock(left)} to target` : `${sosClock(-left)} past target`}</span>
                 </div>
               ) : null}
               <div className="ops-inbox__foot">
