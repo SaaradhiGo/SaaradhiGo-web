@@ -123,7 +123,7 @@ describe('signing in with a recovery code', () => {
     fireEvent.change(field, { target: { value: ' K3Q7-M2X9 ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/start'));
     expect(fetchMock).toHaveBeenCalledTimes(2);
     const second = request(fetchMock, 1);
     expect(second.url.endsWith('/auth/admin/login/')).toBe(true);
@@ -169,7 +169,7 @@ describe('signing in with a recovery code', () => {
     const field = await switchToRecovery();
     fireEvent.change(field, { target: { value: CODES[0] } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/start'));
     expect(window.sessionStorage.getItem(RECOVERY_LOW_KEY)).toBe('2');
     cleanup();
 
@@ -247,7 +247,7 @@ describe('the recovery codes, shown once at the first sign-in', () => {
     fireEvent.click(screen.getByLabelText('I have saved these codes somewhere safe'));
     fireEvent.click(screen.getByRole('button', { name: 'Continue to the console' }));
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/start'));
     expect(screen.queryByTestId('recovery-codes-screen')).toBeNull();
     for (const code of CODES) expect(screen.queryByText(code)).toBeNull();
     // Nowhere in the browser either: not in storage, so not reachable by a reload.
@@ -302,7 +302,7 @@ describe('the recovery codes, shown once at the first sign-in', () => {
     const field = await screen.findByLabelText('Authenticator code');
     fireEvent.change(field, { target: { value: '123456' } });
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/start'));
     expect(screen.queryByTestId('recovery-codes-screen')).toBeNull();
   });
 });

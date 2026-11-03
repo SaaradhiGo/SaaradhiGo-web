@@ -170,6 +170,15 @@
   --ops-success-edge: rgba(70,201,139,0.4);
   --ops-danger-wash: rgba(255,138,107,0.1);
   --ops-danger-edge: rgba(255,138,107,0.42);
+  /* Status (owner, 2026-11-03): caution = Watch / High, info = Waiting / Low. Red stays for
+     critical only. Text contrast: caution 8.8:1 and info 6.9:1 on bg-300, 6.9:1 and 5.6:1 on
+     their own wash. */
+  --ops-caution: #f0b429;
+  --ops-caution-wash: rgba(240,180,41,0.12);
+  --ops-caution-edge: rgba(240,180,41,0.45);
+  --ops-info: #7aa7ff;
+  --ops-info-wash: rgba(122,167,255,0.12);
+  --ops-info-edge: rgba(122,167,255,0.45);
   /* Chart series (Reports, module 14): five categorical hues, in this fixed order, validated for
      lightness band, chroma, colour-blind separation and 3:1 contrast on the surface of each theme. */
   --chart-1: #b08500;
@@ -213,6 +222,13 @@
   --ops-success-edge: rgba(26,111,71,0.4);
   --ops-danger-wash: rgba(184,58,30,0.08);
   --ops-danger-edge: rgba(184,58,30,0.4);
+  /* Status: caution 5.8:1 and info 5.9:1 on bg-000, 5.0:1 and 5.1:1 on their own wash. */
+  --ops-caution: #8a5300;
+  --ops-caution-wash: rgba(138,83,0,0.10);
+  --ops-caution-edge: rgba(138,83,0,0.42);
+  --ops-info: #1d5bb8;
+  --ops-info-wash: rgba(29,91,184,0.10);
+  --ops-info-edge: rgba(29,91,184,0.42);
   /* Chart series (Reports, module 14): five categorical hues, in this fixed order, validated for
      lightness band, chroma, colour-blind separation and 3:1 contrast on the surface of each theme. */
   --chart-1: #8a6d00;

@@ -130,7 +130,7 @@ describe('forced password change at sign-in', () => {
     submitCredentials();
     await submitNewPassword();
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/start'));
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
     const first = request(fetchMock, 0);
@@ -161,7 +161,7 @@ describe('forced password change at sign-in', () => {
     expect(window.localStorage.getItem(TOKEN_KEY)).toBeNull();
 
     await submitNewPassword(SECOND_CHOICE);
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/start'));
     expect(request(fetchMock, 2).body).toEqual({
       email: EMAIL, password: TEMP_PASSWORD, new_password: SECOND_CHOICE,
     });
@@ -193,7 +193,7 @@ describe('forced password change at sign-in', () => {
     await enterCode('123456');
     await submitNewPassword();
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/start'));
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(request(fetchMock, 0).body).toEqual({ email: EMAIL, password: TEMP_PASSWORD });
     expect(request(fetchMock, 1).body).toEqual({ email: EMAIL, password: TEMP_PASSWORD, mfa_code: '123456' });
@@ -210,7 +210,7 @@ describe('forced password change at sign-in', () => {
     await submitNewPassword();
     await enterCode('246810');
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/start'));
     expect(request(fetchMock, 2).body).toEqual({
       email: EMAIL, password: TEMP_PASSWORD, mfa_code: '246810', new_password: CHOSEN,
     });
@@ -227,7 +227,7 @@ describe('forced password change at sign-in', () => {
     expect(replace).not.toHaveBeenCalled();
 
     await enterCode('654321');
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/dashboard'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/start'));
     expect(request(fetchMock, 3).body).toEqual({
       email: EMAIL, password: TEMP_PASSWORD, mfa_code: '654321', new_password: CHOSEN,
     });

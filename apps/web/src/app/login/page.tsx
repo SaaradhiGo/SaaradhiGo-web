@@ -116,7 +116,7 @@ function LoginInner() {
   // Only a same-origin path is followed after sign-in (AUDIT 27.78, M2): this
   // went to `router.replace` raw, so `?next=https://evil.example` or a
   // `/%09/evil.example` variant sent a freshly signed-in operator off-site.
-  const next = safeReturnTo(search.get('next'), '/dashboard');
+  const next = safeReturnTo(search.get('next'), '/start');
   const expired = search.get('reason') === 'expired';
   const previewParam = PREVIEW_BUILT_IN ? search.get('preview') : null;
   const preview = previewParam as Step | null;

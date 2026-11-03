@@ -24,6 +24,7 @@ import {
   TableToolbar,
 } from '@/components/console/ui';
 import { SosActions } from '@/components/console/safety/SosActions';
+import { SafetyBoard } from '@/components/console/safety/SafetyBoard';
 
 /**
  * Safety: the live queue.
@@ -392,10 +393,17 @@ function DismissDrawer({ signal, onClose, onDone }: {
   );
 }
 
+/** The board (design board F) unless a list tab was asked for (?tab=incidents|closed|signals|sos). */
+function SafetyRoute() {
+  const search = useSearchParams();
+  const access = useAdminAccess();
+  return search.get('tab') ? <SafetyInner /> : <SafetyBoard access={access} />;
+}
+
 export default function SafetyPage() {
   return (
     <Suspense fallback={<div className="ops-skel-rows" aria-busy="true"><Skeleton kind="row" count={6} /></div>}>
-      <SafetyInner />
+      <SafetyRoute />
     </Suspense>
   );
 }
