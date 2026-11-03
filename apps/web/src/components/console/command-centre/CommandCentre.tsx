@@ -13,6 +13,7 @@ import {
 } from '@/components/console/ui';
 import { AlertsPanel } from './AlertsPanel';
 import { SuperAdminBanner } from './SuperAdminBanner';
+import { SelfApprovalNotice } from '@/components/console/SelfApprovalNotice';
 import { CityBoard } from './CityBoard';
 import { CityWindowBar } from './CityWindowBar';
 import { FinanceTiles } from './FinanceTiles';
@@ -120,6 +121,7 @@ export function CommandCentre({ access: given }: { access?: AdminAccess | null }
   return (
     <>
       <SuperAdminBanner access={access} />
+      <SelfApprovalNotice />
       {header}
 
       {overview.status !== 'forbidden' && (

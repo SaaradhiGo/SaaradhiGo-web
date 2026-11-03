@@ -13,6 +13,7 @@ import { History, RecordPanel, RecordStat, type HistoryEntry } from '@/component
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
 import { ActionNotice, RecordFacts, RecordFailed, RecordLoading, RecordSection } from '@/components/console/kit/ListBits';
 import { Skeleton } from '@/components/console/ui';
+import { SELF_APPROVAL_LINE, SELF_APPROVAL_MIN_REASON } from '@/components/console/SelfApprovalNotice';
 
 /**
  * Approvals: everything waiting for a second person (owner, 2026-11-03), as a
@@ -26,6 +27,11 @@ import { Skeleton } from '@/components/console/ui';
  * from its answer and the server re-checks on the click. The maker may
  * withdraw their own open request. `?id=` opens one request (from Needs
  * action, an alert, a notification or a payout's APR- link).
+ *
+ * The one exception (owner, 2026-11-03): while APPROVALS_SOLO_SUPER_ADMIN is
+ * on and nobody else could check it, the sole Super Admin may decide their
+ * own request. The server says so per request (`self_approval`); the record
+ * then says it will be recorded as self-approved and a reason is required.
  */
 
 type Person = { id: number; email: string; label: string; role: string } | null;
@@ -60,16 +66,21 @@ type ApprovalRow = {
   can_decide: boolean;
   cannot_decide_reason: string | null;
   can_cancel: boolean;
+  /** The caller may decide only as the maker, under the sole-Super-Admin exception. */
+  self_approval?: boolean;
+  /** Decided by its own maker under that exception. */
+  self_approved?: boolean;
 };
-type Page = { count: number; total_pages?: number; results: ApprovalRow[] };
+type Page = { count: number; total_pages?: number; results: ApprovalRow[]; self_approval_on?: boolean };
 
-type View = 'waiting' | 'mine' | 'open' | 'executed' | 'rejected';
+type View = 'waiting' | 'mine' | 'open' | 'executed' | 'rejected' | 'self';
 const VIEWS: ReadonlyArray<{ key: View; label: string; query: string }> = [
   { key: 'waiting', label: 'Waiting for me', query: 'pending_for_me=1' },
   { key: 'mine', label: 'Raised by me', query: 'mine=1' },
   { key: 'open', label: 'All open', query: 'status=requested' },
   { key: 'executed', label: 'Done', query: 'status=executed' },
   { key: 'rejected', label: 'Rejected', query: 'status=rejected' },
+  { key: 'self', label: 'Self-approved', query: 'self_approved=1' },
 ];
 const PAGE_SIZE = 50;
 
@@ -156,7 +167,14 @@ function ApprovalsPage() {
     { key: 'place', label: 'Place', render: (r) => r.scope ?? r.country },
     { key: 'maker', label: 'Raised by', render: (r) => <span title={r.maker?.email}>{r.maker?.label || r.maker?.email || '—'}</span> },
     { key: 'age', label: 'Waiting', num: true, render: (r) => (r.status === 'requested' ? waitingFor(r.requested_at) : '—') },
-    { key: 'status', label: 'Status', render: (r) => <StatusChip tone={statusTone(r.status)}>{STATUS_WORDS[r.status] ?? r.status}</StatusChip> },
+    {
+      key: 'status', label: 'Status', render: (r) => (
+        <span className="ops-chips">
+          <StatusChip tone={statusTone(r.status)}>{STATUS_WORDS[r.status] ?? r.status}</StatusChip>
+          {r.self_approved ? <StatusChip tone="caution">Self-approved</StatusChip> : null}
+        </span>
+      ),
+    },
   ];
 
   async function exportView() {
@@ -186,7 +204,9 @@ function ApprovalsPage() {
         <ListPage<ApprovalRow>
           pageKey="approvals"
           title="Approvals"
-          summary="Everything waiting for a second person. The person who raised a request cannot decide it."
+          summary={data?.self_approval_on
+            ? 'Everything waiting for a second person. Until someone else can check, the one Super Admin decides their own requests, recorded as self-approved.'
+            : 'Everything waiting for a second person. The person who raised a request cannot decide it.'}
           views={VIEWS.map((v) => ({ key: v.key, label: v.label, count: counts[v.key] ?? null }))}
           view={view}
           onView={(key) => router.push(href({ view: key as View, page: 1, id: null }))}
@@ -248,6 +268,10 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
 
   async function act(kind: 'approve' | 'reject' | 'cancel') {
     if (!row) return;
+    if (kind !== 'cancel' && row.self_approval && reason.trim().length < SELF_APPROVAL_MIN_REASON) {
+      setProblem(`Give a reason of at least ${SELF_APPROVAL_MIN_REASON} characters. No one else checks this, so the reason is the record.`);
+      return;
+    }
     if (kind === 'reject' && !reason.trim()) {
       setProblem('Say why you are rejecting it. The person who raised it will see this.');
       return;
@@ -258,7 +282,7 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
       const next = await api.post<ApprovalRow>(`/approvals/admin/requests/${row.id}/${kind}/`, { reason: reason.trim() });
       setRow(next);
       setReason('');
-      onDecided(`${row.ref} ${kind === 'approve' ? 'approved' : kind === 'reject' ? 'rejected' : 'withdrawn'}.`);
+      onDecided(`${row.ref} ${kind === 'approve' ? 'approved' : kind === 'reject' ? 'rejected' : 'withdrawn'}${row.self_approval && kind !== 'cancel' ? ', recorded as self-approved' : ''}.`);
     } catch (e) {
       setProblem(e instanceof ApiError ? e.message : 'That did not go through. Try again.');
     } finally {
@@ -290,12 +314,14 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
         <>
           <StatusChip tone={statusTone(row.status)}>{STATUS_WORDS[row.status] ?? row.status}</StatusChip>
           {row.blockers.length ? <StatusChip tone="caution">Cannot be approved</StatusChip> : null}
+          {row.self_approved ? <StatusChip tone="caution">Self-approved</StatusChip> : null}
         </>
       )}
       actions={open && (row.can_decide || row.can_cancel) ? (
         <>
           {row.can_decide ? (
             <>
+              {row.self_approval ? <p className="ops-note ops-record__note">{SELF_APPROVAL_LINE}</p> : null}
               <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" disabled={!!busy || row.blockers.length > 0}
                 onClick={() => void act('approve')}>{busy === 'approve' ? 'Approving…' : 'Approve'}</button>
               <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={!!busy}
@@ -323,7 +349,9 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
                 <section className="ops-confirm" aria-label="Decision">
                   {row.can_decide || row.can_cancel ? (
                     <>
-                      <label htmlFor={`reason-${row.id}`}><b>Reason</b>{row.can_decide ? ' (needed to reject; the person who raised it sees it)' : ''}</label>
+                      <label htmlFor={`reason-${row.id}`}><b>Reason</b>{row.can_decide && row.self_approval
+                        ? ` (required, at least ${SELF_APPROVAL_MIN_REASON} characters; kept with the self-approval)`
+                        : row.can_decide ? ' (needed to reject; the person who raised it sees it)' : ''}</label>
                       <textarea id={`reason-${row.id}`} className="input" rows={3} value={reason}
                         onChange={(e) => setReason(e.target.value)} maxLength={2000} />
                     </>

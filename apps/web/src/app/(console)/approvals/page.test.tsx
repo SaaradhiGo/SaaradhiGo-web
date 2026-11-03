@@ -64,7 +64,7 @@ describe('approvals', () => {
     expect(within(record).getAllByText('APR-7').length).toBeGreaterThan(0);
     expect(within(record).getByText('₹1,250.50')).toBeTruthy();
     fireEvent.click(within(record).getByRole('tab', { name: 'What this releases' }));
-    expect(within(record).getByText('PO-31')).toBeTruthy();
+    expect(await screen.findByText('PO-31')).toBeTruthy();
   });
 
   it('asks for a reason before rejecting, and approves through the request endpoint', async () => {
@@ -89,5 +89,25 @@ describe('approvals', () => {
     render(<ApprovalsPage />);
     const approve = await screen.findByRole('button', { name: 'Approve' });
     expect((approve as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('lets the sole Super Admin decide their own request, with the sentence and a required reason', async () => {
+    const fetchMock = routeFetch({ self_approval: true, maker: { id: 1, email: 'owner@example.test', label: 'Owner', role: 'super_admin' } });
+    render(<ApprovalsPage />);
+    const approve = await screen.findByRole('button', { name: 'Approve' });
+    expect(screen.getByText(/You raised this request\. You are approving it yourself because no one else can check it yet\. This is recorded as self-approved\./)).toBeTruthy();
+    expect(screen.getByText(/required, at least 10 characters/)).toBeTruthy();
+    fireEvent.click(approve);
+    expect(await screen.findByText(/Give a reason of at least 10 characters/)).toBeTruthy();
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).endsWith('/approve/'))).toBe(false);
+    fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'Weekly payout, ledger checked.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
+    expect(await screen.findByText('APR-7 approved, recorded as self-approved.')).toBeTruthy();
+  });
+
+  it('marks a self-approved decision on the record', async () => {
+    routeFetch({ status: 'executed', self_approved: true, can_decide: false, decided_at: '2026-11-03T05:00:00Z' });
+    render(<ApprovalsPage />);
+    expect((await screen.findAllByText('Self-approved')).length).toBeGreaterThan(0);
   });
 });
