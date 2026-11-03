@@ -216,6 +216,12 @@
 .sg-row__left svg { width: 20px; height: 20px; color: var(--gold-text); }
 
 .sg-pin { display: inline-flex; gap: 6px; }
+/* The PIN is six digits on QA, not the four the design drew: six 36px boxes
+   ran off a 390px screen. The row wraps and the boxes shrink to fit. */
+.sg-row--pin { flex-wrap: wrap; }
+@media (max-width: 767px) {
+  .sg-pin span { width: 32px; height: 40px; font-size: 18px; }
+}
 .sg-pin span { width: 36px; height: 44px; border-radius: var(--radius-sm); background: var(--bg-300); display: grid; place-items: center;
   font: 800 20px/1 var(--font-sans); font-variant-numeric: tabular-nums; color: var(--ink); border: 1px solid var(--line-strong); }
 
@@ -227,6 +233,23 @@
 .sg-action i { width: 48px; height: 48px; border-radius: var(--radius-pill); background: var(--bg-200); border: 1px solid var(--line); display: grid; place-items: center; color: var(--ink); }
 .sg-action i svg { width: 20px; height: 20px; }
 .sg-action--safety i { color: var(--danger); }
+
+.sg-btn--safety { color: var(--danger); }
+
+/* Safety on the live trip (D4): hold for 2 s to send. The fill shows how long
+   is left; it is a wash of the danger token so the label keeps its contrast
+   over both halves. */
+.sg-safety { display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line);
+  border-radius: var(--radius-md); background: var(--bg-200); }
+.sg-sos { position: relative; overflow: hidden; min-height: 56px; width: 100%; border-radius: var(--radius-md);
+  border: 1px solid var(--danger); background: transparent; color: var(--ink); cursor: pointer;
+  font: 700 16px/20px var(--font-sans); touch-action: none; user-select: none; -webkit-user-select: none; }
+.sg-sos:focus-visible { outline: 2px solid var(--danger); outline-offset: 2px; }
+.sg-sos:disabled { cursor: progress; }
+.sg-sos__fill { position: absolute; inset: 0; transform-origin: left center; transform: scaleX(0);
+  background: color-mix(in srgb, var(--danger) 45%, transparent); }
+.sg-sos__label { position: relative; }
+.sg-safety__error { color: var(--danger); }
 
 .sg-stars { display: flex; gap: var(--space-2); justify-content: center; }
 .sg-stars svg { width: 36px; height: 36px; color: var(--gold-500); }

@@ -322,3 +322,20 @@ export async function rideHistory() {
   );
   return data?.results ?? (Array.isArray(data) ? data : []);
 }
+
+/**
+ * The driver card's facts from the accept broadcast's `driver_info` and
+ * `vehicle_info`. Name and plate only: the phone number it also carries is
+ * deliberately dropped.
+ */
+export function driverFromInfo(info: unknown, vehicle: unknown): Record<string, unknown> | null {
+  const i = (info ?? {}) as Record<string, unknown>;
+  const v = (vehicle ?? {}) as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  if (typeof i.name === 'string' && i.name.trim()) out.name = i.name.trim();
+  const plate = v.vehicle_number;
+  if (typeof plate === 'string' && plate.trim() && plate !== 'Unknown') {
+    out.vehicle_number = plate.trim();
+  }
+  return Object.keys(out).length ? out : null;
+}

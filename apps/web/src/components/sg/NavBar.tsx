@@ -62,7 +62,9 @@ export function NavBar({ quiet }: { quiet?: boolean }) {
   return (
     <header className="hp-header sg-on-noir">
       <nav className="hp hp-nav" aria-label="Main">
-        <Link href="/" className="hp-nav__logo">
+        {/* Named for screen readers: the wordmark beside the emblem is hidden
+            on a phone, which left the link with no name (axe link-name). */}
+        <Link href="/" className="hp-nav__logo" aria-label="SaaradhiGo home">
           <Logo variant="emblem" />
           <span className="hp-nav__name">Saaradhi Go</span>
         </Link>

@@ -21,9 +21,12 @@ import {
   routeBetween,
   searchPlaces,
   serviceabilityAt,
+  driverFromInfo,
+  tripDetail,
 } from '@/lib/booking';
 import MapSurface from '@/components/MapSurface';
 import { GuestCheckout } from '@/components/booking/GuestCheckout';
+import { TripSafety } from '@/components/booking/TripSafety';
 import { messageFor, readRiderToken } from '@/lib/publicAuth';
 import { formatDistance, formatFare } from '@/lib/money';
 import { publicRideName, vehicleClassLabel } from '@/lib/vehicles';
@@ -86,6 +89,9 @@ function normaliseTripState(raw: string): string {
   const key = String(raw ?? '').trim().toLowerCase();
   return TRIP_STATE_FROM_ACTION[key] ?? key;
 }
+
+/** Said when the search ends with no driver and the frame has no sentence. */
+const NO_DRIVER_MESSAGE = 'No driver accepted your request. Please try again.';
 
 const TRIP_STATE_LABEL: Record<string, string> = {
   requested: 'finding you a driver',
@@ -738,6 +744,47 @@ function BookPageInner() {
     void quoteAll();
   }, [pickup, destination, service, quoteAll]);
 
+  // A driver card for a trip restored after a reload: the greeting carries
+  // the PIN and the status but not who is coming. The trip itself does.
+  useEffect(() => {
+    if (stage !== 'matched' || !tripId || driver) return;
+    if (!['accepted', 'reached', 'in_progress'].includes(tripState)) return;
+    let live = true;
+    tripDetail(tripId)
+      .then((t) => {
+        if (!live || !t) return;
+        const vehicle = (t.vehicle_info ?? {}) as Record<string, unknown>;
+        const restored = driverFromInfo(
+          { name: t.driver_name },
+          { vehicle_number: vehicle.vehicle_number ?? t.vehicle_number },
+        );
+        if (restored) setDriver((prev) => prev ?? restored);
+      })
+      .catch(() => {
+        /* the card stays as it is; nothing invented */
+      });
+    return () => {
+      live = false;
+    };
+  }, [stage, tripId, tripState, driver]);
+
+  // The search can never wait forever. The server ends it at 90 s and says
+  // so on the trip socket; if that frame is lost, ask the trip itself.
+  useEffect(() => {
+    if (stage !== 'matched' || !tripId || tripState !== 'requested') return;
+    const timer = window.setTimeout(async () => {
+      try {
+        const t = await tripDetail(tripId);
+        const status = String(t?.status ?? '').toLowerCase();
+        if (status === 'cancelled') endSearchWithoutDriver(NO_DRIVER_MESSAGE);
+      } catch {
+        /* still unknown: the socket may yet answer */
+      }
+    }, 120_000);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, tripId, tripState]);
+
   // --- request -----------------------------------------------------------
 
   /** The booking as a URL, so signing in can come straight back to it. */
@@ -881,6 +928,21 @@ function BookPageInner() {
               unknown
             >);
           if (d) setDriver(d);
+          // What the accept broadcast really carries: `driver_info` and
+          // `vehicle_info`. Only the first two were read, so the driver card
+          // never appeared and the sheet said "Waiting for a driver to
+          // accept" with the driver at the kerb. The phone number in
+          // `driver_info` is never taken: contacts stay masked.
+          const fromAccept = driverFromInfo(event.driver_info, event.vehicle_info);
+          if (fromAccept) setDriver((prev) => ({ ...(prev ?? {}), ...fromAccept }));
+
+          // Nobody accepted inside the deadline (backend auto_cancel_trip).
+          // Not "Ride cancelled": the rider asked for a ride and can ask
+          // again, so go back to the choice with the server's sentence.
+          if (state === 'cancelled' && event.reason === 'no_driver_accepted') {
+            endSearchWithoutDriver((event.message as string) || NO_DRIVER_MESSAGE);
+            return;
+          }
 
           // The OTP arrives with the accept broadcast, either at the top
           // level or inside `trip`. Keep whichever we are given, and never
@@ -907,6 +969,21 @@ function BookPageInner() {
     );
     tripSocket.current = sock;
     sock.open();
+  }
+
+  /** The search ended with nobody: back to the choice, with the reason. */
+  function endSearchWithoutDriver(message: string) {
+    tripSocket.current?.close();
+    tripSocket.current = null;
+    requestSocket.current?.close();
+    requestSocket.current = null;
+    setTripId(null);
+    setTripState('');
+    setPickupOtp(null);
+    setDriver(null);
+    setDriverPos(null);
+    setStage('choose');
+    setError(message);
   }
 
   async function doCancel() {
@@ -974,7 +1051,10 @@ function BookPageInner() {
   function tripHeadline(): string {
     if (tripState === 'cancelled') return 'Ride cancelled';
     if (tripState === 'completed') return 'You have arrived';
-    if (tripState === 'started') {
+    // `start` normalises to `in_progress`. This checked 'started', which no
+    // frame ever produces, so a rider in the car read "Finding your
+    // Saaradhi" (PRODUCT_AUDIT §2, On trip).
+    if (tripState === 'in_progress' || tripState === 'started') {
       return destinationLabel ? `On your way to ${destinationLabel}` : 'On your way';
     }
     if (tripState === 'reached') {
@@ -1403,9 +1483,12 @@ function BookPageInner() {
         {/* ---------------- the live trip ---------------- */}
         {stage === 'matched' && (
           <GlassPanel>
-            <div className="flex items-start justify-between gap-sg-4">
-              <div className="min-w-0">
-                <h2 className="display-lg text-[34px] leading-[40px] m-0">
+            {/* Wraps: on a 390px phone the status badge ("driver is waiting at
+                your pickup") squeezed the headline into a one-word column and
+                ran off the edge (PRODUCT_AUDIT §2). */}
+            <div className="flex flex-wrap items-start justify-between gap-sg-3">
+              <div className="min-w-0 flex-1 basis-[220px]">
+                <h2 className="display-lg text-[28px] leading-[34px] sm:text-[34px] sm:leading-[40px] m-0">
                   {tripHeadline()}
                 </h2>
                 <p className="sg-sheet__sub">
@@ -1444,7 +1527,7 @@ function BookPageInner() {
                 being assigned and the trip starting, so it is shown exactly
                 then. */}
             {pickupOtp && PIN_IS_STILL_NEEDED.includes(tripState) ? (
-              <div className="sg-row">
+              <div className="sg-row sg-row--pin">
                 <span>
                   <span className="sg-field__label block">Ride PIN</span>
                   <span className="sg-sheet__sub m-0">
@@ -1485,12 +1568,20 @@ function BookPageInner() {
 
             <p className="caption text-ink-subtle">Live updates: {socketState}</p>
 
-            {/* TODO(share, safety): the design's trip sheet offers "Share
-                trip" and "Safety". Neither exists on the web app -- there is
-                no shareable-trip endpoint, and the SOS path is implemented in
-                the mobile apps against the device's own contacts. A button
-                that looks like a safety feature and does nothing is worse
-                than its absence, so the panel carries only what works. */}
+            {/* Share trip and Safety (WebLiveTrip spec). SOS is hold-to-send
+                (owner decision D4); see TripSafety. */}
+            {!TRIP_IS_OVER.includes(tripState) && (
+              <TripSafety
+                tripId={tripId}
+                country={service?.zone?.country}
+                driverName={driverName}
+                plate={plate}
+                pickupLabel={pickupLabel}
+                destinationLabel={destinationLabel}
+                position={driverPos ?? pickup}
+                pickup={pickup}
+              />
+            )}
 
             {/* A ride that is over cannot be cancelled, and offering it
                 invites a rider to try -- on trip #88 this sat under a
