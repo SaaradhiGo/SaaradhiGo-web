@@ -27,7 +27,9 @@ function writeList(key: string, list: string[]) {
 export function trail(scope: AdminScope, byCode: Map<string, AdminScope>): string[] {
   const codes = (scope.path ?? `/${scope.code}/`).split('/').filter(Boolean)
     .filter((c) => c !== 'GLOBAL');
-  return codes.map((c) => byCode.get(c)?.name ?? c);
+  // Only the places the operator holds have names here; an ancestor they do not
+  // hold is left out rather than shown as a bare code.
+  return codes.filter((c) => byCode.has(c) || c === scope.code).map((c) => byCode.get(c)?.name ?? scope.name);
 }
 
 /** Places matching what was typed: name or code, starts-with first. Pure; tested. */
