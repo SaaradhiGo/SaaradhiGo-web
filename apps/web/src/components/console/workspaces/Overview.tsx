@@ -98,7 +98,8 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
     return Array.from(groups.entries()).map(([country, cities]) => ({
       country,
       name: places.children.find((r) => r.code === country)?.name
-        ?? places.quiet.find((r) => r.code === country)?.name ?? country,
+        ?? places.quiet.find((r) => r.code === country)?.name
+        ?? places.breadcrumb.find((b) => b.code === country)?.name ?? country,
       cities: [...cities].sort((a, b) => RANK[a.health] - RANK[b.health] || a.name.localeCompare(b.name)),
     })).sort((a, b) => b.cities.length - a.cities.length);
   }, [places]);
@@ -128,6 +129,7 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
       </header>
 
       <div className="ops-ws__grid ops-ws__grid--c">
+        <div className="ops-ws__main">
         <section className="ops-card" aria-label="Every city at a glance">
           <header className="ops-card__head">
             <div>
@@ -167,8 +169,6 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
           </div>
         </section>
 
-        <NeedsActionInbox access={access} placeName={node?.name} compact limit={12} />
-      </div>
 
       <section className="ops-card" aria-label={`${childWord} by ${childWord.toLowerCase()}`}>
         <header className="ops-card__head">
@@ -211,6 +211,10 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
           </table>
         </div>
       </section>
+
+        </div>
+        <NeedsActionInbox access={access} placeName={node?.name} compact limit={8} />
+      </div>
 
       <div className="ops-ws__grid ops-ws__grid--2">
         {money ? (
