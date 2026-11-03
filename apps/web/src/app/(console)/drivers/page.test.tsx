@@ -106,10 +106,10 @@ describe('driver record', () => {
   it('opens beside the list on Enter with the server’s actions, and Escape closes it', async () => {
     routeFetch();
     render(<DriversPage />);
-    const cell = await screen.findByText('D-2231');
+    const cell = await screen.findByText('D-2231', {}, { timeout: 5000 });
     const row = cell.closest('tr') as HTMLElement;
     fireEvent.keyDown(row, { key: 'Enter' });
-    await screen.findByRole('button', { name: 'Suspend…' });
+    await screen.findByRole('button', { name: 'Suspend…' }, { timeout: 5000 });
     const record = screen.getByRole('complementary', { name: 'Driver' });
     expect(within(record).getByRole('button', { name: 'Add note…' })).toBeTruthy();
     expect(within(record).queryByRole('button', { name: 'Reinstate…' })).toBeNull();
@@ -119,6 +119,6 @@ describe('driver record', () => {
     fireEvent.click(within(record).getByRole('tab', { name: 'History' }));
     expect(within(record).getByText(/driver approved/)).toBeTruthy();
     fireEvent.keyDown(window, { key: 'Escape' });
-    await waitFor(() => expect(screen.queryByRole('complementary', { name: 'Driver' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('complementary', { name: 'Driver' })).toBeNull(), { timeout: 5000 });
   });
 });

@@ -28,6 +28,8 @@ export type TripFilters = {
   hasSos: boolean;
   /** The operator's "Stuck" view: active trips the server judges stuck (`ride.stuck`). */
   stuck: boolean;
+  /** Never accepted by a driver (with "cancelled": unfulfilled, the overview's definition). */
+  unaccepted: boolean;
   id: string;
   ordering: string;
   page: number;
@@ -36,7 +38,7 @@ export type TripFilters = {
 
 export const DEFAULT_FILTERS: TripFilters = {
   status: [], dateFrom: '', dateTo: '', scope: '', paymentMethod: '', vehicleType: '',
-  stale: false, flagged: false, hasSos: false, stuck: false, id: '', ordering: '-requested_at',
+  stale: false, flagged: false, hasSos: false, stuck: false, unaccepted: false, id: '', ordering: '-requested_at',
   page: 1, pageSize: 50,
 };
 
@@ -86,6 +88,7 @@ export function filtersFromSearch(params: URLSearchParams): TripFilters {
     flagged: params.get('flagged') === 'true',
     hasSos: params.get('has_sos') === 'true',
     stuck: params.get('stuck') === 'true' || params.get('stuck') === '1',
+    unaccepted: params.get('accepted') === 'false',
     id: ID.test(params.get('id') ?? '') ? (params.get('id') as string) : '',
     ordering: isTripSort(params.get('ordering')) ? (params.get('ordering') as string) : DEFAULT_FILTERS.ordering,
     page: Number.isInteger(page) && page > 0 ? page : 1,
@@ -109,6 +112,7 @@ export function filtersToQuery(f: TripFilters): string {
   if (f.flagged) q.set('flagged', 'true');
   if (f.hasSos) q.set('has_sos', 'true');
   if (f.stuck) q.set('stuck', 'true');
+  if (f.unaccepted) q.set('accepted', 'false');
   if (f.id.trim()) q.set('id', f.id.trim());
   if (f.ordering && f.ordering !== DEFAULT_FILTERS.ordering) q.set('ordering', f.ordering);
   if (f.page > 1) q.set('page', String(f.page));
@@ -127,7 +131,7 @@ export function tripsApiPath(f: TripFilters): string {
 export function activeFilterCount(f: TripFilters): number {
   return [
     f.status.length > 0, Boolean(f.dateFrom || f.dateTo), Boolean(f.scope),
-    Boolean(f.paymentMethod), Boolean(f.vehicleType), f.stale, f.flagged, f.hasSos, f.stuck,
+    Boolean(f.paymentMethod), Boolean(f.vehicleType), f.stale, f.flagged, f.hasSos, f.stuck, f.unaccepted,
     Boolean(f.id.trim()),
   ].filter(Boolean).length;
 }

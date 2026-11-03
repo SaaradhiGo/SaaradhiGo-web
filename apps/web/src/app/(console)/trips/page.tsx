@@ -149,8 +149,8 @@ function presetFor(view: View, today: string): Partial<TripFilters> {
     case 'stuck': return { stuck: true };
     case 'sos': return { hasSos: true };
     case 'cancelled': return { status: ['cancelled'], dateFrom: today, dateTo: today };
-    // Requested today and never matched: still waiting for a driver.
-    case 'unfulfilled': return { status: ['requested'], dateFrom: today, dateTo: today };
+    // Cancelled today before any driver accepted: the overview's "unfulfilled".
+    case 'unfulfilled': return { status: ['cancelled'], unaccepted: true, dateFrom: today, dateTo: today };
     default: return {};
   }
 }
@@ -159,8 +159,7 @@ function viewOf(f: TripFilters, today: string): View {
   if (f.stuck) return 'stuck';
   if (f.hasSos) return 'sos';
   const only = (s: string) => f.status.length === 1 && f.status[0] === s && f.dateFrom === today && f.dateTo === today;
-  if (only('cancelled')) return 'cancelled';
-  if (only('requested')) return 'unfulfilled';
+  if (only('cancelled')) return f.unaccepted ? 'unfulfilled' : 'cancelled';
   if (f.status.length === ACTIVE.length && ACTIVE.every((s) => f.status.includes(s))) return 'active';
   return 'all';
 }
