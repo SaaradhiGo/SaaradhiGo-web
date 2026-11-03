@@ -9,7 +9,7 @@ import { stamp } from '@/lib/consoleTime';
 import {
   KIND_WORDS, STATE_ORDER, STATE_WORDS, canStart, termsWords, totalsByCurrency, type Audience, type Campaign, type Kind, type State,
 } from '@/lib/promotions';
-import { formatMinor } from '@/lib/trips';
+import { formatWhole } from '@/lib/trips';
 import {
   BudgetBar, NoAccess, PromotionsNav, StateTag,
 } from '@/components/console/promotions';
@@ -103,8 +103,8 @@ export function CampaignList({ kind, subtitle, newLabel, emptyDetail, audienceFi
       {totals.length > 0 ? (
         <StatStrip>
           {totals.map((t) => (
-            <Stat key={t.currency} label={`Launched budget · ${t.currency}`} value={formatMinor(t.budget, t.currency)} money
-              note={`${formatMinor(t.spent, t.currency)} spent · ${formatMinor(t.committed, t.currency)} reserved`} />
+            <Stat key={t.currency} label={`Launched budget · ${t.currency}`} value={formatWhole(t.budget, t.currency)} money
+              note={`${formatWhole(t.spent, t.currency)} spent · ${formatWhole(t.committed, t.currency)} reserved`} />
           ))}
         </StatStrip>
       ) : null}

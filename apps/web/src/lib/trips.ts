@@ -220,16 +220,18 @@ export function cityTime(
   if (!iso) return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
+  // No city zone means UTC, labelled: never the viewer's browser zone (owner, 2026-11-03).
+  const tz = timeZone || 'UTC';
   let text: string;
   try {
     text = new Intl.DateTimeFormat('en-GB', {
-      timeZone: timeZone ?? undefined, day: '2-digit', month: 'short',
+      timeZone: tz, day: '2-digit', month: 'short',
       hour: '2-digit', minute: '2-digit', hour12: false,
     }).format(d);
   } catch {
-    return iso.replace('T', ' ').slice(0, 16);
+    return `${iso.replace('T', ' ').slice(0, 16)} UTC`;
   }
-  const label = zone ? cityZoneLabel(timeZone) : '';
+  const label = zone || !timeZone ? (timeZone ? cityZoneLabel(timeZone) : 'UTC') : '';
   return label ? `${text} ${label}` : text;
 }
 
@@ -352,3 +354,32 @@ export function fareCardSummary(card: FareCard): string {
   return card.summary.map((line) => fareCardLineText(line, card.currency)).join(' · ');
 }
 
+
+/**
+ * Whole currency units for lists and dashboards: "₹1,84,200", "$412".
+ * Paise and cents belong on ledgers and receipts only (owner, 2026-11-03), so
+ * a list never makes an operator read ".50" to find the number that matters.
+ * Rounded half away from zero, from the integer minor amount (never a float sum).
+ */
+export function formatWhole(
+  minor: number | null | undefined,
+  currency: string | null | undefined,
+  { signed = false }: { signed?: boolean } = {},
+): string {
+  if (minor === null || minor === undefined || !Number.isInteger(minor)) return '—';
+  const code = (currency ?? '').toUpperCase() || 'INR';
+  const exp = exponentOf(code);
+  const unit = 10 ** exp;
+  const abs = Math.abs(minor);
+  const whole = Math.floor(abs / unit) + (abs % unit >= unit / 2 && exp > 0 ? 1 : 0);
+  let text: string;
+  try {
+    text = new Intl.NumberFormat(LOCALE[code] ?? 'en', {
+      style: 'currency', currency: code, minimumFractionDigits: 0, maximumFractionDigits: 0,
+    }).format(whole);
+  } catch {
+    text = `${code} ${whole}`;
+  }
+  if (minor < 0 && whole !== 0) return `−${text}`;
+  return signed && minor > 0 ? `+${text}` : text;
+}

@@ -23,6 +23,7 @@ import {
   Column, DataTable, Drawer, Empty, ErrorState, Filters, PageHeader, Panel, Pill, Skeleton,
   TableToolbar,
 } from '@/components/console/ui';
+import { SosActions } from '@/components/console/safety/SosActions';
 
 /**
  * Safety: the live queue.
@@ -124,8 +125,9 @@ function SafetyInner() {
       key: 'id', label: 'Incident',
       render: (r) => (
         <>
-          <Link href={`/safety-ops/incidents/${r.id}`}>#{r.id}</Link>{' '}
+          <Link href={`/safety-ops/incidents/${r.id}`} className="sg-num">{r.ref}</Link>{' '}
           <span title={r.title}>{r.title || CATEGORY_LABEL[r.category] || r.category}</span>
+          {r.rider_reports_false_alarm ? <>{' '}<Pill tone="wait">Rider reports false alarm</Pill></> : null}
         </>
       ),
     },
@@ -161,30 +163,25 @@ function SafetyInner() {
     },
     {
       key: 'opened', label: 'Opened', width: '9rem', num: true, hideBelow: 1500,
-      render: (r) => stamp(r.opened_at, timeZoneFor(r.anchor.node)),
+      render: (r) => stamp(r.opened_at, r.anchor.timezone ?? timeZoneFor(r.anchor.node)),
     },
-    ...(filters.tab === 'sos' ? [{
-      key: 'act', label: mayRespond ? 'Respond' : 'Open', width: '7rem',
-      render: (r: IncidentRow) => {
-        const id = r.sos.unacknowledged_ids?.[0];
-        return id && mayRespond ? (
-          <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setActing({ sosId: id })}>
-            Acknowledge
-          </button>
-        ) : <Link href={`/safety-ops/incidents/${r.id}`}>Open</Link>;
-      },
+    ...(filters.tab !== 'closed' ? [{
+      key: 'act', label: mayRespond ? 'Respond' : 'Open', width: mayRespond ? '24rem' : '7rem',
+      render: (r: IncidentRow) => (mayRespond
+        ? <SosActions item={r} meId={access?.id} compact onDone={(m) => { setNotice(m); void load(); }} />
+        : <Link href={`/safety-ops/incidents/${r.id}`}>Open</Link>),
     }] : []),
   ];
 
   const signalColumns: Column<Signal>[] = [
     { key: 'kind', label: 'Signal', width: '9rem', render: (s) => <Pill tone="wait">{SIGNAL_LABEL[s.kind] ?? s.kind}</Pill> },
-    { key: 'trip', label: 'Trip', width: '6rem', render: (s) => <PageLink page="trips" href={`/trips/${s.trip_id}`}>#{s.trip_id}</PageLink> },
+    { key: 'trip', label: 'Trip', width: '7rem', render: (s) => <PageLink page="trips" href={`/trips/${s.trip_id}`}>T-{s.trip_id}</PageLink> },
     { key: 'what', label: 'Measured', render: (s) => signalSummary(s) },
     { key: 'city', label: 'City', width: '8rem', hideBelow: 1100, render: (s) => s.anchor.node_name ?? <span className="muted">Not placed</span> },
     {
       key: 'inc', label: 'Incident', width: '10rem',
       render: (s) => (s.incident_id
-        ? <Link href={`/safety-ops/incidents/${s.incident_id}`}>Incident #{s.incident_id}</Link>
+        ? <Link href={`/safety-ops/incidents/${s.incident_id}`}>Open case</Link>
         : <span className="muted">Waiting for review</span>),
     },
     {
@@ -218,7 +215,7 @@ function SafetyInner() {
     <>
       <PageHeader
         title="Safety"
-        subtitle="SOS first, then severity, then the oldest. Each timer is the incident's own country's; contact details are masked here."
+        subtitle="Active SOS first, most urgent at the top."
         actions={(
           <>
             {mayRespond ? (
@@ -327,7 +324,7 @@ function SafetyInner() {
           onClose={() => setCreating(false)}
           onCreated={(id, created) => {
             setCreating(false);
-            setNotice(created ? `Incident #${id} opened.` : `That trip already had an open incident: #${id}.`);
+            setNotice(created ? `INC-${id} opened.` : `That trip already has an open case: ${id}.`);
             router.push(`/safety-ops/incidents/${id}`);
           }}
         />

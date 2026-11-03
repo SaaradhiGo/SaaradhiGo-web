@@ -20,7 +20,7 @@
  * Going live, and raising a budget, need a second admin.
  */
 import { can, type AdminAccess } from './adminScope';
-import { exponentOf, formatMinor, parseMajorToMinor } from './trips';
+import { exponentOf, formatMinor, formatWhole, parseMajorToMinor } from './trips';
 
 // ---------------------------------------------------------------------------
 // Capabilities
@@ -220,10 +220,10 @@ export function budgetWords(b: BudgetView): string {
   if (b.budget_minor === null) return 'No budget (an existing code, not capped)';
   const c = b.currency;
   const parts = [
-    `${formatMinor(b.spent_minor, c)} spent`, `${formatMinor(b.committed_minor, c)} reserved`,
-    `${formatMinor(b.remaining_minor ?? 0, c)} left of ${formatMinor(b.budget_minor, c)}`,
+    `${formatWhole(b.spent_minor, c)} spent`, `${formatWhole(b.committed_minor, c)} reserved`,
+    `${formatWhole(b.remaining_minor ?? 0, c)} left of ${formatWhole(b.budget_minor, c)}`,
   ];
-  if (b.overshoot_minor > 0) parts.push(`${formatMinor(b.overshoot_minor, c)} over the cap (honoured trips)`);
+  if (b.overshoot_minor > 0) parts.push(`${formatWhole(b.overshoot_minor, c)} over the cap (honoured trips)`);
   return parts.join(' · ');
 }
 

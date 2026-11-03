@@ -126,15 +126,15 @@ const ROW: CityRow = {
 };
 
 const NAV = {
-  super_admin: ['/dashboard', '/live-ops', '/trips', '/reports', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/notifications', '/promotions', '/safety-ops', '/fraud', '/zones', '/settings', '/settings/security'],
-  city_ops_manager: ['/dashboard', '/live-ops', '/trips', '/reports', '/drivers', '/riders', '/support', '/pricing', '/notifications', '/promotions', '/safety-ops', '/fraud', '/zones', '/settings', '/settings/security'],
+  super_admin: ['/dashboard', '/approvals', '/live-ops', '/trips', '/reports', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/notifications', '/promotions', '/safety-ops', '/fraud', '/zones', '/settings', '/settings/security'],
+  city_ops_manager: ['/dashboard', '/approvals', '/live-ops', '/trips', '/reports', '/drivers', '/riders', '/support', '/pricing', '/notifications', '/promotions', '/safety-ops', '/fraud', '/zones', '/settings', '/settings/security'],
   support_agent: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/notifications', '/settings/security'],
   support_lead: ['/dashboard', '/trips', '/drivers', '/riders', '/support', '/notifications', '/settings/security'],
   safety_officer: ['/dashboard', '/live-ops', '/trips', '/drivers', '/riders', '/support', '/safety-ops', '/settings/security'],
   kyc_verifier: ['/drivers', '/settings/security'],
-  finance: ['/dashboard', '/trips', '/reports', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/promotions', '/settings/security'],
+  finance: ['/dashboard', '/approvals', '/trips', '/reports', '/drivers', '/riders', '/support', '/finance', '/finance/payouts', '/pricing', '/promotions', '/settings/security'],
   // Owner ruling 4: Marketing keeps the Command Centre (aggregates only).
-  marketing: ['/dashboard', '/live-ops', '/reports', '/notifications', '/promotions', '/fraud', '/settings/security'],
+  marketing: ['/dashboard', '/approvals', '/live-ops', '/reports', '/notifications', '/promotions', '/fraud', '/settings/security'],
   analyst: ['/dashboard', '/live-ops', '/trips', '/reports', '/drivers', '/riders', '/pricing', '/promotions', '/settings/security'],
 } as const;
 

@@ -116,7 +116,7 @@ export default function DriverDetailPage() {
     return (
       <div aria-busy="true" aria-live="polite">
         <span className="sr-only">Loading the driver</span>
-        <PageHeader title={`Driver #${id}`} />
+        <PageHeader title={`D-${id}`} />
         <div className="ops-review"><Skeleton kind="block" /><Skeleton kind="block" /></div>
       </div>
     );
@@ -202,7 +202,7 @@ export default function DriverDetailPage() {
         title={name}
         subtitle={
           <>
-            Driver #{data.id} · <Revealable value={data.user.phone_number ?? '—'} label="driver phone" target={target} field="phone_number" compact />
+            D-{data.id} · <Revealable value={data.user.phone_number ?? '—'} label="driver phone" target={target} field="phone_number" compact />
             {data.user.email ? <> · <Revealable value={data.user.email} label="driver email" target={target} field="email" compact /></> : null}
             {data.home_city ? ` · ${data.home_city.name}` : ''}
             {data.compliance?.country ? ` · reviewed against ${data.compliance.country}` : ''}
@@ -323,7 +323,7 @@ export default function DriverDetailPage() {
               </div>
             ) : null}
             {(data.approval_requests ?? []).filter((r) => r.status === 'requested').map((r) => (
-              <p key={r.id} className="ops-confirm">Waiting for a checker · request #{r.id} ({words(r.action_key)})</p>
+              <p key={r.id} className="ops-confirm">Waiting for a checker · APR-{r.id} ({words(r.action_key)})</p>
             ))}
             {rail.length === 0 ? (
               <p className="help m-0">You can view this driver but not change them.</p>

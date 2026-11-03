@@ -12,9 +12,9 @@
  *     invent its own.
  */
 import { can, type AdminAccess } from './adminScope';
-import { formatMinor } from './trips';
+import { formatMinor, formatWhole } from './trips';
 
-export { formatMinor };
+export { formatMinor, formatWhole };
 
 // ---------------------------------------------------------------------------
 // Currency grouping

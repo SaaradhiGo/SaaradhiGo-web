@@ -4,8 +4,10 @@
  * One console serves Hyderabad and Austin. A trip requested "at 14:05" is
  * a different fact in each, and an operator in one city reading the other
  * city's board must see that city's local time, not their own browser's.
- * The time zone follows the SELECTED scope; when nothing narrower than the
- * whole platform is selected it falls back to the browser's.
+ * The time zone follows the record's city, else the SELECTED scope. When there
+ * is neither (a platform-wide list) it is UTC, and it says so: an operator's
+ * browser zone is never used (owner, 2026-11-03). Every stamp carries its zone
+ * label ("14:05 IST"), so a time is never ambiguous.
  *
  * The map is by scope-code prefix, deepest match first. It is small
  * because the platform is: a new state in a new time zone is one line.
@@ -25,14 +27,8 @@ export function timeZoneFor(scopeCode: string | null | undefined): string | unde
 }
 
 /** "IST", "CDT" -- the short name a person would say. */
-export function zoneAbbreviation(timeZone: string | undefined): string {
-  try {
-    const parts = new Intl.DateTimeFormat('en', { timeZone, timeZoneName: 'short' })
-      .formatToParts(new Date());
-    return parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
-  } catch {
-    return '';
-  }
+export function zoneAbbreviation(timeZone: string | null | undefined): string {
+  return zoneLabelAt(new Date(), timeZone || 'UTC');
 }
 
 function parse(iso: string | null | undefined): Date | null {
@@ -42,28 +38,44 @@ function parse(iso: string | null | undefined): Date | null {
 }
 
 /** 24-hour clock, e.g. "14:05". */
-export function clock(iso: string | null | undefined, timeZone?: string): string {
+export function clock(iso: string | null | undefined, timeZone?: string | null): string {
   const d = parse(iso);
   if (!d) return '—';
   try {
     return new Intl.DateTimeFormat('en-GB', {
-      timeZone, hour: '2-digit', minute: '2-digit', hour12: false,
+      timeZone: timeZone || 'UTC', hour: '2-digit', minute: '2-digit', hour12: false,
     }).format(d);
   } catch {
     return iso!.slice(11, 16);
   }
 }
 
-/** "27 Oct, 14:05" -- date and time, for a list that spans days. */
-export function stamp(iso: string | null | undefined, timeZone?: string): string {
+/** The zone's short name AT that moment ("IST", "CST" in winter, "CDT" in summer). */
+export function zoneLabelAt(d: Date, timeZone: string): string {
+  try {
+    const parts = new Intl.DateTimeFormat('en', { timeZone, timeZoneName: 'short' }).formatToParts(d);
+    const name = parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+    // Intl spells India "GMT+5:30" in the 'en' locale; people say IST.
+    return timeZone === 'Asia/Kolkata' ? 'IST' : name;
+  } catch {
+    return '';
+  }
+}
+
+/** "27 Oct, 14:05 IST" -- date and time with its zone, for a list that spans days.
+ *  No zone given means UTC, labelled; never the viewer's browser zone. */
+export function stamp(iso: string | null | undefined, timeZone?: string | null): string {
   const d = parse(iso);
   if (!d) return '—';
+  const tz = timeZone || 'UTC';
   try {
-    return new Intl.DateTimeFormat('en-GB', {
-      timeZone, day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
-    }).format(d).replace(',', ',');
+    const text = new Intl.DateTimeFormat('en-GB', {
+      timeZone: tz, day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
+    }).format(d);
+    const label = zoneLabelAt(d, tz);
+    return label ? `${text} ${label}` : text;
   } catch {
-    return iso!.replace('T', ' ').slice(0, 16);
+    return `${iso!.replace('T', ' ').slice(0, 16)} UTC`;
   }
 }
 

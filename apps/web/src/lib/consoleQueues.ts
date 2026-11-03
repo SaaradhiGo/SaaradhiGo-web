@@ -27,6 +27,7 @@ export type QueueCounts = {
   withdrawalsPending: number | null;
   supportOpen: number | null;
   sosOpen: number | null;
+  approvalsWaiting: number | null;
 };
 
 export const EMPTY_COUNTS: QueueCounts = {
@@ -34,6 +35,7 @@ export const EMPTY_COUNTS: QueueCounts = {
   withdrawalsPending: null,
   supportOpen: null,
   sosOpen: null,
+  approvalsWaiting: null,
 };
 
 /** `page_size=1` because only the envelope's `count` is wanted. */
@@ -60,6 +62,8 @@ export const QUEUES = {
   // queue's own counts answer for them (incidents with an SOS not yet
   // acknowledged), within the same scope.
   sosOpenReadOnly: '/safety/admin/incidents/?limit=1',
+  // Open requests raised by somebody else: a checker's queue.
+  approvalsWaiting: '/approvals/admin/requests/?pending_for_me=1&page_size=1',
 } as const;
 
 /**
@@ -83,6 +87,7 @@ const QUEUE_PERMISSION = {
   supportOpen: ['support.read'],
   // The badge sits on the Safety link: it follows that page's capabilities.
   sosOpen: PAGE_NEEDS.safety,
+  approvalsWaiting: ['approval.check'],
 } as const;
 
 export async function fetchQueueCounts(
@@ -103,7 +108,7 @@ export async function fetchQueueCounts(
 
   const skip = Promise.resolve(null);
 
-  const [driversAwaiting, withdrawalsPending, supportOpen, sosOpen] =
+  const [driversAwaiting, withdrawalsPending, supportOpen, sosOpen, approvalsWaiting] =
     await Promise.all([
       allowed('driversAwaiting')
         ? countOf(withScope(QUEUES.driversAwaiting)) : skip,
@@ -117,8 +122,9 @@ export async function fetchQueueCounts(
       allowed('sosOpen')
         ? (can(access ?? null, 'safety.respond') ? countOf(QUEUES.sosOpen) : readOnlySosCount())
         : skip,
+      allowed('approvalsWaiting') ? countOf(QUEUES.approvalsWaiting) : skip,
     ]);
-  return { driversAwaiting, withdrawalsPending, supportOpen, sosOpen };
+  return { driversAwaiting, withdrawalsPending, supportOpen, sosOpen, approvalsWaiting };
 }
 
 /**

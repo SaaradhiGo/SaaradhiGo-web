@@ -121,9 +121,9 @@ describe('the budget bar', () => {
   it('writes the bar out in words, with the overshoot when there is one', () => {
     const words = budgetWords(view({ spent_minor: 125000, committed_minor: 30000, remaining_minor: 0,
       budget_minor: 100000, overshoot_minor: 55000 }));
-    expect(words).toContain('₹1,250.00 spent');
-    expect(words).toContain('₹300.00 reserved');
-    expect(words).toContain('₹550.00 over the cap');
+    expect(words).toContain('₹1,250 spent');
+    expect(words).toContain('₹300 reserved');
+    expect(words).toContain('₹550 over the cap');
   });
 });
 

@@ -7,7 +7,7 @@ import { canOpen } from '@/lib/consoleLinks';
 import {
   budgetWords, canReadFraud, segments, STATE_WORDS, stateTone, type BudgetView, type State,
 } from '@/lib/promotions';
-import { formatMinor } from '@/lib/trips';
+import { formatWhole } from '@/lib/trips';
 import { Empty, Pill } from '@/components/console/ui';
 
 /**
@@ -74,11 +74,11 @@ export function BudgetBar({ budget, compact = false }: { budget: BudgetView; com
         <span className="pm-bar__reserved" style={{ width: `${seg.committed}%` }} />
       </div>
       <div className="pm-budget__nums">
-        <span><b>{formatMinor(budget.spent_minor, currency)}</b> spent</span>
-        <span><b>{formatMinor(budget.committed_minor, currency)}</b> reserved</span>
-        <span><b>{formatMinor(budget.remaining_minor ?? 0, currency)}</b> left{compact ? '' : ` of ${formatMinor(budget.budget_minor, currency)}`}</span>
+        <span><b>{formatWhole(budget.spent_minor, currency)}</b> spent</span>
+        <span><b>{formatWhole(budget.committed_minor, currency)}</b> reserved</span>
+        <span><b>{formatWhole(budget.remaining_minor ?? 0, currency)}</b> left{compact ? '' : ` of ${formatWhole(budget.budget_minor, currency)}`}</span>
         {budget.overshoot_minor > 0 ? (
-          <span className="pm-budget__over">{formatMinor(budget.overshoot_minor, currency)} over the cap</span>
+          <span className="pm-budget__over">{formatWhole(budget.overshoot_minor, currency)} over the cap</span>
         ) : null}
       </div>
     </div>

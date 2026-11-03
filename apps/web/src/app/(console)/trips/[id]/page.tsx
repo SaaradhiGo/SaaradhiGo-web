@@ -224,7 +224,7 @@ export default function TripDetailPage() {
     return (
       <div aria-busy="true" aria-live="polite">
         <span className="sr-only">Loading the trip</span>
-        <PageHeader title={`Trip #${id}`} />
+        <PageHeader title={`T-${id}`} />
         <TileGrid><Skeleton kind="tile" count={4} /></TileGrid>
         <div className="ops-review"><Skeleton kind="block" /><Skeleton kind="block" /></div>
       </div>
@@ -233,7 +233,7 @@ export default function TripDetailPage() {
   if (error || !data) {
     return (
       <>
-        <PageHeader title={`Trip #${id}`} actions={<ButtonLink href="/trips" variant="ghost" size="sm">All trips</ButtonLink>} />
+        <PageHeader title={`T-${id}`} actions={<ButtonLink href="/trips" variant="ghost" size="sm">All trips</ButtonLink>} />
         <ErrorState title="This trip could not be loaded" detail={error ?? undefined} onRetry={() => void load()} />
       </>
     );
@@ -284,7 +284,7 @@ export default function TripDetailPage() {
   return (
     <>
       <PageHeader
-        title={`Trip #${data.id}`}
+        title={`T-${data.id}`}
         subtitle={
           <>
             {data.zone ? `${data.zone.name} (${data.zone.code})` : 'No zone'}
@@ -508,7 +508,7 @@ export default function TripDetailPage() {
                 {(data.money_actions ?? []).map((m) => (
                   <Fact key={m.id} label={`${words(m.kind)} #${m.id}`}>
                     {formatMinor(m.amount_minor, m.currency, { signed: m.kind === 'adjustment' })} · {words(m.status)}
-                    {m.approval_request_id ? <span className="muted"> · request #{m.approval_request_id}</span> : null}
+                    {m.approval_request_id ? <span className="muted"> · APR-{m.approval_request_id}</span> : null}
                     <div className="help">{m.reason} · {cityTime(m.created_at, cityTz)}</div>
                   </Fact>
                 ))}
@@ -557,7 +557,7 @@ export default function TripDetailPage() {
               <div className="ops-panel__body">
                 <Facts>
                   {data.sos_events.map((e) => (
-                    <Fact key={e.id} label={`SOS #${e.id}`}>
+                    <Fact key={e.id} label="SOS alert">
                       <Pill tone={e.status === 'resolved' ? 'good' : e.status === 'open' ? 'bad' : 'wait'}>{words(e.status)}</Pill>
                       <div className="help">raised {cityTime(e.created_at, cityTz)}{e.acknowledged_at ? ` · acknowledged ${cityTime(e.acknowledged_at, cityTz)}` : ''}{e.resolved_at ? ` · resolved ${cityTime(e.resolved_at, cityTz)}` : ''}</div>
                     </Fact>

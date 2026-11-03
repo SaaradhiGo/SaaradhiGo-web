@@ -23,7 +23,7 @@ function call(fetchMock: ReturnType<typeof respond>, n = 0) {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 const incident = (patch: Partial<IncidentDetail> = {}): IncidentDetail => ({
-  id: 9, title: 'SOS (panic) on trip 4', category: 'other', severity: 'critical', status: 'open',
+  id: 9, ref: 'SOS-9', trip_ref: 'T-4', title: 'SOS (panic) on trip 4', category: 'other', severity: 'critical', status: 'open',
   source: 'sos', country: 'IN', anchor: { source: 'trip', node: 'IN-TG-HYD', node_name: 'Hyderabad' },
   trip_id: 4, assigned_to: null, assignee: null, opened_at: '2026-10-30T10:00:00Z', closed_at: null,
   outcome: null, police_referred_at: null, escalated: false,

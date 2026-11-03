@@ -6,7 +6,7 @@ import { useDensity } from '@/lib/consolePrefs';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   PAYMENT_METHODS, PAYMENT_STATUSES, type ListFilters, activeFilterCount, apiPath, cityName,
-  formatMinor, paymentTone,
+  formatMinor, formatWhole, paymentTone,
 } from '@/lib/finance';
 import { useFinanceList } from '@/lib/useFinanceList';
 import { PageLink } from '@/components/console/PageLink';
@@ -60,7 +60,7 @@ function PaymentsInner() {
     { key: 'rider', label: 'Rider', sortValue: (p) => p.rider_name, render: (p) => p.rider_name || '—', hideBelow: 1280 },
     {
       key: 'amount', label: 'Amount', num: true, width: '9rem', sortValue: (p) => p.amount_minor,
-      render: (p) => formatMinor(p.amount_minor, p.currency),
+      render: (p) => formatWhole(p.amount_minor, p.currency),
     },
     { key: 'method', label: 'Method', width: '6rem', render: (p) => p.method },
     {

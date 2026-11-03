@@ -291,7 +291,7 @@ function Summary({ c }: { c: Campaign }) {
       {c.state === 'pending_approval' ? (
         <div className="ops-confirm" role="status">
           <b>Waiting for a second admin</b>
-          <span>Nothing goes live until a different admin approves request #{c.approval_request_id}. You can still cancel it.</span>
+          <span>Nothing goes live until a different admin approves APR-{c.approval_request_id}. You can still cancel it.</span>
         </div>
       ) : null}
       {c.state === 'exhausted' ? (

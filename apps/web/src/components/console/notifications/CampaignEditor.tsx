@@ -206,7 +206,7 @@ export function CampaignEditor({ campaignId, onClose, onDone, onOpen }: {
             {detail?.status === 'pending_approval' ? (
               <div className="ops-confirm" role="status">
                 <b>Waiting for a second admin</b>
-                <span>Nothing is sent until a different admin approves request #{detail.approval_request_id}. You can still cancel it.</span>
+                <span>Nothing is sent until a different admin approves APR-{detail.approval_request_id}. You can still cancel it.</span>
               </div>
             ) : null}
 

@@ -25,13 +25,16 @@ import { AdminAccess, canAny, canAt } from '@/lib/adminScope';
 export type Page =
   | 'dashboard' | 'trips' | 'drivers' | 'riders' | 'support' | 'supportInbox'
   | 'withdrawals' | 'finance' | 'safety' | 'safetyConfig' | 'zones' | 'pricing' | 'liveops'
-  | 'notifications' | 'promotions' | 'fraud' | 'reports' | 'platform';
+  | 'notifications' | 'promotions' | 'fraud' | 'reports' | 'platform' | 'approvals';
 
 export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   // The Command Centre opens for `report.read` too: Marketing keeps it with
   // the aggregate board only (no live SOS, no money, no person), which the
   // overview endpoint enforces (owner ruling 4, AUDIT 27.43).
   dashboard: ['trip.read', 'report.read'],
+  // Everything waiting for a second person (owner, 2026-11-03). The list is `report.read`;
+  // deciding needs `approval.check`, which each request answers for itself (`can_decide`).
+  approvals: ['approval.check', 'finance.payout', 'pricing.write', 'promo.write', 'zone.write', 'platform.settings'],
   trips: ['trip.read'],
   drivers: ['driver.read'],
   riders: ['rider.read'],

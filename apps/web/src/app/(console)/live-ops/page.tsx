@@ -118,7 +118,7 @@ export default function LiveOpsPage() {
       <PageHeader
         title="Live Ops"
         subtitle={full
-          ? 'Where drivers and trips are right now, and where demand is outrunning supply. Opening this page is recorded.'
+          ? 'Where drivers and trips are right now, and where demand is outrunning supply.'
           : 'Where demand is outrunning supply. Your role sees counts per area, never an individual position.'}
         actions={linkText ? <span className={linkClass} role="status">{linkText}</span> : undefined}
       />

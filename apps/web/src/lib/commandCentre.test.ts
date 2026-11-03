@@ -37,7 +37,7 @@ describe('money', () => {
       USD: { now_minor: 4_000, last_week_minor: 0 },
     }, 'Collected');
     expect(tiles.map((t) => t.currency)).toEqual(['INR', 'USD']);
-    expect(tiles.map((t) => t.value)).toEqual(['₹2,100.00', '$40.00']);
+    expect(tiles.map((t) => t.value)).toEqual(['₹2,100', '$40']);
     expect(tiles.map((t) => t.label)).toEqual(['Collected (INR)', 'Collected (USD)']);
     // INR grew 425 %; USD had nothing last week, so no delta is invented.
     expect(tiles[0].delta?.value).toBe(425);

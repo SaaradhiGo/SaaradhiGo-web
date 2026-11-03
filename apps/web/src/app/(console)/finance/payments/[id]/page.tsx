@@ -110,7 +110,7 @@ export default function PaymentDetailPage() {
               <Fact label="Amount"><b>{formatMinor(data.amount_minor, data.currency)}</b> <span className="muted">{data.currency}</span></Fact>
               <Fact label="Status"><Pill tone={paymentTone(data.status)}>{data.status}</Pill></Fact>
               <Fact label="Method">{data.method}</Fact>
-              <Fact label="Trip"><PageLink page="trips" href={`/trips/${data.trip_id}`}>Trip #{data.trip_id}</PageLink></Fact>
+              <Fact label="Trip"><PageLink page="trips" href={`/trips/${data.trip_id}`}>T-{data.trip_id}</PageLink></Fact>
               <Fact label="City">{cityName(data.city)}</Fact>
               <Fact label="Rider">{data.rider_name || '—'}</Fact>
               <Fact label="Gateway">{data.gateway}</Fact>

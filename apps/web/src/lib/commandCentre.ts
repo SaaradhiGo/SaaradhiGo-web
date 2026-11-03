@@ -21,6 +21,7 @@
 
 import { ApiError, api } from '@/lib/api';
 import { withScope } from '@/lib/adminScope';
+import { formatWhole } from '@/lib/trips';
 
 export type Window = 'today' | '24h' | '7d';
 export const WINDOWS: ReadonlyArray<{ key: Window; label: string }> = [
@@ -296,7 +297,8 @@ export function moneyTiles(
     return {
       currency,
       label: `${label} (${currency})`,
-      value: formatMoneyMinor(pair.now_minor, currency) ?? '—',
+      // Whole units on the board (owner, 2026-11-03); the ledger keeps the paise.
+      value: formatWhole(pair.now_minor, currency),
       delta: delta(pair.now_minor, pair.last_week_minor, 'count', direction),
     };
   });

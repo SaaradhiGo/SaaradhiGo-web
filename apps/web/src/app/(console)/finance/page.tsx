@@ -6,7 +6,7 @@ import { ApiError, api } from '@/lib/api';
 import { withScope } from '@/lib/adminScope';
 import { useDensity } from '@/lib/consolePrefs';
 import {
-  OVERVIEW_COLUMNS, type OverviewRow, cityName, formatMinor, isDate, presetRange, rangeProblem,
+  OVERVIEW_COLUMNS, type OverviewRow, cityName, formatMinor, formatWhole, isDate, presetRange, rangeProblem,
 } from '@/lib/finance';
 import { FinanceNav, RangeBar } from '@/components/console/finance';
 import {
@@ -72,7 +72,7 @@ function OverviewInner() {
   useEffect(() => { void load(); }, [load]);
 
   const money = (key: (typeof OVERVIEW_COLUMNS)[number][0]) => (r: OverviewRow) =>
-    formatMinor(r[key], r.currency);
+    formatWhole(r[key], r.currency);
 
   const columns: Column<OverviewRow>[] = [
     { key: 'city', label: 'City', sortValue: (r) => cityName(r.city), render: (r) => cityName(r.city) },
@@ -92,7 +92,7 @@ function OverviewInner() {
     <>
       <PageHeader
         title="Finance"
-        subtitle="Money collected, kept and paid out, by city and currency. Nothing here adds one currency to another."
+        subtitle="Money collected, kept and paid out, by city and currency."
       />
       <FinanceNav />
 
@@ -100,11 +100,11 @@ function OverviewInner() {
         <TileGrid>
           {data.totals.flatMap((t) => [
             <MetricTile key={`${t.currency}-gross`} label={`Gross collected · ${t.currency}`} tone="money"
-              value={formatMinor(Number(t.gross_minor), t.currency)}
-              note={`Commission ${formatMinor(Number(t.commission_minor), t.currency)} · driver net ${formatMinor(Number(t.driver_net_minor), t.currency)}`} />,
+              value={formatWhole(Number(t.gross_minor), t.currency)}
+              note={`Commission ${formatWhole(Number(t.commission_minor), t.currency)} · driver net ${formatWhole(Number(t.driver_net_minor), t.currency)}`} />,
             <MetricTile key={`${t.currency}-pending`} label={`Payouts pending · ${t.currency}`} tone="wait"
-              value={formatMinor(Number(t.payouts_pending_minor), t.currency)}
-              note={`Paid ${formatMinor(Number(t.payouts_paid_minor), t.currency)} · failed ${formatMinor(Number(t.payouts_failed_minor), t.currency)} · refunds ${formatMinor(Number(t.refunds_minor), t.currency)}`} />,
+              value={formatWhole(Number(t.payouts_pending_minor), t.currency)}
+              note={`Paid ${formatWhole(Number(t.payouts_paid_minor), t.currency)} · failed ${formatWhole(Number(t.payouts_failed_minor), t.currency)} · refunds ${formatWhole(Number(t.refunds_minor), t.currency)}`} />,
           ])}
         </TileGrid>
       )}
@@ -126,12 +126,12 @@ function OverviewInner() {
           <ul className="fr-evidence" aria-label="Platform-funded trip ends">
             {(data?.platform_funded_trip_ends?.totals ?? []).map((t) => (
               <li key={t.currency}>
-                {t.currency}: {t.count} trip{t.count === 1 ? '' : 's'}, driver earnings paid by SaaradhiGo {formatMinor(t.driver_earnings_minor, t.currency)}
+                {t.currency}: {t.count} trip{t.count === 1 ? '' : 's'}, driver earnings paid by SaaradhiGo {formatWhole(t.driver_earnings_minor, t.currency)}
               </li>
             ))}
             {(data?.platform_funded_trip_ends?.regulatory_fee_expenses?.totals ?? []).map((t) => (
               <li key={`fee-${t.currency}`}>
-                {t.currency}: per-trip regulatory fee booked as a platform expense {formatMinor(t.amount_minor, t.currency)} on {t.count} trip{t.count === 1 ? '' : 's'}
+                {t.currency}: per-trip regulatory fee booked as a platform expense {formatWhole(t.amount_minor, t.currency)} on {t.count} trip{t.count === 1 ? '' : 's'}
               </li>
             ))}
           </ul>
