@@ -51,6 +51,12 @@ const tooWide = () => page.evaluate(() => {
     // not the page. Everything else counts, clipped or not: a Confirm cut off by a
     // clipping panel is exactly the bug.
     if (el.closest('.gm-style')) continue;
+    // Text inside an ellipsis box is cut on purpose; the box itself is still measured.
+    let truncated = false;
+    for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+      if (getComputedStyle(a).textOverflow === 'ellipsis') { truncated = true; break; }
+    }
+    if (truncated) continue;
     if (r.width > vw + 1 || r.right > vw + 1) {
       const name = el.tagName.toLowerCase() + (el.className && typeof el.className === 'string'
         ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '');
