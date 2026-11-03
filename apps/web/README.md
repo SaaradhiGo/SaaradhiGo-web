@@ -38,7 +38,7 @@ Sign in with a staff email address and password at `/login`. Phone-and-code sign
 
 Access + refresh tokens live in `localStorage` (keys: `saaradhi_admin_access_token`, `saaradhi_admin_refresh_token`). The `Authorization: Bearer …` header is attached on every call by `src/lib/api.ts`.
 
-Token rotation isn't wired yet — the access token currently lives for 15 minutes server-side, so an ops user will need to sign in again after that window. The refresh flow is a Phase-1 follow-up.
+The console stays signed in until the operator signs out: the 15-minute access token is renewed silently with the rotating refresh token (14 days of inactivity ends it), and "Sign out" revokes the refresh token on the server.
 
 ## Backend integration
 
