@@ -45,7 +45,8 @@ export function SosBar({ access }: { access: AdminAccess | null }) {
   const places = Array.from(new Set(items.map((i) => i.where?.name).filter(Boolean))).slice(0, 3);
   const href = items.length === 1 ? items[0].link : '/safety-ops';
   return (
-    <Link href={href} className="ops-sosbar" role="alert">
+    <div role="alert">
+    <Link href={href} className="ops-sosbar">
       <span className="ops-sosbar__tag">SOS</span>
       <b>
         {items.length === 1 ? `${oldest.ref} not acknowledged` : `${items.length} SOS not acknowledged`}
@@ -55,5 +56,6 @@ export function SosBar({ access }: { access: AdminAccess | null }) {
       {oldest.viewers?.length ? <span>{oldest.viewers.join(', ')} viewing</span> : null}
       <span className="ops-sosbar__go">{items.length === 1 ? 'Open it' : 'Open the safety board'} →</span>
     </Link>
+    </div>
   );
 }
