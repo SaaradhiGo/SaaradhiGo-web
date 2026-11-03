@@ -12,6 +12,7 @@ import {
   Empty, ErrorState, PageHeader, Skeleton, TileGrid,
 } from '@/components/console/ui';
 import { AlertsPanel } from './AlertsPanel';
+import { SuperAdminBanner } from './SuperAdminBanner';
 import { CityBoard } from './CityBoard';
 import { CityWindowBar } from './CityWindowBar';
 import { FinanceTiles } from './FinanceTiles';
@@ -109,7 +110,6 @@ export function CommandCentre({ access: given }: { access?: AdminAccess | null }
               ? `${waiting} item${waiting === 1 ? '' : 's'} waiting on you`
               : 'figures unavailable'}
           {openAlerts !== null ? ` · ${openAlerts} open alert${openAlerts === 1 ? '' : 's'}` : ''}
-          {overview.data?.cached ? ' · cached' : ''}
         </>
       }
     />
@@ -119,6 +119,7 @@ export function CommandCentre({ access: given }: { access?: AdminAccess | null }
 
   return (
     <>
+      <SuperAdminBanner access={access} />
       {header}
 
       {overview.status !== 'forbidden' && (

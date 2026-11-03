@@ -101,6 +101,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
       withdrawals: c.withdrawalsPending ?? undefined,
       support: c.supportOpen ?? undefined,
       sos: c.sosOpen ?? undefined,
+      approvals: c.approvalsWaiting ?? undefined,
     }));
     // The operator's own inbox (refunds sent back to them), for the header badge.
     if (can(access ?? null, 'support.read')) {
@@ -163,22 +164,6 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
         />
 
         <main className="ops__content" id="ops-content" tabIndex={-1}>
-          {/* The floor, as a standing prompt to the only people who can act
-              on it. One named Super Admin is a deliberate, warned state --
-              not an error -- so this is a notice, not an alarm. */}
-          {access && access.super_admin_shortfall > 0 && (
-            <div className="ops-banner" role="status">
-              <b>
-                {access.super_admin_shortfall} more named Super Admin
-                {access.super_admin_shortfall === 1 ? '' : 's'} needed
-              </b>
-              <span>
-                The platform should have two accountable people who can
-                administer it. The emergency account does not count.
-              </span>
-            </div>
-          )}
-
           {/* Console maintenance notices (module 15): a message from the platform's own admins.
               Plain text; it informs and never blocks the console. */}
           {(access?.notices ?? []).map((n) => (

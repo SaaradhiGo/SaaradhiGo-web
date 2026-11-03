@@ -707,7 +707,7 @@ function TripPanel({
   const cur = trip.currency;
   return (
     <Panel
-      title={`Trip #${trip.id}`}
+      title={`T-${trip.id}`}
       action={<PageLink page="trips" href={`/trips/${trip.id}`} className="sg-link">Open trip</PageLink>}
     >
       <Facts>

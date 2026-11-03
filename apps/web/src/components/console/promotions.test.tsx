@@ -59,9 +59,9 @@ describe('the budget bar', () => {
   it('writes the three figures out beside the bar and gives the bar a text alternative', () => {
     const { container } = render(<BudgetBar budget={budget()} />);
     const bar = container.querySelector('[role="img"]') as HTMLElement;
-    expect(bar.getAttribute('aria-label')).toContain('₹250.00 spent');
-    expect(bar.getAttribute('aria-label')).toContain('₹100.00 reserved');
-    expect(container.textContent).toContain('₹650.00 left of ₹1,000.00');
+    expect(bar.getAttribute('aria-label')).toContain('₹250 spent');
+    expect(bar.getAttribute('aria-label')).toContain('₹100 reserved');
+    expect(container.textContent).toContain('₹650 left of ₹1,000');
     expect((container.querySelector('.pm-bar__spent') as HTMLElement).style.width).toBe('25%');
     expect((container.querySelector('.pm-bar__reserved') as HTMLElement).style.width).toBe('10%');
   });
@@ -69,7 +69,7 @@ describe('the budget bar', () => {
   it('names an overshoot in words, not only in colour', () => {
     const { container } = render(<BudgetBar budget={budget({ spent_minor: 90000, committed_minor: 25000,
       remaining_minor: 0, overshoot_minor: 15000 })} />);
-    expect(container.textContent).toContain('₹150.00 over the cap');
+    expect(container.textContent).toContain('₹150 over the cap');
     expect(container.querySelector('.pm-bar--over')).not.toBeNull();
   });
 

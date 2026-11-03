@@ -7,7 +7,7 @@ import { useAdminAccess } from '@/lib/adminScope';
 import { useDensity } from '@/lib/consolePrefs';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
-  PAYOUT_LABEL, type ListFilters, ageLabel, apiPath, cityName, formatMinor, payoutTone,
+  PAYOUT_LABEL, type ListFilters, ageLabel, apiPath, cityName, formatMinor, formatWhole, payoutTone,
 } from '@/lib/finance';
 import {
   NO_POLICY_WORDS, RETRY_NOTE, bulkApprovable, bulkCurrencyProblem, bulkRejectable, payoutActions,
@@ -193,7 +193,7 @@ function PayoutsInner() {
       }>('/payments/admin/payouts/bulk-action/', { action: kind, withdrawal_ids: ids, reason: bulkNote.trim() });
       const request = body?.approval_request;
       setNotice(request
-        ? { kind: 'pending', text: `Sent for approval · request #${request.id} for ${body?.requested_count ?? ids.length} payouts. Nothing is released until a second finance admin decides it.` }
+        ? { kind: 'pending', text: `Sent for approval · APR-${request.id} for ${body?.requested_count ?? ids.length} payouts. Nothing is released until a second finance admin decides it.` }
         : { kind: 'done', text: `${body?.updated_count ?? ids.length} payout${(body?.updated_count ?? ids.length) === 1 ? '' : 's'} ${kind === 'reject' ? 'rejected' : 'released'}${body?.skipped_count ? `; ${body.skipped_count} skipped` : ''}.` });
       setPicked(new Set());
       setBulk(null);
@@ -236,7 +236,7 @@ function PayoutsInner() {
       key: 'handle', label: 'Pays to', width: '12rem', hideBelow: 1280,
       render: (w) => w.upi_id || w.bank_account || <span className="muted">Nothing on file</span>,
     },
-    { key: 'amount', label: 'Amount', num: true, width: '9rem', sortValue: (w) => w.amount_minor, render: (w) => formatMinor(w.amount_minor, w.currency) },
+    { key: 'amount', label: 'Amount', num: true, width: '9rem', sortValue: (w) => w.amount_minor, render: (w) => formatWhole(w.amount_minor, w.currency) },
     {
       key: 'status', label: 'Status', width: '11rem',
       render: (w) => (
@@ -489,7 +489,7 @@ function PayoutsInner() {
               ) : null}
               {selected.approval ? (
                 <Fact label="Approval">
-                  {selected.approval.batch ? 'Payout run · ' : ''}Request #{selected.approval.id} · {selected.approval.status}
+                  {selected.approval.batch ? 'Payout run · ' : ''}APR-{selected.approval.id} · {selected.approval.status}
                   {' '}· asked by {selected.approval.maker.label || 'an operator'}
                   {selected.approval.checker ? ` · checked by ${selected.approval.checker.label || 'an operator'}` : ''}
                 </Fact>
@@ -505,7 +505,7 @@ function PayoutsInner() {
                     { key: 'at', label: 'When', render: (t) => stamp(t.created_at, tzOf(selected)) },
                     { key: 'status', label: 'Status', render: (t) => t.status || '—' },
                     { key: 'ref', label: 'Reference', render: (t) => t.gateway_transaction_id || '—' },
-                    { key: 'amt', label: 'Amount', num: true, render: (t) => formatMinor(t.amount_minor, t.currency) },
+                    { key: 'amt', label: 'Amount', num: true, render: (t) => formatWhole(t.amount_minor, t.currency) },
                   ]} />
               </Panel>
             )}

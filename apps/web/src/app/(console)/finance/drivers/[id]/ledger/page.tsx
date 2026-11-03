@@ -122,7 +122,7 @@ function LedgerInner() {
           {e.trip_id ? <> · <PageLink page="trips" href={`/trips/${e.trip_id}`}>trip #{e.trip_id}</PageLink></> : null}
           {e.adjustment ? (
             <span className="muted">
-              {' '}· {(e.adjustment.reason_code ?? '').replace(/_/g, ' ')}{e.adjustment.note ? `: ${e.adjustment.note}` : ''} · request #{e.adjustment.approval_request_id}
+              {' '}· {(e.adjustment.reason_code ?? '').replace(/_/g, ' ')}{e.adjustment.note ? `: ${e.adjustment.note}` : ''} · APR-{e.adjustment.approval_request_id}
             </span>
           ) : null}
           {e.settlement ? (
@@ -183,7 +183,7 @@ function LedgerInner() {
           {data.payout_hold ? (
             <div className="ops-note ops-note--warn mb-3" role="status">
               <b>Payouts are on hold until {stamp(data.payout_hold.expires_at, tz)}.</b>{' '}
-              A suspended driver, approved by a second admin (request #{data.payout_hold.approval_request_id}); it ends by
+              A suspended driver, approved by a second admin (APR-{data.payout_hold.approval_request_id}); it ends by
               itself after at most {data.payout_hold.max_days} days unless it is renewed. The weekly run skips this driver
               and lists them as held.{' '}
               {can(access, 'finance.payout') ? (
@@ -204,7 +204,7 @@ function LedgerInner() {
             <DataTable caption="Recoveries of rewards" rows={data.recovery?.debts ?? []} rowKey={(d) => d.id}
               density="compact" maxHeight={false}
               columns={[
-                { key: 'id', label: 'Recovery', width: '8rem', render: (d) => `#${d.id} · request #${d.approval_request_id}` },
+                { key: 'id', label: 'Recovery', width: '8rem', render: (d) => `#${d.id} · APR-${d.approval_request_id}` },
                 { key: 'req', label: 'Approved', num: true, render: (d) => formatMinor(d.requested_minor, d.currency) },
                 { key: 'rec', label: 'Collected', num: true, render: (d) => formatMinor(d.recovered_minor, d.currency) },
                 { key: 'rem', label: 'Carry-over', num: true, render: (d) => formatMinor(d.remaining_minor, d.currency) },

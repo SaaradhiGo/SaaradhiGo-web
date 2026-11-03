@@ -116,7 +116,7 @@ function SettingsInner() {
                     <div className="ops-confirm mt-3" role="status">
                       <b>{c.pending_changes.length} change{c.pending_changes.length === 1 ? '' : 's'} waiting for a second admin</b>
                       <span>
-                        {c.pending_changes.map((p) => `Request #${p.id} (asked by ${p.maker.label || 'an operator'})`).join(' · ')}
+                        {c.pending_changes.map((p) => `APR-${p.id} (asked by ${p.maker.label || 'an operator'})`).join(' · ')}
                       </span>
                     </div>
                   )}
@@ -146,12 +146,12 @@ function SettingsInner() {
                           { key: 'out', label: 'Outcome', render: (r) => (
                             <>
                               {RUN_WORDS[r.outcome] ?? r.outcome}
-                              {r.approval_request_id ? ` · request #${r.approval_request_id}` : ''}
+                              {r.approval_request_id ? ` · APR-${r.approval_request_id}` : ''}
                               {r.truncated ? ' · cut at the weekly cap' : ''}
                             </>
                           ) },
                           { key: 'skip', label: 'No payout handle', render: (r) => (r.skipped_count
-                            ? `${r.skipped_count} skipped (driver ${(r.skipped ?? []).slice(0, 5).map((x) => `#${x.driver_id}`).join(', ')}${(r.skipped_count ?? 0) > 5 ? ' …' : ''})`
+                            ? `${r.skipped_count} skipped (driver ${(r.skipped ?? []).slice(0, 5).map((x) => `D-${x.driver_id}`).join(', ')}${(r.skipped_count ?? 0) > 5 ? ' …' : ''})`
                             : '—') },
                         ]} />
                     </div>

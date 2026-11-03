@@ -44,7 +44,11 @@ export const SIGNAL_LABEL: Record<string, string> = {
   long_stop: 'Long stop', eta_overrun: 'ETA overrun', route_deviation: 'Route deviation',
 };
 
-export type Place = { source: string; node: string | null; node_name: string | null };
+export type Place = {
+  source: string; node: string | null; node_name: string | null;
+  /** The city's own IANA zone, from the server: times show in it, labelled. */
+  timezone?: string | null;
+};
 
 export type SosSummary = {
   active: number | null;
@@ -56,6 +60,11 @@ export type SosSummary = {
 
 export type IncidentRow = {
   id: number;
+  /** SOS-1042 for a case an SOS raised or joined, else INC-1042: one ID everywhere. */
+  ref: string;
+  trip_ref: string | null;
+  /** The rider tapped "this was a mistake": an operator must confirm it. */
+  rider_reports_false_alarm?: boolean;
   title: string;
   category: string;
   severity: Severity;
@@ -141,6 +150,7 @@ export type SosEventRow = {
   id: number; status: 'open' | 'acknowledged' | 'resolved' | 'false_alarm';
   event_type: string; initiated_by: string; user_label: string; user_phone?: string | null;
   created_at: string; escalated_at: string | null; active: boolean;
+  raiser_reported_mistake_at?: string | null;
 };
 
 export type EmergencyNumbers = {

@@ -135,7 +135,7 @@ function RuleCard({ country, rule, mayEdit, onEdit }: {
       ) : null}
       {rule.pending.map((p) => (
         <div key={p.id} className="fr-pending" role="status">
-          <b>Waiting for a second approver · request #{p.id}</b>
+          <b>Waiting for a second approver · APR-{p.id}</b>
           <span>
             {Object.entries(p.thresholds)
               .filter(([k, v]) => rule.thresholds.some((t) => t.key === k && t.value !== v))

@@ -300,7 +300,7 @@ export default function RiderDetailPage() {
               </p>
             ))}
             {pending.map((a) => (
-              <p key={a.id} className="ops-confirm">Waiting for a checker · request #{a.id} ({words(a.action_key)})</p>
+              <p key={a.id} className="ops-confirm">Waiting for a checker · APR-{a.id} ({words(a.action_key)})</p>
             ))}
             {rail.length === 0 ? (
               <p className="help m-0">You can view this rider but not change them.</p>

@@ -55,6 +55,10 @@ function countTile(
   );
 }
 
+const NOT_ENOUGH = 'Not enough data yet';
+const MIN_REQUESTS_FOR_RATE = 20;
+const MIN_ARRIVALS_FOR_ETA = 5;
+
 export function CityBoard({
   row,
   access,
@@ -76,6 +80,11 @@ export function CityBoard({
   const requested = row.trips.requested.now ?? 0;
   const noRequests = requested === 0;
   const emptyNote = 'No requests in this window';
+  // A rate over a handful of requests, or an average over one or two arrivals,
+  // reads as a fact and is not one (owner, 2026-11-03: "0.2 min" was shown).
+  const thin = requested > 0 && requested < MIN_REQUESTS_FOR_RATE;
+  const fewArrivals = (row.trips.accepted.now ?? 0) < MIN_ARRIVALS_FOR_ETA
+    && row.rates.avg_eta_minutes.now !== null;
 
   const unfulfilled = delta(row.rates.unfulfilled_rate.now, row.rates.unfulfilled_rate.last_week, 'rate', 'down');
   const acceptance = delta(row.rates.acceptance_rate.now, row.rates.acceptance_rate.last_week, 'rate', 'up');
@@ -98,7 +107,6 @@ export function CityBoard({
           <span className="sg-num">{clock(row.window.end, tz)}</span>
           {' '}{zoneAbbreviation(tz)} local
           {' · '}{row.currency}
-          {' · '}{row.drivers.online_source === 'presence' ? 'presence live' : 'presence from status'}
         </p>
       </header>
 
@@ -114,28 +122,28 @@ export function CityBoard({
           direction: 'down', href: to(links.trips, `/trips?status=cancelled&scope=${row.code}`),
         })}
         {countTile('Unfulfilled', row.trips.unfulfilled, country, w, {
-          direction: 'down', note: 'No driver ever accepted',
+          direction: 'down',
         })}
         <MetricTile
           label="Unfulfilled rate"
-          value={formatRate(row.rates.unfulfilled_rate.now, country)}
+          value={thin ? NOT_ENOUGH : formatRate(row.rates.unfulfilled_rate.now, country)}
           tone={(row.rates.unfulfilled_rate.now ?? 0) > 15 ? 'wait' : 'neutral'}
-          delta={tileDelta(unfulfilled, country, w)}
-          note={row.rates.unfulfilled_rate.now === null ? emptyNote : 'of requests, no driver accepted'}
+          delta={thin ? undefined : tileDelta(unfulfilled, country, w)}
+          note={row.rates.unfulfilled_rate.now === null ? emptyNote : undefined}
         />
         <MetricTile
           label="Acceptance rate"
-          value={formatRate(row.rates.acceptance_rate.now, country)}
+          value={thin ? NOT_ENOUGH : formatRate(row.rates.acceptance_rate.now, country)}
           tone={(row.rates.acceptance_rate.now ?? 100) < 70 ? 'wait' : 'neutral'}
-          delta={tileDelta(acceptance, country, w)}
-          note={row.rates.acceptance_rate.now === null ? emptyNote : 'accepted ÷ requested (offers are not recorded)'}
+          delta={thin ? undefined : tileDelta(acceptance, country, w)}
+          note={row.rates.acceptance_rate.now === null ? emptyNote : undefined}
         />
         <MetricTile
           label="Average ETA"
-          value={formatMinutes(row.rates.avg_eta_minutes.now, country)}
+          value={fewArrivals ? NOT_ENOUGH : formatMinutes(row.rates.avg_eta_minutes.now, country)}
           tone={(row.rates.avg_eta_minutes.now ?? 0) > 8 ? 'wait' : 'neutral'}
-          delta={tileDelta(eta, country, w)}
-          note={row.rates.avg_eta_minutes.now === null ? 'No arrivals in this window' : 'accept → arrive'}
+          delta={fewArrivals ? undefined : tileDelta(eta, country, w)}
+          note={row.rates.avg_eta_minutes.now === null ? 'No arrivals in this window' : undefined}
         />
         <MetricTile
           label="Drivers online"

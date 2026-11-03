@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useDensity } from '@/lib/consolePrefs';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
-  type ListFilters, activeFilterCount, apiPath, cityName, formatMinor,
+  type ListFilters, activeFilterCount, apiPath, cityName, formatMinor, formatWhole,
 } from '@/lib/finance';
 import { useFinanceList } from '@/lib/useFinanceList';
 import { PageLink } from '@/components/console/PageLink';
@@ -58,12 +58,12 @@ function SettlementsInner() {
       key: 'driver', label: 'Driver', sortValue: (r) => r.driver_name,
       render: (r) => <PageLink page="drivers" href={`/drivers/${r.driver_id}`}>{r.driver_name || `Driver #${r.driver_id}`}</PageLink>,
     },
-    { key: 'gross', label: 'Gross', num: true, width: '8.5rem', sortValue: (r) => r.gross_fare_minor, render: (r) => formatMinor(r.gross_fare_minor, r.currency) },
+    { key: 'gross', label: 'Gross', num: true, width: '8.5rem', sortValue: (r) => r.gross_fare_minor, render: (r) => formatWhole(r.gross_fare_minor, r.currency) },
     {
       key: 'commission', label: 'Commission', num: true, width: '10.5rem', sortValue: (r) => r.commission_amount_minor,
-      render: (r) => `${formatMinor(r.commission_amount_minor, r.currency)} · ${Number(r.commission_percent)}%`,
+      render: (r) => `${formatWhole(r.commission_amount_minor, r.currency)} · ${Number(r.commission_percent)}%`,
     },
-    { key: 'net', label: 'Driver net', num: true, width: '8.5rem', sortValue: (r) => r.driver_net_minor, render: (r) => formatMinor(r.driver_net_minor, r.currency) },
+    { key: 'net', label: 'Driver net', num: true, width: '8.5rem', sortValue: (r) => r.driver_net_minor, render: (r) => formatWhole(r.driver_net_minor, r.currency) },
     { key: 'method', label: 'Method', width: '6rem', hideBelow: 1280, render: (r) => r.payment_method || '—' },
     {
       key: 'source', label: 'Source', width: '8rem', hideBelow: 1280,

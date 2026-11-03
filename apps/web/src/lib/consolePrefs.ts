@@ -47,7 +47,8 @@ export function writeTheme(theme: Theme) {
 }
 
 export function readDensity(): Density {
-  return read(DENSITY_KEY) === 'compact' ? 'compact' : 'comfortable';
+  // Compact unless the operator chose otherwise (owner, 2026-11-03: dense tables by default).
+  return read(DENSITY_KEY) === 'comfortable' ? 'comfortable' : 'compact';
 }
 export function writeDensity(density: Density) {
   write(DENSITY_KEY, density);
@@ -76,7 +77,7 @@ export function useTheme(): [Theme, (t: Theme) => void] {
 }
 
 export function useDensity(): [Density, (d: Density) => void] {
-  const [density, setDensityState] = useState<Density>('comfortable');
+  const [density, setDensityState] = useState<Density>('compact');
   useEffect(() => setDensityState(readDensity()), []);
   const setDensity = useCallback((d: Density) => {
     writeDensity(d);

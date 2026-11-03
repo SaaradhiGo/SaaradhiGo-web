@@ -317,7 +317,7 @@ function DriversInner() {
       >
         {preview && (
           <Facts>
-            <Fact label="Driver">#{preview.id}</Fact>
+            <Fact label="Driver">D-{preview.id}</Fact>
             <Fact label="KYC"><KycPills d={preview} /></Fact>
             <Fact label="Phone">{preview.user_details?.phone_number ?? '—'}</Fact>
             <Fact label="City">{preview.home_city?.name ?? '—'}</Fact>
@@ -411,7 +411,7 @@ function BulkDrawer({ action, ids, onClose, onDone }: {
         {outcome && <div className="alert-success" role="status">{outcome}</div>}
         {rows ? (
           <Facts>
-            {rows.results.map((r) => <Fact key={r.id} label={`#${r.id}`}>{words(r.result)}</Fact>)}
+            {rows.results.map((r) => <Fact key={r.id} label={`D-${r.id}`}>{words(r.result)}</Fact>)}
           </Facts>
         ) : null}
       </div>

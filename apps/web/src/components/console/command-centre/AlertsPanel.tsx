@@ -64,7 +64,7 @@ export function AlertsPanel({
       alerts.reload();
       onChanged?.();
     } catch (err) {
-      setFailure(messageFor(err, `Alert #${alert.id} could not be acknowledged.`));
+      setFailure(messageFor(err, `"${alert.title}" could not be acknowledged.`));
     } finally {
       setBusy(null);
     }

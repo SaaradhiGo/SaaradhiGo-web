@@ -144,16 +144,16 @@ describe('ready', () => {
     render(<CommandCentre access={cityOps} />);
     await screen.findByRole('heading', { name: /Hyderabad/ });
     expect(screen.getByRole('heading', { name: /Austin/ })).toBeTruthy();
-    expect(screen.getByText('₹2,100.00')).toBeTruthy();
-    expect(screen.getByText('$40.00')).toBeTruthy();
+    // Whole units on the board; paise and cents belong on ledgers (owner, 2026-11-03).
+    expect(screen.getByText('₹2,100')).toBeTruthy();
+    expect(screen.getByText('$40')).toBeTruthy();
     expect(screen.queryByText(/₹.*\$|\$.*₹/)).toBeNull();
-    // Rates and their deltas: 20.0 % unfulfilled, unchanged; acceptance down 10 points.
-    expect(screen.getAllByText('20.0%').length).toBeGreaterThan(0);
-    expect(screen.getByText(/▼ 10\.0 pp/)).toBeTruthy();
-    expect(screen.getAllByText(/vs same 24 h last week/).length).toBeGreaterThan(5);
-    // Austin's last week was empty, so its rates carry no trend and say so.
+    // 10 and 4 requests are too few for a rate: it says so rather than "20.0%".
+    expect(screen.queryAllByText('20.0%')).toHaveLength(0);
+    expect(screen.getAllByText('Not enough data yet').length).toBeGreaterThan(3);
+    expect(screen.getAllByText(/vs same 24 h last week/).length).toBeGreaterThan(3);
     const austin = screen.getByRole('region', { name: /Austin/ });
-    expect(within(austin).getAllByText('50.0%')).toHaveLength(2); // unfulfilled and acceptance, both 2 of 4
+    expect(within(austin).queryAllByText('50.0%')).toHaveLength(0);
     expect(within(austin).queryAllByText('No requests in this window')).toHaveLength(0);
     expect(screen.getByText('No open alerts')).toBeTruthy();
     // The selector offers both cities and "All cities".

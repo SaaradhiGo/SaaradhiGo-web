@@ -19,6 +19,8 @@ import { SosActionDrawer, type SosAction } from '@/components/console/safety/Sos
 import {
   Empty, ErrorState, Fact, Facts, PageHeader, Panel, Pill, Skeleton,
 } from '@/components/console/ui';
+import { useAdminAccess } from '@/lib/adminScope';
+import { SosActions } from '@/components/console/safety/SosActions';
 
 /**
  * One incident: the case file.
@@ -59,6 +61,7 @@ export default function IncidentPage() {
   const [drawer, setDrawer] = useState<IncidentAction | null>(null);
   const [sosAct, setSosAct] = useState<{ id: number; action: SosAction } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const access = useAdminAccess();
   const [now, setNow] = useState(() => Date.now());
   const first = useRef(true);
 
@@ -127,14 +130,16 @@ export default function IncidentPage() {
   return (
     <>
       <PageHeader
-        title={`Incident #${data.id}`}
+        title={data.ref}
         subtitle={(
           <>
             <Link href="/safety-ops">Safety</Link> · {data.title || CATEGORY_LABEL[data.category] || data.category}
+            {data.rider_reports_false_alarm ? <>{' · '}<Pill tone="wait">Rider reports false alarm</Pill></> : null}
           </>
         )}
-        actions={closed ? undefined : (
+        actions={closed || data.read_only ? undefined : (
           <div className="ops-actions" role="group" aria-label="Incident actions">
+            <SosActions item={data} meId={access?.id} compact onDone={(m) => { setNotice(m); void load(); }} />
             {buttons.filter(([, on]) => on).map(([act]) => (
               <button
                 key={act} type="button"
@@ -166,7 +171,7 @@ export default function IncidentPage() {
             <Fact label="Country">{data.country ?? 'Unknown'}</Fact>
             <Fact label="Assignee">{data.assignee ? data.assignee.label : <span className="muted">Unassigned</span>}</Fact>
             <Fact label="Opened">{stamp(data.opened_at, tz)} <span className="muted">· {elapsed(minutesBetween(data.opened_at, now))} ago</span></Fact>
-            <Fact label="Trip">{data.trip_id ? <PageLink page="trips" href={`/trips/${data.trip_id}`}>#{data.trip_id}</PageLink> : 'None'}</Fact>
+            <Fact label="Trip">{data.trip_id ? <PageLink page="trips" href={`/trips/${data.trip_id}`}>T-{data.trip_id}</PageLink> : 'None'}</Fact>
             {closed ? (
               <>
                 <Fact label="Closed">{stamp(data.closed_at, tz)}</Fact>
@@ -209,7 +214,8 @@ export default function IncidentPage() {
             {data.sos_events.map((ev: SosEventRow) => (
               <article key={ev.id} className={`ops-sos__card ops-sos__card--${ev.status}`} aria-labelledby={`sos-${ev.id}`}>
                 <div className="ops-sos__head">
-                  <h3 id={`sos-${ev.id}`}>SOS #{ev.id}</h3>
+                  <h3 id={`sos-${ev.id}`}>Press {data.sos_events.indexOf(ev) + 1}</h3>
+                  {ev.raiser_reported_mistake_at ? <Pill tone="wait">Rider reports false alarm</Pill> : null}
                   <Pill tone={SOS_TONE[ev.status]}>{words(ev.status)}</Pill>
                   <span className="ops-sos__type">{words(ev.event_type)}</span>
                   <span className="ops-sos__age">raised {elapsed(minutesBetween(ev.created_at, now))} ago</span>
@@ -220,7 +226,7 @@ export default function IncidentPage() {
                     <b>{ev.user_label || '—'}</b>
                     <Revealable
                       value={<span className="ops-sos__phone">{ev.user_phone || '—'}</span>}
-                      label={`caller phone for SOS #${ev.id}`}
+                      label={`caller phone for ${data.ref}`}
                       target={{ type: 'sos_event', id: ev.id }}
                       field="phone_number"
                       render={TELL}
@@ -265,7 +271,7 @@ export default function IncidentPage() {
             {data.people.trips.map((t) => (
               <li key={`t${t.id}`}>
                 <span className="ops-linklist__kind">Trip</span>
-                {t.in_scope ? <PageLink page="trips" href={`/trips/${t.id}`}>Trip #{t.id}</PageLink> : <span>Trip #{t.id} <span className="muted">(outside your scope)</span></span>}
+                {t.in_scope ? <PageLink page="trips" href={`/trips/${t.id}`}>T-{t.id}</PageLink> : <span>T-{t.id} <span className="muted">(outside your scope)</span></span>}
                 {t.status ? <span className="muted">{words(t.status)}</span> : null}
                 {t.primary ? <Pill>Primary</Pill> : null}
               </li>
@@ -273,7 +279,7 @@ export default function IncidentPage() {
             {data.people.tickets.map((t) => (
               <li key={`k${t.id}`}>
                 <span className="ops-linklist__kind">Ticket</span>
-                {t.in_scope ? <PageLink page="support" href={`/support/${t.id}`}>Ticket #{t.id}</PageLink> : <span>Ticket #{t.id} <span className="muted">(outside your scope)</span></span>}
+                {t.in_scope ? <PageLink page="support" href={`/support/${t.id}`}>TKT-{t.id}</PageLink> : <span>TKT-{t.id} <span className="muted">(outside your scope)</span></span>}
                 <span className="muted">{words(t.issue_type)} · {words(t.status.toLowerCase())}</span>
               </li>
             ))}

@@ -9,7 +9,7 @@ import { useDensity } from '@/lib/consolePrefs';
 import {
   BULK_CHECKER_ABOVE, DEFAULT_FILTERS, PAGE_SIZES, SORT_OPTIONS, STATUS_OPTIONS,
   type ApprovalBody, type TripFilters, activeFilterCount, canSeeMoneyColumns, cityTime,
-  filtersFromSearch, filtersToQuery, formatMinor, interpretWrite, newIdempotencyKey,
+  filtersFromSearch, filtersToQuery, formatMinor, formatWhole, interpretWrite, newIdempotencyKey,
   tripsApiPath, words,
 } from '@/lib/trips';
 import { ButtonLink } from '@/components/sg/Button';
@@ -36,8 +36,13 @@ type TripRow = {
   status?: string;
   user?: string | null;
   driver_name?: string | null;
-  pickup_address?: string;
-  destination_address?: string;
+  /** "T-881230": the ID an operator reads, types and is told. */
+  ref?: string;
+  /** Locality only ("Banjara Hills"); the full address is behind the logged reveal. */
+  pickup_locality?: string | null;
+  drop_locality?: string | null;
+  stuck_reason?: string | null;
+  stuck_minutes?: number | null;
   currency?: string | null;
   charged_fare_minor?: number | null;
   final_fare_minor?: number | null;
@@ -53,6 +58,20 @@ type TripRow = {
   flagged?: boolean;
   stale?: boolean;
   stale_reason?: string | null;
+};
+
+/** "Banjara Hills → Madhapur", from the localities the server derives. */
+function routeOf(t: TripRow): string {
+  const from = t.pickup_locality || null;
+  const to = t.drop_locality || null;
+  if (!from && !to) return '—';
+  return `${from ?? '—'} → ${to ?? '—'}`;
+}
+
+const STUCK_WORDS: Record<string, string> = {
+  overrun: 'running over',
+  no_location: 'no location',
+  not_started: 'not started',
 };
 
 type Page = { count: number; page: number; total_pages: number; results: TripRow[] };
@@ -132,13 +151,14 @@ function TripsInner() {
         <input type="checkbox" aria-label={`Select trip ${t.id}`} checked={picked.has(t.id)} onChange={() => toggle(t.id)} />
       ),
     }] : []),
-    { key: 'id', label: 'Trip', width: '5.5rem', render: (t) => <Link href={`/trips/${t.id}`}>#{t.id}</Link> },
+    { key: 'id', label: 'Trip', width: '7rem', render: (t) => <Link href={`/trips/${t.id}`} className="sg-num">{t.ref ?? `T-${t.id}`}</Link> },
     {
       key: 'status', label: 'Status', width: '10.5rem',
       render: (t) => (
         <span className="ops-form__row">
           <Pill tone={TONE[t.status ?? ''] ?? 'neutral'}>{words(t.status)}</Pill>
-          {t.stale ? <Pill tone="bad">stale</Pill> : null}
+          {t.stuck_reason ? <Pill tone="wait">stuck · {STUCK_WORDS[t.stuck_reason] ?? t.stuck_reason}</Pill>
+            : t.stale ? <Pill tone="wait">stale</Pill> : null}
         </span>
       ),
     },
@@ -156,12 +176,15 @@ function TripsInner() {
     ...(multiCity ? [{ key: 'city', label: 'City', width: '8rem', hideBelow: 1280 as const, render: (t: TripRow) => t.city?.name ?? <span className="muted">—</span> }] : []),
     { key: 'rider', label: 'Rider', width: '9rem', render: (t) => t.user || <span className="muted">—</span> },
     { key: 'driver', label: 'Driver', width: '9rem', hideBelow: 1280, render: (t) => t.driver_name || <span className="muted">unassigned</span> },
-    { key: 'pickup', label: 'Pickup', render: (t) => <span title={t.pickup_address}>{t.pickup_address || '—'}</span> },
+    { key: 'route', label: 'From → to', render: (t) => {
+      const route = routeOf(t);
+      return <span title={route}>{route}</span>;
+    } },
     ...(showMoney ? [{
       key: 'fare', label: 'Fare', num: true, width: '8rem',
       render: (t: TripRow) => (
         <>
-          {formatMinor(t.charged_fare_minor ?? null, t.currency)}
+          {formatWhole(t.charged_fare_minor ?? null, t.currency)}
           {t.final_fare_minor == null && t.status !== 'completed' ? <span className="muted"> est.</span> : null}
         </>
       ),
@@ -216,7 +239,7 @@ function TripsInner() {
             </select>
             <label className="ops-form__label" htmlFor="f-vehicle">Vehicle</label>
             <input id="f-vehicle" className="ops-select" placeholder="e.g. sedan" value={draft.vehicleType} onChange={(e) => setDraft({ ...draft, vehicleType: e.target.value.trim() })} size={10} />
-            <label className="ops-form__label" htmlFor="f-id">Trip #</label>
+            <label className="ops-form__label" htmlFor="f-id">Trip (T-…)</label>
             <input id="f-id" className="ops-select" inputMode="numeric" value={draft.id} onChange={(e) => setDraft({ ...draft, id: e.target.value.replace(/\D/g, '') })} size={8} />
           </div>
           <div className="ops-form__row">
@@ -281,7 +304,7 @@ function TripsInner() {
 
       <Drawer
         open={preview !== null}
-        title={preview ? `Trip #${preview.id}` : ''}
+        title={preview ? (preview.ref ?? `T-${preview.id}`) : ''}
         onClose={() => setPreview(null)}
         footer={preview ? <ButtonLink href={`/trips/${preview.id}`} variant="primary" size="sm">Open full trip</ButtonLink> : undefined}
       >
@@ -291,9 +314,9 @@ function TripsInner() {
             <Fact label="City">{preview.city?.name ?? '—'}</Fact>
             <Fact label="Rider">{preview.user || '—'}</Fact>
             <Fact label="Driver">{preview.driver_name || 'Unassigned'}</Fact>
-            <Fact label="Pickup">{preview.pickup_address || '—'}</Fact>
-            <Fact label="Drop">{preview.destination_address || '—'}</Fact>
-            {showMoney ? <Fact label="Fare">{formatMinor(preview.charged_fare_minor ?? null, preview.currency)} · {preview.payment_method ?? '—'}</Fact> : null}
+            <Fact label="Trip"><span className="sg-num">{preview.ref ?? `T-${preview.id}`}</span></Fact>
+            <Fact label="From → to">{routeOf(preview)}</Fact>
+            {showMoney ? <Fact label="Fare">{formatWhole(preview.charged_fare_minor ?? null, preview.currency)} · {preview.payment_method ?? '—'}</Fact> : null}
             <Fact label="Requested">{cityTime(preview.requested_at, preview.city?.timezone, { zone: true })}</Fact>
           </Facts>
         )}

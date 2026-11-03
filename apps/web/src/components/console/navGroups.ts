@@ -2,7 +2,7 @@ import { AdminAccess, canAny } from '@/lib/adminScope';
 import { PAGE_NEEDS } from '@/lib/consoleLinks';
 import type { NavGroup, NavItem } from '@/components/console/Sidebar';
 import {
-  BarChart, Cog, Flag, Gauge, Gift, LifeBuoy, MapPin, Megaphone, Percent, Radar, Route, Shield, Siren, TrendUp, UserRound, Users, Wallet,
+  BarChart, Check, Cog, Flag, Gauge, Gift, LifeBuoy, MapPin, Megaphone, Percent, Radar, Route, Shield, Siren, TrendUp, UserRound, Users, Wallet,
 } from '@/components/console/icons';
 
 /**
@@ -27,6 +27,8 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Operations',
     items: [
       { href: '/dashboard', label: 'Command Centre', Icon: Gauge, need: PAGE_NEEDS.dashboard },
+      // Everything waiting for a second person, with the checker's count (owner, 2026-11-03).
+      { href: '/approvals', label: 'Approvals', Icon: Check, need: PAGE_NEEDS.approvals, countKey: 'approvals' },
       // The live map (module 10): dots for liveops.read, the heatmap alone for liveops.aggregate.
       { href: '/live-ops', label: 'Live Ops', Icon: Radar, need: PAGE_NEEDS.liveops },
       { href: '/trips', label: 'Trips', Icon: Route, need: PAGE_NEEDS.trips },

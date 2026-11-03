@@ -271,7 +271,7 @@ function ReconciliationInner() {
               <Fact label="Seen">{selected.seen || '—'}</Fact>
               {selected.reference ? <Fact label="Gateway reference">{selected.reference}</Fact> : null}
               {selected.payment_id ? <Fact label="Payment"><Link href={`/finance/payments/${selected.payment_id}`}>Payment #{selected.payment_id}</Link></Fact> : null}
-              {selected.trip_id ? <Fact label="Trip"><PageLink page="trips" href={`/trips/${selected.trip_id}`}>Trip #{selected.trip_id}</PageLink></Fact> : null}
+              {selected.trip_id ? <Fact label="Trip"><PageLink page="trips" href={`/trips/${selected.trip_id}`}>T-{selected.trip_id}</PageLink></Fact> : null}
               {selected.withdrawal_id ? <Fact label="Payout"><Link href="/finance/payouts">Payout #{selected.withdrawal_id}</Link></Fact> : null}
               <Fact label="Raised">{stamp(selected.created_at, timeZoneFor(selected.city?.code))}</Fact>
               {selected.resolved_at ? (
