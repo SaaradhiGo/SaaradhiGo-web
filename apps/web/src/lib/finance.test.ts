@@ -114,11 +114,19 @@ describe('filters, the URL and the API say the same thing', () => {
       'from=2026-03-01&to=2026-03-09&status=failed&method=cash&currency=usd&q=%20abc%20&scope=US-TX-AUS&page=3'));
     expect(f).toEqual({
       from: '2026-03-01', to: '2026-03-09', status: 'failed', method: 'cash', currency: 'USD',
-      q: 'abc', scope: 'US-TX-AUS', page: 3,
+      q: 'abc', scope: 'US-TX-AUS', ordering: '', page: 3,
     });
     expect(filtersToQuery(f)).toBe(
       'from=2026-03-01&to=2026-03-09&status=failed&method=cash&currency=USD&q=abc&scope=US-TX-AUS&page=3');
     expect(filtersToQuery(EMPTY_FILTERS)).toBe('');
+  });
+
+  it('keeps a column sort in the URL and the API path, and never counts it as a filter', () => {
+    const f = filtersFromSearch(new URLSearchParams('status=failed&ordering=-amount'));
+    expect(f.ordering).toBe('-amount');
+    expect(apiPath('/payments/admin/payouts/', f)).toBe('/payments/admin/payouts/?status=failed&ordering=-amount');
+    expect(activeFilterCount(f)).toBe(1);
+    expect(filtersFromSearch(new URLSearchParams('ordering=amount;drop')).ordering).toBe('');
   });
 
   it('drops anything malformed instead of guessing', () => {

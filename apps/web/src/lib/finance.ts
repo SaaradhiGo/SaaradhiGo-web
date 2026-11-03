@@ -114,11 +114,13 @@ export type ListFilters = {
   q: string;
   /** A place narrowing the view (`?scope=`); the server refuses one the operator does not hold. */
   scope: string;
+  /** The server's `?ordering=` (a column sort); empty means the list's default. */
+  ordering: string;
   page: number;
 };
 
 export const EMPTY_FILTERS: ListFilters = {
-  from: '', to: '', status: '', method: '', currency: '', q: '', scope: '', page: 1,
+  from: '', to: '', status: '', method: '', currency: '', q: '', scope: '', ordering: '', page: 1,
 };
 
 export function filtersFromSearch(params: URLSearchParams): ListFilters {
@@ -133,6 +135,7 @@ export function filtersFromSearch(params: URLSearchParams): ListFilters {
     currency: /^[A-Z]{3}$/.test(currency) ? currency : '',
     q: (params.get('q') ?? '').trim(),
     scope: (params.get('scope') ?? '').trim(),
+    ordering: /^-?[a-z_]+$/.test(params.get('ordering') ?? '') ? (params.get('ordering') as string) : '',
     page: Number.isInteger(page) && page > 0 ? page : 1,
   };
 }
@@ -147,12 +150,13 @@ export function filtersToQuery(f: ListFilters): string {
   if (f.currency) q.set('currency', f.currency);
   if (f.q) q.set('q', f.q);
   if (f.scope) q.set('scope', f.scope);
+  if (f.ordering) q.set('ordering', f.ordering);
   if (f.page > 1) q.set('page', String(f.page));
   return q.toString();
 }
 
 export function activeFilterCount(f: ListFilters, ignore: readonly (keyof ListFilters)[] = []): number {
-  const skip = new Set<string>(['page', ...ignore]);
+  const skip = new Set<string>(['page', 'ordering', ...ignore]);
   return (Object.keys(f) as (keyof ListFilters)[]).filter((k) => !skip.has(k) && Boolean(f[k])).length;
 }
 

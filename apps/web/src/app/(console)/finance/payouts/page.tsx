@@ -269,17 +269,17 @@ function PayoutsInner() {
   if (filters.method) chips.push({ key: 'method', label: `Paid by ${filters.method}`, onRemove: () => go({ ...filters, method: '', page: 1 }) });
 
   const columns: ListColumn<Row>[] = [
-    { key: 'id', label: 'Payout', primary: true, render: (w) => <span className="sg-num">PO-{w.id}</span> },
-    { key: 'driver', label: 'Driver', render: (w) => <span>{whoOf(w)} <span className="ops-ref sg-num">D-{w.driver_id}</span></span> },
-    { key: 'amount', label: 'Amount', num: true, render: (w) => formatWhole(w.amount_minor, w.currency) },
+    { key: 'id', label: 'Payout', primary: true, sortKey: 'id', render: (w) => <span className="sg-num">PO-{w.id}</span> },
+    { key: 'driver', label: 'Driver', sortKey: 'driver', render: (w) => <span>{whoOf(w)} <span className="ops-ref sg-num">D-{w.driver_id}</span></span> },
+    { key: 'amount', label: 'Amount', num: true, sortKey: 'amount', render: (w) => formatWhole(w.amount_minor, w.currency) },
     { key: 'status', label: 'Status', render: (w) => <PayoutStatus w={w} /> },
     {
       key: 'details', label: 'Payout details',
       render: (w) => (w.upi_id || w.bank_account ? <StatusChip tone="good">On file</StatusChip> : <StatusChip tone="caution">Missing</StatusChip>),
     },
-    { key: 'city', label: 'City', render: (w) => cityName(w.city) },
+    { key: 'city', label: 'City', sortKey: 'city', render: (w) => cityName(w.city) },
     { key: 'age', label: 'Waiting', num: true, render: (w) => ageLabel(w.age_seconds) },
-    { key: 'when', label: 'Requested', num: true, render: (w) => stamp(w.requested_at, timeZoneFor(w.city?.code)) },
+    { key: 'when', label: 'Requested', num: true, sortKey: 'requested', render: (w) => stamp(w.requested_at, timeZoneFor(w.city?.code)) },
   ];
   const requestColumns: ListColumn<Request>[] = [
     { key: 'ref', label: 'Request', primary: true, render: (r) => <span className="sg-num">{r.ref}</span> },
@@ -399,6 +399,8 @@ function PayoutsInner() {
                 { key: 'reject', label: `Reject ${toReject.length}`, tone: 'danger', onRun: () => { setBulk('reject'); setBulkNote(''); setBulkError(null); } },
               ] : []}
               onRow={setOpen}
+              ordering={filters.ordering || '-requested'}
+              onOrdering={(o) => go({ ...filters, ordering: o, page: 1 })}
               activeKey={open?.id ?? null}
               loading={data === null && !error}
               error={error ? `${error} This is not the same as there being nothing to pay.` : null}
