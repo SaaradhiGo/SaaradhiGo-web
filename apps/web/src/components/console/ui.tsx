@@ -444,6 +444,16 @@ export function Drawer({
   const closeBtn = useRef<HTMLButtonElement>(null);
   const titleId = useId();
 
+  // Callers pass `onClose` inline (`() => setDialog(null)`), so it is a new
+  // function on every render. When it was a dependency of the effect below,
+  // every keystroke -- and every timer tick on a live page like the Safety
+  // board -- tore the effect down and ran it again: focus went back to the
+  // button that opened the drawer, then jumped to the drawer's close button.
+  // Typing in a drawer's text box moved the cursor away after one letter.
+  // The latest `onClose` is read through a ref; the effect runs on open/close only.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement as HTMLElement | null;
@@ -454,7 +464,7 @@ export function Drawer({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab' || !panel.current) return;
@@ -478,7 +488,7 @@ export function Drawer({
       document.body.style.overflow = prevOverflow;
       previous?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
   return (

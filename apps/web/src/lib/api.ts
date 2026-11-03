@@ -19,18 +19,101 @@ export function readToken(): string | null {
 }
 
 /**
- * Only the ACCESS token is kept (AUDIT 27.78, M4).
+ * The console stays signed in until the operator signs out (owner, 2026-11-03).
  *
- * The console never refreshes: a session ends when its access token does, and
- * the operator signs in again with their second factor. The refresh token the
- * login response carries was nevertheless written to localStorage, where it
- * stayed usable for 14 days after "Sign out" -- any script on the page, or
- * anyone with the browser profile, could mint new sessions from it. It is no
- * longer stored; `signOutConsole` revokes one an older build left behind.
+ * Before, only the 15-minute access token was kept and the console never
+ * renewed it (AUDIT 27.78, M4), so an operator was sent back to the password
+ * and authenticator code every quarter of an hour. Now the refresh token is
+ * kept too and the access token is renewed silently (`renewConsoleSession`).
+ *
+ * What still bounds the session:
+ *   * every renewal ROTATES the refresh token and blacklists the old one, so a
+ *     copied token is single-use;
+ *   * "Sign out" revokes the refresh token on the server before clearing this
+ *     browser (`signOutConsole`), so it is dead after sign-out, not 14 days later;
+ *   * a deactivated account gets no new tokens (`/auth/refresh/`, AUDIT 27.78 Low 3);
+ *   * a password or authenticator change revokes every refresh token the
+ *     account holds (`session_revocation.revoke_all_refresh_tokens`);
+ *   * 14 days without opening the console ends the session (REFRESH_TOKEN_LIFETIME).
  */
-export function writeTokens({ access }: { access: string; refresh?: string }) {
+export function writeTokens({ access, refresh }: { access: string; refresh?: string }) {
   window.localStorage.setItem(TOKEN_KEY, access);
-  window.localStorage.removeItem(REFRESH_KEY);
+  if (refresh) window.localStorage.setItem(REFRESH_KEY, refresh);
+}
+
+/** Seconds since the epoch at which a JWT expires, or null if it cannot be read. */
+function tokenExpiry(token: string): number | null {
+  try {
+    const part = token.split('.')[1];
+    if (!part) return null;
+    const json = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')));
+    return typeof json.exp === 'number' ? json.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Renew this long before the access token runs out, so a request never races it. */
+const RENEW_BEFORE_S = 60;
+
+let renewing: Promise<boolean> | null = null;
+
+/**
+ * Swap the stored refresh token for a new access + refresh pair.
+ *
+ * Single-flight: the Command Centre fires several requests at once, and two
+ * renewals with the same refresh token would have the second refused (the
+ * first blacklisted it) and sign the operator out. They all wait on one.
+ *
+ * Sent WITHOUT the Authorization header: the access token is expired by now,
+ * and the server's JWT authentication would refuse the request before the
+ * refresh view ever saw it.
+ *
+ * Returns true when renewed. A refusal (expired, revoked, deactivated) clears
+ * the session; a network failure leaves it alone, so being offline for a
+ * moment never signs anyone out.
+ */
+export function renewConsoleSession(): Promise<boolean> {
+  if (typeof window === 'undefined') return Promise.resolve(false);
+  if (renewing) return renewing;
+  const refresh = window.localStorage.getItem(REFRESH_KEY);
+  if (!refresh) return Promise.resolve(false);
+  renewing = (async () => {
+    try {
+      const resp = await fetch(`${BASE}/auth/refresh/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refresh }),
+      });
+      let json: any = null;
+      try { json = await resp.json(); } catch { /* empty */ }
+      const data = json?.data ?? json;
+      if (resp.ok && data?.token) {
+        writeTokens({ access: data.token, refresh: data.refresh_token });
+        return true;
+      }
+      if (resp.status === 400 || resp.status === 401) clearTokens();
+      return false;
+    } catch {
+      return false;
+    } finally {
+      renewing = null;
+    }
+  })();
+  return renewing;
+}
+
+/** Renew first if the stored access token is about to expire (or has). */
+async function freshConsoleToken(): Promise<string | null> {
+  const token = readToken();
+  if (!token || typeof window === 'undefined') return token;
+  if (!window.localStorage.getItem(REFRESH_KEY)) return token;
+  const exp = tokenExpiry(token);
+  if (exp !== null && exp - Date.now() / 1000 <= RENEW_BEFORE_S) {
+    await renewConsoleSession();
+    return readToken();
+  }
+  return token;
 }
 
 export function clearTokens() {
@@ -43,18 +126,19 @@ export function clearTokens() {
 }
 
 /**
- * Sign the console out: revoke any stored refresh token on the server, then
+ * Sign the console out: revoke the stored refresh token on the server, then
  * clear this browser (AUDIT 27.78, M4).
  *
- * New sessions keep no refresh token (`writeTokens`), but one written by an
- * earlier build may still be in storage. It is POSTed to `/auth/logout/`,
+ * The refresh token is POSTed to `/auth/logout/`,
  * which blacklists it, BEFORE storage is cleared -- clearing first would lose
  * the only copy and leave it valid. Best effort and bounded: a sign-out must
  * never hang on the network, and the local session is cleared either way.
  */
 export async function signOutConsole(): Promise<void> {
   if (typeof window === 'undefined') return;
-  const access = window.localStorage.getItem(TOKEN_KEY);
+  // `/auth/logout/` needs a live access token. After a night away the stored
+  // one has expired, so renew first; the token revoked is then the new one.
+  const access = await freshConsoleToken();
   const refresh = window.localStorage.getItem(REFRESH_KEY);
   if (access && refresh) {
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -124,15 +208,23 @@ async function call<T>(
   body?: unknown,
   authToken?: string | null,
 ): Promise<T> {
-  const token = authToken !== undefined ? authToken : readToken();
-  const resp = await fetch(`${BASE}${path}`, {
+  const consoleSession = authToken === undefined;
+  let token = consoleSession ? await freshConsoleToken() : authToken;
+  const send = (bearer: string | null) => fetch(`${BASE}${path}`, {
     method,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
   });
+  let resp = await send(token);
+  // The token was refused (expired while the laptop slept, say): renew once
+  // and send the same request again before treating the session as ended.
+  if (resp.status === 401 && consoleSession && token && await renewConsoleSession()) {
+    token = readToken();
+    resp = await send(token);
+  }
   let json: any = null;
   try {
     json = await resp.json();
@@ -210,7 +302,7 @@ async function callForm<T>(
   form: FormData,
   authToken?: string | null,
 ): Promise<T> {
-  const token = authToken !== undefined ? authToken : readToken();
+  const token = authToken !== undefined ? authToken : await freshConsoleToken();
   const resp = await fetch(`${BASE}${path}`, {
     method,
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -245,7 +337,7 @@ async function callForm<T>(
  * ApiError like any other call.
  */
 export async function apiDownload(path: string): Promise<{ blob: Blob; filename: string }> {
-  const token = readToken();
+  const token = await freshConsoleToken();
   const resp = await fetch(`${BASE}${path}`, {
     method: 'GET',
     headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
