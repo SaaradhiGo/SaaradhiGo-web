@@ -38,6 +38,7 @@ function timer(fromIso: string | null, now: number): string {
   if (!fromIso) return '—';
   const s = Math.max(0, Math.round((now - new Date(fromIso).getTime()) / 1000));
   const m = Math.floor(s / 60);
+  if (m >= 2880) return `${Math.floor(m / 1440)} d`;
   if (m >= 120) return `${Math.floor(m / 60)} h ${m % 60} min`;
   return `${m}:${String(s % 60).padStart(2, '0')}`;
 }

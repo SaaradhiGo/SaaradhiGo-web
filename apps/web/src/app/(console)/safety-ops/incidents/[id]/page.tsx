@@ -136,8 +136,9 @@ export default function IncidentPage() {
   const ack = ackState(data, timers, now);
 
   const buttons: Array<[IncidentAction, boolean]> = [
-    ['assign', a.assign], ['note', a.note], ['status', a.status], ['link', a.link],
-    ['suspend', a.suspend_driver], ['block', a.block_rider], ['police', a.refer_police], ['close', a.close || a.close_blockers.length > 0],
+    // Resolve and False alarm (SosActions) close the case; status and close stay off the bar.
+    ['assign', a.assign], ['note', a.note], ['link', a.link],
+    ['suspend', a.suspend_driver], ['block', a.block_rider], ['police', a.refer_police],
   ];
 
   return (
@@ -156,7 +157,7 @@ export default function IncidentPage() {
             {buttons.filter(([, on]) => on).map(([act]) => (
               <button
                 key={act} type="button"
-                className={`sg-btn sg-btn--${act === 'close' ? 'primary' : 'secondary'} sg-btn--sm`}
+                className="sg-btn sg-btn--ghost sg-btn--sm"
                 onClick={() => setDrawer(act)}
               >
                 {ACTION_TITLE[act]}
@@ -376,7 +377,7 @@ function CaseHead({ data, now, others }: { data: IncidentDetail; now: number; ot
   const since = data.sos.oldest_active_at ?? data.opened_at;
   const s = Math.max(0, Math.round((now - new Date(since).getTime()) / 1000));
   const m = Math.floor(s / 60);
-  const clockText = m >= 120 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m}:${String(s % 60).padStart(2, '0')}`;
+  const clockText = m >= 2880 ? `${Math.floor(m / 1440)} d` : m >= 120 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m}:${String(s % 60).padStart(2, '0')}`;
   return (
     <section className={`ops-case-head mb-4${live ? '' : ' ops-case-head--calm'}`} aria-label="Case">
       {live ? <span className="ops-case-head__tag">SOS</span> : null}
