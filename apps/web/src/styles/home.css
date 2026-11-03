@@ -401,7 +401,7 @@
    comes from type size and vertical space; the only borders are the hairline
    rules that separate list rows. */
 
-.hp-masthead { padding: 64px 0 0; }
+.hp-masthead { padding-top: 64px; }
 .hp-h1 {
   margin: 0;
   font-family: var(--font-sans);

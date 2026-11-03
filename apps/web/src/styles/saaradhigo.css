@@ -180,7 +180,7 @@
 .sg-map .car { fill: var(--champagne); stroke: var(--gold-700); stroke-width: 1.5; }
 .sg-map .ring { fill: none; stroke: var(--pickup); stroke-width: 2; }
 .sg-maplabel { position: absolute; transform: translate(-50%, calc(-100% - 18px)); background: var(--noir); color: var(--on-noir);
-  font: 700 12px/16px var(--font-sans); padding: 7px 12px; border-radius: var(--radius-pill); white-space: nowrap; box-shadow: var(--shadow-panel); border: 1px solid rgba(255,215,0,0.35); }
+  font: 700 12px/16px var(--font-sans); padding: 7px 12px; border-radius: var(--radius-pill); white-space: nowrap; max-width: min(240px, 64vw); overflow: hidden; text-overflow: ellipsis; box-shadow: var(--shadow-panel); border: 1px solid rgba(255,215,0,0.35); }
 .sg-maplabel b { color: var(--gold-500); }
 
 .sg-sheet { background: var(--bg-100); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: var(--space-3) var(--space-4) var(--space-5);
@@ -391,8 +391,8 @@
 .sg-ws .sg-panel__title { margin: 0; }
 
 /* A journey recap: two rows, each with its own marker shape. */
-.sg-summary { display: grid; gap: 10px; padding: var(--space-4); border-radius: var(--radius-md); background: var(--bg-200); border: 1px solid var(--line); }
-.sg-summary > div { display: flex; gap: var(--space-3); align-items: center; font: 600 14px/20px var(--font-sans); }
+.sg-summary { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: var(--space-4); border-radius: var(--radius-md); background: var(--bg-200); border: 1px solid var(--line); }
+.sg-summary > div { min-width: 0; display: flex; gap: var(--space-3); align-items: center; font: 600 14px/20px var(--font-sans); }
 .sg-summary small { color: var(--ink-muted); font-weight: 500; margin-left: auto; font-size: 13px; }
 
 /* Marketing sections. */
