@@ -2091,3 +2091,42 @@ button.ops-square:focus-visible { outline: 2px solid var(--ops-gold-300); outlin
 .ops-key { display: inline-block; width: 14px; height: 0; border-top: 2px solid; }
 .ops-key--req { border-color: var(--ops-ink-3); }
 .ops-key--done { border-color: var(--ops-gold-500); }
+
+/* KYC review (board E): one driver, the document beside the checks, one key per decision. */
+.ops-kyc { display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 16px; align-items: start; }
+@media (max-width: 1100px) { .ops-kyc { grid-template-columns: minmax(0, 1fr); } }
+.ops-kyc__pace { font: 600 12.5px/1.4 var(--font-sans); color: var(--ops-ink-2); }
+.ops-kyc__chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 14px; }
+.ops-kyc__who { font: 700 13px/1.4 var(--font-sans); color: var(--ops-ink-1); margin-right: 6px; }
+.ops-kyc__chip { display: inline-flex; align-items: center; gap: 8px; padding: 5px 8px 5px 10px; border-radius: 10px; border: 1px solid var(--ops-hairline); background: var(--ops-bg-100); color: var(--ops-ink-2); font: 600 12.5px/1.3 var(--font-sans); cursor: pointer; }
+.ops-kyc__chip:hover { border-color: var(--ops-line-strong); }
+.ops-kyc__chip.is-current { border-color: var(--ops-gold-edge); box-shadow: inset 0 0 0 1px var(--ops-gold-edge); background: var(--ops-gold-wash); color: var(--ops-ink-1); }
+.ops-kyc__chip:focus-visible, .ops-kyc__reason:focus-visible, .ops-kyc__toggle button:focus-visible { outline: 2px solid var(--ops-gold-300); outline-offset: 2px; }
+.ops-kyc__viewer, .ops-kyc__panel { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--ops-hairline); background: var(--ops-bg-100); min-width: 0; }
+.ops-kyc__tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ops-kyc__title { font: 800 15px/1.3 var(--font-sans); color: var(--ops-ink-1); margin-right: 8px; }
+.ops-kyc__spacer { flex: 1; }
+.ops-kyc__zoom { min-width: 3.2em; text-align: center; font: 600 12px/1 var(--font-sans); color: var(--ops-ink-3); }
+.ops-kyc__toggle { display: inline-flex; border: 1px solid var(--ops-hairline); border-radius: 8px; overflow: hidden; }
+.ops-kyc__toggle button { border: 0; background: transparent; color: var(--ops-ink-2); padding: 4px 10px; font: 600 12px/1.3 var(--font-sans); cursor: pointer; }
+.ops-kyc__toggle button[aria-pressed="true"] { background: var(--ops-gold-wash); color: var(--ops-ink-1); }
+.ops-kyc__stage { height: 560px; display: grid; place-items: center; overflow: auto; border-radius: 10px; background: var(--ops-bg-000); border: 1px solid var(--ops-hairline); }
+.ops-kyc__file { max-width: 100%; max-height: 100%; transition: transform 0.15s ease; transform-origin: center; }
+iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--ops-bg-000); }
+.ops-kyc__placeholder { margin: 0; padding: 24px; max-width: 44ch; text-align: center; font: 500 13px/1.5 var(--font-sans); color: var(--ops-ink-3); }
+.ops-kyc__placeholder a { color: var(--ops-gold-300); }
+.ops-kyc__meta { margin: 0; font: 500 12px/1.4 var(--font-sans); color: var(--ops-ink-3); }
+.ops-kyc__side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.ops-kyc__panel h2 { margin: 0; font: 800 10.5px/1.4 var(--font-sans); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ops-ink-3); }
+.ops-kyc__checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ops-kyc__checks li { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr) auto; gap: 10px; align-items: center; font: 500 12.5px/1.4 var(--font-sans); }
+.ops-kyc__check-label { color: var(--ops-ink-3); }
+.ops-kyc__check-value { color: var(--ops-ink-1); overflow-wrap: anywhere; }
+.ops-kyc__reasons { display: flex; flex-wrap: wrap; gap: 6px; }
+.ops-kyc__reason { border: 1px solid var(--ops-hairline); border-radius: 999px; background: transparent; color: var(--ops-ink-2); padding: 4px 10px; font: 600 12px/1.3 var(--font-sans); cursor: pointer; }
+.ops-kyc__reason:hover { border-color: var(--ops-line-strong); }
+.ops-kyc__reason[aria-pressed="true"] { border-color: var(--ops-gold-edge); background: var(--ops-gold-wash); color: var(--ops-ink-1); }
+.ops-kyc__primary { width: 100%; justify-content: center; }
+.ops-kyc__decide-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ops-kyc__hint { margin: 0; font: 500 12px/1.45 var(--font-sans); color: var(--ops-ink-3); }
+.ops-kyc__hint kbd { display: inline-block; min-width: 1.4em; padding: 0 4px; border: 1px solid var(--ops-line-strong); border-radius: 4px; text-align: center; font: 700 11px/1.5 var(--font-sans); color: var(--ops-ink-2); }
