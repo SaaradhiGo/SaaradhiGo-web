@@ -14,8 +14,9 @@ import {
 } from '@/lib/reports';
 import { Download } from '@/components/console/icons';
 import {
-  type Column, DataTable, Empty, ErrorState, MetricTile, PageHeader, Panel, Skeleton, TableToolbar, TileGrid,
+  type Column, Empty, ErrorState, MetricTile, PageHeader, Panel, Skeleton, TableToolbar, TileGrid,
 } from '@/components/console/ui';
+import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { CohortTable, Funnel, StackedBars } from './charts';
 
 /**
@@ -192,6 +193,32 @@ function ChartPanel({ body, metricKey, setMetric }: {
   );
 }
 
+/** Column types that add up across days; rates and averages do not. */
+const SUMMABLE = new Set(['count', 'money', 'hours', 'km', 'minutes']);
+
+/** One row per place (and currency): the period rows of a city breakdown, added up. */
+function byPlace(body: ReportBody): Row[] {
+  const out = new Map<string, Row>();
+  const cols = body.columns.filter((c) => SUMMABLE.has(c.type));
+  for (const r of body.rows) {
+    const k = `${r.city ?? ''}|${r.currency ?? ''}`;
+    let acc = out.get(k);
+    if (!acc) {
+      acc = { period: '', city: r.city ?? null, currency: r.currency ?? null };
+      for (const c of cols) acc[c.key] = 0;
+      out.set(k, acc);
+    }
+    for (const c of cols) {
+      const v = r[c.key];
+      if (typeof v === 'number' && Number.isFinite(v)) acc[c.key] = (acc[c.key] as number) + v;
+    }
+  }
+  const lead = cols[0]?.key;
+  return [...out.values()].sort((a, b) => String(a.currency ?? '').localeCompare(String(b.currency ?? ''))
+    || (lead ? (b[lead] as number) - (a[lead] as number) : 0)
+    || String(a.city ?? '').localeCompare(String(b.city ?? '')));
+}
+
 function ReportInner() {
   const { key } = useParams<{ key: string }>();
   const router = useRouter();
@@ -250,6 +277,29 @@ function ReportInner() {
     ];
   }, [body]);
 
+  const groups = card?.groups ?? body?.report.groups ?? [];
+  const [tableView, setTableView] = useState<'period' | 'place'>(() => (search.get('table') === 'place' ? 'place' : 'period'));
+  const tableViews = [
+    { key: 'period', label: 'By period' },
+    ...(groups.includes('city') ? [{ key: 'place', label: 'By place' }] : []),
+  ];
+  const chooseTable = (v: string) => {
+    const next = v === 'place' ? 'place' : 'period';
+    setTableView(next);
+    // A place breakdown needs the rows split by city; ask the server for them.
+    if (next === 'place' && filters.group !== 'city') router.push(`/reports/${key}?${filtersToQuery({ ...filters, group: 'city' })}&table=place`);
+  };
+  const listColumns: ListColumn<Row>[] = columns.map((c) => ({ key: c.key, label: String(c.label), num: c.num, render: c.render }));
+  const periodRows = useMemo(() => [...(body?.rows ?? [])].sort((a, b) => (a.period < b.period ? 1 : a.period > b.period ? -1 : 0)), [body]);
+  const placeRows = useMemo(() => (body && body.params.group_by === 'city' ? byPlace(body) : []), [body]);
+  const placeColumns: ListColumn<Row>[] = body ? [
+    { key: 'city', label: 'Place', primary: true, render: (r) => String(r.city ?? '—') },
+    ...(body.report.money ? [{ key: 'currency', label: 'Currency', render: (r: Row) => String(r.currency ?? '') }] : []),
+    ...body.columns.filter((c) => SUMMABLE.has(c.type)).map((c): ListColumn<Row> => ({
+      key: c.key, label: c.label, num: true,
+      render: (r) => formatCell(c, r[c.key], typeof r.currency === 'string' ? r.currency : null),
+    })),
+  ] : [];
   const title = card?.title ?? body?.report.title ?? 'Report';
   const empty = body !== null && body.rows.length === 0 && !body.cohorts?.length;
 
@@ -298,11 +348,41 @@ function ReportInner() {
               <Totals body={body} />
               {body.extra.funnel ? <Panel><Funnel stages={body.extra.funnel} /></Panel> : null}
               <ChartPanel body={body} metricKey={metric || CHART_DEFAULT[body.report.key] || ''} setMetric={setMetric} />
-              <Panel flush>
-                <div className="rp-table"><DataTable caption={`${title}: ${body.params.granularity} table`} rows={body.rows} columns={columns}
-                  rowKey={(r) => `${r.period}|${r.vehicle ?? r.city ?? ''}|${r.currency ?? ''}`} density={density}
-                  defaultSort={{ key: 'period', dir: 'desc' }} /></div>
-              </Panel>
+              {tableView === 'place' && body.params.group_by === 'city' ? (
+                <ListPage<Row>
+                  pageKey={`report-${key}-place`}
+                  title="By place"
+                  summary={`${body.params.from} to ${body.params.to}. Counts and money are added up per place${body.report.money ? ' and currency' : ''}; rates and averages are in the period table.`}
+                  views={tableViews}
+                  view={tableView}
+                  onView={chooseTable}
+                  columns={placeColumns}
+                  rows={placeRows}
+                  rowKey={(r) => `${r.city ?? ''}|${r.currency ?? ''}`}
+                  total={placeRows.length}
+                  page={1}
+                  pageSize={Math.max(1, placeRows.length)}
+                  onPage={() => undefined}
+                  empty="No place has data in this range."
+                />
+              ) : (
+                <ListPage<Row>
+                  pageKey={`report-${key}-period`}
+                  title="By period"
+                  summary={`${body.rows.length} row${body.rows.length === 1 ? '' : 's'} · ${body.params.from} to ${body.params.to} · days are each city's own`}
+                  views={tableViews}
+                  view={tableView}
+                  onView={chooseTable}
+                  columns={listColumns}
+                  rows={periodRows}
+                  rowKey={(r) => `${r.period}|${r.vehicle ?? r.city ?? ''}|${r.currency ?? ''}`}
+                  total={periodRows.length}
+                  page={1}
+                  pageSize={Math.max(1, periodRows.length)}
+                  onPage={() => undefined}
+                  empty="No rows in this range."
+                />
+              )}
               {body.extra.kinds?.length ? (
                 <Panel title="By rule"><ul className="fr-evidence">{body.extra.kinds.map((k) => <li key={k.kind}>{k.kind.replace(/_/g, ' ')}: {k.raised} raised, {k.confirmed} confirmed, {k.dismissed} dismissed</li>)}</ul></Panel>
               ) : null}
