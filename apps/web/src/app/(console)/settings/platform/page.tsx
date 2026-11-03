@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
-import { useDensity } from '@/lib/consolePrefs';
 import { stamp } from '@/lib/consoleTime';
 import {
   SETTING_KEY_RE, SETTING_TYPES, canWritePlatform, looksSensitive, validateSettingValue, type Pending,
@@ -14,9 +13,9 @@ import { NoticeBanner, messageOf, type Notice } from '@/components/console/notif
 import {
   PendingRequests, PlatformNav, PlatformNoAccess, outcomeNotice,
 } from '@/components/console/platform';
-import {
-  DataTable, Drawer, Empty, ErrorState, PageHeader, Panel, Pill, Skeleton, TableToolbar,
-} from '@/components/console/ui';
+import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { StatusChip } from '@/components/console/kit/StatusChip';
+import { Drawer, PageHeader } from '@/components/console/ui';
 
 /**
  * Platform settings: the key/value editor.
@@ -31,11 +30,12 @@ type Payload = { results: SettingRow[]; pending: Pending[]; types: SettingType[]
 
 export default function SettingsPage() {
   const access = useAdminAccess();
-  const [density, setDensity] = useDensity();
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [open, setOpen] = useState<SettingRow | 'new' | null>(null);
+  const [view, setView] = useState('');
+  const [q, setQ] = useState('');
 
   const load = useCallback(async () => {
     setError(null);
@@ -48,46 +48,67 @@ export default function SettingsPage() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const columns = useMemo(() => [
-    { key: 'key', label: 'Key', sortValue: (r: SettingRow) => r.key, render: (r: SettingRow) => <b>{r.key}</b> },
-    { key: 'type', label: 'Type', width: '7rem', render: (r: SettingRow) => r.setting_type },
-    { key: 'value', label: 'Value', width: '14rem', render: (r: SettingRow) => <code className="nf-envnames">{r.value}</code> },
-    { key: 'flags', label: 'State', width: '12rem', render: (r: SettingRow) => (r.deprecated ? <Pill tone="wait">Deprecated, read-only</Pill> : r.is_sensitive ? <Pill tone="neutral">Sensitive</Pill> : <span className="muted">—</span>) },
-    { key: 'controls', label: 'Controls', hideBelow: 1100 as const,
-      render: (r: SettingRow) => (r.controls.length ? r.controls.join(', ') : <span className="muted">Nothing reads this key yet</span>) },
-    { key: 'when', label: 'Changed', width: '12rem', hideBelow: 1280 as const, render: (r: SettingRow) => `${r.updated_by ?? '—'} · ${stamp(r.updated_at)}` },
-  ], []);
+  const columns: ListColumn<SettingRow>[] = [
+    { key: 'key', label: 'Key', primary: true, render: (r) => r.key },
+    { key: 'type', label: 'Type', render: (r) => r.setting_type },
+    { key: 'value', label: 'Value', render: (r) => <code className="nf-envnames">{r.value}</code> },
+    {
+      key: 'flags', label: 'Status',
+      render: (r) => (r.deprecated ? <StatusChip tone="info">Deprecated, read-only</StatusChip>
+        : r.is_sensitive ? <StatusChip tone="neutral">Sensitive</StatusChip> : <StatusChip tone="good">In use</StatusChip>),
+    },
+    { key: 'controls', label: 'Controls', render: (r) => (r.controls.length ? r.controls.join(', ') : <span className="muted">Nothing reads this key yet</span>) },
+    { key: 'when', label: 'Changed', render: (r) => `${r.updated_by ?? '—'} · ${stamp(r.updated_at)}` },
+  ];
 
   if (!canWritePlatform(access)) {
     return (<><PageHeader title="Platform settings" /><PlatformNav /><PlatformNoAccess what="The settings editor" /></>);
   }
 
+  const all = [...(data?.results ?? [])].sort((x, y) => x.key.localeCompare(y.key));
+  const inView = (r: SettingRow) => (view === 'sensitive' ? r.is_sensitive : view === 'deprecated' ? r.deprecated : true);
+  const needle = q.trim().toUpperCase();
+  const rows = all.filter((r) => inView(r) && (!needle || r.key.includes(needle) || (r.description ?? '').toUpperCase().includes(needle)));
+
   return (
     <>
-      <PageHeader title="Platform settings"
-        subtitle="Runtime key and value settings. Every change is audited with its before and after; a sensitive key needs a second admin."
-        actions={<button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setOpen('new')}>New setting…</button>} />
       <PlatformNav />
       <NoticeBanner notice={notice} />
       {data ? <PendingRequests items={data.pending} onDecided={(n) => { setNotice(n); void load(); }}
         describe={(p) => `Change the sensitive setting ${p.target}`} /> : null}
-      <Panel title="Settings" flush>
-        <TableToolbar summary={data ? `${data.results.length} setting${data.results.length === 1 ? '' : 's'}` : null}
-          density={density} onDensity={setDensity} />
-        {error ? (
-          <ErrorState title="The settings could not be loaded" detail={error} onRetry={() => void load()} />
-        ) : data === null ? (
-          <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
-            <span className="sr-only">Loading the settings</span>
-            <Skeleton kind="row" count={4} />
-          </div>
-        ) : data.results.length === 0 ? (
-          <Empty title="No settings yet" detail={data.note} />
-        ) : (
-          <DataTable caption="Platform settings" rows={data.results} columns={columns} rowKey={(r) => r.key}
-            density={density} onRow={(r) => setOpen(r)} defaultSort={{ key: 'key', dir: 'asc' }} maxHeight={false} />
+      <ListPage<SettingRow>
+        pageKey="settings-platform"
+        title="Platform settings"
+        summary="Runtime key and value settings. Every change is audited with its before and after; a sensitive key needs a second admin."
+        actionsSlot={<button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setOpen('new')}>New setting…</button>}
+        views={[
+          { key: '', label: 'All', count: data ? all.length : undefined },
+          { key: 'sensitive', label: 'Sensitive', count: data ? all.filter((r) => r.is_sensitive).length : undefined },
+          { key: 'deprecated', label: 'Deprecated', count: data ? all.filter((r) => r.deprecated).length : undefined },
+        ]}
+        view={view}
+        onView={setView}
+        chips={q.trim() ? [{ key: 'q', label: `Search: ${q.trim()}`, onRemove: () => setQ('') }] : []}
+        filterSlot={(
+          <>
+            <label className="sr-only" htmlFor="st-q">Search settings</label>
+            <input id="st-q" className="input ops-list__search" type="search" placeholder="Search by key" value={q}
+              onChange={(e) => setQ(e.target.value)} />
+          </>
         )}
-      </Panel>
+        columns={columns}
+        rows={rows}
+        rowKey={(r) => r.key}
+        total={data ? rows.length : null}
+        page={1}
+        pageSize={Math.max(1, rows.length)}
+        onPage={() => undefined}
+        onRow={(r) => setOpen(r)}
+        activeKey={open && open !== 'new' ? open.key : null}
+        loading={data === null && !error}
+        error={error}
+        empty={data && data.results.length === 0 ? `No settings yet. ${data.note}` : 'No setting matches.'}
+      />
       {open ? (
         <SettingDrawer row={open === 'new' ? null : open} onClose={() => setOpen(null)}
           onDone={(n) => { setOpen(null); setNotice(n); void load(); }} />

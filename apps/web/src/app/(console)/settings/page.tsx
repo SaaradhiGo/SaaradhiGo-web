@@ -4,21 +4,21 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
-import { useDensity } from '@/lib/consolePrefs';
 import {
-  MARKET_STATUS_WORDS, READINESS_WORDS, canReadPlatform, canWritePlatform, launchBlockedBy, marketTone,
-  readinessSummary, readinessTone, type CityRow, type CountryRow, type MarketsPayload,
+  MARKET_STATUS_WORDS, READINESS_WORDS, canReadPlatform, canWritePlatform, launchBlockedBy,
+  readinessSummary, type CityRow, type CountryRow, type MarketStatus, type MarketsPayload,
 } from '@/lib/platform';
 import { NoticeBanner, messageOf, type Notice } from '@/components/console/notifications';
 import {
   PendingRequests, PlatformNav, PlatformNoAccess, outcomeNotice,
 } from '@/components/console/platform';
-import {
-  DataTable, Drawer, Empty, ErrorState, PageHeader, Panel, Pill, Skeleton, TableToolbar,
-} from '@/components/console/ui';
+import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { RecordPanel } from '@/components/console/kit/RecordPanel';
+import { StatusChip } from '@/components/console/kit/StatusChip';
+import { Drawer, PageHeader } from '@/components/console/ui';
 
 /**
- * Platform settings: Markets.
+ * Platform settings: countries and cities, as ONE table (country > state > city).
  *
  * Countries and cities, and whether each is live. A city goes live only when every BLOCKING item of
  * its readiness checklist is ready (zone, fare cards, commission, safety cover, payout rules,
@@ -28,14 +28,62 @@ import {
  */
 type Detail = CityRow & { readiness: NonNullable<CityRow['readiness']> };
 
+/** One line of the place table: a country, a state under it, or a city under that. */
+type PlaceLine =
+  | { level: 0; key: string; country: CountryRow }
+  | { level: 1; key: string; code: string; name: string; cities: CityRow[] }
+  | { level: 2; key: string; city: CityRow };
+
+const STATUS_VIEWS: Array<'' | MarketStatus> = ['', 'live', 'draft', 'paused'];
+
+function MarketChip({ status }: { status: MarketStatus }) {
+  const tone = status === 'live' ? 'good' : status === 'paused' ? 'caution' : 'info';
+  return <StatusChip tone={tone}>{MARKET_STATUS_WORDS[status]}</StatusChip>;
+}
+
+function ReadinessChip({ city }: { city: CityRow }) {
+  if (city.blocking_count > 0) return <StatusChip tone="caution">{readinessSummary(city)}</StatusChip>;
+  return <StatusChip tone={city.warning_count > 0 ? 'info' : 'good'}>{readinessSummary(city)}</StatusChip>;
+}
+
+/** Country > state > city, filtered by status and a search, as one ordered list of lines. */
+function hierarchy(countries: readonly CountryRow[], status: '' | MarketStatus, search: string): PlaceLine[] {
+  const needle = search.trim().toLowerCase();
+  const hit = (...texts: Array<string | null | undefined>) => !needle || texts.some((t) => (t ?? '').toLowerCase().includes(needle));
+  const lines: PlaceLine[] = [];
+  for (const country of [...countries].sort((a, b) => a.name.localeCompare(b.name))) {
+    const countryHit = hit(country.name, country.code);
+    const cities = country.cities.filter((c) => (!status || c.status === status)
+      && (countryHit || hit(c.name, c.code, c.state?.name, c.state?.code)));
+    const countryShown = (!status || country.status === status || cities.length > 0) && (countryHit || cities.length > 0);
+    if (!countryShown) continue;
+    lines.push({ level: 0, key: `c:${country.code}`, country });
+    const byState = new Map<string, { code: string; name: string; cities: CityRow[] }>();
+    for (const c of cities) {
+      const k = c.state?.code ?? '';
+      const group = byState.get(k) ?? { code: k, name: c.state?.name ?? 'No state', cities: [] };
+      group.cities.push(c);
+      byState.set(k, group);
+    }
+    for (const group of [...byState.values()].sort((a, b) => a.name.localeCompare(b.name))) {
+      lines.push({ level: 1, key: `s:${country.code}:${group.code}`, ...group });
+      for (const city of group.cities.sort((a, b) => a.name.localeCompare(b.name))) {
+        lines.push({ level: 2, key: `t:${city.code}`, city });
+      }
+    }
+  }
+  return lines;
+}
+
 export default function MarketsPage() {
   const access = useAdminAccess();
-  const [density, setDensity] = useDensity();
   const [data, setData] = useState<MarketsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [status, setStatus] = useState<'' | MarketStatus>('');
+  const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
     setError(null);
@@ -48,69 +96,97 @@ export default function MarketsPage() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const columns = useMemo(() => [
-    { key: 'city', label: 'City', sortValue: (c: CityRow) => c.name,
-      render: (c: CityRow) => <><b>{c.name}</b> <span className="muted">{c.code}</span></> },
-    { key: 'state', label: 'State', width: '11rem', hideBelow: 1100 as const, render: (c: CityRow) => c.state?.name ?? '—' },
-    { key: 'status', label: 'Status', width: '8rem', sortValue: (c: CityRow) => c.status,
-      render: (c: CityRow) => <Pill tone={marketTone(c.status)}>{MARKET_STATUS_WORDS[c.status]}</Pill> },
-    { key: 'ready', label: 'Readiness', width: '15rem', sortValue: (c: CityRow) => c.blocking_count,
-      render: (c: CityRow) => (c.blocking_count > 0
-        ? <Pill tone="bad">{readinessSummary(c)}</Pill>
-        : <Pill tone={c.warning_count > 0 ? 'wait' : 'good'}>{readinessSummary(c)}</Pill>) },
-    { key: 'req', label: 'Request', width: '13rem', hideBelow: 1100 as const,
-      render: (c: CityRow) => (c.pending_request ? <Pill tone="wait">Awaiting a checker</Pill> : <span className="muted">—</span>) },
-  ], []);
+  const lines = useMemo(() => hierarchy(data?.countries ?? [], status, search), [data, status, search]);
 
   if (!canReadPlatform(access)) {
-    return (<><PageHeader title="Platform settings" /><PlatformNav /><PlatformNoAccess what="Markets" /></>);
+    return (<><PageHeader title="Countries and cities" /><PlatformNav /><PlatformNoAccess what="Markets" /></>);
   }
+
+  const allCities = (data?.countries ?? []).flatMap((c) => c.cities);
+  const countOf = (s: '' | MarketStatus) => (s ? allCities.filter((c) => c.status === s).length : allCities.length);
+  const columns: ListColumn<PlaceLine>[] = [
+    {
+      key: 'place', label: 'Place', primary: true,
+      render: (l) => (
+        <span className={`ops-tree ops-tree--${l.level}`}>
+          {l.level === 0 ? <>{l.country.name} <span className="muted">{l.country.code}</span></>
+            : l.level === 1 ? <>{l.name} <span className="muted">{l.code}</span></>
+              : <>{l.city.name} <span className="muted">{l.city.code}</span></>}
+        </span>
+      ),
+    },
+    { key: 'kind', label: 'Kind', render: (l) => (l.level === 0 ? 'Country' : l.level === 1 ? 'State' : 'City') },
+    {
+      key: 'status', label: 'Status',
+      render: (l) => (l.level === 0 ? <MarketChip status={l.country.status} /> : l.level === 2 ? <MarketChip status={l.city.status} /> : null),
+    },
+    {
+      key: 'ready', label: 'Readiness',
+      render: (l) => {
+        if (l.level === 2) return <ReadinessChip city={l.city} />;
+        const cities = l.level === 0 ? l.country.cities : l.cities;
+        const live = cities.filter((c) => c.status === 'live').length;
+        return <span className="muted">{live} of {cities.length} cit{cities.length === 1 ? 'y' : 'ies'} live</span>;
+      },
+    },
+    {
+      key: 'money', label: 'Currency',
+      render: (l) => (l.level === 0 ? l.country.currency ?? '—' : ''),
+    },
+    {
+      key: 'req', label: 'Request',
+      render: (l) => (l.level === 2 && l.city.pending_request ? <StatusChip tone="info">Awaiting a checker</StatusChip> : null),
+    },
+  ];
 
   return (
     <>
-      <PageHeader title="Platform settings"
-        subtitle="Which countries and cities exist, which are live, and what each still needs. Launching, pausing or adding a place needs a second admin."
-        actions={canWritePlatform(access) ? (
-          <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setAdding(true)}>Add a place…</button>
-        ) : undefined} />
       <PlatformNav />
       <NoticeBanner notice={notice} />
       {data ? (
         <PendingRequests items={data.pending} onDecided={(n) => { setNotice(n); void load(); }} />
       ) : null}
-
-      {error ? (
-        <ErrorState title="The markets could not be loaded" detail={error} onRetry={() => void load()} />
-      ) : data === null ? (
-        <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
-          <span className="sr-only">Loading the markets</span>
-          <Skeleton kind="row" count={5} />
+      <div className={open ? 'ops-split' : undefined}>
+        <div className="ops-list__tree">
+          <ListPage<PlaceLine>
+            pageKey="settings-markets"
+            title="Countries and cities"
+            summary="Which countries and cities exist, which are live, and what each still needs. Launching, pausing or adding a place needs a second admin."
+            actionsSlot={canWritePlatform(access) ? (
+              <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setAdding(true)}>Add a place…</button>
+            ) : undefined}
+            views={STATUS_VIEWS.map((s) => ({
+              key: s, label: s ? `${MARKET_STATUS_WORDS[s]} cities` : 'All places', count: data ? countOf(s) : undefined,
+            }))}
+            view={status}
+            onView={(v) => setStatus(v as '' | MarketStatus)}
+            chips={search.trim() ? [{ key: 'q', label: `Search: ${search.trim()}`, onRemove: () => setSearch('') }] : []}
+            filterSlot={(
+              <>
+                <label className="sr-only" htmlFor="mk-q">Search places</label>
+                <input id="mk-q" className="input ops-list__search" type="search" placeholder="Search a country, state or city"
+                  value={search} onChange={(e) => setSearch(e.target.value)} />
+              </>
+            )}
+            columns={columns}
+            rows={lines}
+            rowKey={(l) => l.key}
+            total={data ? lines.length : null}
+            page={1}
+            pageSize={Math.max(1, lines.length)}
+            onPage={() => undefined}
+            onRow={(l) => { if (l.level === 2) setOpen(l.city.code); }}
+            activeKey={open ? `t:${open}` : null}
+            loading={data === null && !error}
+            error={error}
+            empty={data && data.countries.length === 0 ? 'No countries in your scope. Nothing here is held at a place you can see.' : 'No place matches.'}
+          />
         </div>
-      ) : data.countries.length === 0 ? (
-        <Empty title="No countries in your scope" detail="Nothing here is held at a place you can see." />
-      ) : (
-        <div className="grid gap-4">
-          {data.countries.map((country: CountryRow) => (
-            <Panel key={country.code} flush
-              title={`${country.name} · ${MARKET_STATUS_WORDS[country.status]}`}>
-              <TableToolbar summary={`${country.cities.length} cit${country.cities.length === 1 ? 'y' : 'ies'}${country.currency ? ` · ${country.currency}` : ''}`}
-                density={density} onDensity={setDensity} />
-              {country.cities.length === 0 ? (
-                <Empty title="No cities yet" detail="A country is live when at least one of its cities is live." />
-              ) : (
-                <DataTable caption={`Cities in ${country.name}`} rows={country.cities} columns={columns}
-                  rowKey={(c) => c.code} density={density} onRow={(c) => setOpen(c.code)}
-                  selectedKey={open} defaultSort={{ key: 'city', dir: 'asc' }} maxHeight={false} />
-              )}
-            </Panel>
-          ))}
-        </div>
-      )}
-
-      {open ? (
-        <CityDrawer code={open} onClose={() => setOpen(null)}
-          onDone={(n) => { setOpen(null); setNotice(n); void load(); }} />
-      ) : null}
+        {open ? (
+          <CityRecord key={open} code={open} onClose={() => setOpen(null)}
+            onDone={(n) => { setOpen(null); setNotice(n); void load(); }} />
+        ) : null}
+      </div>
       {adding && data ? (
         <AddPlaceDrawer countries={data.countries} onClose={() => setAdding(false)}
           onDone={(n) => { setAdding(false); setNotice(n); void load(); }} />
@@ -119,7 +195,7 @@ export default function MarketsPage() {
   );
 }
 
-function CityDrawer({ code, onClose, onDone }: { code: string; onClose: () => void; onDone: (n: Notice) => void }) {
+function CityRecord({ code, onClose, onDone }: { code: string; onClose: () => void; onDone: (n: Notice) => void }) {
   const [city, setCity] = useState<Detail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reason, setReason] = useState('');
@@ -150,38 +226,38 @@ function CityDrawer({ code, onClose, onDone }: { code: string; onClose: () => vo
     }
   }
 
-  const blocked = launchBlockedBy(city?.readiness);
-  const canAsk = city && !city.pending_request;
+  if (!city) {
+    return (
+      <RecordPanel label="City" title="City readiness" refId={code} onClose={onClose}
+        tabs={[{ key: 'ready', label: 'Readiness', content: error ? (
+          <div>
+            <p className="alert-error" role="alert">{error}</p>
+            <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => void load()}>Try again</button>
+          </div>
+        ) : <p className="ops-record__empty" aria-busy="true">Loading the checklist…</p> }]} />
+    );
+  }
+
+  const blocked = launchBlockedBy(city.readiness);
+  const canAsk = !city.pending_request && (city.may_launch || city.may_pause);
   return (
-    <Drawer open wide onClose={onClose} title={city ? `${city.name} · readiness` : 'City readiness'}
-      footer={canAsk && (city.may_launch || city.may_pause) ? (
-        <>
-          {city.may_pause ? (
-            <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void ask('paused')}>
-              Request pause
-            </button>
-          ) : null}
-          {city.may_launch ? (
-            <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" disabled={busy || blocked.length > 0}
-              onClick={() => void ask('live')}>
-              Request launch
-            </button>
-          ) : null}
-        </>
-      ) : undefined}>
-      {error ? <ErrorState title="That city could not be loaded" detail={error} onRetry={() => void load()} />
-        : !city ? (
-          <div className="ops-skel-rows" aria-busy="true"><span className="sr-only">Loading the checklist</span><Skeleton kind="row" count={6} /></div>
-        ) : (
+    <RecordPanel
+      label="City"
+      title={city.name}
+      refId={city.code}
+      subtitle={<>{city.state?.name ?? 'No state'} · {readinessSummary(city)}</>}
+      status={<MarketChip status={city.status} />}
+      onClose={onClose}
+      tabs={[{
+        key: 'ready', label: 'Readiness', content: (
           <div className="nf-editor">
             <p className="help mb-0">
-              {MARKET_STATUS_WORDS[city.status]} · {readinessSummary(city)}. Blocking items must be ready before a launch can be
-              asked for; it is checked again when the second admin approves.
+              Blocking items must be ready before a launch can be asked for; it is checked again when the second admin approves.
             </p>
             {city.pending_request ? (
               <div className="ops-confirm" role="status">
                 <b>Awaiting a checker</b>
-                <span>Request #{city.pending_request.id} from {city.pending_request.maker_label}: {city.pending_request.reason}</span>
+                <span>Request APR-{city.pending_request.id} from {city.pending_request.maker_label}: {city.pending_request.reason}</span>
               </div>
             ) : null}
             <ul className="ps-checklist" aria-label="Readiness checklist">
@@ -189,7 +265,7 @@ function CityDrawer({ code, onClose, onDone }: { code: string; onClose: () => vo
                 <li key={item.key} className="ps-check">
                   <div className="ps-check__head">
                     <b>{item.label}</b>
-                    <Pill tone={readinessTone(item.status)}>{READINESS_WORDS[item.status]}</Pill>
+                    <StatusChip tone={item.status === 'ok' ? 'good' : item.status === 'missing' ? 'caution' : 'info'}>{READINESS_WORDS[item.status]}</StatusChip>
                     {item.blocking ? <span className="ps-check__flag">Blocks launch</span> : null}
                   </div>
                   <p className="help mb-0">{item.detail}</p>
@@ -199,7 +275,7 @@ function CityDrawer({ code, onClose, onDone }: { code: string; onClose: () => vo
                 </li>
               ))}
             </ul>
-            {canAsk && (city.may_launch || city.may_pause) ? (
+            {canAsk ? (
               <div className="nf-field">
                 <label className="ops-form__label" htmlFor="city-reason">Reason</label>
                 <textarea id="city-reason" className="input" rows={3} value={reason}
@@ -207,9 +283,25 @@ function CityDrawer({ code, onClose, onDone }: { code: string; onClose: () => vo
               </div>
             ) : null}
             {problem ? <p className="nf-problems" role="alert">{problem}</p> : null}
+            {canAsk ? (
+              <div className="nf-inline">
+                {city.may_pause ? (
+                  <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void ask('paused')}>
+                    Request pause
+                  </button>
+                ) : null}
+                {city.may_launch ? (
+                  <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" disabled={busy || blocked.length > 0}
+                    onClick={() => void ask('live')}>
+                    Request launch
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
           </div>
-        )}
-    </Drawer>
+        ),
+      }]}
+    />
   );
 }
 
