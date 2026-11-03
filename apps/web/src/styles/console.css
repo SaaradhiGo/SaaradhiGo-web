@@ -2208,3 +2208,4 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .ops-thread__meta { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; color: var(--ops-ink-3); }
 .ops-thread p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ops-record__note { width: 100%; }
+.ops-list-stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
