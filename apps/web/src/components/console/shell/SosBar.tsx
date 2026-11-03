@@ -4,14 +4,10 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { type AdminAccess, can, withScope } from '@/lib/adminScope';
-import type { NeedsItem, NeedsResponse } from '@/lib/workspace';
+import { type NeedsItem, type NeedsResponse, sosClock } from '@/lib/workspace';
 
 const POLL_MS = 15_000;
 
-function clockText(seconds: number): string {
-  const s = Math.max(0, seconds);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-}
 
 /**
  * The red bar (design boards C and D): while any SOS in the operator's area is
@@ -49,15 +45,17 @@ export function SosBar({ access }: { access: AdminAccess | null }) {
   const places = Array.from(new Set(items.map((i) => i.where?.name).filter(Boolean))).slice(0, 3);
   const href = items.length === 1 ? items[0].link : '/safety-ops';
   return (
-    <Link href={href} className="ops-sosbar" role="alert">
+    <div role="alert">
+    <Link href={href} className="ops-sosbar">
       <span className="ops-sosbar__tag">SOS</span>
       <b>
         {items.length === 1 ? `${oldest.ref} not acknowledged` : `${items.length} SOS not acknowledged`}
       </b>
-      <span className="sg-num">oldest {clockText(age)}</span>
+      <span className="sg-num">oldest {sosClock(age)}</span>
       {places.length ? <span>{places.join(', ')}</span> : null}
       {oldest.viewers?.length ? <span>{oldest.viewers.join(', ')} viewing</span> : null}
       <span className="ops-sosbar__go">{items.length === 1 ? 'Open it' : 'Open the safety board'} →</span>
     </Link>
+    </div>
   );
 }

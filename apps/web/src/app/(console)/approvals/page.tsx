@@ -55,6 +55,8 @@ type ApprovalRow = {
   error: string;
   subjects: Subject[];
   blockers: string[];
+  /** What the request would change, as the server shows it (personal data masked). */
+  payload?: Record<string, unknown> | null;
   can_decide: boolean;
   cannot_decide_reason: string | null;
   can_cancel: boolean;
@@ -316,6 +318,7 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
                   {row.blockers.map((b) => <span key={b}>{b}. Reject it with that reason. </span>)}
                 </div>
               ) : null}
+              <WhatChanges payload={row.payload} />
               {open ? (
                 <section className="ops-confirm" aria-label="Decision">
                   {row.can_decide || row.can_cancel ? (
@@ -374,5 +377,41 @@ export default function Page() {
     <Suspense fallback={<Skeleton kind="row" count={6} />}>
       <ApprovalsPage />
     </Suspense>
+  );
+}
+
+
+const HIDDEN_KEYS = /(^|_)(id|ids|key|idempotency_key|version)$/;
+
+/** "base_fare_minor" -> "Base fare minor"; nested objects one level down. */
+function changeLines(payload: Record<string, unknown> | null | undefined): Array<[string, string]> {
+  const out: Array<[string, string]> = [];
+  const word = (k: string) => k.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+  const text = (v: unknown): string => (v === null || v === undefined ? '—'
+    : typeof v === 'object' ? JSON.stringify(v).slice(0, 160) : String(v));
+  for (const [k, v] of Object.entries(payload ?? {})) {
+    if (HIDDEN_KEYS.test(k)) continue;
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      for (const [k2, v2] of Object.entries(v as Record<string, unknown>)) {
+        if (!HIDDEN_KEYS.test(k2)) out.push([`${word(k)} · ${word(k2).toLowerCase()}`, text(v2)]);
+      }
+    } else {
+      out.push([word(k), text(v)]);
+    }
+  }
+  return out.slice(0, 40);
+}
+
+/** The change itself, so a checker never approves blind (owner's new-hire run). */
+function WhatChanges({ payload }: { payload?: Record<string, unknown> | null }) {
+  const lines = changeLines(payload);
+  if (lines.length === 0) return null;
+  return (
+    <section aria-label="What changes">
+      <h3 className="ops-subhead">What changes</h3>
+      <dl className="ops-kv">
+        {lines.map(([k, v]) => <div key={k}><dt>{k}</dt><dd className="sg-num">{v}</dd></div>)}
+      </dl>
+    </section>
   );
 }

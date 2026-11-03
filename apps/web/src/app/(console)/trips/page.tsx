@@ -234,7 +234,12 @@ function TripsInner() {
     setPage(null);
     setError(null);
     try {
-      if (q) {
+      const digits = q.replace(/\D/g, '');
+      if (q && !/^\s*T/i.test(q) && digits.length >= 6) {
+        // A phone: the list itself, filtered by the rider's number (paged and scoped like any view).
+        const base = scoped(tripsApiPath(filters));
+        setPage(await api.get<Page>(`${base}${base.includes('?') ? '&' : '?'}rider_phone=${digits.slice(-10)}`));
+      } else if (q) {
         const body = await api.get<{ results: TripHit[] }>(searchPath('trips', q, 20));
         const hits = (body?.results ?? []).map(rowFromHit);
         setPage({ count: hits.length, page: 1, total_pages: 1, results: hits });
@@ -329,7 +334,9 @@ function TripsInner() {
         cityTime(t.requested_at, t.city?.timezone, { zone: true }),
       ]);
       downloadCsv(`trips-${view}.csv`, toCsv(header, body));
-      if (truncated) setNotice({ kind: 'done', text: `Exported the first ${all.length.toLocaleString('en-IN')} trips. Narrow the view to export the rest.` });
+      setNotice({ kind: 'done', text: truncated
+        ? `Exported the first ${all.length.toLocaleString('en-IN')} trips. Narrow the view to export the rest.`
+        : `Exported all ${all.length.toLocaleString('en-IN')} trips in this view to trips-${view}.csv.` });
     } catch (err) {
       setNotice({ kind: 'done', text: err instanceof ApiError && err.fromServer ? err.message : 'The export did not complete.' });
     } finally {
