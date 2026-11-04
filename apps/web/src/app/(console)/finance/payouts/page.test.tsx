@@ -37,7 +37,7 @@ const ROW = {
   requested_at: '2026-11-03T04:00:00Z', processed_at: null, age_seconds: 600,
 };
 
-function routeFetch(request: Record<string, unknown>) {
+function routeFetch(request: Record<string, unknown>, detail: Record<string, unknown> = {}) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const path = new URL(url, 'http://x').pathname;
     let data: unknown = { count: 0, results: [] };
@@ -48,7 +48,7 @@ function routeFetch(request: Record<string, unknown>) {
     } else if (path.endsWith('/approvals/admin/requests/9/')) {
       data = request;
     } else if (path.endsWith('/payments/admin/payouts/31/')) {
-      data = { ...ROW, transactions: [], history: [], driver_phone: '' };
+      data = { ...ROW, transactions: [], history: [], driver_phone: '', ...detail };
     } else if (path.endsWith('/payments/admin/payouts/')) {
       data = { count: 1, results: [ROW], tabs: [] };
     }
@@ -98,10 +98,29 @@ describe('payout release by the sole Super Admin', () => {
     expect(screen.queryByRole('button', { name: 'Approve now' })).toBeNull();
   });
 
+  it('lets a second checker approve a request raised by someone else', async () => {
+    const fetchMock = routeFetch({ id: 9, status: 'requested', can_decide: true, self_approval: false, blockers: [] });
+    const record = await askToRelease();
+    const approveNow = await within(record).findByRole('button', { name: 'Approve now' });
+    expect((approveNow as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(approveNow);
+    await waitFor(() => expect(fetchMock.mock.calls.some((c) => String(c[0]).endsWith('/approvals/admin/requests/9/approve/'))).toBe(true));
+    expect(await screen.findByText(/APR-9 approved/)).toBeTruthy();
+  });
+
   it('does not offer Approve now for a blocked request', async () => {
     routeFetch({ id: 9, status: 'requested', can_decide: true, self_approval: true, blockers: ['No payout details on file for D-18'] });
     await askToRelease();
     expect(await screen.findByText(/Nothing is released until a second finance admin decides it/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Approve now' })).toBeNull();
+  });
+
+  it('says why an open request cannot be approved when the payout is opened', async () => {
+    routeFetch({ id: 9, status: 'requested', can_decide: true, self_approval: false, blockers: ['No payout details on file for D-18'] },
+      { approval: { id: 9, status: 'requested', requested_at: '2026-11-03T05:30:00Z', expires_at: '2026-11-10T05:30:00Z', decided_at: null, maker: { id: 49, label: 'QA Finance', role: 'finance_admin' }, checker: null } });
+    render(<PayoutsPage />);
+    fireEvent.click(await screen.findByText('PO-31'));
+    expect(await screen.findByText(/APR-9 cannot be approved yet: No payout details on file for D-18/)).toBeTruthy();
+    expect(screen.queryByText(/Waiting for a second finance admin/)).toBeNull();
   });
 });
