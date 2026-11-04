@@ -11,6 +11,7 @@ import {
 } from '@/lib/safety';
 import { Revealable } from '@/components/console/Revealable';
 import { PageLink } from '@/components/console/PageLink';
+import { History, RecordPanel, type RecordTab } from '@/components/console/kit/RecordPanel';
 import { SeverityPill } from '@/components/console/safety/SeverityPill';
 import {
   ACTION_TITLE, IncidentActionDrawer, type IncidentAction,
@@ -123,7 +124,8 @@ export default function IncidentPage() {
   if (!data) {
     return (
       <>
-        <PageHeader title="Incident" subtitle={<Link href="/safety-ops">Back to Safety</Link>} />
+        <p className="ops-record-page__back"><Link href="/safety-ops">All incidents</Link></p>
+        <PageHeader title="Incident" />
         <ErrorState title="This incident could not be opened" detail={error ?? ''} onRetry={() => { first.current = true; void load(); }} />
       </>
     );
@@ -142,63 +144,53 @@ export default function IncidentPage() {
     ['suspend', a.suspend_driver], ['block', a.block_rider], ['police', a.refer_police],
   ];
 
-  return (
-    <>
-      <PageHeader
-        title={data.ref}
-        subtitle={(
-          <>
-            <Link href="/safety-ops">Safety</Link> · {data.title || CATEGORY_LABEL[data.category] || data.category}
-            {data.rider_reports_false_alarm ? <>{' · '}<Pill tone="wait">Rider reports false alarm</Pill></> : null}
-          </>
-        )}
-        actions={closed || data.read_only ? undefined : (
-          <div className="ops-actions" role="group" aria-label="Incident actions">
-            <SosActions item={data} meId={access?.id} compact onDone={(m) => { setNotice(m); void load(); }} />
-            {buttons.filter(([, on]) => on).map(([act]) => (
-              <button
-                key={act} type="button"
-                className="sg-btn sg-btn--ghost sg-btn--sm"
-                onClick={() => setDrawer(act)}
-              >
-                {ACTION_TITLE[act]}
-              </button>
+  const tabs: RecordTab[] = [
+    { key: 'overview', label: 'Overview', content: (
+<div className="grid gap-4">
+      <Panel title={`SOS (${data.sos_events.length})`} flush>
+        {data.sos_events.length === 0 ? (
+          <Empty title="No SOS on this incident" detail="It was opened from a ticket, a detected signal or by hand." />
+        ) : (
+          <div className="ops-sos p-4">
+            {data.sos_events.map((ev: SosEventRow) => (
+              <article key={ev.id} className={`ops-sos__card ops-sos__card--${ev.status}`} aria-labelledby={`sos-${ev.id}`}>
+                <div className="ops-sos__head">
+                  <h3 id={`sos-${ev.id}`}>Press {data.sos_events.indexOf(ev) + 1}</h3>
+                  {ev.raiser_reported_mistake_at ? <Pill tone="wait">Rider reports false alarm</Pill> : null}
+                  <Pill tone={SOS_TONE[ev.status]}>{words(ev.status)}</Pill>
+                  <span className="ops-sos__type">{words(ev.event_type)}</span>
+                  <span className="ops-sos__age">raised {elapsed(minutesBetween(ev.created_at, now))} ago</span>
+                </div>
+                <div className="ops-sos__body">
+                  <div className="ops-sos__who">
+                    <span className="ops-sos__label">Raised by {ev.initiated_by}</span>
+                    <b>{ev.user_label || '—'}</b>
+                    <Revealable
+                      value={<span className="ops-sos__phone">{ev.user_phone || '—'}</span>}
+                      label={`caller phone for ${data.ref}`}
+                      target={{ type: 'sos_event', id: ev.id }}
+                      field="phone_number"
+                      render={TELL}
+                      disabledReason={ev.active ? undefined : 'Contact can be revealed only while the SOS is open or acknowledged.'}
+                      noReveal={readOnly}
+                    />
+                  </div>
+                  {ev.status === 'open' ? <span className={ack.kind === 'overdue' ? 'ops-late' : 'muted'}>{ackText(ack, data.country)}</span> : null}
+                </div>
+                {ev.active && !readOnly && (
+                  <div className="ops-sos__actions">
+                    {ev.status === 'open' && (
+                      <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setSosAct({ id: ev.id, action: 'acknowledge' })}>Acknowledge</button>
+                    )}
+                    <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setSosAct({ id: ev.id, action: 'resolve' })}>Resolve</button>
+                    <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setSosAct({ id: ev.id, action: 'false-alarm' })}>False alarm</button>
+                  </div>
+                )}
+              </article>
             ))}
           </div>
         )}
-      />
-
-      <CaseHead data={data} now={now} others={others} />
-      {!closed && !readOnly ? (
-        <ol className="ops-steps mb-4" aria-label="Respond">
-          <li className={`ops-step ${(data.sos.unacknowledged ?? 0) === 0 ? 'ops-step--done' : 'ops-step--next'}`}>
-            <span className="ops-step__n" aria-hidden="true">{(data.sos.unacknowledged ?? 0) === 0 ? '✓' : '1'}</span>
-            <span className="ops-step__text"><b>Acknowledge</b>
-              <span>{(data.sos.unacknowledged ?? 0) === 0 ? 'Done' : 'Tell everyone you have it'}</span></span>
-          </li>
-          <li className="ops-step">
-            <span className="ops-step__n" aria-hidden="true">2</span>
-            <span className="ops-step__text"><b>Call the rider and the driver</b>
-              <span>Reveal a number below; every reveal is logged</span></span>
-            <a href="#people" className="sg-btn sg-btn--ghost sg-btn--sm">People</a>
-          </li>
-          <li className={`ops-step${data.police_referred_at ? ' ops-step--done' : ''}`}>
-            <span className="ops-step__n" aria-hidden="true">{data.police_referred_at ? '✓' : '3'}</span>
-            <span className="ops-step__text"><b>Send to emergency services</b>
-              <span>{data.police_referred_at ? 'Referred' : emergencyLine(data.emergency)}</span></span>
-            {!data.police_referred_at && a.refer_police ? (
-              <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setDrawer('police')}>Record referral</button>
-            ) : null}
-          </li>
-          <li className="ops-step">
-            <span className="ops-step__n" aria-hidden="true">4</span>
-            <span className="ops-step__text"><b>Close it</b><span>Resolve with an outcome, or mark it a false alarm with the reason</span></span>
-          </li>
-        </ol>
-      ) : null}
-      {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
-      {error && <div className="alert-error mb-4" role="alert">{error} Showing the last version that loaded.</div>}
-
+      </Panel>
       <div className="ops-grid-2">
         <Panel title="The incident">
           <Facts>
@@ -248,53 +240,7 @@ export default function IncidentPage() {
           <p className="help mt-3">Ring the number yourself, then record it. SaaradhiGo does not contact emergency services for you.</p>
         </Panel>
       </div>
-
-      <Panel title={`SOS (${data.sos_events.length})`} flush>
-        {data.sos_events.length === 0 ? (
-          <Empty title="No SOS on this incident" detail="It was opened from a ticket, a detected signal or by hand." />
-        ) : (
-          <div className="ops-sos p-4">
-            {data.sos_events.map((ev: SosEventRow) => (
-              <article key={ev.id} className={`ops-sos__card ops-sos__card--${ev.status}`} aria-labelledby={`sos-${ev.id}`}>
-                <div className="ops-sos__head">
-                  <h3 id={`sos-${ev.id}`}>Press {data.sos_events.indexOf(ev) + 1}</h3>
-                  {ev.raiser_reported_mistake_at ? <Pill tone="wait">Rider reports false alarm</Pill> : null}
-                  <Pill tone={SOS_TONE[ev.status]}>{words(ev.status)}</Pill>
-                  <span className="ops-sos__type">{words(ev.event_type)}</span>
-                  <span className="ops-sos__age">raised {elapsed(minutesBetween(ev.created_at, now))} ago</span>
-                </div>
-                <div className="ops-sos__body">
-                  <div className="ops-sos__who">
-                    <span className="ops-sos__label">Raised by {ev.initiated_by}</span>
-                    <b>{ev.user_label || '—'}</b>
-                    <Revealable
-                      value={<span className="ops-sos__phone">{ev.user_phone || '—'}</span>}
-                      label={`caller phone for ${data.ref}`}
-                      target={{ type: 'sos_event', id: ev.id }}
-                      field="phone_number"
-                      render={TELL}
-                      disabledReason={ev.active ? undefined : 'Contact can be revealed only while the SOS is open or acknowledged.'}
-                      noReveal={readOnly}
-                    />
-                  </div>
-                  {ev.status === 'open' ? <span className={ack.kind === 'overdue' ? 'ops-late' : 'muted'}>{ackText(ack, data.country)}</span> : null}
-                </div>
-                {ev.active && !readOnly && (
-                  <div className="ops-sos__actions">
-                    {ev.status === 'open' && (
-                      <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setSosAct({ id: ev.id, action: 'acknowledge' })}>Acknowledge</button>
-                    )}
-                    <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setSosAct({ id: ev.id, action: 'resolve' })}>Resolve</button>
-                    <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setSosAct({ id: ev.id, action: 'false-alarm' })}>False alarm</button>
-                  </div>
-                )}
-              </article>
-            ))}
-          </div>
-        )}
-      </Panel>
-
-      <div className="ops-grid-2" id="people">
+<div id="people">
         <Panel title="People and records">
           <ul className="ops-linklist">
             {data.people.drivers.map((d) => (
@@ -331,7 +277,10 @@ export default function IncidentPage() {
             <Empty title="Nothing linked yet" detail="Link a driver, rider, trip or ticket from Actions." />
           ) : null}
         </Panel>
-
+</div>
+</div>
+    ) },
+    { key: 'signals', label: 'Signals', content: (
         <Panel title={`Detected signals (${data.signals.length})`}>
           {data.signals.length === 0 ? (
             <Empty title="No signals" detail="A long stop, an ETA overrun or a route deviation on this trip would appear here." />
@@ -347,23 +296,81 @@ export default function IncidentPage() {
             </ul>
           )}
         </Panel>
-      </div>
+    ) },
+    { key: 'history', label: 'History', content: (
+<Panel title="Timeline">
+  <History
+    entries={[...data.timeline].reverse().map((e) => ({
+      at: stamp(e.created_at, tz),
+      text: <>
+        <b>{KIND_LABEL[e.kind] ?? e.kind}</b>
+        {e.to_status ? <> · {STATUS_LABEL[e.to_status as keyof typeof STATUS_LABEL] ?? words(e.to_status)}</> : null}
+        {e.note ? <> — {e.note}</> : null}
+      </>,
+      who: e.actor_label || 'system',
+    }))}
+  />
+</Panel>
+    ) },
+  ];
 
-      <Panel title="Timeline">
-        <ol className="ops-timeline">
-          {[...data.timeline].reverse().map((e) => (
-            <li key={e.id} className="ops-timeline__item">
-              <time dateTime={e.created_at}>{stamp(e.created_at, tz)}</time>
-              <span>
-                <b>{KIND_LABEL[e.kind] ?? e.kind}</b>
-                {e.to_status ? <> · {STATUS_LABEL[e.to_status as keyof typeof STATUS_LABEL] ?? words(e.to_status)}</> : null}
-                {e.note ? <> — {e.note}</> : null}
-              </span>
-              <span className="muted">{e.actor_label || 'system'}</span>
-            </li>
-          ))}
+  return (
+    <>
+      <p className="ops-record-page__back"><Link href="/safety-ops">All incidents</Link></p>
+      <CaseHead data={data} now={now} others={others} />
+      {!closed && !readOnly ? (
+        <ol className="ops-steps mb-4" aria-label="Respond">
+          <li className={`ops-step ${(data.sos.unacknowledged ?? 0) === 0 ? 'ops-step--done' : 'ops-step--next'}`}>
+            <span className="ops-step__n" aria-hidden="true">{(data.sos.unacknowledged ?? 0) === 0 ? '✓' : '1'}</span>
+            <span className="ops-step__text"><b>Acknowledge</b>
+              <span>{(data.sos.unacknowledged ?? 0) === 0 ? 'Done' : 'Tell everyone you have it'}</span></span>
+          </li>
+          <li className="ops-step">
+            <span className="ops-step__n" aria-hidden="true">2</span>
+            <span className="ops-step__text"><b>Call the rider and the driver</b>
+              <span>Reveal a number below; every reveal is logged</span></span>
+            <a href="#people" className="sg-btn sg-btn--ghost sg-btn--sm">People</a>
+          </li>
+          <li className={`ops-step${data.police_referred_at ? ' ops-step--done' : ''}`}>
+            <span className="ops-step__n" aria-hidden="true">{data.police_referred_at ? '✓' : '3'}</span>
+            <span className="ops-step__text"><b>Send to emergency services</b>
+              <span>{data.police_referred_at ? 'Referred' : emergencyLine(data.emergency)}</span></span>
+            {!data.police_referred_at && a.refer_police ? (
+              <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setDrawer('police')}>Record referral</button>
+            ) : null}
+          </li>
+          <li className="ops-step">
+            <span className="ops-step__n" aria-hidden="true">4</span>
+            <span className="ops-step__text"><b>Close it</b><span>Resolve with an outcome, or mark it a false alarm with the reason</span></span>
+          </li>
         </ol>
-      </Panel>
+      ) : null}
+      {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
+      {error && <div className="alert-error mb-4" role="alert">{error} Showing the last version that loaded.</div>}
+      <div className="ops-record-page ops-record-page--wide">
+        <RecordPanel
+          label="Incident"
+          title={data.title || CATEGORY_LABEL[data.category] || data.category}
+          refId={data.ref}
+          subtitle={data.rider_reports_false_alarm ? <Pill tone="wait">Rider reports false alarm</Pill> : undefined}
+          status={<>
+            <SeverityPill severity={data.severity} />{' '}
+            <Pill tone={closed ? 'good' : data.status === 'open' ? 'bad' : 'wait'}>{STATUS_LABEL[data.status]}</Pill>
+            {data.escalated ? <> <Pill tone="bad">Escalated</Pill></> : null}
+          </>}
+          actions={closed || data.read_only ? undefined : (
+            <>
+              <SosActions item={data} meId={access?.id} compact onDone={(m) => { setNotice(m); void load(); }} />
+              {buttons.filter(([, on]) => on).map(([act]) => (
+                <button key={act} type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setDrawer(act)}>
+                  {ACTION_TITLE[act]}
+                </button>
+              ))}
+            </>
+          )}
+          tabs={tabs}
+        />
+      </div>
 
       {drawer && <IncidentActionDrawer action={drawer} incident={data} onClose={() => setDrawer(null)} onDone={done} />}
       {sosAct && <SosActionDrawer sosId={sosAct.id} action={sosAct.action} onClose={() => setSosAct(null)} onDone={done} />}

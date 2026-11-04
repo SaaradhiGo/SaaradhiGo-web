@@ -15,7 +15,7 @@ import {
 import { ActionDrawer } from '@/components/console/TripActionDrawer';
 import { StaleTripPanel } from '@/components/console/StaleTripPanel';
 import { type StaleActions, type StaleDetail, panelModel } from '@/lib/staleTrip';
-import { ButtonLink } from '@/components/sg/Button';
+import { History, RecordPanel, type RecordTab } from '@/components/console/kit/RecordPanel';
 import { Revealable } from '@/components/console/Revealable';
 import {
   Column,
@@ -224,6 +224,7 @@ export default function TripDetailPage() {
     return (
       <div aria-busy="true" aria-live="polite">
         <span className="sr-only">Loading the trip</span>
+        <p className="ops-record-page__back"><Link href="/trips">All trips</Link></p>
         <PageHeader title={`T-${id}`} />
         <TileGrid><Skeleton kind="tile" count={4} /></TileGrid>
         <div className="ops-review"><Skeleton kind="block" /><Skeleton kind="block" /></div>
@@ -233,7 +234,8 @@ export default function TripDetailPage() {
   if (error || !data) {
     return (
       <>
-        <PageHeader title={`T-${id}`} actions={<ButtonLink href="/trips" variant="ghost" size="sm">All trips</ButtonLink>} />
+        <p className="ops-record-page__back"><Link href="/trips">All trips</Link></p>
+        <PageHeader title={`T-${id}`} />
         <ErrorState title="This trip could not be loaded" detail={error ?? undefined} onRetry={() => void load()} />
       </>
     );
@@ -281,67 +283,9 @@ export default function TripDetailPage() {
     { key: 'pdf', label: 'PDF', width: '5rem', render: (r) => (r.pdf_url ? <a href={r.pdf_url} target="_blank" rel="noopener noreferrer">Open</a> : <span className="muted">—</span>) },
   ];
 
-  return (
-    <>
-      <PageHeader
-        title={`T-${data.id}`}
-        subtitle={
-          <>
-            {data.zone ? `${data.zone.name} (${data.zone.code})` : 'No zone'}
-            {' · requested '}{cityTime(data.timeline.requested_at, cityTz, { zone: true })}
-          </>
-        }
-        actions={
-          <>
-            <Pill tone={TONE[state] ?? 'neutral'}>{words(state)}</Pill>
-            <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void resendReceipt()}>Resend receipt</button>
-            {data.actions?.resend_pickup_code ? (
-              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void resendPickupCode()}>Re-send pickup code</button>
-            ) : null}
-            <ButtonLink href="/trips" variant="ghost" size="sm">All trips</ButtonLink>
-          </>
-        }
-      />
-
-      {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
-      {actionError && <div className="alert-error mb-4" role="alert">{actionError}</div>}
-      {pending.length > 0 && (
-        <div className="ops-banner" role="status">
-          <b>Waiting for a checker</b>
-          <span>{pending.map((r) => `${r.action_key} · request #${r.id}${r.amount != null && r.currency ? ` · ${formatMinor(r.amount, r.currency)}` : ''}`).join('; ')}</span>
-        </div>
-      )}
-      {data.stale?.is_stale && (
-        <div className="ops-banner" role="status"><b>Stale</b><span>{words(data.stale.reason)}: this trip has stopped progressing.</span></div>
-      )}
-
-      {rail.length > 0 && (
-        <nav className="ops-form__row mb-4" aria-label="Trip actions">
-          {rail.map((key) => (
-            <button key={key} type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => { setNotice(null); setActionError(null); setActing(key); }}>
-              {ACTION_LABEL[key]}
-            </button>
-          ))}
-          {(data.flags ?? []).some((f) => f.active) && data.actions?.flag ? (
-            <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={busy} onClick={() => void clearFlags()}>Clear flags</button>
-          ) : null}
-        </nav>
-      )}
-
-      {data.stale_actions ? (
-        <div className="mb-4">
-          <StaleTripPanel
-            model={panelModel(data.stale, data.stale_actions)}
-            tripId={data.id}
-            reason={data.stale?.reason ?? null}
-            actions={data.stale_actions}
-            detail={data.stale_detail}
-            timeZone={cityTz}
-            onDone={(message) => { setActionError(null); setNotice(message); void load(true); }}
-          />
-        </div>
-      ) : null}
-
+  const tabs: RecordTab[] = [
+    { key: 'overview', label: 'Overview', content: (
+<div className="grid gap-4">
       <TileGrid>
         {data.fare_card ? (
           // The fare and what the rider actually paid, never one figure called "Charged": on a promo
@@ -382,9 +326,6 @@ export default function TripDetailPage() {
           tone={/fail/i.test(data.fare.payment_status ?? '') ? 'urgent' : 'neutral'}
         />
       </TileGrid>
-
-      <div className="ops-review">
-        <div className="grid gap-4">
           <Panel title="Route">
             <Facts>
               {/* The server cuts both addresses to locality, city and state
@@ -399,32 +340,70 @@ export default function TripDetailPage() {
               </Fact>
             </Facts>
           </Panel>
-
-          <Panel title={cityZoneLabel(cityTz) ? `Timeline (${cityZoneLabel(cityTz)})` : 'Timeline'}>
-            {data.timeline_events && data.timeline_events.length > 0 ? (
-              <ol className="ops-timeline">
-                {data.timeline_events.map((e, i) => (
-                  <li key={`${e.event}-${i}`} className="ops-timeline__item">
-                    <time dateTime={e.at ?? undefined}>{cityTime(e.at, cityTz)}</time>
-                    <b>{EVENT_LABEL[e.event] ?? words(e.event)}</b>
-                    <span className="muted">
-                      {e.created_by?.label ? `${e.created_by.label}${e.created_by.role ? ` (${e.created_by.role})` : ''}` : e.actor ? words(e.actor.type) : 'system'}
-                      {e.detail ? ` · ${e.detail}` : ''}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            ) : (
+          <Panel title="Rider">
+            {data.rider ? (
               <Facts>
-                {Object.entries(data.timeline).map(([k, v]) => (
-                  <Fact key={k} label={TIMELINE_LABEL[k] ?? words(k)}>
-                    {v ? cityTime(v, cityTz) : <span className="muted">—</span>}
+                <Fact label="Name">{data.rider.full_name ?? '—'}{data.rider.flagged_for_review ? <> <Pill tone="bad">Flagged</Pill></> : null}</Fact>
+                <Fact label="Phone"><Revealable value={data.rider.phone_number ?? '—'} label="rider phone" target={tripTarget} field="rider_phone" /></Fact>
+                <Fact label="Email"><Revealable value={data.rider.email ?? '—'} label="rider email" target={tripTarget} field="rider_email" /></Fact>
+                <Fact label="Rating">{data.rider.rating ?? '—'}{data.rider.rating_count ? ` (${data.rider.rating_count})` : ''}</Fact>
+              </Facts>
+            ) : <Empty title="No rider" />}
+          </Panel>
+          <Panel title="Driver">
+            {data.driver ? (
+              <Facts>
+                <Fact label="Name"><PageLink page="drivers" href={`/drivers/${data.driver.driver_id}`}>{data.driver.full_name ?? `Driver #${data.driver.driver_id}`}</PageLink></Fact>
+                <Fact label="Phone"><Revealable value={data.driver.phone_number ?? '—'} label="driver phone" target={tripTarget} field="driver_phone" /></Fact>
+                <Fact label="State">
+                  <Pill tone={data.driver.status === 'online' ? 'good' : 'neutral'}>{data.driver.status ?? '—'}</Pill>{' '}
+                  {data.driver.approved ? <Pill tone="good">Approved</Pill> : <Pill tone="wait">Unapproved</Pill>}
+                </Fact>
+                <Fact label="Rating">{data.driver.ratings} · {data.driver.total_trips} trips</Fact>
+                {data.driver.fatigue_lockout_until ? <Fact label="Rest until">{cityTime(data.driver.fatigue_lockout_until, cityTz)}</Fact> : null}
+              </Facts>
+            ) : <Empty title="No driver assigned" />}
+          </Panel>
+          <Panel title="Vehicle">
+            {data.vehicle ? (
+              <Facts>
+                <Fact label="Registration">{data.vehicle.vehicle_number ?? '—'}</Fact>
+                <Fact label="Make">{[data.vehicle.brand, data.vehicle.model, data.vehicle.color].filter(Boolean).join(' · ') || '—'}</Fact>
+                <Fact label="Category">{data.vehicle.type ?? '—'}</Fact>
+                <Fact label="Insurance">{data.vehicle.insurance_expiry ?? '—'}</Fact>
+                <Fact label="Permit">{data.vehicle.permit_expiry ?? '—'}</Fact>
+                <Fact label="Fitness">{data.vehicle.fitness_expiry ?? '—'}</Fact>
+                <Fact label="PUC">{data.vehicle.puc_expiry ?? '—'}</Fact>
+              </Facts>
+            ) : <Empty title="No vehicle recorded" />}
+          </Panel>
+          {data.ratings.length > 0 && (
+            <Panel title="Ratings">
+              <Facts>
+                {data.ratings.map((r) => (
+                  <Fact key={r.id} label={words(r.direction)}>
+                    <span aria-label={`${r.score} out of 5`}>{'★'.repeat(r.score)}{'☆'.repeat(Math.max(0, 5 - r.score))}</span>
+                    {r.comments ? <div className="help">{r.comments}</div> : null}
                   </Fact>
                 ))}
               </Facts>
-            )}
-          </Panel>
-
+            </Panel>
+          )}
+          {data.driver_cancellations.length > 0 && (
+            <Panel title="Driver cancellations">
+              <Facts>
+                {data.driver_cancellations.map((c) => (
+                  <Fact key={c.id} label={cityTime(c.created_at, cityTz)}>
+                    {words(c.reason)}{c.note ? <div className="help">{c.note}</div> : null}
+                  </Fact>
+                ))}
+              </Facts>
+            </Panel>
+          )}
+</div>
+    ) },
+    { key: 'money', label: 'Money', content: (
+<div className="grid gap-4">
           {data.fare_card ? (
             <Panel title="Who paid what">
               <p className="mb-2"><b>{fareCardSummary(data.fare_card)}</b></p>
@@ -454,7 +433,6 @@ export default function TripDetailPage() {
               </Facts>
             </Panel>
           ) : null}
-
           {data.fare_minor ? (
             <Panel title={`Fare breakdown · ${cur}`}>
               <Facts>
@@ -485,7 +463,6 @@ export default function TripDetailPage() {
               </Facts>
             </Panel>
           ) : null}
-
           {data.payment_summary && (
             <Panel title="Payment and payout">
               <Facts>
@@ -501,7 +478,6 @@ export default function TripDetailPage() {
               </Facts>
             </Panel>
           )}
-
           {(data.money_actions ?? []).length > 0 && (
             <Panel title="Refunds and adjustments">
               <Facts>
@@ -515,19 +491,19 @@ export default function TripDetailPage() {
               </Facts>
             </Panel>
           )}
-
           {data.payments.length > 0 && (
             <Panel title="Payments" flush>
               <DataTable caption="Payments on this trip" rows={data.payments} columns={paymentColumns} rowKey={(p) => p.id} density="compact" maxHeight={false} />
             </Panel>
           )}
-
           {data.receipts.length > 0 && (
             <Panel title="Receipts" flush>
               <DataTable caption="Receipts for this trip" rows={data.receipts} columns={receiptColumns} rowKey={(r) => r.id} density="compact" maxHeight={false} />
             </Panel>
           )}
-
+</div>
+    ) },
+    { key: 'messages', label: 'Messages', content: (
           <Panel title={`Chat · ${data.chat.total} message${data.chat.total === 1 ? '' : 's'}`}>
             {data.chat.messages.length === 0 ? (
               <Empty title="No messages" detail="Nothing was said in the app on this trip." />
@@ -548,26 +524,9 @@ export default function TripDetailPage() {
               </div>
             )}
           </Panel>
-        </div>
-
-        <div className="grid gap-4">
-          {hadSos && (
-            <section className="ops-panel ops-panel--alarm">
-              <div className="ops-panel__head"><h2>SOS on this trip</h2></div>
-              <div className="ops-panel__body">
-                <Facts>
-                  {data.sos_events.map((e) => (
-                    <Fact key={e.id} label="SOS alert">
-                      <Pill tone={e.status === 'resolved' ? 'good' : e.status === 'open' ? 'bad' : 'wait'}>{words(e.status)}</Pill>
-                      <div className="help">raised {cityTime(e.created_at, cityTz)}{e.acknowledged_at ? ` · acknowledged ${cityTime(e.acknowledged_at, cityTz)}` : ''}{e.resolved_at ? ` · resolved ${cityTime(e.resolved_at, cityTz)}` : ''}</div>
-                    </Fact>
-                  ))}
-                </Facts>
-                <div className="mt-3"><PageButtonLink page="safety" href="/safety-ops">Open Safety</PageButtonLink></div>
-              </div>
-            </section>
-          )}
-
+    ) },
+    { key: 'safety', label: 'Safety & support', content: (
+<div className="grid gap-4">
           {(data.support_tickets ?? []).length > 0 && (
             <Panel title="Support tickets">
               <Facts>
@@ -579,7 +538,6 @@ export default function TripDetailPage() {
               </Facts>
             </Panel>
           )}
-
           {(data.flags ?? []).length > 0 && (
             <Panel title="Flags">
               <Facts>
@@ -592,7 +550,9 @@ export default function TripDetailPage() {
               </Facts>
             </Panel>
           )}
-
+</div>
+    ) },
+    { key: 'notes', label: 'Notes', content: (
           <Panel title="Internal notes">
             {(data.notes ?? []).length === 0 ? (
               <Empty title="No notes" detail="Notes are for operators only; riders and drivers never see them." />
@@ -610,87 +570,116 @@ export default function TripDetailPage() {
               </div>
             )}
           </Panel>
-
-          <Panel title="Audit trail">
-            {(data.audit_trail ?? []).length === 0 ? (
-              <Empty title="No operator actions" detail="Every cancel, refund, flag and note on this trip is listed here." />
+    ) },
+    { key: 'history', label: 'History', content: (
+<div className="grid gap-4">
+          <Panel title={cityZoneLabel(cityTz) ? `Timeline (${cityZoneLabel(cityTz)})` : 'Timeline'}>
+            {data.timeline_events && data.timeline_events.length > 0 ? (
+              <ol className="ops-timeline">
+                {data.timeline_events.map((e, i) => (
+                  <li key={`${e.event}-${i}`} className="ops-timeline__item">
+                    <time dateTime={e.at ?? undefined}>{cityTime(e.at, cityTz)}</time>
+                    <b>{EVENT_LABEL[e.event] ?? words(e.event)}</b>
+                    <span className="muted">
+                      {e.created_by?.label ? `${e.created_by.label}${e.created_by.role ? ` (${e.created_by.role})` : ''}` : e.actor ? words(e.actor.type) : 'system'}
+                      {e.detail ? ` · ${e.detail}` : ''}
+                    </span>
+                  </li>
+                ))}
+              </ol>
             ) : (
               <Facts>
-                {(data.audit_trail ?? []).map((r) => (
-                  <Fact key={r.id} label={cityTime(r.created_at, cityTz)}>
-                    {EVENT_LABEL[r.action] ?? words(r.action)}
-                    <div className="help">{r.created_by?.label ?? 'system'}{r.created_by?.role ? ` (${r.created_by.role})` : ''}{r.reason ? ` · ${r.reason}` : ''}</div>
+                {Object.entries(data.timeline).map(([k, v]) => (
+                  <Fact key={k} label={TIMELINE_LABEL[k] ?? words(k)}>
+                    {v ? cityTime(v, cityTz) : <span className="muted">—</span>}
                   </Fact>
                 ))}
               </Facts>
             )}
           </Panel>
+<Panel title="Audit trail">
+  <History
+    empty="No operator actions. Every cancel, refund, flag and note on this trip is listed here."
+    entries={(data.audit_trail ?? []).map((r) => ({
+      at: cityTime(r.created_at, cityTz),
+      text: <>{EVENT_LABEL[r.action] ?? words(r.action)}{r.reason ? <span className="muted"> · {r.reason}</span> : null}</>,
+      who: r.created_by?.label ? `${r.created_by.label}${r.created_by.role ? ` (${r.created_by.role})` : ''}` : 'system',
+    }))}
+  />
+</Panel>
+</div>
+    ) },
+  ];
 
-          <Panel title="Rider">
-            {data.rider ? (
-              <Facts>
-                <Fact label="Name">{data.rider.full_name ?? '—'}{data.rider.flagged_for_review ? <> <Pill tone="bad">Flagged</Pill></> : null}</Fact>
-                <Fact label="Phone"><Revealable value={data.rider.phone_number ?? '—'} label="rider phone" target={tripTarget} field="rider_phone" /></Fact>
-                <Fact label="Email"><Revealable value={data.rider.email ?? '—'} label="rider email" target={tripTarget} field="rider_email" /></Fact>
-                <Fact label="Rating">{data.rider.rating ?? '—'}{data.rider.rating_count ? ` (${data.rider.rating_count})` : ''}</Fact>
-              </Facts>
-            ) : <Empty title="No rider" />}
-          </Panel>
-
-          <Panel title="Driver">
-            {data.driver ? (
-              <Facts>
-                <Fact label="Name"><PageLink page="drivers" href={`/drivers/${data.driver.driver_id}`}>{data.driver.full_name ?? `Driver #${data.driver.driver_id}`}</PageLink></Fact>
-                <Fact label="Phone"><Revealable value={data.driver.phone_number ?? '—'} label="driver phone" target={tripTarget} field="driver_phone" /></Fact>
-                <Fact label="State">
-                  <Pill tone={data.driver.status === 'online' ? 'good' : 'neutral'}>{data.driver.status ?? '—'}</Pill>{' '}
-                  {data.driver.approved ? <Pill tone="good">Approved</Pill> : <Pill tone="wait">Unapproved</Pill>}
-                </Fact>
-                <Fact label="Rating">{data.driver.ratings} · {data.driver.total_trips} trips</Fact>
-                {data.driver.fatigue_lockout_until ? <Fact label="Rest until">{cityTime(data.driver.fatigue_lockout_until, cityTz)}</Fact> : null}
-              </Facts>
-            ) : <Empty title="No driver assigned" />}
-          </Panel>
-
-          <Panel title="Vehicle">
-            {data.vehicle ? (
-              <Facts>
-                <Fact label="Registration">{data.vehicle.vehicle_number ?? '—'}</Fact>
-                <Fact label="Make">{[data.vehicle.brand, data.vehicle.model, data.vehicle.color].filter(Boolean).join(' · ') || '—'}</Fact>
-                <Fact label="Category">{data.vehicle.type ?? '—'}</Fact>
-                <Fact label="Insurance">{data.vehicle.insurance_expiry ?? '—'}</Fact>
-                <Fact label="Permit">{data.vehicle.permit_expiry ?? '—'}</Fact>
-                <Fact label="Fitness">{data.vehicle.fitness_expiry ?? '—'}</Fact>
-                <Fact label="PUC">{data.vehicle.puc_expiry ?? '—'}</Fact>
-              </Facts>
-            ) : <Empty title="No vehicle recorded" />}
-          </Panel>
-
-          {data.ratings.length > 0 && (
-            <Panel title="Ratings">
-              <Facts>
-                {data.ratings.map((r) => (
-                  <Fact key={r.id} label={words(r.direction)}>
-                    <span aria-label={`${r.score} out of 5`}>{'★'.repeat(r.score)}{'☆'.repeat(Math.max(0, 5 - r.score))}</span>
-                    {r.comments ? <div className="help">{r.comments}</div> : null}
-                  </Fact>
-                ))}
-              </Facts>
-            </Panel>
-          )}
-
-          {data.driver_cancellations.length > 0 && (
-            <Panel title="Driver cancellations">
-              <Facts>
-                {data.driver_cancellations.map((c) => (
-                  <Fact key={c.id} label={cityTime(c.created_at, cityTz)}>
-                    {words(c.reason)}{c.note ? <div className="help">{c.note}</div> : null}
-                  </Fact>
-                ))}
-              </Facts>
-            </Panel>
-          )}
+  return (
+    <>
+      <p className="ops-record-page__back"><Link href="/trips">All trips</Link></p>
+      {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
+      {actionError && <div className="alert-error mb-4" role="alert">{actionError}</div>}
+      {pending.length > 0 && (
+        <div className="ops-banner" role="status">
+          <b>Waiting for a checker</b>
+          <span>{pending.map((r) => `${r.action_key} · request #${r.id}${r.amount != null && r.currency ? ` · ${formatMinor(r.amount, r.currency)}` : ''}`).join('; ')}</span>
         </div>
+      )}
+      {data.stale?.is_stale && (
+        <div className="ops-banner" role="status"><b>Stale</b><span>{words(data.stale.reason)}: this trip has stopped progressing.</span></div>
+      )}
+      {data.stale_actions ? (
+        <div className="mb-4">
+          <StaleTripPanel
+            model={panelModel(data.stale, data.stale_actions)}
+            tripId={data.id}
+            reason={data.stale?.reason ?? null}
+            actions={data.stale_actions}
+            detail={data.stale_detail}
+            timeZone={cityTz}
+            onDone={(message) => { setActionError(null); setNotice(message); void load(true); }}
+          />
+        </div>
+      ) : null}
+          {hadSos && (
+            <section className="ops-panel ops-panel--alarm">
+              <div className="ops-panel__head"><h2>SOS on this trip</h2></div>
+              <div className="ops-panel__body">
+                <Facts>
+                  {data.sos_events.map((e) => (
+                    <Fact key={e.id} label="SOS alert">
+                      <Pill tone={e.status === 'resolved' ? 'good' : e.status === 'open' ? 'bad' : 'wait'}>{words(e.status)}</Pill>
+                      <div className="help">raised {cityTime(e.created_at, cityTz)}{e.acknowledged_at ? ` · acknowledged ${cityTime(e.acknowledged_at, cityTz)}` : ''}{e.resolved_at ? ` · resolved ${cityTime(e.resolved_at, cityTz)}` : ''}</div>
+                    </Fact>
+                  ))}
+                </Facts>
+                <div className="mt-3"><PageButtonLink page="safety" href="/safety-ops">Open Safety</PageButtonLink></div>
+              </div>
+            </section>
+          )}
+      <div className="ops-record-page ops-record-page--wide">
+        <RecordPanel
+          label="Trip"
+          title="Trip"
+          refId={`T-${data.id}`}
+          subtitle={<>
+            {data.zone ? `${data.zone.name} (${data.zone.code})` : 'No zone'}
+            {' · requested '}{cityTime(data.timeline.requested_at, cityTz, { zone: true })}
+          </>}
+          status={<Pill tone={TONE[state] ?? 'neutral'}>{words(state)}</Pill>}
+          actions={<>
+            <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void resendReceipt()}>Resend receipt</button>
+            {data.actions?.resend_pickup_code ? (
+              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void resendPickupCode()}>Re-send pickup code</button>
+            ) : null}
+            {rail.map((key) => (
+              <button key={key} type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => { setNotice(null); setActionError(null); setActing(key); }}>
+                {ACTION_LABEL[key]}
+              </button>
+            ))}
+            {(data.flags ?? []).some((f) => f.active) && data.actions?.flag ? (
+              <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={busy} onClick={() => void clearFlags()}>Clear flags</button>
+            ) : null}
+          </>}
+          tabs={tabs}
+        />
       </div>
 
       {acting && (

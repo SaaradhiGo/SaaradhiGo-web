@@ -12,7 +12,7 @@ import {
 } from '@/lib/drivers';
 import { cityTime, words } from '@/lib/trips';
 import { DocumentReviewDrawer, DriverActionDrawer, type ReviewTarget } from '@/components/console/DriverActionDrawer';
-import { ButtonLink } from '@/components/sg/Button';
+import { RecordPanel, type RecordTab } from '@/components/console/kit/RecordPanel';
 import { Revealable } from '@/components/console/Revealable';
 import { LedgerLink } from '@/components/console/finance';
 import {
@@ -116,6 +116,7 @@ export default function DriverDetailPage() {
     return (
       <div aria-busy="true" aria-live="polite">
         <span className="sr-only">Loading the driver</span>
+        <p className="ops-record-page__back"><Link href="/drivers">All drivers</Link></p>
         <PageHeader title={`D-${id}`} />
         <div className="ops-review"><Skeleton kind="block" /><Skeleton kind="block" /></div>
       </div>
@@ -124,7 +125,8 @@ export default function DriverDetailPage() {
   if (error || !data) {
     return (
       <>
-        <PageHeader title={`Driver #${id}`} actions={<ButtonLink href="/drivers" variant="ghost" size="sm">All drivers</ButtonLink>} />
+        <p className="ops-record-page__back"><Link href="/drivers">All drivers</Link></p>
+        <PageHeader title={`Driver #${id}`} />
         <ErrorState title="This driver could not be loaded" detail={error ?? undefined} onRetry={() => void load()} />
       </>
     );
@@ -196,38 +198,49 @@ export default function DriverDetailPage() {
     { key: 'who', label: 'By', width: '10rem', hideBelow: 1100, render: (r) => r.created_by?.label || '—' },
   ];
 
-  return (
-    <>
-      <PageHeader
-        title={name}
-        subtitle={
-          <>
-            D-{data.id} · <Revealable value={data.user.phone_number ?? '—'} label="driver phone" target={target} field="phone_number" compact />
-            {data.user.email ? <> · <Revealable value={data.user.email} label="driver email" target={target} field="email" compact /></> : null}
-            {data.home_city ? ` · ${data.home_city.name}` : ''}
-            {data.compliance?.country ? ` · reviewed against ${data.compliance.country}` : ''}
-          </>
-        }
-        actions={
-          <>
-            <Pill tone={kycTone}>{kycLabel}</Pill>
-            {suspended ? <Pill tone="bad">{data.suspension?.permanent ? 'deactivated' : 'suspended'}</Pill> : null}
-            <Pill tone={data.status === 'online' ? 'good' : 'neutral'}>{words(data.status)}</Pill>
-            {/* Drawn only for finance.read (the link rule): the statement behind the balance. */}
-            <LedgerLink driverId={data.id} />
-            <ButtonLink href="/drivers" variant="ghost" size="sm">All drivers</ButtonLink>
-          </>
-        }
-      />
-
-      {notice && (
-        <div className={notice.kind === 'pending' ? 'ops-confirm mb-5' : 'alert-success mb-5'} role="status">
-          <b>{notice.text}</b>
-        </div>
-      )}
-
-      <div className="ops-review">
-        <div className="grid gap-5">
+  const tabs: RecordTab[] = [
+    { key: 'overview', label: 'Overview', content: (
+<div className="grid gap-4">
+          <Panel title="Record">
+            <Facts>
+              <Fact label="Rating">
+                {Number(data.ratings) > 0 ? Number(data.ratings).toFixed(2) : 'No ratings yet'}
+                {data.ratings_summary ? ` · ${data.ratings_summary.count} rating${data.ratings_summary.count === 1 ? '' : 's'}` : ''}
+              </Fact>
+              {data.ratings_summary && data.ratings_summary.count > 0 ? (
+                <Fact label="Stars">{['5', '4', '3', '2', '1'].map((s) => `${s}★ ${data.ratings_summary?.distribution[s] ?? 0}`).join(' · ')}</Fact>
+              ) : null}
+              <Fact label="Trips">{data.total_trips}</Fact>
+              <Fact label="Cancellations">{data.cancellations.last_24h} in 24h · {data.cancellations.last_7d} in 7d · {data.cancellations.last_30d} in 30d</Fact>
+              <Fact label="SOS">
+                <PageLink page="safety" href="/safety-ops">{data.counts?.sos_total ?? 0} total, {data.counts?.sos_open ?? 0} open</PageLink>
+              </Fact>
+              <Fact label="Tickets">
+                <PageLink page="support" href="/support">{data.counts?.tickets_total ?? 0} total, {data.counts?.tickets_open ?? 0} open</PageLink>
+              </Fact>
+              <Fact label="Licence expiry">{data.license_expiry ?? 'Not set'}{data.documents_expired ? ' · a document has expired' : ''}</Fact>
+              <Fact label="Joined">{when(data.joined_at)}</Fact>
+              <Fact label="Account active">{data.user.is_active ? 'Yes' : 'No'}</Fact>
+            </Facts>
+          </Panel>
+          <Panel title="Vehicles" flush>
+            {data.vehicles.length === 0 ? (
+              <Empty title="No vehicle on file" detail="A driver cannot be approved without one." />
+            ) : (
+              <DataTable caption="Vehicles" rows={data.vehicles} columns={vehicleColumns} rowKey={(v) => v.id} density="compact" maxHeight={false} />
+            )}
+          </Panel>
+          <Panel title="Recent trips" flush>
+            {data.recent_trips.length === 0 ? (
+              <Empty title="No trips yet" />
+            ) : (
+              <DataTable caption="This driver's recent trips" rows={data.recent_trips.slice(0, 10)} columns={tripColumns} rowKey={(t) => t.id} density="compact" maxHeight={false} />
+            )}
+          </Panel>
+</div>
+    ) },
+    { key: 'documents', label: 'Documents', content: (
+<div className="grid gap-4">
           {docGroups.map(([title, docs]) => (
             <Panel key={title} title={title}>
               {docs.length === 0 ? (
@@ -270,23 +283,36 @@ export default function DriverDetailPage() {
               })}
             </Panel>
           ))}
-
-          <Panel title="Vehicles" flush>
-            {data.vehicles.length === 0 ? (
-              <Empty title="No vehicle on file" detail="A driver cannot be approved without one." />
+</div>
+    ) },
+    { key: 'money', label: 'Money', content: (
+          <Panel title="Money">
+            <Facts>
+              <Fact label="Wallet">{data.earnings.wallet_balance}</Fact>
+              <Fact label="This month">{data.earnings.this_month}</Fact>
+              <Fact label="Lifetime">{data.earnings.lifetime}</Fact>
+              <Fact label="UPI">
+                {data.upi_id ? <Revealable value={data.upi_id} label="UPI handle" target={target} field="upi_id" /> : 'Not set'}
+              </Fact>
+            </Facts>
+            <p className="help">{data.earnings.currency ? `Amounts in ${data.earnings.currency}.` : 'Currency not determined for these amounts.'}</p>
+          </Panel>
+    ) },
+    { key: 'notes', label: 'Notes', content: (
+          <Panel title="Internal notes">
+            {(data.notes ?? []).length === 0 ? (
+              <p className="help m-0">No notes yet.</p>
             ) : (
-              <DataTable caption="Vehicles" rows={data.vehicles} columns={vehicleColumns} rowKey={(v) => v.id} density="compact" maxHeight={false} />
+              <Facts>
+                {(data.notes ?? []).map((n) => (
+                  <Fact key={n.id} label={`${when(n.created_at)}${n.created_by?.label ? ` · ${n.created_by.label}` : ''}`}>{n.body}</Fact>
+                ))}
+              </Facts>
             )}
           </Panel>
-
-          <Panel title="Recent trips" flush>
-            {data.recent_trips.length === 0 ? (
-              <Empty title="No trips yet" />
-            ) : (
-              <DataTable caption="This driver's recent trips" rows={data.recent_trips.slice(0, 10)} columns={tripColumns} rowKey={(t) => t.id} density="compact" maxHeight={false} />
-            )}
-          </Panel>
-
+    ) },
+    { key: 'history', label: 'History', content: (
+<div className="grid gap-4">
           <Panel title="Status history" flush>
             {(data.status_history ?? []).length === 0 ? (
               <Empty title="No status changes recorded" />
@@ -294,7 +320,6 @@ export default function DriverDetailPage() {
               <DataTable caption="Status history" rows={data.status_history ?? []} columns={auditColumns} rowKey={(r) => r.id} density="compact" maxHeight={false} />
             )}
           </Panel>
-
           <Panel title="Audit trail" flush>
             {(data.audit_trail ?? []).length === 0 ? (
               <Empty title="No operator has acted on this driver" />
@@ -302,9 +327,18 @@ export default function DriverDetailPage() {
               <DataTable caption="Audit trail" rows={data.audit_trail ?? []} columns={auditColumns} rowKey={(r) => r.id} density="compact" maxHeight={false} />
             )}
           </Panel>
-        </div>
+</div>
+    ) },
+  ];
 
-        <div className="grid gap-5">
+  return (
+    <>
+      <p className="ops-record-page__back"><Link href="/drivers">All drivers</Link></p>
+      {notice && (
+        <div className={notice.kind === 'pending' ? 'ops-confirm mb-5' : 'alert-success mb-5'} role="status">
+          <b>{notice.text}</b>
+        </div>
+      )}
           <div className="ops-decide">
             <h2>Decision</h2>
             {data.doc_status === 'rejected' && data.doc_rejection_reason ? (
@@ -327,67 +361,38 @@ export default function DriverDetailPage() {
             ))}
             {rail.length === 0 ? (
               <p className="help m-0">You can view this driver but not change them.</p>
-            ) : (
-              <div className="ops-decide__actions">
-                {rail.map((key) => (
-                  <button
-                    key={key} type="button"
-                    className={key === 'approve' ? 'btn-primary' : key === 'deactivate' ? 'btn-ghost' : 'btn-secondary'}
-                    disabled={key === 'approve' && blockers.length > 0}
-                    onClick={() => setAction(key)}
-                  >{RAIL_LABEL[key]}</button>
-                ))}
-              </div>
-            )}
+            ) : null}
           </div>
-
-          <Panel title="Record">
-            <Facts>
-              <Fact label="Rating">
-                {Number(data.ratings) > 0 ? Number(data.ratings).toFixed(2) : 'No ratings yet'}
-                {data.ratings_summary ? ` · ${data.ratings_summary.count} rating${data.ratings_summary.count === 1 ? '' : 's'}` : ''}
-              </Fact>
-              {data.ratings_summary && data.ratings_summary.count > 0 ? (
-                <Fact label="Stars">{['5', '4', '3', '2', '1'].map((s) => `${s}★ ${data.ratings_summary?.distribution[s] ?? 0}`).join(' · ')}</Fact>
-              ) : null}
-              <Fact label="Trips">{data.total_trips}</Fact>
-              <Fact label="Cancellations">{data.cancellations.last_24h} in 24h · {data.cancellations.last_7d} in 7d · {data.cancellations.last_30d} in 30d</Fact>
-              <Fact label="SOS">
-                <PageLink page="safety" href="/safety-ops">{data.counts?.sos_total ?? 0} total, {data.counts?.sos_open ?? 0} open</PageLink>
-              </Fact>
-              <Fact label="Tickets">
-                <PageLink page="support" href="/support">{data.counts?.tickets_total ?? 0} total, {data.counts?.tickets_open ?? 0} open</PageLink>
-              </Fact>
-              <Fact label="Licence expiry">{data.license_expiry ?? 'Not set'}{data.documents_expired ? ' · a document has expired' : ''}</Fact>
-              <Fact label="Joined">{when(data.joined_at)}</Fact>
-              <Fact label="Account active">{data.user.is_active ? 'Yes' : 'No'}</Fact>
-            </Facts>
-          </Panel>
-
-          <Panel title="Internal notes">
-            {(data.notes ?? []).length === 0 ? (
-              <p className="help m-0">No notes yet.</p>
-            ) : (
-              <Facts>
-                {(data.notes ?? []).map((n) => (
-                  <Fact key={n.id} label={`${when(n.created_at)}${n.created_by?.label ? ` · ${n.created_by.label}` : ''}`}>{n.body}</Fact>
-                ))}
-              </Facts>
-            )}
-          </Panel>
-
-          <Panel title="Money">
-            <Facts>
-              <Fact label="Wallet">{data.earnings.wallet_balance}</Fact>
-              <Fact label="This month">{data.earnings.this_month}</Fact>
-              <Fact label="Lifetime">{data.earnings.lifetime}</Fact>
-              <Fact label="UPI">
-                {data.upi_id ? <Revealable value={data.upi_id} label="UPI handle" target={target} field="upi_id" /> : 'Not set'}
-              </Fact>
-            </Facts>
-            <p className="help">{data.earnings.currency ? `Amounts in ${data.earnings.currency}.` : 'Currency not determined for these amounts.'}</p>
-          </Panel>
-        </div>
+      <div className="ops-record-page ops-record-page--wide">
+        <RecordPanel
+          label="Driver"
+          title={name}
+          refId={`D-${data.id}`}
+          subtitle={<>
+            <Revealable value={data.user.phone_number ?? '—'} label="driver phone" target={target} field="phone_number" compact />
+            {data.user.email ? <> · <Revealable value={data.user.email} label="driver email" target={target} field="email" compact /></> : null}
+            {data.home_city ? ` · ${data.home_city.name}` : ''}
+            {data.compliance?.country ? ` · reviewed against ${data.compliance.country}` : ''}
+          </>}
+          status={<>
+            <Pill tone={kycTone}>{kycLabel}</Pill>
+            {suspended ? <> <Pill tone="bad">{data.suspension?.permanent ? 'deactivated' : 'suspended'}</Pill></> : null}
+            {' '}<Pill tone={data.status === 'online' ? 'good' : 'neutral'}>{words(data.status)}</Pill>
+          </>}
+          actions={<>
+            {rail.map((key) => (
+              <button
+                key={key} type="button"
+                className={key === 'approve' ? 'btn-primary' : key === 'deactivate' ? 'btn-ghost' : 'btn-secondary'}
+                disabled={key === 'approve' && blockers.length > 0}
+                onClick={() => setAction(key)}
+              >{RAIL_LABEL[key]}</button>
+            ))}
+            {/* Drawn only for finance.read (the link rule): the statement behind the balance. */}
+            <LedgerLink driverId={data.id} />
+          </>}
+          tabs={tabs}
+        />
       </div>
 
       {action && (

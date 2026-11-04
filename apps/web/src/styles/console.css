@@ -2211,6 +2211,7 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .ops-list-stack { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 /* Tier 4: the remaining modules on the list + record pattern. */
 .ops-record-page { max-width: 760px; }
+.ops-record-page--wide { max-width: none; }
 .ops-record-page .ops-record { position: static; max-height: none; }
 .ops-record-page__back { margin: 0 0 10px; font: 600 12.5px/1.4 var(--font-sans); }
 .ops-record__caption { caption-side: top; text-align: left; padding: 0 0 6px; font: 800 10.5px/1.4 var(--font-sans); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ops-ink-3); }
