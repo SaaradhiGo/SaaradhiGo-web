@@ -13,7 +13,7 @@ import {
   priorityTone, slaSentence, visibleSupportActions,
 } from '@/lib/supportDesk';
 import { formatMinor, newIdempotencyKey, words } from '@/lib/trips';
-import { ButtonLink } from '@/components/sg/Button';
+import { History, RecordPanel, type RecordTab } from '@/components/console/kit/RecordPanel';
 import { Revealable } from '@/components/console/Revealable';
 import { SlaChip } from '@/components/console/SlaChip';
 import { ActionDrawer } from '@/components/console/TripActionDrawer';
@@ -157,6 +157,7 @@ export default function SupportTicketPage() {
     return (
       <div aria-busy="true" aria-live="polite">
         <span className="sr-only">Loading the ticket</span>
+        <p className="ops-record-page__back"><Link href="/support">All tickets</Link></p>
         <PageHeader title={`TKT-${id}`} />
         <div className="ops-review"><Skeleton kind="block" /><Skeleton kind="block" /></div>
       </div>
@@ -165,7 +166,8 @@ export default function SupportTicketPage() {
   if (error || !ticket) {
     return (
       <>
-        <PageHeader title={`TKT-${id}`} actions={<ButtonLink href="/support" variant="ghost" size="sm">All tickets</ButtonLink>} />
+        <p className="ops-record-page__back"><Link href="/support">All tickets</Link></p>
+        <PageHeader title={`TKT-${id}`} />
         <ErrorState title="This ticket could not be loaded" detail={error ?? undefined} onRetry={() => void load()} />
       </>
     );
@@ -214,47 +216,10 @@ function TicketView({
 
   const done = (text: string, kind: 'pending' | 'done' = 'done') => { setNotice({ text, kind }); setActionError(null); void reload(); };
 
-  return (
-    <>
-      <PageHeader
-        title={`TKT-${ticket.id}`}
-        subtitle={
-          <>
-            {ticket.issue_label ?? ISSUE_LABEL[ticket.issue_type] ?? words(ticket.issue_type)}
-            {' · raised by '}{name}
-            {' · opened '}{stamp(ticket.created_at, tz)}
-            {ticket.city ? ` · ${ticket.city.name}` : ''}
-          </>
-        }
-        actions={
-          <>
-            <Pill tone={priorityTone(ticket.priority)}>{PRIORITY_LABEL[ticket.priority] ?? ticket.priority}</Pill>
-            <SlaChip sla={ticket.sla} />
-            <Pill tone={STATUS_TONE[ticket.status] ?? 'neutral'}>{STATUS_LABEL[ticket.status] ?? ticket.status}</Pill>
-            <ButtonLink href="/support" variant="ghost" size="sm">All tickets</ButtonLink>
-          </>
-        }
-      />
 
-      {notice && (
-        <div className={notice.kind === 'pending' ? 'ops-confirm mb-5' : 'alert-success mb-5'} role="status">
-          <b>{notice.text}</b>
-        </div>
-      )}
-      {actionError && <div className="alert-error mb-5" role="alert">{actionError}</div>}
-      {ticket.returned_at ? (
-        <div className="ops-confirm mb-5" role="status">
-          <b>Returned to you</b>
-          <span>
-            The refund you asked for on this ticket was turned down
-            {ticket.returned_reason ? `: ${ticket.returned_reason}` : '.'}{' '}
-            Nothing was sent to the {ticket.requester.role === 'driver' ? 'driver' : 'rider'}. Reply or add a note to pick it up again.
-          </span>
-        </div>
-      ) : null}
-
-      <div className="ops-review">
-        <div className="grid gap-5">
+  const tabs: RecordTab[] = [
+    { key: 'conversation', label: 'Conversation', content: (
+<div className="grid gap-4">
           <Panel
             title={`Conversation · ${ticket.messages.length} message${ticket.messages.length === 1 ? '' : 's'}`}
             action={
@@ -275,25 +240,10 @@ function TicketView({
               <p className="help m-0">You can read this ticket but not reply to it.</p>
             </Panel>
           )}
-
-          <Panel title="Audit trail" flush>
-            {ticket.audit_trail.length === 0 ? (
-              <Empty title="No operator has acted on this ticket" />
-            ) : (
-              <ol className="ops-audit" aria-label="Audit trail">
-                {ticket.audit_trail.map((a) => (
-                  <li key={a.id}>
-                    <time dateTime={a.created_at ?? undefined}>{stamp(a.created_at, tz)}</time>
-                    <b>{words(a.action.replace(/^support_ticket_/, ''))}</b>
-                    <span>{a.created_by?.label || '—'}{a.reason ? ` · ${a.reason}` : ''}</span>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </Panel>
-        </div>
-
-        <div className="grid gap-5">
+</div>
+    ) },
+    { key: 'overview', label: 'Overview', content: (
+<div className="grid gap-4">
           <Panel title="Requester">
             <Facts>
               <Fact label="Name">
@@ -329,7 +279,10 @@ function TicketView({
                 onClick={() => setCreditOpen(true)}>Credit wallet…</button>
             </Panel>
           ) : null}
-
+</div>
+    ) },
+    { key: 'trip', label: 'Trip & money', content: (
+<>
           {ticket.trip ? (
             <TripPanel
               trip={ticket.trip} refund={ticket.refund} tz={tz}
@@ -338,7 +291,58 @@ function TicketView({
           ) : (
             <Panel title="Trip"><p className="help m-0">No trip attached to this ticket.</p></Panel>
           )}
+</>
+    ) },
+    { key: 'history', label: 'History', content: (
+<Panel title="Audit trail">
+  <History
+    empty="No operator has acted on this ticket."
+    entries={ticket.audit_trail.map((a) => ({
+      at: stamp(a.created_at, tz),
+      text: <>{words(a.action.replace(/^support_ticket_/, ''))}{a.reason ? <span className="muted"> · {a.reason}</span> : null}</>,
+      who: a.created_by?.label || '—',
+    }))}
+  />
+</Panel>
+    ) },
+  ];
+
+  return (
+    <>
+      <p className="ops-record-page__back"><Link href="/support">All tickets</Link></p>
+      {notice && (
+        <div className={notice.kind === 'pending' ? 'ops-confirm mb-5' : 'alert-success mb-5'} role="status">
+          <b>{notice.text}</b>
         </div>
+      )}
+      {actionError && <div className="alert-error mb-5" role="alert">{actionError}</div>}
+      {ticket.returned_at ? (
+        <div className="ops-confirm mb-5" role="status">
+          <b>Returned to you</b>
+          <span>
+            The refund you asked for on this ticket was turned down
+            {ticket.returned_reason ? `: ${ticket.returned_reason}` : '.'}{' '}
+            Nothing was sent to the {ticket.requester.role === 'driver' ? 'driver' : 'rider'}. Reply or add a note to pick it up again.
+          </span>
+        </div>
+      ) : null}
+      <div className="ops-record-page ops-record-page--wide">
+        <RecordPanel
+          label="Ticket"
+          title={name}
+          refId={`TKT-${ticket.id}`}
+          subtitle={<>
+            {ticket.issue_label ?? ISSUE_LABEL[ticket.issue_type] ?? words(ticket.issue_type)}
+            {' · opened '}{stamp(ticket.created_at, tz)}
+            {ticket.city ? ` · ${ticket.city.name}` : ''}
+          </>}
+          status={<>
+            <Pill tone={priorityTone(ticket.priority)}>{PRIORITY_LABEL[ticket.priority] ?? ticket.priority}</Pill>{' '}
+            <SlaChip sla={ticket.sla} />{' '}
+            <Pill tone={STATUS_TONE[ticket.status] ?? 'neutral'}>{STATUS_LABEL[ticket.status] ?? ticket.status}</Pill>
+          </>}
+          tabs={tabs}
+        />
       </div>
 
       {creditOpen && ticket.requester.page?.type === 'rider' ? (
