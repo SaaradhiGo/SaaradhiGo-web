@@ -442,9 +442,9 @@ function PayoutsInner() {
 /** The parts of an approval request the drawer needs to offer "Approve now". */
 type SelfCheck = { id: number; status: string; can_decide: boolean; self_approval?: boolean; blockers: string[]; error?: string };
 
-/** Open, decidable by this maker under the sole-Super-Admin exception, and not blocked. */
-function selfApprovable(req: SelfCheck | null): boolean {
-  return !!req && req.status === 'requested' && req.can_decide && !!req.self_approval && req.blockers.length === 0;
+/** Open and decidable by this operator: a second checker, or the maker under the sole-Super-Admin exception. */
+function decidable(req: SelfCheck | null): req is SelfCheck {
+  return !!req && req.status === 'requested' && req.can_decide;
 }
 
 function PayoutRecord({ row, onClose, onChanged }: {
@@ -457,13 +457,20 @@ function PayoutRecord({ row, onClose, onChanged }: {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  // The open request this operator may approve themselves (owner, 2026-11-03).
+  // The open request this operator may approve here; `own` needs the self-approval reason.
   const [selfId, setSelfId] = useState<number | null>(null);
+  const [own, setOwn] = useState(false);
   const [selfReason, setSelfReason] = useState('');
+  const [blockedBy, setBlockedBy] = useState<{ id: number; blockers: string[] } | null>(null);
 
   async function offerSelfApproval(requestId: number): Promise<boolean> {
     const req = await api.get<SelfCheck>(`/approvals/admin/requests/${requestId}/`).catch(() => null);
-    if (!selfApprovable(req)) return false;
+    if (!decidable(req)) return false;
+    if (req.blockers.length > 0) {
+      setBlockedBy({ id: requestId, blockers: req.blockers });
+      return false;
+    }
+    setOwn(!!req.self_approval);
     setSelfId(requestId);
     return true;
   }
@@ -526,7 +533,7 @@ function PayoutRecord({ row, onClose, onChanged }: {
     try {
       const done = await api.post<SelfCheck>(`/approvals/admin/requests/${selfId}/approve/`, { reason: selfReason.trim() });
       await onChanged(done.status === 'executed'
-        ? { kind: 'done', text: `Released ${amount} to ${who}. Recorded as self-approved (APR-${selfId}).` }
+        ? { kind: 'done', text: `Released ${amount} to ${who}.${own ? ` Recorded as self-approved (APR-${selfId}).` : ` APR-${selfId} approved.`}` }
         : { kind: 'done', text: `APR-${selfId} was approved, but the payout did not go out${done.error ? `: ${done.error}` : '.'}` });
     } catch (err) {
       setActionError(failureText(err, 'That did not go through. Nothing was released.'));
@@ -583,11 +590,11 @@ function PayoutRecord({ row, onClose, onChanged }: {
               {selfId !== null && (
                 <div className="ops-confirm">
                   <b>Approve now: release {amount} to {who}</b>
-                  <span>{SELF_APPROVAL_LINE}</span>
-                  <label className="sr-only" htmlFor="payout-self-reason">Reason (required)</label>
+                  <span>{own ? SELF_APPROVAL_LINE : `APR-${selfId} is waiting for a checker. Approving it releases the money now.`}</span>
+                  <label className="sr-only" htmlFor="payout-self-reason">{own ? 'Reason (required)' : 'Note (optional)'}</label>
                   <textarea id="payout-self-reason" className="input" rows={3} value={selfReason}
                     onChange={(e) => setSelfReason(e.target.value)}
-                    placeholder={`Reason (required, at least ${SELF_APPROVAL_MIN_REASON} characters)`} />
+                    placeholder={own ? `Reason (required, at least ${SELF_APPROVAL_MIN_REASON} characters)` : 'Note for the audit log (optional)'} />
                   {actionError && <div className="alert-error" role="alert">{actionError}</div>}
                   <div>
                     <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={busy}
@@ -595,12 +602,17 @@ function PayoutRecord({ row, onClose, onChanged }: {
                       Not now
                     </button>{' '}
                     <button type="button" className="sg-btn sg-btn--primary sg-btn--sm"
-                      disabled={busy || selfReason.trim().length < SELF_APPROVAL_MIN_REASON}
+                      disabled={busy || (own && selfReason.trim().length < SELF_APPROVAL_MIN_REASON)}
                       onClick={() => void approveNow()}>{busy ? 'Working…' : 'Approve now'}</button>
                   </div>
                 </div>
               )}
-              {can.awaitingChecker && selfId === null && (
+              {blockedBy && selfId === null && (
+                <div className="ops-note ops-note--warn" role="status">
+                  <b>APR-{blockedBy.id} cannot be approved yet: {blockedBy.blockers.join('; ')}.</b>{' '}
+                  Add the payout details first, or reject the payout to return the amount to the driver.</div>
+              )}
+              {can.awaitingChecker && selfId === null && !blockedBy && (
                 <div className="ops-confirm" role="status"><b>Waiting for a second finance admin.</b>{' '}
                   The request is open; nothing has been released.</div>
               )}
