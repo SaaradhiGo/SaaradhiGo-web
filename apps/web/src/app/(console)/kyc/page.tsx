@@ -14,7 +14,10 @@ import {
 } from '@/lib/kycReview';
 import { type ApprovalBody, interpretWrite } from '@/lib/trips';
 import { type ChipTone, StatusChip } from '@/components/console/kit/StatusChip';
-import { Empty, ErrorState, PageHeader, Skeleton } from '@/components/console/ui';
+import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { PageHead } from '@/components/console/kit/ListBits';
+import { RecordPanel } from '@/components/console/kit/RecordPanel';
+import { Empty, ErrorState, Skeleton } from '@/components/console/ui';
 
 /**
  * KYC review, built for throughput (design board E).
@@ -272,17 +275,13 @@ export default function KycReviewPage() {
   const oldest = queue && queue.length > 0 ? queue[0].waiting_seconds : null;
   const remaining = Math.max(queueCount, queue?.length ?? 0) - position;
   const total = done + remaining;
-  const header = (
-    <PageHeader
-      title={`KYC queue · ${place}`}
-      subtitle={queue && queue.length > 0
-        ? `Driver ${done + 1} of ${total} · oldest waiting ${waitingLabel(oldest)}`
-        : undefined}
-      actions={pace ? (
-        <span className="ops-kyc__pace">You today: {pace.drivers} driver{pace.drivers === 1 ? '' : 's'} · median {shortDuration(pace.medianSeconds)} between reviews</span>
-      ) : undefined}
-    />
-  );
+  const summaryText = queue && queue.length > 0
+    ? `Driver ${done + 1} of ${total} · oldest waiting ${waitingLabel(oldest)}`
+    : undefined;
+  const paceNote = pace ? (
+    <span className="ops-kyc__pace">You today: {pace.drivers} driver{pace.drivers === 1 ? '' : 's'} · median {shortDuration(pace.medianSeconds)} between reviews</span>
+  ) : undefined;
+  const header = <PageHead title={`KYC queue · ${place}`} summary={summaryText} actions={paceNote} />;
 
   if (queue === null) {
     return (
@@ -340,152 +339,191 @@ export default function KycReviewPage() {
   const today = localToday();
   const docLabel = doc ? chipLabel(doc) : '';
 
+  const jumpTo = (id: number) => {
+    const idx = queue.findIndex((q) => q.id === id);
+    if (idx < 0 || idx === position) return;
+    setDetail(null); setReason(''); setPosition(idx);
+  };
+  const upNext = queue.slice(position, position + 8);
+  const queueColumns: ListColumn<QueueRow>[] = [
+    { key: 'driver', label: 'Driver', primary: true, render: (r) => <span>{r.user_details?.full_name || 'Driver'} <span className="ops-ref sg-num">D-{r.id}</span></span> },
+    { key: 'vehicle', label: 'Vehicle', render: (r) => r.vehicle_type ?? <span className="muted">None</span> },
+    { key: 'waiting', label: 'Waiting', num: true, render: (r) => waitingLabel(r.waiting_seconds ?? null) },
+  ];
+  const reviewTab = (
+    <>
+          <div className="ops-kyc__chips" role="group" aria-label="Documents for this driver">
+            {docs.map((d, i) => {
+              const [word, tone] = docState(d);
+              return (
+                <button
+                  key={docId(d)} type="button"
+                  className={`ops-kyc__chip${i === docIndex ? ' is-current' : ''}`}
+                  aria-current={i === docIndex ? 'true' : undefined}
+                  onClick={() => setDocIndex(i)}
+                >
+                  <span>{chipLabel(d)}</span>
+                  <StatusChip tone={tone}>{word}</StatusChip>
+                </button>
+              );
+            })}
+          </div>
+
+          {docs.length === 0 ? (
+            <Empty title="No documents are required for this driver" detail="Open the driver's record to check their details." />
+          ) : (
+            <div className="ops-kyc">
+              <section className="ops-kyc__viewer" aria-label={`Document: ${docLabel}`}>
+                <div className="ops-kyc__tools">
+                  <b className="ops-kyc__title">{docLabel}</b>
+                  {side && sibling !== -1 ? (
+                    <span className="ops-kyc__toggle" role="group" aria-label="Side">
+                      <button type="button" aria-pressed={side === 'front'} onClick={() => side !== 'front' && setDocIndex(sibling)}>Front</button>
+                      <button type="button" aria-pressed={side === 'back'} onClick={() => side !== 'back' && setDocIndex(sibling)}>Back</button>
+                    </span>
+                  ) : null}
+                  <span className="ops-kyc__spacer" />
+                  <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setRotation((r) => (r + 270) % 360)} disabled={view.status !== 'ready'}>Rotate left</button>
+                  <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setRotation((r) => (r + 90) % 360)} disabled={view.status !== 'ready'}>Rotate right</button>
+                  <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))} disabled={view.status !== 'ready' || zoom <= 0.5}>Zoom out</button>
+                  <span className="ops-kyc__zoom" aria-live="polite">{Math.round(zoom * 100)}%</span>
+                  <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2)))} disabled={view.status !== 'ready' || zoom >= 3}>Zoom in</button>
+                </div>
+                <div className="ops-kyc__stage">
+                  <DocumentStage
+                    doc={doc} view={view} label={docLabel} rotation={rotation} zoom={zoom}
+                    onBroken={(url) => setView({ status: 'broken', url })}
+                  />
+                </div>
+                <p className="ops-kyc__meta">
+                  {current.waiting_seconds !== null && current.waiting_seconds !== undefined ? `Sent for review ${waitingLabel(current.waiting_seconds)} ago · ` : ''}
+                  Opening is logged
+                </p>
+              </section>
+
+              <aside className="ops-kyc__side">
+                <section className="ops-kyc__panel" aria-labelledby="kyc-checks">
+                  <h2 id="kyc-checks">Checks</h2>
+                  <ul className="ops-kyc__checks">
+                    <Check label="Name on profile" value={detail.user.full_name || 'Not given'} />
+                    <Check label="Name on document" value="Not read automatically" chip={['Not connected', 'neutral']} />
+                    {doc?.owner === 'driver' && doc.key.startsWith('license') ? (
+                      <Check label="Licence number" value="Not sent to the console" chip={['Not connected', 'neutral']} />
+                    ) : null}
+                    {doc ? <ExpiryRow iso={expiryFor(doc, detail.license_expiry, detail.vehicles)} today={today} /> : null}
+                    <Check
+                      label="Vehicle class"
+                      value={vehicleClass ? `${vehicleClass}${active?.vehicle_number ? ` · ${active.vehicle_number}` : ''}` : 'No vehicle on file'}
+                    />
+                    {doc?.review && !doc.review.current ? (
+                      <Check label="Earlier decision" value={`${doc.review.state === 'rejected' ? 'Rejected' : 'Approved'} an older file${doc.review.reason ? `: ${doc.review.reason}` : ''}`} />
+                    ) : null}
+                    {doc?.review?.current && doc.review.state === 'rejected' ? (
+                      <Check label="Driver was told" value={doc.review.reason} />
+                    ) : null}
+                    <Check label="Face match" value="No face check on this platform" chip={['Not connected', 'neutral']} />
+                    <Check label="Police check" value="No police check on this platform" chip={['Not connected', 'neutral']} />
+                  </ul>
+                </section>
+
+                {mayReview ? (
+                  <section className="ops-kyc__panel" aria-labelledby="kyc-reason">
+                    <h2 id="kyc-reason">If you reject, pick a reason the driver will see</h2>
+                    <div className="ops-kyc__reasons" role="group" aria-label="Reasons">
+                      {REJECT_REASONS.map(([chip, text]) => (
+                        <button key={chip} type="button" className="ops-kyc__reason" aria-pressed={reason === text} onClick={() => setReason(text)}>{chip}</button>
+                      ))}
+                    </div>
+                    <label className="ops-form__label" htmlFor="kyc-reason-text">Reason the driver reads</label>
+                    <textarea
+                      id="kyc-reason-text" ref={reasonBox} className="input" rows={3} value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder="Or write your own"
+                    />
+                  </section>
+                ) : null}
+
+                <section className="ops-kyc__panel" aria-labelledby="kyc-decide">
+                  <h2 id="kyc-decide">Decision</h2>
+                  {offerDriverApproval ? (
+                    <>
+                      <p className="ops-kyc__hint">Every document is approved.</p>
+                      {blockers.length > 0 ? (
+                        <div className="ops-decide__why">
+                          <strong className="block">Approval is refused until:</strong>
+                          <ul>{blockers.map((b) => <li key={`${b.code}-${b.message}`}>{b.message}</li>)}</ul>
+                        </div>
+                      ) : null}
+                      <button type="button" className="sg-btn sg-btn--primary ops-kyc__primary" onClick={() => void approveDriver()} disabled={busy || blockers.length > 0}>
+                        {busy ? 'Working…' : `Approve driver · A`}
+                      </button>
+                      <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={nextDriver} disabled={busy}>Next driver</button>
+                    </>
+                  ) : !mayReview ? (
+                    <>
+                      <p className="ops-kyc__hint">You can look at these documents but not decide them.</p>
+                      <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={nextDriver}>Next driver</button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button" className="sg-btn sg-btn--primary ops-kyc__primary" onClick={onApprove}
+                        disabled={!canApprove || doc?.review_state === 'approved'}
+                      >
+                        {busy ? 'Working…' : `Approve ${docLabel} · A`}
+                      </button>
+                      <div className="ops-kyc__decide-row">
+                        <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={onReject} disabled={!canDecide}>Reject · R</button>
+                        <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={onReupload} disabled={!canDecide}>Ask to re-upload · U</button>
+                      </div>
+                      {doc && !isReviewable(doc) ? <p className="ops-kyc__hint">There is no file to decide on yet.</p> : null}
+                      {doc && isReviewable(doc) && view.status === 'error' ? <p className="ops-kyc__hint">The file did not open, so it cannot be approved. Reject it or ask for a new upload.</p> : null}
+                      {doc && isDecided(doc) ? <p className="ops-kyc__hint">Already decided. You can change the decision.</p> : null}
+                      <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={nextDriver} disabled={busy}>Skip to next driver</button>
+                    </>
+                  )}
+                  <p className="ops-kyc__hint"><kbd>J</kbd> / <kbd>K</kbd> next and previous document</p>
+                  {mayReview && !offerDriverApproval ? (
+                    <p className="ops-kyc__hint">{nextLabel ? `Approving moves to ${nextLabel}` : blockers.length ? `Still needed before this driver can drive: ${blockers.length} more` : 'Approving finishes this driver'}</p>
+                  ) : null}
+                </section>
+              </aside>
+            </div>
+          )}
+    </>
+  );
+
   return (
     <>
-      {header}
       {notice ? <NoticeBar notice={notice} /> : null}
-
-      <div className="ops-kyc__chips" role="group" aria-label="Documents for this driver">
-        <span className="ops-kyc__who">
-          <Link href={`/drivers/${detail.id}`}>D-{detail.id}</Link> · {name} · {vehicleClass ?? 'No vehicle class'}
-        </span>
-        {docs.map((d, i) => {
-          const [word, tone] = docState(d);
-          return (
-            <button
-              key={docId(d)} type="button"
-              className={`ops-kyc__chip${i === docIndex ? ' is-current' : ''}`}
-              aria-current={i === docIndex ? 'true' : undefined}
-              onClick={() => setDocIndex(i)}
-            >
-              <span>{chipLabel(d)}</span>
-              <StatusChip tone={tone}>{word}</StatusChip>
-            </button>
-          );
-        })}
+      <ListPage<QueueRow>
+        pageKey="kyc"
+        title={`KYC queue · ${place}`}
+        summary={summaryText}
+        views={[{ key: 'queue', label: 'Waiting for review', count: Math.max(remaining, 0) }]}
+        view="queue"
+        onView={() => undefined}
+        actionsSlot={paceNote}
+        columns={queueColumns}
+        rows={upNext}
+        rowKey={(r) => r.id}
+        total={upNext.length}
+        page={1}
+        pageSize={Math.max(upNext.length, 1)}
+        onPage={() => undefined}
+        onRow={(r) => jumpTo(r.id)}
+        activeKey={current.id}
+      />
+      <div className="ops-record-page ops-record-page--wide mt-4">
+        <RecordPanel
+          label="KYC review"
+          title={name}
+          refId={`D-${detail.id}`}
+          subtitle={<>{vehicleClass ?? 'No vehicle class'} · <Link href={`/drivers/${detail.id}`}>Driver record</Link></>}
+          status={<StatusChip tone={detail.approved ? 'good' : 'info'}>{detail.approved ? 'Approved' : 'Waiting for review'}</StatusChip>}
+          tabs={[{ key: 'review', label: 'Review', content: reviewTab }]}
+        />
       </div>
-
-      {docs.length === 0 ? (
-        <Empty title="No documents are required for this driver" detail="Open the driver's record to check their details." />
-      ) : (
-        <div className="ops-kyc">
-          <section className="ops-kyc__viewer" aria-label={`Document: ${docLabel}`}>
-            <div className="ops-kyc__tools">
-              <b className="ops-kyc__title">{docLabel}</b>
-              {side && sibling !== -1 ? (
-                <span className="ops-kyc__toggle" role="group" aria-label="Side">
-                  <button type="button" aria-pressed={side === 'front'} onClick={() => side !== 'front' && setDocIndex(sibling)}>Front</button>
-                  <button type="button" aria-pressed={side === 'back'} onClick={() => side !== 'back' && setDocIndex(sibling)}>Back</button>
-                </span>
-              ) : null}
-              <span className="ops-kyc__spacer" />
-              <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setRotation((r) => (r + 270) % 360)} disabled={view.status !== 'ready'}>Rotate left</button>
-              <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setRotation((r) => (r + 90) % 360)} disabled={view.status !== 'ready'}>Rotate right</button>
-              <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))} disabled={view.status !== 'ready' || zoom <= 0.5}>Zoom out</button>
-              <span className="ops-kyc__zoom" aria-live="polite">{Math.round(zoom * 100)}%</span>
-              <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2)))} disabled={view.status !== 'ready' || zoom >= 3}>Zoom in</button>
-            </div>
-            <div className="ops-kyc__stage">
-              <DocumentStage
-                doc={doc} view={view} label={docLabel} rotation={rotation} zoom={zoom}
-                onBroken={(url) => setView({ status: 'broken', url })}
-              />
-            </div>
-            <p className="ops-kyc__meta">
-              {current.waiting_seconds !== null && current.waiting_seconds !== undefined ? `Sent for review ${waitingLabel(current.waiting_seconds)} ago · ` : ''}
-              Opening is logged
-            </p>
-          </section>
-
-          <aside className="ops-kyc__side">
-            <section className="ops-kyc__panel" aria-labelledby="kyc-checks">
-              <h2 id="kyc-checks">Checks</h2>
-              <ul className="ops-kyc__checks">
-                <Check label="Name on profile" value={detail.user.full_name || 'Not given'} />
-                <Check label="Name on document" value="Not read automatically" chip={['Not connected', 'neutral']} />
-                {doc?.owner === 'driver' && doc.key.startsWith('license') ? (
-                  <Check label="Licence number" value="Not sent to the console" chip={['Not connected', 'neutral']} />
-                ) : null}
-                {doc ? <ExpiryRow iso={expiryFor(doc, detail.license_expiry, detail.vehicles)} today={today} /> : null}
-                <Check
-                  label="Vehicle class"
-                  value={vehicleClass ? `${vehicleClass}${active?.vehicle_number ? ` · ${active.vehicle_number}` : ''}` : 'No vehicle on file'}
-                />
-                {doc?.review && !doc.review.current ? (
-                  <Check label="Earlier decision" value={`${doc.review.state === 'rejected' ? 'Rejected' : 'Approved'} an older file${doc.review.reason ? `: ${doc.review.reason}` : ''}`} />
-                ) : null}
-                {doc?.review?.current && doc.review.state === 'rejected' ? (
-                  <Check label="Driver was told" value={doc.review.reason} />
-                ) : null}
-                <Check label="Face match" value="No face check on this platform" chip={['Not connected', 'neutral']} />
-                <Check label="Police check" value="No police check on this platform" chip={['Not connected', 'neutral']} />
-              </ul>
-            </section>
-
-            {mayReview ? (
-              <section className="ops-kyc__panel" aria-labelledby="kyc-reason">
-                <h2 id="kyc-reason">If you reject, pick a reason the driver will see</h2>
-                <div className="ops-kyc__reasons" role="group" aria-label="Reasons">
-                  {REJECT_REASONS.map(([chip, text]) => (
-                    <button key={chip} type="button" className="ops-kyc__reason" aria-pressed={reason === text} onClick={() => setReason(text)}>{chip}</button>
-                  ))}
-                </div>
-                <label className="ops-form__label" htmlFor="kyc-reason-text">Reason the driver reads</label>
-                <textarea
-                  id="kyc-reason-text" ref={reasonBox} className="input" rows={3} value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="Or write your own"
-                />
-              </section>
-            ) : null}
-
-            <section className="ops-kyc__panel" aria-labelledby="kyc-decide">
-              <h2 id="kyc-decide">Decision</h2>
-              {offerDriverApproval ? (
-                <>
-                  <p className="ops-kyc__hint">Every document is approved.</p>
-                  {blockers.length > 0 ? (
-                    <div className="ops-decide__why">
-                      <strong className="block">Approval is refused until:</strong>
-                      <ul>{blockers.map((b) => <li key={`${b.code}-${b.message}`}>{b.message}</li>)}</ul>
-                    </div>
-                  ) : null}
-                  <button type="button" className="sg-btn sg-btn--primary ops-kyc__primary" onClick={() => void approveDriver()} disabled={busy || blockers.length > 0}>
-                    {busy ? 'Working…' : `Approve driver · A`}
-                  </button>
-                  <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={nextDriver} disabled={busy}>Next driver</button>
-                </>
-              ) : !mayReview ? (
-                <>
-                  <p className="ops-kyc__hint">You can look at these documents but not decide them.</p>
-                  <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={nextDriver}>Next driver</button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button" className="sg-btn sg-btn--primary ops-kyc__primary" onClick={onApprove}
-                    disabled={!canApprove || doc?.review_state === 'approved'}
-                  >
-                    {busy ? 'Working…' : `Approve ${docLabel} · A`}
-                  </button>
-                  <div className="ops-kyc__decide-row">
-                    <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={onReject} disabled={!canDecide}>Reject · R</button>
-                    <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={onReupload} disabled={!canDecide}>Ask to re-upload · U</button>
-                  </div>
-                  {doc && !isReviewable(doc) ? <p className="ops-kyc__hint">There is no file to decide on yet.</p> : null}
-                  {doc && isReviewable(doc) && view.status === 'error' ? <p className="ops-kyc__hint">The file did not open, so it cannot be approved. Reject it or ask for a new upload.</p> : null}
-                  {doc && isDecided(doc) ? <p className="ops-kyc__hint">Already decided. You can change the decision.</p> : null}
-                  <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={nextDriver} disabled={busy}>Skip to next driver</button>
-                </>
-              )}
-              <p className="ops-kyc__hint"><kbd>J</kbd> / <kbd>K</kbd> next and previous document</p>
-              {mayReview && !offerDriverApproval ? (
-                <p className="ops-kyc__hint">{nextLabel ? `Approving moves to ${nextLabel}` : blockers.length ? `Still needed before this driver can drive: ${blockers.length} more` : 'Approving finishes this driver'}</p>
-              ) : null}
-            </section>
-          </aside>
-        </div>
-      )}
     </>
   );
 }

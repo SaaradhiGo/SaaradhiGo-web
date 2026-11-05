@@ -4,14 +4,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
 import { stamp } from '@/lib/consoleTime';
-import { useDensity } from '@/lib/consolePrefs';
 import {
   type Dashboard, type DashboardStats, PRIORITY_LABEL, dashboardPath, dashboardRangeError,
   formatMedian, formatPct, priorityTone,
 } from '@/lib/supportDesk';
 import { ButtonLink } from '@/components/sg/Button';
+import { MetricCard } from '@/components/console/kit/MetricCard';
+import { PageHead } from '@/components/console/kit/ListBits';
 import {
-  Column, DataTable, Empty, ErrorState, PageHeader, Panel, Pill, Skeleton, Stat, StatStrip,
+  Column, DataTable, Empty, ErrorState, Panel, Pill, Skeleton,
 } from '@/components/console/ui';
 
 /**
@@ -46,7 +47,6 @@ const statColumns = <T extends DashboardStats>(): Column<T>[] => [
 
 export default function DashboardPage() {
   const access = useAdminAccess();
-  const [density] = useDensity();
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [applied, setApplied] = useState<{ from: string; to: string }>({ from: '', to: '' });
@@ -89,9 +89,9 @@ export default function DashboardPage() {
 
   return (
     <>
-      <PageHeader
+      <PageHead
         title="SLA dashboard"
-        subtitle="How the desk is doing against its clocks. Tickets opened in the range, each cut at its own city's midnight."
+        summary="How the desk is doing against its clocks. Tickets opened in the range, each cut at its own city's midnight."
         actions={<ButtonLink href="/support" variant="ghost" size="sm">All tickets</ButtonLink>}
       />
 
@@ -135,27 +135,28 @@ export default function DashboardPage() {
             {data.date_from} to {data.date_to} · as of {stamp(data.as_of)}
             {data.truncated ? ' · very large range: the oldest tickets were left out' : ''}
           </p>
-          <StatStrip>
-            <Stat label="Opened" value={data.totals.opened.toLocaleString('en-IN')} />
-            <Stat label="First reply met" value={formatPct(data.totals.first_response_met_pct)} />
-            <Stat label="Resolution met" value={formatPct(data.totals.resolution_met_pct)} />
-            <Stat label="Median first reply" value={formatMedian(data.totals.median_first_response_minutes)} />
-            <Stat label="Breaching now" value={String(data.totals.currently_breaching)} />
-            <Stat label="Paused" value={String(data.totals.paused)} />
-          </StatStrip>
+          <div className="ops-metrics mb-4">
+            <MetricCard label="Opened" value={data.totals.opened.toLocaleString('en-IN')} />
+            <MetricCard label="First reply met" value={formatPct(data.totals.first_response_met_pct)} />
+            <MetricCard label="Resolution met" value={formatPct(data.totals.resolution_met_pct)} />
+            <MetricCard label="Median first reply" value={formatMedian(data.totals.median_first_response_minutes)} />
+            <MetricCard label="Breaching now" value={String(data.totals.currently_breaching)}
+              tone={data.totals.currently_breaching > 0 ? 'caution' : 'neutral'} />
+            <MetricCard label="Paused" value={String(data.totals.paused)} />
+          </div>
 
           {data.cities.length === 0 && data.agents.length === 0 ? (
             <Empty title="No tickets in this range" detail="Nothing was opened in these dates in your scope, and nothing open is late." />
           ) : (
             <>
               <Panel title="By city" flush>
-                <DataTable caption="Tickets by city" rows={data.cities} columns={totalColumns} rowKey={(r) => r.city.code ?? r.city.name} density={density} maxHeight={false} />
+                <DataTable caption="Tickets by city" rows={data.cities} columns={totalColumns} rowKey={(r) => r.city.code ?? r.city.name} density="compact" maxHeight={false} />
               </Panel>
               <Panel title="By city and priority" flush>
-                <DataTable caption="Tickets by city and priority" rows={cityRows} columns={cityColumns} rowKey={(r) => `${r.city.code}:${r.priority}`} density={density} maxHeight={false} />
+                <DataTable caption="Tickets by city and priority" rows={cityRows} columns={cityColumns} rowKey={(r) => `${r.city.code}:${r.priority}`} density="compact" maxHeight={false} />
               </Panel>
               <Panel title="By agent" flush>
-                <DataTable caption="Tickets by agent" rows={data.agents} columns={agentColumns} rowKey={(r) => r.agent?.id ?? 'none'} density={density} maxHeight={false} />
+                <DataTable caption="Tickets by agent" rows={data.agents} columns={agentColumns} rowKey={(r) => r.agent?.id ?? 'none'} density="compact" maxHeight={false} />
               </Panel>
             </>
           )}

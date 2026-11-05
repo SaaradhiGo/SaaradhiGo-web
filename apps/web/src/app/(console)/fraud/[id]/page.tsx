@@ -11,6 +11,7 @@ import {
   EVENT_WORDS, KIND_WORDS, ageWords, evidenceLines, canReadFraud, type FlagDetail, type LinkedAccount, type Options,
 } from '@/lib/fraud';
 import { PageLink } from '@/components/console/PageLink';
+import { History, RecordPanel, type RecordTab } from '@/components/console/kit/RecordPanel';
 import { FlagDecisionDrawer, type FlagAction } from '@/components/console/fraud/FlagDecisionDrawer';
 import { FlagMoney } from '@/components/console/fraud/FlagMoney';
 import { HandoffButtons } from '@/components/console/fraud/HandoffButtons';
@@ -112,44 +113,9 @@ export default function FlagPage() {
   const taken = new Set(data.handoffs_taken.map((h) => h.kind));
   const withTaken = data.handoffs.map((h) => (taken.has(h.kind) && !h.taken_at ? { ...h, taken_at: 'yes' } : h));
 
-  return (
-    <>
-      <PageHeader
-        title={`Flag #${data.id}`}
-        subtitle={<><Link href="/fraud">Fraud &amp; Risk</Link> · {KIND_WORDS[data.kind] ?? data.kind}</>}
-        actions={review ? (
-          <div className="ops-actions" role="group" aria-label="Flag actions">
-            {active ? (
-              <>
-                {data.assigned_to === null ? (
-                  <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy}
-                    onClick={() => void simple('assign', 'Assigned to you.')}>Assign to me</button>
-                ) : (
-                  <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy}
-                    onClick={() => void simple('unassign', 'Unassigned.')}>Unassign</button>
-                )}
-                <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setDrawer('assign')}>Assign to…</button>
-                <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setDrawer('note')}>Add note</button>
-                <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setDrawer('dismiss')}>Dismiss</button>
-                <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setDrawer('confirm')}>Confirm fraud</button>
-              </>
-            ) : (
-              <>
-                <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setDrawer('note')}>Add note</button>
-                <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setDrawer('reopen')}>Reopen</button>
-              </>
-            )}
-          </div>
-        ) : undefined}
-      />
-
-      {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
-      {error && <div className="alert-error mb-4" role="alert">{error}</div>}
-      {!review ? (
-        <p className="help mb-4">You can read this flag. Reviewing it needs the fraud.review capability.</p>
-      ) : null}
-
-      <div className="ops-grid-2">
+  const tabs: RecordTab[] = [
+    { key: 'overview', label: 'Overview', content: (
+      <div className="grid gap-4">
         <Panel title="The flag">
           <Facts>
             <Fact label="Severity"><SeverityPill severity={data.severity} /> <span className="muted">score {data.score} of 100</span></Fact>
@@ -199,7 +165,8 @@ export default function FlagPage() {
           ) : null}
         </Panel>
       </div>
-
+    ) },
+    { key: 'linked', label: `Linked · ${data.linked.accounts.length + data.linked.outside_scope}`, content: (
       <Panel title={`Linked accounts (${data.linked.accounts.length + data.linked.outside_scope})`}>
         {data.linked.accounts.length === 0 && data.linked.outside_scope === 0 ? (
           <Empty title="No linked accounts" detail="No other account shares a device, phone number or payout instrument with this person." />
@@ -212,31 +179,72 @@ export default function FlagPage() {
           </>
         )}
       </Panel>
+    ) },
+    { key: 'money', label: 'Rewards & money', content: (
+      <div className="grid gap-4">
+        <FlagMoney flag={data} onDone={(m) => { setNotice(m); void load(); }} />
+        {data.status === 'confirmed' && withTaken.some((h) => h.available) ? (
+          <Panel title="Take it further">
+            <p className="help">Each opens the page where that action already lives, with its own permission and, where the rules say so, a second approver. Choosing one is recorded below.</p>
+            <HandoffButtons flagId={data.id} handoffs={withTaken} />
+          </Panel>
+        ) : null}
+      </div>
+    ) },
+    { key: 'history', label: 'History', content: (
+      <History entries={[...data.timeline].reverse().map((e) => ({
+        at: stamp(e.at),
+        text: <><b>{EVENT_WORDS[e.action] ?? e.action}</b>{e.reason ? <> · {e.reason.replace(/_/g, ' ')}</> : null}{e.note ? <> — {e.note}</> : null}</>,
+        who: e.actor ? e.actor.label : 'system',
+      }))} />
+    ) },
+  ];
 
-      <FlagMoney flag={data} onDone={(m) => { setNotice(m); void load(); }} />
-
-      {data.status === 'confirmed' && withTaken.some((h) => h.available) ? (
-        <Panel title="Take it further">
-          <p className="help">Each opens the page where that action already lives, with its own permission and, where the rules say so, a second approver. Choosing one is recorded below.</p>
-          <HandoffButtons flagId={data.id} handoffs={withTaken} />
-        </Panel>
+  return (
+    <>
+      <p className="ops-record-page__back"><Link href="/fraud">Fraud &amp; Risk</Link></p>
+      {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
+      {error && <div className="alert-error mb-4" role="alert">{error}</div>}
+      {!review ? (
+        <p className="help mb-4">You can read this flag. Reviewing it needs the fraud.review capability.</p>
       ) : null}
-
-      <Panel title="Timeline">
-        <ol className="ops-timeline">
-          {[...data.timeline].reverse().map((e) => (
-            <li key={e.id} className="ops-timeline__item">
-              <time dateTime={e.at}>{stamp(e.at)}</time>
-              <span>
-                <b>{EVENT_WORDS[e.action] ?? e.action}</b>
-                {e.reason ? <> · {e.reason.replace(/_/g, ' ')}</> : null}
-                {e.note ? <> — {e.note}</> : null}
-              </span>
-              <span className="muted">{e.actor ? e.actor.label : 'system'}</span>
-            </li>
-          ))}
-        </ol>
-      </Panel>
+      <div className="ops-record-page ops-record-page--wide">
+        <RecordPanel
+          label="Fraud flag"
+          title={KIND_WORDS[data.kind] ?? data.kind}
+          refId={`Flag #${data.id}`}
+          subtitle={<>
+            {data.subject.href ? <PageLink page={subjectPage} href={data.subject.href}>{data.subject.ref}</PageLink> : data.subject.ref}
+            {data.scope_name ? ` · ${data.scope_name}` : ''}
+          </>}
+          status={<><SeverityPill severity={data.severity} /> <StatusPill status={data.status} /></>}
+          actions={review ? (
+            <div className="ops-actions" role="group" aria-label="Flag actions">
+              {active ? (
+                <>
+                  {data.assigned_to === null ? (
+                    <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy}
+                      onClick={() => void simple('assign', 'Assigned to you.')}>Assign to me</button>
+                  ) : (
+                    <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy}
+                      onClick={() => void simple('unassign', 'Unassigned.')}>Unassign</button>
+                  )}
+                  <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setDrawer('assign')}>Assign to…</button>
+                  <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setDrawer('note')}>Add note</button>
+                  <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setDrawer('dismiss')}>Dismiss</button>
+                  <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setDrawer('confirm')}>Confirm fraud</button>
+                </>
+              ) : (
+                <>
+                  <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setDrawer('note')}>Add note</button>
+                  <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setDrawer('reopen')}>Reopen</button>
+                </>
+              )}
+            </div>
+          ) : undefined}
+          tabs={tabs}
+        />
+      </div>
 
       {drawer && (
         <FlagDecisionDrawer action={drawer} flag={data} options={options}
