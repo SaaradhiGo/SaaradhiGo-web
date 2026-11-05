@@ -25,7 +25,7 @@ import { AdminAccess, canAny, canAt } from '@/lib/adminScope';
 export type Page =
   | 'dashboard' | 'trips' | 'drivers' | 'riders' | 'support' | 'supportInbox'
   | 'withdrawals' | 'finance' | 'safety' | 'safetyConfig' | 'zones' | 'pricing' | 'liveops'
-  | 'notifications' | 'promotions' | 'fraud' | 'reports' | 'platform' | 'approvals' | 'staff';
+  | 'notifications' | 'promotions' | 'fraud' | 'reports' | 'platform' | 'approvals' | 'staff' | 'dataRequests';
 
 export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   // The Command Centre opens for `report.read` too: Marketing keeps it with
@@ -80,6 +80,8 @@ export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   // section; the tabs inside it are drawn from the same capabilities (lib/platform.ts).
   // Staff and roles: Super Admin only (`admin.manage`).
   staff: ['admin.manage'],
+  // Data requests (export and erasure): Super Admin only (`privacy.manage`).
+  dataRequests: ['privacy.manage'],
   platform: ['platform.read', 'platform.settings', 'platform.integrations.read', 'audit.read'],
 };
 

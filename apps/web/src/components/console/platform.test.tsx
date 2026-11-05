@@ -57,8 +57,13 @@ describe('the tabs', () => {
     expect(screen.getAllByRole('link').map((x) => x.getAttribute('href'))).toEqual(['/settings/staff']);
     unmount();
     current = access(['platform.read', 'audit.read']);
-    render(<PlatformNav />);
+    const again = render(<PlatformNav />);
     expect(screen.queryByRole('link', { name: 'Staff and roles' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Data requests' })).toBeNull();
+    again.unmount();
+    current = access(['privacy.manage']);
+    render(<PlatformNav />);
+    expect(screen.getAllByRole('link').map((x) => x.getAttribute('href'))).toEqual(['/settings/data-requests']);
   });
 
   it('draws nothing for an operator with none of the capabilities', () => {

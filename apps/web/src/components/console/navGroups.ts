@@ -87,6 +87,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/fraud', label: 'Fraud and risk', Icon: Flag, need: PAGE_NEEDS.fraud },
       { href: '/settings/audit', label: 'Audit log', Icon: Shield, need: ['audit.read'] },
       { href: '/settings/staff', label: 'Staff and roles', Icon: Users, need: PAGE_NEEDS.staff },
+      { href: '/settings/data-requests', label: 'Data requests', Icon: Lock, need: PAGE_NEEDS.dataRequests },
       // Reports & Analytics (module 14): `report.read`.
       { href: '/reports', label: 'Reports', Icon: BarChart, need: PAGE_NEEDS.reports },
       // No `need`: the operator's OWN authenticator and recovery codes.

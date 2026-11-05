@@ -52,7 +52,7 @@ const TEMPLATES: Record<string, { permissions: string[]; global?: boolean }> = {
       'rider.block', 'driver.write', 'driver.kyc', 'driver.deactivate', 'support.reply', 'support.refund',
       'support.macro', 'support.sla', 'support.dashboard', 'finance.payout', 'finance.adjust', 'finance.export', 'finance.config', 'finance.aggregate', 'pricing.write',
       'zone.write', 'promo.write', 'notify.send', 'safety.read', 'safety.respond', 'safety.config',
-      'fraud.review', 'admin.manage', 'platform.settings', 'approval.check', 'liveops.read', 'liveops.aggregate',
+      'fraud.review', 'admin.manage', 'privacy.manage', 'platform.settings', 'approval.check', 'liveops.read', 'liveops.aggregate',
       'notify.read', 'notify.template', 'notify.campaign',
       'promo.read', 'incentive.write', 'fraud.read', 'fraud.rules',
       'platform.read', 'platform.city_pause', 'platform.integrations.read',
@@ -126,7 +126,7 @@ const ROW: CityRow = {
 };
 
 const NAV = {
-  super_admin: ['/dashboard', '/live-ops', '/trips', '/safety-ops', '/support', '/drivers', '/kyc', '/riders', '/finance', '/finance/payments', '/finance/payouts', '/finance/reconciliation', '/promotions', '/promotions/incentives', '/promotions/referrals', '/notifications', '/settings', '/zones', '/pricing', '/settings/integrations', '/approvals', '/fraud', '/settings/audit', '/settings/staff', '/reports', '/settings/security'],
+  super_admin: ['/dashboard', '/live-ops', '/trips', '/safety-ops', '/support', '/drivers', '/kyc', '/riders', '/finance', '/finance/payments', '/finance/payouts', '/finance/reconciliation', '/promotions', '/promotions/incentives', '/promotions/referrals', '/notifications', '/settings', '/zones', '/pricing', '/settings/integrations', '/approvals', '/fraud', '/settings/audit', '/settings/staff', '/settings/data-requests', '/reports', '/settings/security'],
   city_ops_manager: ['/dashboard', '/live-ops', '/trips', '/safety-ops', '/support', '/drivers', '/kyc', '/riders', '/promotions', '/promotions/incentives', '/promotions/referrals', '/notifications', '/settings', '/zones', '/pricing', '/settings/integrations', '/approvals', '/fraud', '/settings/audit', '/reports', '/settings/security'],
   support_agent: ['/dashboard', '/trips', '/support', '/drivers', '/kyc', '/riders', '/notifications', '/settings/security'],
   support_lead: ['/dashboard', '/trips', '/support', '/drivers', '/kyc', '/riders', '/notifications', '/settings/security'],
