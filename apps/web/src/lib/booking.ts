@@ -83,6 +83,27 @@ export async function quoteFare(params: {
   );
 }
 
+export type SearchField = 'pickup' | 'drop';
+
+// One Google billing session per search: one token across the keystrokes and the
+// details call, then a fresh one. Pickup and drop search independently.
+const sessions: Partial<Record<SearchField, string>> = {};
+
+export function sessionToken(field: SearchField): string {
+  const existing = sessions[field];
+  if (existing) return existing;
+  const c = typeof crypto !== 'undefined' ? crypto : undefined;
+  const token = c?.randomUUID
+    ? c.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+  sessions[field] = token;
+  return token;
+}
+
+export function endSearchSession(field: SearchField): void {
+  delete sessions[field];
+}
+
 export type Place = { description: string; place_id: string };
 
 /**
@@ -96,6 +117,7 @@ export type Place = { description: string; place_id: string };
 export async function searchPlaces(
   query: string,
   near?: LatLng | null,
+  field: SearchField = 'pickup',
 ): Promise<Place[]> {
   // BIAS THE SEARCH, OR GET THE WRONG HEMISPHERE. Unbiased, the autocomplete
   // is worldwide: "Banjara" typed by a rider in Hyderabad returned
@@ -106,18 +128,23 @@ export async function searchPlaces(
   const data = await api.post<{ predictions?: Place[]; results?: Place[] }>(
     '/ride/maps/geocode',
     near
-      ? { input: query, location: `${near.lat},${near.lng}` }
-      : { input: query },
+      ? { input: query, location: `${near.lat},${near.lng}`, session_token: sessionToken(field) }
+      : { input: query, session_token: sessionToken(field) },
     readRiderToken(),
   );
   return data?.predictions ?? data?.results ?? [];
 }
 
-export async function placeToPoint(placeId: string): Promise<LatLng | null> {
+export async function placeToPoint(
+  placeId: string,
+  field: SearchField = 'pickup',
+): Promise<LatLng | null> {
+  const token = sessionToken(field);
+  endSearchSession(field);
   const data = await api.post<{
     location?: { lat?: number; lng?: number };
     result?: { geometry?: { location?: { lat: number; lng: number } } };
-  }>('/ride/maps/place-details', { place_id: placeId }, readRiderToken());
+  }>('/ride/maps/place-details', { place_id: placeId, session_token: token }, readRiderToken());
 
   const loc = data?.location ?? data?.result?.geometry?.location;
   if (!loc || typeof loc.lat !== 'number' || typeof loc.lng !== 'number') {

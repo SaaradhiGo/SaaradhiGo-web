@@ -6,7 +6,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AdminAccess } from '@/lib/adminScope';
 import type { Pending } from '@/lib/platform';
-import { PendingRequests, PlatformNav, outcomeNotice } from '@/components/console/platform';
+import { MapsCallsPanel, PendingRequests, PlatformNav, outcomeNotice } from '@/components/console/platform';
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/settings/flags' }));
 vi.mock('next/link', () => ({
@@ -116,5 +116,20 @@ describe('the banner after a write', () => {
     expect(outcomeNotice({ state: 'pending_approval', approval_request: { id: 4 } }, 'Done.').kind).toBe('pending');
     expect(outcomeNotice({ state: 'pending_approval', approval_request: { id: 4 } }, 'Done.').text).toMatch(/request #4/);
     expect(outcomeNotice({ state: 'applied' }, 'The flag was changed.')).toEqual({ text: 'The flag was changed.', kind: 'done' });
+  });
+});
+
+describe('MapsCallsPanel', () => {
+  it('shows today and the 7-day total per SKU, and hides when absent', () => {
+    const calls = {
+      today: { geocoding: 2, places_details: 1 },
+      last_7_days: { '2026-11-04': { geocoding: 2, places_details: 1 }, '2026-11-03': { geocoding: 5, places_details: 0 } },
+    };
+    const { container, rerender } = render(<MapsCallsPanel calls={calls} />);
+    const row = screen.getByText('geocoding').closest('tr')!;
+    expect(row.textContent).toContain('2');
+    expect(row.textContent).toContain('7');
+    rerender(<MapsCallsPanel calls={undefined} />);
+    expect(container.textContent).toBe('');
   });
 });

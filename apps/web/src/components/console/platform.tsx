@@ -6,8 +6,8 @@ import { useId, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
 import { stamp } from '@/lib/consoleTime';
-import { mayDecide, pendingWords, visibleTabs, type Pending } from '@/lib/platform';
-import { Empty, Panel } from '@/components/console/ui';
+import { mayDecide, pendingWords, visibleTabs, type MapsCalls, type Pending } from '@/lib/platform';
+import { DataTable, Empty, Panel } from '@/components/console/ui';
 import { messageOf, type Notice } from '@/components/console/notifications';
 
 /**
@@ -122,4 +122,29 @@ export function outcomeNotice(
     return { text: `Sent for approval · request #${out.approval_request?.id ?? ''}. Nothing changes until a second admin approves.`, kind: 'pending' };
   }
   return { text: done, kind: 'done' };
+}
+
+/** Outbound Google Maps calls per SKU: today and the 7-day total. Hidden when the API sends none. */
+export function MapsCallsPanel({ calls }: { calls?: MapsCalls | null }) {
+  if (!calls?.today) return null;
+  const week: Record<string, number> = {};
+  for (const day of Object.values(calls.last_7_days ?? {})) {
+    for (const [sku, n] of Object.entries(day)) week[sku] = (week[sku] ?? 0) + n;
+  }
+  const skus = Array.from(new Set([...Object.keys(calls.today), ...Object.keys(week)])).sort();
+  return (
+    <Panel title="Google Maps calls">
+      <DataTable
+        caption="Outbound Google Maps calls per SKU"
+        rows={skus}
+        rowKey={(sku) => sku}
+        maxHeight={false}
+        columns={[
+          { key: 'sku', label: 'SKU', render: (sku) => <code>{sku}</code> },
+          { key: 'today', label: 'Today (UTC)', num: true, render: (sku) => calls.today[sku] ?? 0 },
+          { key: 'week', label: 'Last 7 days', num: true, render: (sku) => week[sku] ?? 0 },
+        ]}
+      />
+    </Panel>
+  );
 }
