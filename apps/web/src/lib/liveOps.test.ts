@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   FrameBuffer, ageText, applyFrame, applyFrames, cellBounds, cellKey, cellOf, cellSentence, coalesce,
   dotsFrom, dotsInCity, heatmapUrl, linkSentence, networkTone, positionText, secondsSince, shadeLevel,
-  snapshotUrl, socketUrl, type Dot, type Frame, type HeatCell,
+  snapshotUrl, socketUrl, ackRemaining, ackText, buildQueue, filterQueue, kpiTotals,
+  type CityStatus, type Dot, type Frame, type HeatCell, type LiveAlert, type LiveTrip,
 } from '@/lib/liveOps';
 
 const dot = (id: number, over: Partial<Dot> = {}): Dot => ({
@@ -246,5 +247,59 @@ describe('addresses and words', () => {
     const dots = dotsFrom([dot(1), dot(2, { city: 'US-TX-AUS' }), dot(3, { city: null })]);
     expect(dotsInCity(dots, null)).toHaveLength(3);
     expect(dotsInCity(dots, 'US-TX-AUS').map((d) => d.driver_id)).toEqual([2]);
+  });
+});
+
+describe('workspace queue and KPIs', () => {
+  const city = (over: Partial<CityStatus>): CityStatus => ({
+    code: 'X', name: 'X', network_status: 'NORMAL', online_drivers: 0, on_trip_drivers: 0,
+    unassigned_trips: 0, oldest_unassigned_age_s: null, stale_trips: 0, ...over,
+  });
+  const alert = (id: number, over: Partial<LiveAlert> = {}): LiveAlert => ({
+    id, kind: 'k', severity: 'info', title: `A${id}`, city: null, created_at: '2026-11-05T10:00:00Z',
+    is_sos: false, lat: null, lng: null, ...over,
+  });
+  const sos = (id: number, due: string | null): LiveAlert => alert(id, {
+    is_sos: true, sos_id: id, sos_status: 'open', ack_due_at: due, severity: 'critical',
+  });
+  const trip = (id: number, over: Partial<LiveTrip> = {}): LiveTrip => ({
+    id, state: 'accepted', pickup_lat: 0, pickup_lng: 0, drop_lat: 0, drop_lng: 0, vehicle_class: null,
+    age_s: 10, city: null, stale: false, ...over,
+  });
+  const cell = (row: number, shade: 'short' | 'balanced', demand = 5): HeatCell => ({
+    row, col: 0, cell_south: 0, cell_west: 0, demand, supply: 1, peak_supply: 1,
+    demand_per_baseline: demand, shade, events: demand,
+  });
+
+  it('sums the KPIs', () => {
+    const k = kpiTotals(
+      [city({ online_drivers: 3, on_trip_drivers: 2, unassigned_trips: 1, stale_trips: 4 }), city({ online_drivers: 5, unassigned_trips: 2 })],
+      [sos(1, null), alert(2), { ...sos(3, null), sos_status: 'acknowledged' }],
+      [cell(1, 'short'), cell(2, 'balanced'), cell(3, 'short')],
+    );
+    expect(k).toEqual({ online: 8, onTrip: 2, waiting: 3, sos: 1, stuck: 4, short: 2 });
+  });
+
+  it('orders open SOS by due time, then alerts by severity, stuck, waiting, short', () => {
+    const q = buildQueue(
+      [alert(1, { severity: 'info' }), sos(2, '2026-11-05T10:05:00Z'), alert(3, { severity: 'critical' }), sos(4, '2026-11-05T10:01:00Z')],
+      [trip(5, { state: 'requested', age_s: 30 }), trip(6, { stale: true }), trip(7, { state: 'requested', age_s: 90 })],
+      [cell(1, 'balanced'), cell(2, 'short', 2), cell(3, 'short', 9)],
+    );
+    expect(q.map((i) => i.key)).toEqual(['a4', 'a2', 'a3', 'a1', 't6', 't7', 't5', 'c3:0', 'c2:0']);
+  });
+
+  it('filters by tab and by chip kind', () => {
+    const q = buildQueue([sos(1, null), alert(2)], [trip(3, { stale: true })], [cell(1, 'short')]);
+    expect(filterQueue(q, 'safety', null).map((i) => i.kind)).toEqual(['sos', 'alert']);
+    expect(filterQueue(q, 'all', 'stale').map((i) => i.key)).toEqual(['t3']);
+    expect(filterQueue(q, 'supply', null)).toHaveLength(1);
+  });
+
+  it('words the countdown', () => {
+    const now = Date.parse('2026-11-05T10:00:00Z');
+    expect(ackText(ackRemaining('2026-11-05T10:02:05Z', now) as number)).toBe('Acknowledge due in 2:05');
+    expect(ackText(ackRemaining('2026-11-05T09:59:30Z', now) as number)).toBe('Overdue by 0:30');
+    expect(ackRemaining(null, now)).toBeNull();
   });
 });

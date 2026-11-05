@@ -68,6 +68,12 @@ export type LiveAlert = {
   is_sos: boolean;
   lat: number | null;
   lng: number | null;
+  /** SOS alerts only. */
+  sos_id?: number | null;
+  sos_status?: string | null;
+  incident_id?: number | null;
+  /** ISO instant by which the SOS must be acknowledged, or null. */
+  ack_due_at?: string | null;
 };
 
 export type NetworkStatus = 'OFFLINE' | 'CRITICAL' | 'HIGH DEMAND' | 'NORMAL';
@@ -443,4 +449,83 @@ export function linkSentence(link: Link, dataAgeSeconds: number | null): string 
 export function dotsInCity(dots: DotMap, city: string | null): Dot[] {
   const all = [...dots.values()];
   return city ? all.filter((d) => d.city === city) : all;
+}
+
+// ---------------------------------------------------------------------------
+// The workspace: KPI chips, the attention queue, the SOS countdown
+// ---------------------------------------------------------------------------
+
+export type Kpis = { online: number; onTrip: number; waiting: number; sos: number; stuck: number; short: number };
+
+export const isOpenSos = (a: LiveAlert) => a.is_sos && a.sos_status === 'open';
+
+export function kpiTotals(cities: CityStatus[], alerts: LiveAlert[], cells: HeatCell[]): Kpis {
+  return {
+    online: cities.reduce((n, c) => n + c.online_drivers, 0),
+    onTrip: cities.reduce((n, c) => n + c.on_trip_drivers, 0),
+    waiting: cities.reduce((n, c) => n + c.unassigned_trips, 0),
+    sos: alerts.filter(isOpenSos).length,
+    stuck: cities.reduce((n, c) => n + c.stale_trips, 0),
+    short: cells.filter((c) => c.shade === 'short').length,
+  };
+}
+
+export type QueueKind = 'sos' | 'alert' | 'stale' | 'waiting' | 'short';
+export type QueueTab = 'all' | 'safety' | 'trips' | 'supply';
+export type QueueItem = {
+  key: string; kind: QueueKind; alert?: LiveAlert; trip?: LiveTrip; cell?: HeatCell;
+};
+
+const TAB_OF: Record<QueueKind, QueueTab> = {
+  sos: 'safety', alert: 'safety', stale: 'trips', waiting: 'trips', short: 'supply',
+};
+const SEVERITY_RANK = { critical: 0, warning: 1, info: 2 } as const;
+const dueMs = (a: LiveAlert) => (a.ack_due_at ? Date.parse(a.ack_due_at) : Number.POSITIVE_INFINITY);
+
+/** Open SOS (soonest due first), other alerts by severity, stuck trips, waiting trips, short cells. */
+export function buildQueue(alerts: LiveAlert[], trips: LiveTrip[], cells: HeatCell[]): QueueItem[] {
+  const sos = alerts.filter(isOpenSos).sort((a, b) => dueMs(a) - dueMs(b) || a.id - b.id);
+  const others = alerts.filter((a) => !isOpenSos(a))
+    .sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] || a.id - b.id);
+  const stale = trips.filter((t) => t.stale).sort((a, b) => b.age_s - a.age_s);
+  const waiting = trips.filter((t) => !t.stale && t.state === 'requested').sort((a, b) => b.age_s - a.age_s);
+  const short = cells.filter((c) => c.shade === 'short')
+    .sort((a, b) => shadeLevel(b) - shadeLevel(a) || b.demand - a.demand);
+  return [
+    ...sos.map((alert): QueueItem => ({ key: `a${alert.id}`, kind: 'sos', alert })),
+    ...others.map((alert): QueueItem => ({ key: `a${alert.id}`, kind: 'alert', alert })),
+    ...stale.map((trip): QueueItem => ({ key: `t${trip.id}`, kind: 'stale', trip })),
+    ...waiting.map((trip): QueueItem => ({ key: `t${trip.id}`, kind: 'waiting', trip })),
+    ...short.map((cell): QueueItem => ({ key: `c${cell.row}:${cell.col}`, kind: 'short', cell })),
+  ];
+}
+
+/** A chip narrows the queue to one kind; a tab to one group. */
+export function filterQueue(items: QueueItem[], tab: QueueTab, kind: QueueKind | null): QueueItem[] {
+  return items.filter((i) => (tab === 'all' || TAB_OF[i.kind] === tab) && (!kind || i.kind === kind));
+}
+
+/** Seconds left to acknowledge (negative when overdue), or null with no deadline. */
+export function ackRemaining(iso: string | null | undefined, now: number): number | null {
+  if (!iso) return null;
+  const t = Date.parse(iso);
+  return Number.isFinite(t) ? Math.ceil((t - now) / 1000) : null;
+}
+
+const clock = (s: number) => `${Math.floor(Math.abs(s) / 60)}:${String(Math.abs(s) % 60).padStart(2, '0')}`;
+
+export function ackText(remaining: number): string {
+  return remaining >= 0 ? `Acknowledge due in ${clock(remaining)}` : `Overdue by ${clock(remaining)}`;
+}
+
+export const sosLabel = (a: LiveAlert) => `SOS-${a.sos_id ?? a.id}`;
+
+/** Open SOS that carry a deadline, soonest first: the ones that raise the alarm. */
+export function alarmingSos(alerts: LiveAlert[]): LiveAlert[] {
+  return alerts.filter((a) => isOpenSos(a) && a.ack_due_at).sort((a, b) => dueMs(a) - dueMs(b));
+}
+
+export function alarmTitle(a: LiveAlert, now: number): string {
+  const r = ackRemaining(a.ack_due_at, now) ?? 0;
+  return r >= 0 ? `⚠ ${sosLabel(a)} · ack in ${clock(r)}` : `⚠ ${sosLabel(a)} overdue`;
 }
