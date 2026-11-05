@@ -5,7 +5,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { stamp } from '@/lib/consoleTime';
 import type { Catalogue } from '@/lib/reports';
-import { Empty, ErrorState, PageHeader, Skeleton } from '@/components/console/ui';
+import { Empty, ErrorState, Skeleton } from '@/components/console/ui';
+import { PageHead } from '@/components/console/kit/ListBits';
 
 /**
  * Reports & Analytics: the catalogue.
@@ -29,10 +30,13 @@ export default function ReportsPage() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
+  const zones = (data?.cities ?? []).map((c) => c.timezone);
+  const marketZone = zones.length > 0 && zones.every((z) => z === zones[0]) ? zones[0] : undefined;
+
   return (
     <>
-      <PageHeader title="Reports"
-        subtitle="Trips, revenue, supply, riders, safety and fraud, by city and day. Read-only; money is shown per currency and never added across currencies." />
+      <PageHead title="Reports"
+        summary="Trips, revenue, supply, riders, safety and fraud, by city and day. Read-only; money is shown per currency and never added across currencies." />
       {data === null && !error ? (
         <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
           <span className="sr-only">Loading the report catalogue</span>
@@ -45,7 +49,7 @@ export default function ReportsPage() {
       ) : data ? (
         <>
           <p className="rp-asof" role="status">
-            {data.as_of ? `Data as of ${stamp(data.as_of)} (last rebuild).` : 'No rollup has been built yet.'}{' '}
+            {data.as_of ? `Data as of ${stamp(data.as_of, marketZone)} (last rebuild).` : 'No rollup has been built yet.'}{' '}
             {data.cities.length} {data.cities.length === 1 ? 'city' : 'cities'} in your scope.
           </p>
           {data.areas.map((area) => (
