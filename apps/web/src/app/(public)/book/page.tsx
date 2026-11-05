@@ -488,7 +488,7 @@ function BookPageInner() {
 
     setBusy(true);
     try {
-      const found = await searchPlaces(typed);
+      const found = await searchPlaces(typed, null, 'pickup');
       setPickupPlaces(found);
       if (found.length === 0) setNotice('No places matched that search.');
     } catch (err) {
@@ -506,7 +506,7 @@ function BookPageInner() {
     setPickupPlaces([]);
     setBusy(true);
     try {
-      const point = await placeToPoint(place.place_id);
+      const point = await placeToPoint(place.place_id, 'pickup');
       if (!point) {
         setError('We could not use that place. Please pick another.');
         return;
@@ -561,7 +561,7 @@ function BookPageInner() {
 
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
-      searchPlaces(typed)
+      searchPlaces(typed, null, activeField === 'pickup' ? 'pickup' : 'drop')
         .then((found) => {
           if (activeField === 'pickup') setPickupPlaces(found);
           else setPlaces(found);
@@ -591,7 +591,7 @@ function BookPageInner() {
     if (!query.trim()) return;
     setBusy(true);
     try {
-      const found = await searchPlaces(query.trim());
+      const found = await searchPlaces(query.trim(), null, 'drop');
       setPlaces(found);
       if (found.length === 0) setNotice('No places matched that search.');
     } catch (err) {
@@ -615,7 +615,7 @@ function BookPageInner() {
     setBusy(true);
     setError(null);
     try {
-      const point = await placeToPoint(place.place_id);
+      const point = await placeToPoint(place.place_id, 'drop');
       if (!point) {
         setError('We could not resolve that place to a location.');
         return;

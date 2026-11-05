@@ -96,7 +96,7 @@ export function HeroBooking() {
     }
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      searchPlaces(text, searchNear)
+      searchPlaces(text, searchNear, active === 'pickup' ? 'pickup' : 'drop')
         .then((places) => {
           setSuggestions(places);
           setSearchNote(null);
@@ -157,7 +157,7 @@ export function HeroBooking() {
         if (p) params.set('pickup', `${p.lat},${p.lng}`);
       }
       if (destPlace) {
-        const d = await placeToPoint(destPlace.place_id);
+        const d = await placeToPoint(destPlace.place_id, 'drop');
         if (d) params.set('dest', `${d.lat},${d.lng}`);
       }
     } catch {

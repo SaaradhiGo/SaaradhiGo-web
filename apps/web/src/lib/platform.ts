@@ -255,7 +255,9 @@ export type IntegrationRow = {
 };
 export type IntegrationsPayload = {
   rows: IntegrationRow[]; live_send: boolean; production: boolean; live_providers_required: boolean; note: string;
+  maps_calls?: MapsCalls;
 };
+export type MapsCalls = { today: Record<string, number>; last_7_days: Record<string, Record<string, number>> };
 export const MODE_WORDS: Record<IntegrationMode, string> = { live: 'Live', sandbox: 'Sandbox', stubbed: 'Stubbed', off: 'Off' };
 export const modeTone = (m: IntegrationMode): 'good' | 'bad' | 'wait' | 'neutral' =>
   (m === 'live' ? 'good' : m === 'off' ? 'bad' : m === 'stubbed' ? 'wait' : 'neutral');

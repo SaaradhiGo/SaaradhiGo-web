@@ -8,7 +8,7 @@ import {
   MODE_WORDS, canReadIntegrations, modeTone, type IntegrationRow, type IntegrationsPayload,
 } from '@/lib/platform';
 import { messageOf } from '@/components/console/notifications';
-import { PlatformNav, PlatformNoAccess } from '@/components/console/platform';
+import { MapsCallsPanel, PlatformNav, PlatformNoAccess } from '@/components/console/platform';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { StatusChip } from '@/components/console/kit/StatusChip';
 import { chipToneOf } from '@/components/console/listKit';
@@ -113,6 +113,7 @@ export default function IntegrationsPage() {
         error={error}
         empty="No provider matches."
       />
+      <MapsCallsPanel calls={data?.maps_calls} />
     </>
   );
 }
