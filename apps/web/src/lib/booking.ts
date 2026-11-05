@@ -53,7 +53,32 @@ export type FareQuote = {
   currency?: string | null;
   distance_unit?: string | null;
   fare_breakdown?: Record<string, unknown>;
+  /** Minutes until the nearest driver of this class, or null when unknown. */
+  pickup_eta_min?: number | null;
+  drivers_nearby?: boolean;
 };
+
+/** Seats per class, as the rider app shows them. */
+const SEATS: Record<string, number> = {
+  auto: 3, mini: 4, hatchback: 4, sedan: 4, suv: 6, bike: 1,
+};
+
+/** "5 min · 4 seats" or "No drivers nearby · 4 seats"; null when nothing is known. */
+export function rideMeta(type: string, quote: FareQuote | null | undefined): string | null {
+  const seats = SEATS[type.trim().toLowerCase()];
+  const seatText = seats ? `${seats} ${seats === 1 ? 'seat' : 'seats'}` : null;
+  let when: string | null = null;
+  if (quote) {
+    const eta = quote.pickup_eta_min;
+    if (typeof eta === 'number' && Number.isFinite(eta)) {
+      when = `${Math.max(1, Math.round(eta))} min`;
+    } else if (quote.drivers_nearby === false) {
+      when = 'No drivers nearby';
+    }
+  }
+  const parts = [when, seatText].filter(Boolean);
+  return parts.length ? parts.join(' · ') : null;
+}
 
 /** Which categories can actually be priced at this pickup point. */
 export async function serviceabilityAt(point: LatLng): Promise<Serviceability> {
@@ -370,4 +395,11 @@ export function driverFromInfo(info: unknown, vehicle: unknown): Record<string, 
     out.vehicle_number = plate.trim();
   }
   return Object.keys(out).length ? out : null;
+}
+
+/** "TS09QT0059" -> "TS 09 QT 0059", as the plate is printed; unknown shapes pass through. */
+export function formatPlate(raw: string): string {
+  const compact = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const m = /^([A-Z]{2})(\d{1,2})([A-Z]{1,3})(\d{1,4})$/.exec(compact);
+  return m ? `${m[1]} ${m[2]} ${m[3]} ${m[4]}` : raw.trim();
 }
