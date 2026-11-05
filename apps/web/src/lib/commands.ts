@@ -54,6 +54,7 @@ const PAGES: PageSpec[] = [
   { page: 'withdrawals', label: 'Failed payouts', href: '/finance/payouts?status=failed', words: ['failed'] },
   { page: 'finance', label: 'Money overview', href: '/finance', words: ['finance', 'money'] },
   { page: 'pricing', label: 'Pricing and commission', href: '/pricing', words: ['pricing', 'fares', 'commission'] },
+  { page: 'pricing', label: 'Vehicle classes', href: '/pricing/vehicle-classes', words: ['vehicle', 'classes', 'suv', 'sedan'] },
   { page: 'promotions', label: 'Promotions', href: '/promotions', words: ['promotions', 'promo', 'codes'] },
   { page: 'notifications', label: 'Messages', href: '/notifications', words: ['messages', 'notifications', 'campaigns'] },
   { page: 'zones', label: 'Zones', href: '/zones', words: ['zones', 'geofence'] },
