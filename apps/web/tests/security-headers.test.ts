@@ -58,3 +58,9 @@ test('an explicit socket origin is used', () => {
 test('only next dev gets unsafe-eval', () => {
   assert.ok(contentSecurityPolicy({ NODE_ENV: 'development' }).includes("'unsafe-eval'"));
 });
+
+test('KYC document images from R2 are allowed as images only', () => {
+  const policy = contentSecurityPolicy({ NEXT_PUBLIC_API_BASE_URL: 'https://api.example.test/api/v1' });
+  assert.ok(directive(policy, 'img-src').includes('https://*.r2.cloudflarestorage.com'));
+  assert.ok(!directive(policy, 'connect-src').includes('https://*.r2.cloudflarestorage.com'));
+});
