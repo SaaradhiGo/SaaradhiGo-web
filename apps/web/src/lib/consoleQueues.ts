@@ -82,7 +82,7 @@ export const QUEUES = {
  * It is not a security measure: the endpoint refuses them either way.
  * It stops the console asking questions it already knows the answer to.
  */
-const QUEUE_PERMISSION = {
+export const QUEUE_PERMISSION = {
   driversAwaiting: ['driver.read'],
   withdrawalsPending: ['finance.read'],
   supportOpen: ['support.read'],
