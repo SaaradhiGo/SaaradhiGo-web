@@ -55,6 +55,7 @@ const PAGES: PageSpec[] = [
   { page: 'finance', label: 'Money overview', href: '/finance', words: ['finance', 'money'] },
   { page: 'finance', label: 'Refunds', href: '/finance/refunds', words: ['refunds', 'refund'] },
   { page: 'pricing', label: 'Pricing and commission', href: '/pricing', words: ['pricing', 'fares', 'commission'] },
+  { page: 'pricing', label: 'Vehicle classes', href: '/pricing/vehicle-classes', words: ['vehicle', 'classes', 'suv', 'sedan'] },
   { page: 'promotions', label: 'Promotions', href: '/promotions', words: ['promotions', 'promo', 'codes'] },
   { page: 'notifications', label: 'Messages', href: '/notifications', words: ['messages', 'notifications', 'campaigns'] },
   { page: 'zones', label: 'Zones', href: '/zones', words: ['zones', 'geofence'] },
