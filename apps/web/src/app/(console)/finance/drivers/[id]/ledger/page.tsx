@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { can, useAdminAccess } from '@/lib/adminScope';
 import { useDensity } from '@/lib/consolePrefs';
@@ -14,9 +15,11 @@ import { carryOverWords, type PayoutHoldRow, type RecoveryDebtRow } from '@/lib/
 import { ReleaseDrawer } from '@/components/console/fraud/FlagMoney';
 import { AdjustBalanceDrawer } from '@/components/console/FinanceActionDrawers';
 import { PageLink } from '@/components/console/PageLink';
-import { FinanceNav, Pager, RangeBar } from '@/components/console/finance';
+import { RecordPanel, type RecordTab } from '@/components/console/kit/RecordPanel';
+import { StatusChip } from '@/components/console/kit/StatusChip';
+import { Pager, RangeBar } from '@/components/console/finance';
 import {
-  Column, DataTable, Empty, ErrorState, MetricTile, PageHeader, Panel, Skeleton, TableToolbar,
+  Column, DataTable, Empty, ErrorState, MetricTile, Panel, Skeleton, TableToolbar,
   TileGrid,
 } from '@/components/console/ui';
 
@@ -144,29 +147,15 @@ function LedgerInner() {
     { key: 'note', label: 'Note', hideBelow: 1100, render: (m) => m.note },
   ];
 
-  return (
-    <>
-      <PageHeader
-        title={data ? `Ledger · ${data.driver.driver_name || `Driver #${data.driver.id}`}` : 'Ledger'}
-        subtitle={data ? (
-          <>
-            {cityName(data.driver.home_city)} · days are {data.range.timezone} days ·{' '}
-            <PageLink page="drivers" href={`/drivers/${data.driver.id}`}>Driver record</PageLink>
-          </>
-        ) : 'A driver statement.'}
-        actions={data && data.has_wallet && cur && canAdjustBalance(access) ? (
-          <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setAdjusting(true)}>
-            Adjust balance
-          </button>
-        ) : undefined}
-      />
-      <FinanceNav />
-      {notice && (
-        <div className={notice.kind === 'pending' ? 'ops-confirm mb-4' : 'alert-success mb-4'} role="status">
-          <b>{notice.text}</b>
-        </div>
-      )}
+  const hasHolds = Boolean(data && data.has_wallet && cur && (
+    data.payout_hold || (data.recovery?.debts.length ?? 0) > 0 || (data.held_rewards?.minor ?? 0) > 0));
+  // Kept across reloads so the panel does not read as a different record while the page reloads.
+  const who = useRef({ name: '', code: '' });
+  if (data) who.current = { name: data.driver.driver_name || `Driver #${data.driver.id}`, code: `D-${data.driver.id}` };
 
+  const tabs: RecordTab[] = [
+    { key: 'statement', label: 'Statement', content: (
+      <div className="grid gap-4">
       {data && data.has_wallet && cur && (
         <TileGrid>
           <MetricTile label={`Opening · ${cur}`} value={formatMinor(data.opening_minor, cur)} />
@@ -176,52 +165,6 @@ function LedgerInner() {
             note={`Available balance now ${formatMinor(data.balance_minor, cur)}`} />
         </TileGrid>
       )}
-      {data && data.has_wallet && cur && (
-        data.payout_hold || (data.recovery?.debts.length ?? 0) > 0 || (data.held_rewards?.minor ?? 0) > 0
-      ) ? (
-        <Panel title="Recoveries, held rewards and payout hold">
-          {data.payout_hold ? (
-            <div className="ops-note ops-note--warn mb-3" role="status">
-              <b>Payouts are on hold until {stamp(data.payout_hold.expires_at, tz)}.</b>{' '}
-              A suspended driver, approved by a second admin (APR-{data.payout_hold.approval_request_id}); it ends by
-              itself after at most {data.payout_hold.max_days} days unless it is renewed. The weekly run skips this driver
-              and lists them as held.{' '}
-              {can(access, 'finance.payout') ? (
-                <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setReleasing(true)}>
-                  Release the hold…
-                </button>
-              ) : null}
-            </div>
-          ) : null}
-          {(data.held_rewards?.minor ?? 0) > 0 ? (
-            <p className="m-0 mb-3">
-              <b>{formatMinor(data.held_rewards?.minor, cur)}</b> of rewards are pending review. They stay in the wallet but
-              are left out of the next payout and of what the driver can withdraw; they are released by themselves
-              after the country&rsquo;s hold period, or when the flag is dismissed.
-            </p>
-          ) : null}
-          {(data.recovery?.debts.length ?? 0) > 0 ? (
-            <DataTable caption="Recoveries of rewards" rows={data.recovery?.debts ?? []} rowKey={(d) => d.id}
-              density="compact" maxHeight={false}
-              columns={[
-                { key: 'id', label: 'Recovery', width: '8rem', render: (d) => `#${d.id} · APR-${d.approval_request_id}` },
-                { key: 'req', label: 'Approved', num: true, render: (d) => formatMinor(d.requested_minor, d.currency) },
-                { key: 'rec', label: 'Collected', num: true, render: (d) => formatMinor(d.recovered_minor, d.currency) },
-                { key: 'rem', label: 'Carry-over', num: true, render: (d) => formatMinor(d.remaining_minor, d.currency) },
-                { key: 'note', label: 'Payouts so far', hideBelow: 1100, render: (d) => (
-                  d.deductions.length === 0
-                    ? 'None yet'
-                    : `${d.deductions.map((x) => `${formatMinor(x.amount_minor, d.currency)} of ${formatMinor(x.payout_gross_minor, d.currency)}`).join(', ')} · ${carryOverWords(d, (m, c) => formatMinor(m, c))}`
-                ) },
-              ]} />
-          ) : null}
-          {(data.recovery?.debts.length ?? 0) > 0 ? (
-            <p className="help m-0 mt-2">
-              A payout is reduced by at most {data.recovery?.max_percent_per_payout}% for a recovery; the rest carries to the next one.
-            </p>
-          ) : null}
-        </Panel>
-      ) : null}
       {data && data.has_wallet && (data.unexplained_minor ?? 0) !== 0 && (
         <div className="ops-note ops-note--warn mb-4" role="alert">
           <b>The wallet and the ledger disagree.</b> The wallet holds {formatMinor(data.unexplained_minor, cur)}{' '}
@@ -274,14 +217,93 @@ function LedgerInner() {
         )}
       </Panel>
 
-      {data && data.memo.length > 0 && (
-        <div className="mt-4">
-          <Panel title="Also in this range (moves no money in the wallet)" flush>
-            <DataTable caption="Memo lines" rows={data.memo} columns={memoColumns} rowKey={(m) => m.id}
-              density="compact" maxHeight={false} />
-          </Panel>
+      </div>
+    ) },
+    ...(hasHolds ? [{ key: 'holds', label: 'Recoveries & holds', content: data ? (
+      <Panel title="Recoveries, held rewards and payout hold">
+          {data.payout_hold ? (
+            <div className="ops-note ops-note--warn mb-3" role="status">
+              <b>Payouts are on hold until {stamp(data.payout_hold.expires_at, tz)}.</b>{' '}
+              A suspended driver, approved by a second admin (APR-{data.payout_hold.approval_request_id}); it ends by
+              itself after at most {data.payout_hold.max_days} days unless it is renewed. The weekly run skips this driver
+              and lists them as held.{' '}
+              {can(access, 'finance.payout') ? (
+                <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setReleasing(true)}>
+                  Release the hold…
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {(data.held_rewards?.minor ?? 0) > 0 ? (
+            <p className="m-0 mb-3">
+              <b>{formatMinor(data.held_rewards?.minor, cur)}</b> of rewards are pending review. They stay in the wallet but
+              are left out of the next payout and of what the driver can withdraw; they are released by themselves
+              after the country&rsquo;s hold period, or when the flag is dismissed.
+            </p>
+          ) : null}
+          {(data.recovery?.debts.length ?? 0) > 0 ? (
+            <DataTable caption="Recoveries of rewards" rows={data.recovery?.debts ?? []} rowKey={(d) => d.id}
+              density="compact" maxHeight={false}
+              columns={[
+                { key: 'id', label: 'Recovery', width: '8rem', render: (d) => `#${d.id} · APR-${d.approval_request_id}` },
+                { key: 'req', label: 'Approved', num: true, render: (d) => formatMinor(d.requested_minor, d.currency) },
+                { key: 'rec', label: 'Collected', num: true, render: (d) => formatMinor(d.recovered_minor, d.currency) },
+                { key: 'rem', label: 'Carry-over', num: true, render: (d) => formatMinor(d.remaining_minor, d.currency) },
+                { key: 'note', label: 'Payouts so far', hideBelow: 1100, render: (d) => (
+                  d.deductions.length === 0
+                    ? 'None yet'
+                    : `${d.deductions.map((x) => `${formatMinor(x.amount_minor, d.currency)} of ${formatMinor(x.payout_gross_minor, d.currency)}`).join(', ')} · ${carryOverWords(d, (m, c) => formatMinor(m, c))}`
+                ) },
+              ]} />
+          ) : null}
+          {(data.recovery?.debts.length ?? 0) > 0 ? (
+            <p className="help m-0 mt-2">
+              A payout is reduced by at most {data.recovery?.max_percent_per_payout}% for a recovery; the rest carries to the next one.
+            </p>
+          ) : null}
+      </Panel>
+    ) : null }] : []),
+    ...(data && data.memo.length > 0 ? [{ key: 'memo', label: `Memo · ${data.memo.length}`, content: (
+      <Panel title="Also in this range (moves no money in the wallet)" flush>
+        <DataTable caption="Memo lines" rows={data?.memo ?? []} columns={memoColumns} rowKey={(m) => m.id}
+          density="compact" maxHeight={false} />
+      </Panel>
+    ) }] : []),
+  ];
+
+  return (
+    <>
+      <p className="ops-record-page__back"><Link href="/finance">Finance</Link></p>
+      {notice && (
+        <div className={notice.kind === 'pending' ? 'ops-confirm mb-4' : 'alert-success mb-4'} role="status">
+          <b>{notice.text}</b>
         </div>
       )}
+      <div className="ops-record-page ops-record-page--wide">
+        <RecordPanel
+          label="Driver ledger"
+          title={who.current.name || `Driver ${id}`}
+          refId={who.current.code || `D-${id}`}
+          subtitle={data ? (
+            <>
+              {cityName(data.driver.home_city)} · days are {data.range.timezone} days ·{' '}
+              <PageLink page="drivers" href={`/drivers/${data.driver.id}`}>Driver record</PageLink>
+            </>
+          ) : 'A driver statement.'}
+          status={data && data.has_wallet && cur ? (
+            <>
+              <StatusChip tone="neutral">Balance {formatMinor(data.balance_minor, cur)}</StatusChip>
+              {data.payout_hold ? <> <StatusChip tone="caution">Payouts on hold</StatusChip></> : null}
+            </>
+          ) : undefined}
+          actions={data && data.has_wallet && cur && canAdjustBalance(access) ? (
+            <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setAdjusting(true)}>
+              Adjust balance
+            </button>
+          ) : undefined}
+          tabs={tabs}
+        />
+      </div>
       {releasing && data?.payout_hold ? (
         <ReleaseDrawer hold={data.payout_hold} path={`/payments/admin/payout-holds/${data.payout_hold.id}/release/`}
           onClose={() => setReleasing(false)}

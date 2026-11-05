@@ -6,9 +6,8 @@ import { ApiError, api } from '@/lib/api';
 import { stamp } from '@/lib/consoleTime';
 import type { InboxItem } from '@/lib/supportDesk';
 import { ButtonLink } from '@/components/sg/Button';
-import {
-  Empty, ErrorState, PageHeader, Panel, Pill, Skeleton,
-} from '@/components/console/ui';
+import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { StatusChip } from '@/components/console/kit/StatusChip';
 
 /**
  * Your inbox: things that came back to you.
@@ -28,6 +27,7 @@ export default function InboxPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [view, setView] = useState('all');
 
   const load = useCallback(async () => {
     setInbox(null);
@@ -56,14 +56,30 @@ export default function InboxPage() {
     }
   }
 
-  const items = inbox?.results ?? [];
+  const all = inbox?.results ?? [];
+  const items = view === 'unread' ? all.filter((i) => !i.read) : all;
+
+  const columns: ListColumn<InboxItem>[] = [
+    { key: 'state', label: 'State', width: '6rem', render: (i) => (i.read ? <StatusChip tone="neutral">Read</StatusChip> : <StatusChip tone="info">New</StatusChip>) },
+    { key: 'when', label: 'When', width: '10rem', num: true, render: (i) => stamp(i.created_at) },
+    { key: 'text', label: 'Message', primary: true, render: (i) => i.text },
+    { key: 'ticket', label: 'Ticket', width: '9rem', render: (i) => (i.ticket_id ? <Link href={`/support/${i.ticket_id}`}>Open ticket #{i.ticket_id}</Link> : <span className="muted">—</span>) },
+  ];
 
   return (
     <>
-      <PageHeader
+      {notice && <div className="alert-success mb-5" role="status"><b>{notice}</b></div>}
+      <ListPage<InboxItem>
+        pageKey="support-inbox"
         title="Inbox"
-        subtitle="Refund requests that came back to you. The rider was not told; the reason is in the ticket's internal notes."
-        actions={
+        summary="Refund requests that came back to you. The rider was not told; the reason is in the ticket's internal notes."
+        views={[
+          { key: 'all', label: 'All', count: inbox ? all.length : null },
+          { key: 'unread', label: 'Unread', count: inbox ? inbox.unread : null },
+        ]}
+        view={view}
+        onView={setView}
+        actionsSlot={(
           <>
             <button
               type="button" className="sg-btn sg-btn--secondary sg-btn--sm"
@@ -71,37 +87,18 @@ export default function InboxPage() {
             >{busy ? 'Marking…' : 'Mark all read'}</button>
             <ButtonLink href="/support?queue=returned" variant="ghost" size="sm">Returned to you</ButtonLink>
           </>
-        }
-      />
-      {notice && <div className="alert-success mb-5" role="status"><b>{notice}</b></div>}
-
-      <Panel flush>
-        {inbox === null ? (
-          <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
-            <span className="sr-only">Loading your inbox</span>
-            <Skeleton kind="row" count={4} />
-          </div>
-        ) : error ? (
-          <div className="p-4">
-            <ErrorState title="Your inbox could not be loaded" detail={`${error} This is not the same as it being empty.`} onRetry={() => void load()} />
-          </div>
-        ) : items.length === 0 ? (
-          <Empty title="Nothing here" detail="No refund request has come back to you." />
-        ) : (
-          <ul className="ops-inbox" aria-label="Inbox">
-            {items.map((item) => (
-              <li key={item.id} className="ops-inbox__item">
-                <div>
-                  {item.read ? <Pill>Read</Pill> : <Pill tone="wait">New</Pill>}{' '}
-                  <span className="ops-inbox__when">{stamp(item.created_at)}</span>
-                </div>
-                <p className="ops-inbox__text">{item.text}</p>
-                {item.ticket_id ? <Link href={`/support/${item.ticket_id}`}>Open ticket #{item.ticket_id}</Link> : null}
-              </li>
-            ))}
-          </ul>
         )}
-      </Panel>
+        columns={columns}
+        rows={items}
+        rowKey={(i) => i.id}
+        total={inbox ? items.length : null}
+        page={1}
+        pageSize={Math.max(items.length, 1)}
+        onPage={() => undefined}
+        loading={inbox === null}
+        error={error ? `${error} This is not the same as it being empty.` : null}
+        empty={view === 'unread' ? 'Nothing unread.' : 'Nothing here. No refund request has come back to you.'}
+      />
     </>
   );
 }

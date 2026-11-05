@@ -6,7 +6,6 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
 import { PageLink } from '@/components/console/PageLink';
-import { useDensity } from '@/lib/consolePrefs';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   CATEGORY_LABEL, DEFAULT_SAFETY_FILTERS, SEVERITY_LABEL, SIGNAL_LABEL, STATUS_LABEL, TAB_KEYS,
@@ -18,11 +17,11 @@ import {
 import { ButtonLink } from '@/components/sg/Button';
 import { SeverityPill } from '@/components/console/safety/SeverityPill';
 import { NewIncidentDrawer } from '@/components/console/safety/NewIncidentDrawer';
-import { SosActionDrawer } from '@/components/console/safety/SosActionDrawer';
-import {
-  Column, DataTable, Drawer, Empty, ErrorState, Filters, PageHeader, Panel, Pill, Skeleton,
-  TableToolbar,
-} from '@/components/console/ui';
+import { Drawer, Pill, Skeleton } from '@/components/console/ui';
+import { ListPage, type FilterChip, type ListColumn } from '@/components/console/kit/ListPage';
+import { RecordPanel } from '@/components/console/kit/RecordPanel';
+import { StatusChip } from '@/components/console/kit/StatusChip';
+import { MoreFilters, RecordFacts } from '@/components/console/kit/ListBits';
 import { SosActions } from '@/components/console/safety/SosActions';
 import { SafetyBoard } from '@/components/console/safety/SafetyBoard';
 
@@ -44,22 +43,20 @@ import { SafetyBoard } from '@/components/console/safety/SafetyBoard';
 const POLL_MS = 15_000;
 const TICK_MS = 30_000;
 
-type Acting = { sosId: number } | null;
-
 function SafetyInner() {
   const router = useRouter();
   const search = useSearchParams();
   const access = useAdminAccess();
-  const filters = useMemo(() => safetyFiltersFromSearch(new URLSearchParams(search.toString())), [search]);
+  const query = search.toString();
+  const filters = useMemo(() => safetyFiltersFromSearch(new URLSearchParams(query)), [query]);
 
-  const [density, setDensity] = useDensity();
   const [page, setPage] = useState<IncidentPage | null>(null);
   const [signals, setSignals] = useState<SignalPage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<SafetyFilters>(filters);
   const [now, setNow] = useState(() => Date.now());
   const [creating, setCreating] = useState(false);
-  const [acting, setActing] = useState<Acting>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [dismissing, setDismissing] = useState<Signal | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const first = useRef(true);
@@ -116,14 +113,24 @@ function SafetyInner() {
   const mayRespond = canRespond(access);
   const applies = filtersFor(filters.tab);
 
-  const tabs = TAB_KEYS.map((t) => {
-    const n = tabCount(t, counts);
-    return { key: t, label: n === undefined ? TAB_LABEL[t] : `${TAB_LABEL[t]} ${n}` };
-  });
+  const clockText = (r: IncidentRow) => {
+    if (filters.tab === 'closed') return r.outcome ? r.outcome.replace(/_/g, ' ') : '—';
+    const ack = ackState(r, timers, now);
+    if (ack.kind === 'none') {
+      return r.sos.active
+        ? <span>SOS acknowledged · raised {elapsed(minutesBetween(r.sos.oldest_active_at, now))} ago</span>
+        : <span>Open {elapsed(minutesBetween(r.opened_at, now))}</span>;
+    }
+    return (
+      <span className={ack.kind === 'overdue' ? 'ops-late' : undefined}>
+        {ack.kind === 'overdue' ? <b>Overdue · </b> : null}{ackText(ack, r.country)}
+      </span>
+    );
+  };
 
-  const columns: Column<IncidentRow>[] = [
+  const columns: ListColumn<IncidentRow>[] = [
     {
-      key: 'id', label: 'Incident',
+      key: 'id', label: 'Incident', primary: true,
       render: (r) => (
         <>
           <Link href={`/safety-ops/incidents/${r.id}`} className="sg-num">{r.ref}</Link>{' '}
@@ -135,35 +142,22 @@ function SafetyInner() {
     { key: 'severity', label: 'Severity', width: '7rem', render: (r) => <SeverityPill severity={r.severity} /> },
     {
       key: 'clock', label: filters.tab === 'closed' ? 'Outcome' : 'Clock', width: '17rem',
-      render: (r) => {
-        if (filters.tab === 'closed') return r.outcome ? r.outcome.replace(/_/g, ' ') : '—';
-        const ack = ackState(r, timers, now);
-        if (ack.kind === 'none') {
-          return r.sos.active
-            ? <span>SOS acknowledged · raised {elapsed(minutesBetween(r.sos.oldest_active_at, now))} ago</span>
-            : <span>Open {elapsed(minutesBetween(r.opened_at, now))}</span>;
-        }
-        return (
-          <span className={ack.kind === 'overdue' ? 'ops-late' : undefined}>
-            {ack.kind === 'overdue' ? <b>Overdue · </b> : null}{ackText(ack, r.country)}
-          </span>
-        );
-      },
+      render: clockText,
     },
     {
       key: 'assignee', label: 'Assignee', width: '8rem',
       render: (r) => (r.assignee ? r.assignee.label : <span className="muted">Unassigned</span>),
     },
     {
-      key: 'city', label: 'City', width: '7.5rem', hideBelow: 1100,
+      key: 'city', label: 'City', width: '7.5rem',
       render: (r) => r.anchor.node_name ?? <span className="muted">Not placed</span>,
     },
     {
-      key: 'status', label: 'Status', width: '8rem', hideBelow: 1100,
+      key: 'status', label: 'Status', width: '8rem',
       render: (r) => <Pill tone={r.status === 'closed' ? 'good' : r.status === 'open' ? 'bad' : 'wait'}>{STATUS_LABEL[r.status]}</Pill>,
     },
     {
-      key: 'opened', label: 'Opened', width: '9rem', num: true, hideBelow: 1500,
+      key: 'opened', label: 'Opened', width: '9rem', num: true,
       render: (r) => stamp(r.opened_at, r.anchor.timezone ?? timeZoneFor(r.anchor.node)),
     },
     ...(filters.tab !== 'closed' ? [{
@@ -174,11 +168,11 @@ function SafetyInner() {
     }] : []),
   ];
 
-  const signalColumns: Column<Signal>[] = [
+  const signalColumns: ListColumn<Signal>[] = [
     { key: 'kind', label: 'Signal', width: '9rem', render: (s) => <Pill tone="wait">{SIGNAL_LABEL[s.kind] ?? s.kind}</Pill> },
     { key: 'trip', label: 'Trip', width: '7rem', render: (s) => <PageLink page="trips" href={`/trips/${s.trip_id}`}>T-{s.trip_id}</PageLink> },
     { key: 'what', label: 'Measured', render: (s) => signalSummary(s) },
-    { key: 'city', label: 'City', width: '8rem', hideBelow: 1100, render: (s) => s.anchor.node_name ?? <span className="muted">Not placed</span> },
+    { key: 'city', label: 'City', width: '8rem', render: (s) => s.anchor.node_name ?? <span className="muted">Not placed</span> },
     {
       key: 'inc', label: 'Incident', width: '10rem',
       render: (s) => (s.incident_id
@@ -186,7 +180,7 @@ function SafetyInner() {
         : <span className="muted">Waiting for review</span>),
     },
     {
-      key: 'seen', label: 'First seen', width: '10rem', num: true, hideBelow: 1280,
+      key: 'seen', label: 'First seen', width: '10rem', num: true,
       render: (s) => stamp(s.created_at, timeZoneFor(s.anchor.node)),
     },
     // Dismissing a signal is a write (safety.respond): not drawn for a caller who may only look.
@@ -199,126 +193,145 @@ function SafetyInner() {
   ];
 
   const total = filters.tab === 'signals' ? signals?.count ?? null : page?.count ?? null;
-  const summary = total === null ? null
-    : `${total} ${filters.tab === 'signals' ? 'signal' : 'incident'}${total === 1 ? '' : 's'}${active ? ` · ${active} filter${active === 1 ? '' : 's'}` : ''} · refreshing every ${POLL_MS / 1000}s`;
-
   const loading = filters.tab === 'signals' ? signals === null : page === null;
   const empty = filters.tab === 'signals' ? (signals?.results.length ?? 0) === 0 : rows.length === 0;
+  const shown = filters.tab === 'signals' ? signals?.results.length ?? 0 : rows.length;
+  const summary = total === null ? null
+    : `${total} ${filters.tab === 'signals' ? 'signal' : 'incident'}${total === 1 ? '' : 's'}${total > shown ? ` (latest ${shown} shown)` : ''} · refreshing every ${POLL_MS / 1000}s`;
 
   const emptyDetail: Record<string, string> = {
-    sos: 'An SOS raised during a trip appears here within a few seconds.',
+    sos: 'No active SOS. One raised during a trip appears here within a few seconds.',
     incidents: 'Nothing is open.',
-    signals: 'Long stops, overruns and route deviations that need a look appear here.',
+    signals: 'No signals to review. Long stops, overruns and route deviations that need a look appear here.',
     closed: 'Closed incidents appear here with their outcome.',
+  };
+
+  const chipFor = (key: string, label: string, patch: Partial<SafetyFilters>): FilterChip => (
+    { key, label, onRemove: () => go({ ...filters, ...patch }) });
+  const chips: FilterChip[] = [];
+  if (filters.q) chips.push(chipFor('q', `Find: ${filters.q}`, { q: '' }));
+  if (filters.severity) chips.push(chipFor('severity', `Severity: ${(SEVERITY_LABEL as Record<string, string>)[filters.severity] ?? filters.severity}`, { severity: '' }));
+  if (filters.category) chips.push(chipFor('category', `Category: ${(CATEGORY_LABEL as Record<string, string>)[filters.category] ?? filters.category}`, { category: '' }));
+  if (filters.assigned) chips.push(chipFor('assigned', filters.assigned === 'me' ? 'Assigned to me' : 'Unassigned', { assigned: '' }));
+  if (filters.country) chips.push(chipFor('country', `Country: ${filters.country}`, { country: '' }));
+
+  const filterForm = (
+    <MoreFilters count={active}>
+      <form className="ops-form" aria-label="Filter incidents" onSubmit={(e) => { e.preventDefault(); go({ ...draft }); }}>
+        <div className="ops-form__row">
+          {/* Only the filters that apply to this tab: Signals is filtered by country alone. */}
+          {applies.includes('q') ? (
+            <>
+              <label className="ops-form__label" htmlFor="sf-q">Find</label>
+              <input id="sf-q" className="ops-select" value={draft.q} placeholder="Incident or trip number"
+                onChange={(e) => setDraft({ ...draft, q: e.target.value })} size={22} />
+            </>
+          ) : null}
+          {applies.includes('severity') ? (
+            <>
+              <label className="ops-form__label" htmlFor="sf-sev">Severity</label>
+              <select id="sf-sev" className="ops-select" value={draft.severity} onChange={(e) => setDraft({ ...draft, severity: e.target.value })}>
+                <option value="">Any</option>
+                {Object.entries(SEVERITY_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </>
+          ) : null}
+          {applies.includes('category') ? (
+            <>
+              <label className="ops-form__label" htmlFor="sf-cat">Category</label>
+              <select id="sf-cat" className="ops-select" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>
+                <option value="">Any</option>
+                {Object.entries(CATEGORY_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </>
+          ) : null}
+          {applies.includes('assigned') ? (
+            <>
+              <label className="ops-form__label" htmlFor="sf-asg">Assignee</label>
+              <select id="sf-asg" className="ops-select" value={draft.assigned}
+                onChange={(e) => setDraft({ ...draft, assigned: e.target.value as SafetyFilters['assigned'] })}>
+                <option value="">Anyone</option>
+                <option value="me">Me</option>
+                <option value="none">Unassigned</option>
+              </select>
+            </>
+          ) : null}
+          {applies.includes('country') && countries.length > 1 ? (
+            <>
+              <label className="ops-form__label" htmlFor="sf-country">Country</label>
+              <select id="sf-country" className="ops-select" value={draft.country} onChange={(e) => setDraft({ ...draft, country: e.target.value })}>
+                <option value="">Any</option>
+                {countries.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </>
+          ) : null}
+          <button type="submit" className="sg-btn sg-btn--primary sg-btn--sm">Show</button>
+          <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={active === 0}
+            onClick={() => go({ ...DEFAULT_SAFETY_FILTERS, tab: filters.tab })}>Clear</button>
+        </div>
+      </form>
+    </MoreFilters>
+  );
+
+  const listError = error && empty && !loading
+    ? `${error} This is not the same as there being nothing.`
+    : null;
+  const selectedRow = selectedId === null ? null : rows.find((r) => r.id === selectedId) ?? null;
+  // One list component for both kinds of row: it is never remounted by a poll, only given new rows.
+  const common = {
+    pageKey: 'safety', title: 'Safety', summary,
+    views: TAB_KEYS.map((t) => ({ key: t, label: TAB_LABEL[t], count: tabCount(t, counts) ?? null })),
+    view: filters.tab, onView: (tab: string) => go({ ...filters, tab: tab as SafetyFilters['tab'] }),
+    chips, filterSlot: filterForm,
+    actionsSlot: (
+      <>
+        {mayRespond ? (
+          <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setCreating(true)}>Open an incident</button>
+        ) : null}
+        <ButtonLink href="/safety-ops/config" variant="ghost" size="sm">
+          {canEditSafetyConfig(access) ? 'Safety settings' : 'Safety settings (read only)'}
+        </ButtonLink>
+      </>
+    ),
+    page: 1, pageSize: Math.max(shown, 1), onPage: () => undefined,
+    loading, error: listError, empty: emptyDetail[filters.tab],
   };
 
   return (
     <>
-      <PageHeader
-        title="Safety"
-        subtitle="Active SOS first, most urgent at the top."
-        actions={(
-          <>
-            {mayRespond ? (
-              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setCreating(true)}>Open an incident</button>
-            ) : null}
-            <ButtonLink href="/safety-ops/config" variant="ghost" size="sm">
-              {canEditSafetyConfig(access) ? 'Safety settings' : 'Safety settings (read only)'}
-            </ButtonLink>
-          </>
-        )}
-      />
-
       {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
-
-      <div className="ops-queuebar">
-        <Filters value={filters.tab} options={tabs} onChange={(tab) => go({ ...filters, tab })} />
-      </div>
-
-      <Panel title="Filters">
-        <form className="ops-form" aria-label="Filter incidents" onSubmit={(e) => { e.preventDefault(); go({ ...draft }); }}>
-          <div className="ops-form__row">
-            {/* Only the filters that apply to this tab: the Signals list is
-                filtered by country alone, so Find, Severity, Category and
-                Assignee are not drawn there (they would do nothing). */}
-            {applies.includes('q') ? (
-              <>
-                <label className="ops-form__label" htmlFor="sf-q">Find</label>
-                <input id="sf-q" className="ops-select" value={draft.q} placeholder="Incident or trip number"
-                  onChange={(e) => setDraft({ ...draft, q: e.target.value })} size={22} />
-              </>
-            ) : null}
-            {applies.includes('severity') ? (
-              <>
-                <label className="ops-form__label" htmlFor="sf-sev">Severity</label>
-                <select id="sf-sev" className="ops-select" value={draft.severity} onChange={(e) => setDraft({ ...draft, severity: e.target.value })}>
-                  <option value="">Any</option>
-                  {Object.entries(SEVERITY_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                </select>
-              </>
-            ) : null}
-            {applies.includes('category') ? (
-              <>
-                <label className="ops-form__label" htmlFor="sf-cat">Category</label>
-                <select id="sf-cat" className="ops-select" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>
-                  <option value="">Any</option>
-                  {Object.entries(CATEGORY_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                </select>
-              </>
-            ) : null}
-            {applies.includes('assigned') ? (
-              <>
-                <label className="ops-form__label" htmlFor="sf-asg">Assignee</label>
-                <select id="sf-asg" className="ops-select" value={draft.assigned}
-                  onChange={(e) => setDraft({ ...draft, assigned: e.target.value as SafetyFilters['assigned'] })}>
-                  <option value="">Anyone</option>
-                  <option value="me">Me</option>
-                  <option value="none">Unassigned</option>
-                </select>
-              </>
-            ) : null}
-            {applies.includes('country') && countries.length > 1 ? (
-              <>
-                <label className="ops-form__label" htmlFor="sf-country">Country</label>
-                <select id="sf-country" className="ops-select" value={draft.country} onChange={(e) => setDraft({ ...draft, country: e.target.value })}>
-                  <option value="">Any</option>
-                  {countries.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </>
-            ) : null}
-            <button type="submit" className="sg-btn sg-btn--primary sg-btn--sm">Show</button>
-            <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={active === 0}
-              onClick={() => go({ ...DEFAULT_SAFETY_FILTERS, tab: filters.tab })}>Clear</button>
-          </div>
-        </form>
-      </Panel>
-
-      <Panel flush>
-        <TableToolbar summary={summary} density={density} onDensity={setDensity} />
-        {loading ? (
-          <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
-            <span className="sr-only">Loading the safety queue</span>
-            <Skeleton kind="row" count={6} />
-          </div>
-        ) : error && empty ? (
-          <div className="p-4">
-            <ErrorState title="The safety queue could not be loaded" detail={`${error} This is not the same as there being nothing.`}
-              onRetry={() => { first.current = true; void load(); }} />
-          </div>
-        ) : empty ? (
-          <Empty title={filters.tab === 'sos' ? 'No active SOS' : filters.tab === 'signals' ? 'No signals to review' : 'Nothing here'}
-            detail={active ? 'Try fewer filters.' : emptyDetail[filters.tab]} />
-        ) : filters.tab === 'signals' ? (
-          <DataTable caption="Safety signals to review" rows={signals?.results ?? []} columns={signalColumns}
-            rowKey={(s) => s.id} density={density} />
+      {error && !empty && !loading ? (
+        <div className="alert-error mb-4" role="alert">{error} Showing the last list that loaded.</div>
+      ) : null}
+      <div className={selectedRow && filters.tab !== 'signals' ? 'ops-split' : undefined}>
+        {filters.tab === 'signals' ? (
+          <ListPage<Signal> {...common} columns={signalColumns} rows={signals?.results ?? []} rowKey={(s) => s.id}
+            total={signals?.results.length ?? null} />
         ) : (
-          <DataTable caption="Safety incidents" rows={rows} columns={columns} rowKey={(r) => r.id}
-            density={density} onRow={(r) => router.push(`/safety-ops/incidents/${r.id}`)} />
+          <ListPage<IncidentRow> {...common} columns={columns} rows={rows} rowKey={(r) => r.id}
+            total={page ? rows.length : null} onRow={(r) => setSelectedId(r.id)} activeKey={selectedId} />
         )}
-        {error && !empty && !loading ? (
-          <div className="alert-error m-4" role="alert">{error} Showing the last list that loaded.</div>
+        {selectedRow && filters.tab !== 'signals' ? (
+          <RecordPanel
+            label="Incident"
+            title={selectedRow.title || CATEGORY_LABEL[selectedRow.category] || selectedRow.category}
+            refId={selectedRow.ref}
+            subtitle={selectedRow.anchor.node_name ?? 'Not placed'}
+            status={<><SeverityPill severity={selectedRow.severity} /> <StatusChip tone={selectedRow.status === 'closed' ? 'good' : selectedRow.status === 'open' ? 'critical' : 'info'}>{STATUS_LABEL[selectedRow.status]}</StatusChip></>}
+            actions={<ButtonLink href={`/safety-ops/incidents/${selectedRow.id}`} variant="secondary" size="sm">Open the full case</ButtonLink>}
+            onClose={() => setSelectedId(null)}
+            tabs={[{ key: 'overview', label: 'Overview', content: (
+              <RecordFacts rows={[
+                ['Clock', clockText(selectedRow)],
+                ['Assignee', selectedRow.assignee ? selectedRow.assignee.label : 'Unassigned'],
+                ['Opened', stamp(selectedRow.opened_at, selectedRow.anchor.timezone ?? timeZoneFor(selectedRow.anchor.node))],
+                selectedRow.outcome ? ['Outcome', selectedRow.outcome.replace(/_/g, ' ')] : false,
+                selectedRow.sos.active ? ['Active SOS', String(selectedRow.sos.active)] : false,
+              ]} />
+            ) }]}
+          />
         ) : null}
-      </Panel>
+      </div>
 
       {creating && (
         <NewIncidentDrawer
@@ -328,12 +341,6 @@ function SafetyInner() {
             setNotice(created ? `INC-${id} opened.` : `That trip already has an open case: ${id}.`);
             router.push(`/safety-ops/incidents/${id}`);
           }}
-        />
-      )}
-      {acting && (
-        <SosActionDrawer
-          sosId={acting.sosId} action="acknowledge" onClose={() => setActing(null)}
-          onDone={(m) => { setActing(null); setNotice(m); void load(); }}
         />
       )}
       {dismissing && (

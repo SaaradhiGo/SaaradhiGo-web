@@ -8,8 +8,10 @@ import {
   pendingFor, pendingSummary, priorityTone,
 } from '@/lib/supportDesk';
 import { ButtonLink } from '@/components/sg/Button';
+import { MetricCard } from '@/components/console/kit/MetricCard';
+import { PageHead } from '@/components/console/kit/ListBits';
 import {
-  Column, DataTable, Drawer, Empty, ErrorState, PageHeader, Panel, Pill, Skeleton,
+  Column, DataTable, Drawer, Empty, ErrorState, Panel, Pill, Skeleton,
 } from '@/components/console/ui';
 
 /**
@@ -140,11 +142,20 @@ export default function SlaPage() {
 
   return (
     <>
-      <PageHeader
+      <PageHead
         title="SLA policy"
-        subtitle="Minutes from the moment a ticket is opened. Waiting on the user pauses only the resolution clock."
+        summary="Minutes from the moment a ticket is opened. Waiting on the user pauses only the resolution clock."
         actions={<ButtonLink href="/support" variant="ghost" size="sm">All tickets</ButtonLink>}
       />
+      {data && !error ? (
+        <div className="ops-metrics mb-4">
+          <MetricCard label="Policy rows" value={String(data.results.length)}
+            note={`${data.results.filter((r) => r.source === 'policy').length} set in the console`} />
+          <MetricCard label="Countries configured" value={`${data.config.filter((c) => c.configured).length} of ${data.config.length}`} />
+          <MetricCard label="Changes waiting" value={String(pending.length)} tone={pending.length > 0 ? 'caution' : 'neutral'}
+            note="Each needs a second person" />
+        </div>
+      ) : null}
       {notice && <div className="alert-success mb-5" role="status"><b>{notice}</b></div>}
       {data && !data.may_edit ? (
         <p className="help">This page is read only. Asking for a change needs the support.sla permission.</p>
@@ -154,7 +165,7 @@ export default function SlaPage() {
 
       {pending.length > 0 ? (
         <Panel title="Changes waiting for approval" flush>
-          <DataTable caption="Pending SLA changes" rows={pending} columns={pendingColumns} rowKey={(p) => p.id} density="comfortable" maxHeight={false} />
+          <DataTable caption="Pending SLA changes" rows={pending} columns={pendingColumns} rowKey={(p) => p.id} density="compact" maxHeight={false} />
         </Panel>
       ) : null}
 
@@ -169,13 +180,13 @@ export default function SlaPage() {
         ) : data.results.length === 0 ? (
           <Empty title="No policy rows" detail="The platform defaults apply." />
         ) : (
-          <DataTable caption="SLA policy" rows={data.results} columns={columns} rowKey={(r) => `${r.country}:${r.priority}`} density="comfortable" maxHeight={false} />
+          <DataTable caption="SLA policy" rows={data.results} columns={columns} rowKey={(r) => `${r.country}:${r.priority}`} density="compact" maxHeight={false} />
         )}
       </Panel>
 
       {data && !error ? (
         <Panel title="Country settings" flush>
-          <DataTable caption="Support settings by country" rows={data.config} columns={configColumns} rowKey={(c) => c.country} density="comfortable" maxHeight={false} />
+          <DataTable caption="Support settings by country" rows={data.config} columns={configColumns} rowKey={(c) => c.country} density="compact" maxHeight={false} />
         </Panel>
       ) : null}
 

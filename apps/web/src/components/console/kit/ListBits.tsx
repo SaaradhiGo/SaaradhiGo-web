@@ -86,3 +86,16 @@ export function RecordFailed({ label, message, onRetry, onClose }: {
     </aside>
   );
 }
+
+/** The page header the list pages use, for overview pages that are not lists. */
+export function PageHead({ title, summary, actions }: { title: string; summary?: ReactNode; actions?: ReactNode }) {
+  return (
+    <header className="ops-list__head mb-4">
+      <div>
+        <h1>{title}</h1>
+        {summary ? <p>{summary}</p> : null}
+      </div>
+      {actions ? <div className="ops-list__actions">{actions}</div> : null}
+    </header>
+  );
+}
