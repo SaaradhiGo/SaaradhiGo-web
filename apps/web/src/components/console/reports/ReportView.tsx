@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api, apiDownload } from '@/lib/api';
-import { stamp } from '@/lib/consoleTime';
+import { stamp, timeZoneFor } from '@/lib/consoleTime';
+import { currentScope, useAdminAccess } from '@/lib/adminScope';
 import { useDensity } from '@/lib/consolePrefs';
 import {
   type Catalogue, type ReportBody, type ReportColumn, type ReportFilters, type Row, CHART_DEFAULT,
@@ -14,8 +15,10 @@ import {
 } from '@/lib/reports';
 import { Download } from '@/components/console/icons';
 import {
-  type Column, Empty, ErrorState, MetricTile, PageHeader, Panel, Skeleton, TableToolbar, TileGrid,
+  type Column, Empty, ErrorState, Panel, Skeleton, TableToolbar,
 } from '@/components/console/ui';
+import { MetricCard } from '@/components/console/kit/MetricCard';
+import { PageHead } from '@/components/console/kit/ListBits';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { CohortTable, Funnel, StackedBars } from './charts';
 
@@ -152,12 +155,11 @@ function Totals({ body }: { body: ReportBody }) {
         return (
           <section key={cur ?? 'all'} aria-label={cur ? `Totals in ${cur}` : 'Totals'}>
             {cur ? <h2 className="rp-cur">{cur} <small>totals for the range, this currency only</small></h2> : null}
-            <TileGrid>
+            <div className="ops-metrics mb-4">
               {cols.map((c) => (
-                <MetricTile key={c.key} label={c.label} tone={c.type === 'money' ? 'money' : 'neutral'}
-                  value={formatCell(c, t[c.key], cur)} />
+                <MetricCard key={c.key} label={c.label} value={formatCell(c, t[c.key], cur)} />
               ))}
-            </TileGrid>
+            </div>
           </section>
         );
       })}
@@ -229,6 +231,7 @@ function ReportInner() {
   const [error, setError] = useState<{ status: number; message: string } | null>(null);
   const [metric, setMetric] = useState<string>('');
   const [density, setDensity] = useDensity();
+  const access = useAdminAccess();
 
   const card = catalogue?.areas.flatMap((a) => a.reports).find((r) => r.key === key);
   const base = filtersFromParams((k) => search.get(k), fallback, '');
@@ -300,13 +303,16 @@ function ReportInner() {
       render: (r) => formatCell(c, r[c.key], typeof r.currency === 'string' ? r.currency : null),
     })),
   ] : [];
+  // A report's clock is its market's: the chosen city's zone, else the first city in scope.
+  const cityZones = (catalogue?.cities ?? []).filter((c) => !filters.city || c.code === filters.city).map((c) => c.timezone);
+  const marketZone = cityZones[0] ?? timeZoneFor(currentScope(access)?.code);
   const title = card?.title ?? body?.report.title ?? 'Report';
   const empty = body !== null && body.rows.length === 0 && !body.cohorts?.length;
 
   if (error && (error.status === 403 || error.status === 404)) {
     return (
       <>
-        <PageHeader title="Report" />
+        <PageHead title="Report" />
         <Empty title={error.status === 403 ? 'You cannot open this report' : 'Nothing here'}
           detail={error.status === 403 ? 'Your role does not include it. The catalogue lists the reports you can open.' : error.message} />
         <p><Link href="/reports">Back to the catalogue</Link></p>
@@ -316,9 +322,9 @@ function ReportInner() {
 
   return (
     <>
-      <PageHeader title={title} subtitle={card?.description ?? body?.report.description}
+      <p className="ops-record-page__back"><Link href="/reports">All reports</Link></p>
+      <PageHead title={title} summary={card?.description ?? body?.report.description}
         actions={body ? <ExportButton path={exportPath(key, filters)} /> : undefined} />
-      <nav className="ops-subnav" aria-label="Reports"><Link href="/reports" className="ops-subnav__link">All reports</Link></nav>
       <Panel flush>
         <Filters filters={filters} catalogue={catalogue} groups={card?.groups ?? body?.report.groups ?? []}
           showVehicle={(card?.groups ?? body?.report.groups ?? []).includes('vehicle')} noPeriod={key === 'rider_retention'} onApply={go} />
@@ -326,7 +332,7 @@ function ReportInner() {
           summary={body ? `${body.rows.length || body.cohorts?.length || 0} row${(body.rows.length || body.cohorts?.length || 0) === 1 ? '' : 's'} · ${body.params.from} to ${body.params.to} · days are each city's own` : null}
           density={density} onDensity={setDensity} />
         <p className="rp-asof" role="status">
-          {body ? (body.as_of ? `Data as of ${stamp(body.as_of)} (last rebuild of these days).` : 'No rollup has been built for these days yet.') : ''}
+          {body ? (body.as_of ? `Data as of ${stamp(body.as_of, marketZone)} (last rebuild of these days).` : 'No rollup has been built for these days yet.') : ''}
         </p>
       </Panel>
 

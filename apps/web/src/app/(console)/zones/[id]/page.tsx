@@ -12,6 +12,7 @@ import {
   KIND_WORDS, TYPE_WORDS, canDraftZones, outerRings, requestWords, type History, type Revision, type Zone,
 } from '@/lib/zones';
 import { PageLink } from '@/components/console/PageLink';
+import { RecordPanel, type RecordTab } from '@/components/console/kit/RecordPanel';
 import { ZoneMap, type MapZone, type PointMark } from '@/components/console/zones/ZoneMap';
 import { ZoneEditor } from '@/components/console/zones/ZoneEditor';
 import { PointTester } from '@/components/console/zones/PointTester';
@@ -180,37 +181,119 @@ export default function ZoneDetailPage() {
     ) },
   ];
 
+  const mapNode = (
+    <ZoneMap caption={`${zone.name} on the map of zones`} zones={mapZones} point={point} onPoint={pick} fit={outerRings(zone.polygon_geojson)} />
+  );
+  const tabs: RecordTab[] = [
+    {
+      key: 'map', label: 'Map & shape',
+      content: drafting ? (
+        <ZoneEditor
+          zone={zone} zones={all} cities={[]}
+          onSent={(text) => { setNotice({ text, kind: text.startsWith('Sent for approval') ? 'pending' : 'done' }); setDrafting(false); void load(); }}
+          onCancel={() => setDrafting(false)}
+        />
+      ) : (
+        <>
+          {mapNode}
+          <Facts>
+            <Fact label="Type">{TYPE_WORDS[zone.zone_type] ?? zone.zone_type}</Fact>
+            <Fact label="Priority">{zone.priority}</Fact>
+            <Fact label="Area">{zone.area_km2 === null ? '—' : `${zone.area_km2.toLocaleString('en')} km²`}</Fact>
+            <Fact label="Inside zone">{zone.parent_code ?? 'None'}</Fact>
+            <Fact label="City node">{zone.geo_node ?? '—'}</Fact>
+            <Fact label="Currency">{zone.currency}</Fact>
+            <Fact label="Time zone">{zone.timezone_name}</Fact>
+            <Fact label="Distance unit">{zone.distance_unit === 'mi' ? 'Miles' : 'Kilometres'}</Fact>
+            <Fact label="Tax">{zone.tax_mode === 'additive' ? 'Added on top' : 'Included in the fare'}</Fact>
+            <Fact label="Per-trip fee">
+              {Number(zone.per_trip_fee) > 0 ? `${symbol}${zone.per_trip_fee} (${zone.per_trip_fee_label})` : 'None'}
+            </Fact>
+          </Facts>
+        </>
+      ),
+    },
+    {
+      key: 'point', label: 'Test a point',
+      content: (
+        <>
+          <PointTester lat={lat} lng={lng} onLat={(v) => typed(v, lng)} onLng={(v) => typed(lat, v)} />
+          {mapNode}
+        </>
+      ),
+    },
+    ...(pending.length > 0 ? [{
+      key: 'requests', label: `Waiting (${pending.length})`,
+      content: (
+        <DataTable
+          caption="Requests waiting for approval for this zone" maxHeight={false} density="compact"
+          rows={pending} rowKey={(r) => r.id}
+          columns={[
+            { key: 'id', label: 'Request', width: '7rem', render: (r) => <PageLink page="approvals" href={`/approvals?id=${r.id}`}>APR-{r.id}</PageLink> },
+            { key: 'what', label: 'What', render: (r) => requestWords(r) },
+            { key: 'who', label: 'Asked by', hideBelow: 1100, render: (r) => r.maker?.label || r.maker?.email || '—' },
+            { key: 'why', label: 'Reason', hideBelow: 1100, render: (r) => r.request_reason || '—' },
+            { key: 'when', label: 'When', width: '9rem', render: (r) => stamp(r.requested_at, zone.timezone_name) },
+          ] as Column<(typeof pending)[number]>[]}
+        />
+      ),
+    }] : []),
+    {
+      key: 'history', label: 'History',
+      content: history === null ? (
+        <Empty title="History unavailable" detail="The revisions could not be loaded." />
+      ) : history.revisions.length === 0 ? (
+        <Empty title="No revisions yet" detail="Versioning starts with the next approved change." />
+      ) : (
+        <>
+          {compare ? mapNode : null}
+          <DataTable
+            caption={`Revisions of ${zone.name}`} rows={history.revisions} columns={revisionColumns}
+            rowKey={(r) => r.id} density="compact" maxHeight={false} defaultSort={{ key: 'v', dir: 'desc' }}
+          />
+        </>
+      ),
+    },
+    {
+      key: 'fares', label: 'Fare cards',
+      content: cards === null ? (
+        <p className="help m-0">The fare cards could not be loaded.</p>
+      ) : cards.length === 0 ? (
+        <p className="help m-0">This zone has no fare card of its own, so its pickups use its parent&apos;s. Fares are under <Link href="/pricing/fare-cards" className="ops-linkbtn">Pricing</Link>.</p>
+      ) : (
+        <div className="ops-table-wrap">
+          <table className="ops-table ops-table--compact ops-table--auto">
+            <caption className="sr-only">Active fare cards of {zone.name}</caption>
+            <thead><tr><th scope="col">Class</th><th scope="col" className="num">Base</th><th scope="col" className="num">
+              {/* The rate is stored and charged per km in every market; "Per mi" put a
+                  per-km number under a per-mile heading (AUDIT 27.78, Low 6). */}
+              Per km</th><th scope="col" className="num">Per min</th><th scope="col" className="num">Minimum</th></tr></thead>
+            <tbody>
+              {cards.map((c) => (
+                <tr key={c.id}>
+                  <th scope="row">{c.vehicle_type_name} <span className="muted">v{c.version}</span></th>
+                  <td className="num">{symbol}{c.base_fare}</td><td className="num">{symbol}{c.per_km_fare}</td>
+                  <td className="num">{symbol}{c.per_min_fare}</td><td className="num">{symbol}{c.min_fare}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <>
-      <PageHeader
-        title={zone.name}
-        subtitle={<>{zone.code} · {zone.city}, {zone.state_code}, {zone.country} · version {zone.version}</>}
-        actions={(
-          <>
-            <Link href="/zones" className="sg-btn sg-btn--ghost sg-btn--sm">All zones</Link>
-            {may ? (
-              <>
-                <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setDrafting((d) => !d)} aria-expanded={drafting}>
-                  {drafting ? 'Close the draft' : 'Draft a change…'}
-                </button>
-                <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm"
-                  onClick={() => { setActing(zone.is_active ? 'deactivate' : 'reactivate'); setWhy(''); setActError(null); }}>
-                  {zone.is_active ? 'Deactivate…' : 'Reactivate…'}
-                </button>
-              </>
-            ) : null}
-          </>
-        )}
-      />
-
+      <p className="ops-record-page__back"><Link href="/zones">All zones</Link></p>
       {notice ? (
         <div className={notice.kind === 'pending' ? 'ops-confirm mb-4' : 'alert-success mb-4'} role="status">
           <b>{notice.text}</b>
         </div>
       ) : null}
 
-      <div className="grid gap-4">
-        {acting ? (
+      {acting ? (
+        <div className="mb-4">
           <Panel title={typeof acting === 'string' ? (acting === 'deactivate' ? 'Deactivate this zone' : 'Reactivate this zone') : `Restore version ${acting.restore}`}>
             <div className="ops-form">
               <p className="help m-0">
@@ -231,96 +314,29 @@ export default function ZoneDetailPage() {
               </div>
             </div>
           </Panel>
-        ) : null}
+        </div>
+      ) : null}
 
-        {drafting ? (
-          <Panel title="Draft a change">
-            <ZoneEditor
-              zone={zone} zones={all} cities={[]}
-              onSent={(text) => { setNotice({ text, kind: text.startsWith('Sent for approval') ? 'pending' : 'done' }); setDrafting(false); void load(); }}
-              onCancel={() => setDrafting(false)}
-            />
-          </Panel>
-        ) : (
-          <Panel title="Shape and settings"
-            action={zone.is_active ? <Pill tone="good">Active</Pill> : <Pill tone="neutral">Inactive</Pill>}>
-            <ZoneMap caption={`${zone.name} on the map of zones`} zones={mapZones} point={point} onPoint={pick} fit={outerRings(zone.polygon_geojson)} />
-            <Facts>
-              <Fact label="Type">{TYPE_WORDS[zone.zone_type] ?? zone.zone_type}</Fact>
-              <Fact label="Priority">{zone.priority}</Fact>
-              <Fact label="Area">{zone.area_km2 === null ? '—' : `${zone.area_km2.toLocaleString('en')} km²`}</Fact>
-              <Fact label="Inside zone">{zone.parent_code ?? 'None'}</Fact>
-              <Fact label="City node">{zone.geo_node ?? '—'}</Fact>
-              <Fact label="Currency">{zone.currency}</Fact>
-              <Fact label="Time zone">{zone.timezone_name}</Fact>
-              <Fact label="Distance unit">{zone.distance_unit === 'mi' ? 'Miles' : 'Kilometres'}</Fact>
-              <Fact label="Tax">{zone.tax_mode === 'additive' ? 'Added on top' : 'Included in the fare'}</Fact>
-              <Fact label="Per-trip fee">
-                {Number(zone.per_trip_fee) > 0 ? `${symbol}${zone.per_trip_fee} (${zone.per_trip_fee_label})` : 'None'}
-              </Fact>
-            </Facts>
-          </Panel>
-        )}
-
-        {pending.length > 0 ? (
-          <Panel title={`Waiting for a checker (${pending.length})`} flush>
-            <DataTable
-              caption="Requests waiting for approval for this zone" maxHeight={false} density="compact"
-              rows={pending} rowKey={(r) => r.id}
-              columns={[
-                { key: 'id', label: 'Request', width: '7rem', render: (r) => <PageLink page="approvals" href={`/approvals?id=${r.id}`}>APR-{r.id}</PageLink> },
-                { key: 'what', label: 'What', render: (r) => requestWords(r) },
-                { key: 'who', label: 'Asked by', hideBelow: 1100, render: (r) => r.maker?.label || r.maker?.email || '—' },
-                { key: 'why', label: 'Reason', hideBelow: 1100, render: (r) => r.request_reason || '—' },
-                { key: 'when', label: 'When', width: '9rem', render: (r) => stamp(r.requested_at, zone?.timezone_name) },
-              ] as Column<(typeof pending)[number]>[]}
-            />
-          </Panel>
-        ) : null}
-
-        <Panel title="Try a point">
-          <PointTester lat={lat} lng={lng} onLat={(v) => typed(v, lng)} onLng={(v) => typed(lat, v)} />
-        </Panel>
-
-        <Panel flush title="History">
-          {history === null ? (
-            <Empty title="History unavailable" detail="The revisions could not be loaded." />
-          ) : history.revisions.length === 0 ? (
-            <Empty title="No revisions yet" detail="Versioning starts with the next approved change." />
-          ) : (
-            <DataTable
-              caption={`Revisions of ${zone.name}`} rows={history.revisions} columns={revisionColumns}
-              rowKey={(r) => r.id} density="compact" maxHeight={false} defaultSort={{ key: 'v', dir: 'desc' }}
-            />
-          )}
-        </Panel>
-
-        <Panel title="Fare cards in force">
-          {cards === null ? (
-            <p className="help m-0">The fare cards could not be loaded.</p>
-          ) : cards.length === 0 ? (
-            <p className="help m-0">This zone has no fare card of its own, so its pickups use its parent&apos;s. Fares are under <Link href="/pricing/fare-cards" className="ops-linkbtn">Pricing</Link>.</p>
-          ) : (
-            <div className="ops-table-wrap">
-              <table className="ops-table ops-table--compact ops-table--auto">
-                <caption className="sr-only">Active fare cards of {zone.name}</caption>
-                <thead><tr><th scope="col">Class</th><th scope="col" className="num">Base</th><th scope="col" className="num">
-                  {/* The rate is stored and charged per km in every market; "Per mi" put a
-                      per-km number under a per-mile heading (AUDIT 27.78, Low 6). */}
-                  Per km</th><th scope="col" className="num">Per min</th><th scope="col" className="num">Minimum</th></tr></thead>
-                <tbody>
-                  {cards.map((c) => (
-                    <tr key={c.id}>
-                      <th scope="row">{c.vehicle_type_name} <span className="muted">v{c.version}</span></th>
-                      <td className="num">{symbol}{c.base_fare}</td><td className="num">{symbol}{c.per_km_fare}</td>
-                      <td className="num">{symbol}{c.per_min_fare}</td><td className="num">{symbol}{c.min_fare}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Panel>
+      <div className="ops-record-page ops-record-page--wide">
+        <RecordPanel
+          label="Zone"
+          title={zone.name}
+          refId={zone.code}
+          subtitle={<>{zone.city}, {zone.state_code}, {zone.country} · version {zone.version}</>}
+          status={zone.is_active ? <Pill tone="good">Active</Pill> : <Pill tone="neutral">Inactive</Pill>}
+          actions={may ? (
+            <>
+              <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setDrafting((d) => !d)} aria-expanded={drafting}>
+                {drafting ? 'Close the draft' : 'Draft a change…'}
+              </button>
+              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm"
+                onClick={() => { setActing(zone.is_active ? 'deactivate' : 'reactivate'); setWhy(''); setActError(null); }}>
+                {zone.is_active ? 'Deactivate…' : 'Reactivate…'}
+              </button>
+            </>
+          ) : undefined}
+          tabs={tabs}
+        />
       </div>
     </>
   );

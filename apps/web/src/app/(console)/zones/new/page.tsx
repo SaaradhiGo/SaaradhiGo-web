@@ -6,7 +6,8 @@ import { api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
 import { canDraftZones, type City, type Zone } from '@/lib/zones';
 import { ZoneEditor } from '@/components/console/zones/ZoneEditor';
-import { Empty, PageHeader, Panel, Skeleton } from '@/components/console/ui';
+import { RecordPanel } from '@/components/console/kit/RecordPanel';
+import { Empty, Skeleton } from '@/components/console/ui';
 
 /**
  * A new zone: pick a city, draw the shape, read what it would do, send it for approval.
@@ -42,30 +43,34 @@ export default function NewZonePage() {
     return () => { live = false; };
   }, []);
 
+  const note = 'Draw the shape, read what it would change, and send it for approval. Nothing exists until a different admin approves.';
+  const body = !may ? (
+    <Empty title="You cannot draft zones" detail="Drawing a zone needs the zone.write capability in a city." />
+  ) : zones === null ? (
+    <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
+      <span className="sr-only">Loading</span>
+      <Skeleton kind="row" count={4} />
+    </div>
+  ) : cities.length === 0 ? (
+    <Empty title="No city to draw in" detail="A zone belongs to a city in your scope, and none is available to you." />
+  ) : (
+    <ZoneEditor zone={null} zones={zones} cities={cities} onSent={(m) => setSent(m)} />
+  );
+
   return (
     <>
-      <PageHeader
-        title="New zone"
-        subtitle="Draw the shape, read what it would change, and send it for approval. Nothing exists until a different admin approves."
-        actions={<Link href="/zones" className="sg-btn sg-btn--ghost sg-btn--sm">All zones</Link>}
-      />
+      <p className="ops-record-page__back"><Link href="/zones">All zones</Link></p>
       {sent ? (
         <div className="ops-confirm mb-4" role="status"><b>{sent}</b> <Link href="/zones" className="ops-linkbtn">Back to zones</Link></div>
       ) : null}
-      {!may ? (
-        <Empty title="You cannot draft zones" detail="Drawing a zone needs the zone.write capability in a city." />
-      ) : zones === null ? (
-        <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
-          <span className="sr-only">Loading</span>
-          <Skeleton kind="row" count={4} />
-        </div>
-      ) : cities.length === 0 ? (
-        <Empty title="No city to draw in" detail="A zone belongs to a city in your scope, and none is available to you." />
-      ) : (
-        <Panel title="Draft">
-          <ZoneEditor zone={null} zones={zones} cities={cities} onSent={(m) => setSent(m)} />
-        </Panel>
-      )}
+      <div className="ops-record-page ops-record-page--wide">
+        <RecordPanel
+          label="New zone"
+          title="New zone"
+          subtitle={note}
+          tabs={[{ key: 'draft', label: 'Draft', content: body }]}
+        />
+      </div>
     </>
   );
 }

@@ -113,6 +113,7 @@ export default function ZonesPage() {
     { key: 'priority', label: 'Priority', num: true, render: (z) => z.priority },
     { key: 'area', label: 'Area', num: true, render: (z) => (z.area_km2 === null ? '—' : `${z.area_km2.toLocaleString('en')} km²`) },
     { key: 'version', label: 'Version', num: true, render: (z) => `v${z.version}` },
+    { key: 'changed', label: 'Last changed', render: (z) => stamp(z.updated_at, z.timezone_name) },
     {
       key: 'status', label: 'Status',
       render: (z) => (
