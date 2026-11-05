@@ -291,3 +291,26 @@ export function documentViewPath(
   const base = `/driver/admin/${encodeURIComponent(String(driverId))}/documents/${encodeURIComponent(doc.key)}/view/`;
   return doc.vehicle_id ? `${base}?vehicle_id=${encodeURIComponent(String(doc.vehicle_id))}` : base;
 }
+
+/**
+ * Warnings to draw beside an "Approved" chip. Approval is a decision; the
+ * driver can still be missing paperwork or a vehicle, and the chip alone
+ * would say all is well. Uses only fields the API returns; unknown stays quiet.
+ */
+export function approvedCaveats(d: {
+  kyc_state?: string; documents_expired?: boolean;
+  documents?: Array<{ review_state: string }>;
+  vehicles?: Array<{ is_active_vehicle: boolean }>;
+  vehicle_number?: string | null;
+  approval_blockers?: unknown[];
+}): string[] {
+  if (d.kyc_state !== 'approved') return [];
+  const out: string[] = [];
+  const docsOpen = d.documents_expired
+    || (d.documents ?? []).some((x) => x.review_state !== 'approved')
+    || (d.approval_blockers ?? []).length > 0;
+  if (docsOpen) out.push('Documents outstanding');
+  const noVehicle = d.vehicles ? !d.vehicles.some((v) => v.is_active_vehicle) : d.vehicle_number === null;
+  if (noVehicle) out.push('No vehicle');
+  return out;
+}

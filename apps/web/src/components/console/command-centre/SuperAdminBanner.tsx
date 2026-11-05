@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 import type { AdminAccess } from '@/lib/adminScope';
 
@@ -40,4 +41,16 @@ export function SuperAdminBanner({ access }: { access: AdminAccess | null | unde
       </button>
     </div>
   );
+}
+
+/**
+ * The same fact, quietly, on every page but the Command Centre: one muted
+ * chip in the top bar. The full banner is shown once, on the dashboard.
+ */
+export function SuperAdminChip({ access }: { access: AdminAccess | null | undefined }) {
+  const pathname = usePathname();
+  const shortfall = access?.super_admin_shortfall ?? 0;
+  if (shortfall <= 0 || pathname === '/dashboard') return null;
+  const text = `${shortfall} more Super Admin${shortfall === 1 ? '' : 's'} needed`;
+  return <span className="ops-quiet-chip" role="status" title="The platform should have two named Super Admins.">{text}</span>;
 }

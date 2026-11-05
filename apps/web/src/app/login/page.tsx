@@ -19,6 +19,7 @@ import { EnvBadge } from '@/components/console/EnvBadge';
 import {
   Alert, ArrowRight, Clock, KeyRound, Lock, Moon, Sun,
 } from '@/components/console/icons';
+import { onQaHost } from '@/lib/qaHost';
 import '@/styles/console.css';
 
 /**
@@ -118,7 +119,7 @@ function LoginInner() {
   // `/%09/evil.example` variant sent a freshly signed-in operator off-site.
   const next = safeReturnTo(search.get('next'), '/start');
   const expired = search.get('reason') === 'expired';
-  const previewParam = PREVIEW_BUILT_IN ? search.get('preview') : null;
+  const previewParam = PREVIEW_BUILT_IN && onQaHost() ? search.get('preview') : null;
   const preview = previewParam as Step | null;
   const previewExpired = previewParam === 'expired';
 
@@ -735,7 +736,7 @@ function LoginInner() {
         </footer>
       </main>
 
-      {LoginPreview ? <LoginPreview current={previewExpired ? 'expired' : step} /> : null}
+      {LoginPreview && onQaHost() ? <LoginPreview current={previewExpired ? 'expired' : step} /> : null}
     </div>
   );
 }

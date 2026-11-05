@@ -10,7 +10,7 @@ import {
   FALLBACK_SUSPEND_REASONS, KYC_LABEL, KYC_STATE_OPTIONS, RATING_BANDS, REVIEW_LABEL,
   type DriverActionKey, type DriverActions, type DriverFilters, activeDriverFilterCount, canBulkDrivers,
   driverFiltersFromSearch, driverFiltersToQuery, driverName, driversApiPath, queueApiPath,
-  ratingBandValue, visibleDriverActions, waitingLabel,
+  ratingBandValue, visibleDriverActions, waitingLabel, approvedCaveats,
 } from '@/lib/drivers';
 import {
   BULK_CHECKER_ABOVE, type ApprovalBody, cityTime, interpretWrite, newIdempotencyKey, words,
@@ -137,12 +137,13 @@ function NowChip({ d }: { d: { online?: boolean; status?: string; suspended?: bo
   return <StatusChip tone="neutral">{d.status ? words(d.status) : 'Offline'}</StatusChip>;
 }
 
-function KycChips({ d }: { d: { kyc_state?: string; documents_expired?: boolean } }) {
+function KycChips({ d }: { d: Parameters<typeof approvedCaveats>[0] }) {
   const [label, tone] = KYC_LABEL[d.kyc_state ?? ''] ?? [words(d.kyc_state), 'neutral'];
   return (
     <span className="ops-chips">
       <StatusChip tone={chipTone(tone)}>{label}</StatusChip>
       {d.documents_expired ? <StatusChip tone="caution">Expired</StatusChip> : null}
+      {approvedCaveats({ ...d, documents_expired: false }).map((c) => <StatusChip key={c} tone="caution">{c}</StatusChip>)}
     </span>
   );
 }
@@ -457,6 +458,7 @@ function DriverRecord({ row, queue, onClose, onChanged }: {
             <NowChip d={{ status: data.status, suspended }} />
             <StatusChip tone={tone(kycTone)}>{kycLabel}</StatusChip>
             {data.documents_expired ? <StatusChip tone="caution">Document expired</StatusChip> : null}
+            {approvedCaveats({ ...data, documents_expired: false }).map((c) => <StatusChip key={c} tone="caution">{c}</StatusChip>)}
             {waiting.length ? <StatusChip tone="info">Waiting for a second approver</StatusChip> : null}
           </>
         )}

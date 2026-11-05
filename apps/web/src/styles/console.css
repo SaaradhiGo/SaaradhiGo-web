@@ -2235,3 +2235,22 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 
 /* The self-approval sentence, on its own line above the decision buttons. */
 .ops-record__note { flex-basis: 100%; margin: 0 0 4px; }
+
+/* Quiet one-line notice for the top bar: muted, no amber block. */
+.ops-quiet-chip { font: 500 11.5px/1 var(--font-sans); color: var(--ops-ink-4); padding: 5px 9px; border: 1px solid var(--line); border-radius: 999px; white-space: nowrap; }
+@media (max-width: 900px) { .ops-quiet-chip { display: none; } }
+
+/* "Go to" commands: title and hint sit in two fixed columns, same baseline. */
+.ops-search-group--go .ops-search-opt { grid-template-columns: minmax(0, 1fr) 9.5rem; align-items: baseline; }
+.ops-search-group--go .ops-search-opt__meta { white-space: normal; text-align: left; }
+
+/* Command Centre hierarchy: a few large "needs action" tiles, then a denser row. */
+.ops-tiles--lead { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.ops-tiles--lead .ops-tile { min-height: 116px; padding: 18px 20px; }
+.ops-tiles--lead .ops-tile__value { font-size: 40px; }
+.ops-tiles--lead .ops-tile__label { font-size: 10.5px; }
+.ops-tiles--dense { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.ops-tiles--dense .ops-tile { min-height: 64px; padding: 9px 12px; }
+.ops-tiles--dense .ops-tile__value { font-size: 18px; }
+
+.ops-metrics--dense .ops-metric__value:not(.ops-metric__value--empty) { font-size: 20px; }
