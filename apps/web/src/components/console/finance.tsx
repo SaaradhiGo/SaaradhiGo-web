@@ -24,6 +24,7 @@ import { Download } from '@/components/console/icons';
 const TABS = [
   { href: '/finance', label: 'Overview' },
   { href: '/finance/payments', label: 'Payments' },
+  { href: '/finance/refunds', label: 'Refunds' },
   { href: '/finance/settlements', label: 'Settlements' },
   { href: '/finance/payouts', label: 'Payouts' },
   { href: '/finance/reconciliation', label: 'Reconciliation' },

@@ -42,7 +42,7 @@ export const PAGE_NEEDS: Record<Page, readonly string[]> = {
   supportInbox: ['support.read'],
   // The payout queue (the old Withdrawals page now lives at /finance/payouts).
   withdrawals: ['finance.read'],
-  // The Finance pages: overview, payments, settlements, payouts, reconciliation
+  // The Finance pages: overview, payments, refunds, settlements, payouts, reconciliation
   // and a driver's ledger. One capability opens them all.
   finance: ['finance.read'],
   safety: ['safety.read', 'safety.respond'],

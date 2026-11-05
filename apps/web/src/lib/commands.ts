@@ -53,6 +53,7 @@ const PAGES: PageSpec[] = [
   { page: 'withdrawals', label: 'Payouts', href: '/finance/payouts', words: ['payouts', 'withdrawals'] },
   { page: 'withdrawals', label: 'Failed payouts', href: '/finance/payouts?status=failed', words: ['failed'] },
   { page: 'finance', label: 'Money overview', href: '/finance', words: ['finance', 'money'] },
+  { page: 'finance', label: 'Refunds', href: '/finance/refunds', words: ['refunds', 'refund'] },
   { page: 'pricing', label: 'Pricing and commission', href: '/pricing', words: ['pricing', 'fares', 'commission'] },
   { page: 'promotions', label: 'Promotions', href: '/promotions', words: ['promotions', 'promo', 'codes'] },
   { page: 'notifications', label: 'Messages', href: '/notifications', words: ['messages', 'notifications', 'campaigns'] },
