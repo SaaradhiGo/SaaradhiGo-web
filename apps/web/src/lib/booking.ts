@@ -35,7 +35,12 @@ export type Zone = {
   timezone?: string;
 };
 
-export type VehicleCategory = { type: string; description: string };
+/** `min_fare` is optional: the public endpoint may not carry a price yet. */
+export type VehicleCategory = {
+  type: string;
+  description: string;
+  min_fare?: number | string | null;
+};
 
 export type Serviceability = {
   serviceable: boolean;

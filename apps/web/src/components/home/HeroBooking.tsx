@@ -6,7 +6,8 @@ import { Button } from '@/components/sg/Button';
 import { ArrowRight } from '@/components/sg/icons';
 import { LatLng, Place, placeToPoint, searchPlaces } from '@/lib/booking';
 import { fetchServiceAreas, primaryArea } from '@/lib/serviceAreas';
-import { useT } from '@/i18n/LocaleProvider';
+import { useLocale } from '@/i18n/LocaleProvider';
+import { HOME_COPY } from '@/i18n/home';
 
 /**
  * Pickup, destination, and the one action the homepage is for.
@@ -65,7 +66,7 @@ export function HeroBooking() {
   // Where to bias the place search. Starts as the first live service area
   // and is replaced by the rider's own position the moment they share it.
   const [searchNear, setSearchNear] = useState<LatLng | null>(null);
-  const t = useT();
+  const { t, language } = useLocale();
 
   useEffect(() => {
     let cancelled = false;
@@ -290,7 +291,7 @@ export function HeroBooking() {
 
       <div className="mt-sg-2">
         <Button variant="primary" size="lg" block onClick={submit} disabled={busy}>
-          {t.hero.cta}
+          {HOME_COPY[language].cta}
           <ArrowRight />
         </Button>
       </div>

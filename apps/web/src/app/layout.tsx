@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Cormorant_Garamond, Noto_Serif_Devanagari, Noto_Serif_Telugu } from 'next/font/google';
 import { SITE_URL } from '@/lib/support';
 import './globals.css';
 
@@ -7,6 +8,15 @@ import './globals.css';
 // `(public)/layout.tsx` for the marketing pages, and the console pages for
 // themselves. Leaving 'Ops Console' here put an internal tool's name in the
 // browser tab and in search results for every public page.
+// Display serif for homepage headlines; Telugu and Hindi get their own
+// serifs because Cormorant has no coverage for them (see `--font-display`).
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'], weight: ['400', '500', '600'], style: ['normal', 'italic'],
+  display: 'swap', variable: '--f-cormorant',
+});
+const notoTelugu = Noto_Serif_Telugu({ subsets: ['telugu'], display: 'swap', variable: '--f-noto-te' });
+const notoDeva = Noto_Serif_Devanagari({ subsets: ['devanagari'], display: 'swap', variable: '--f-noto-hi' });
+
 export const metadata: Metadata = {
   // `metadataBase` is what makes every relative canonical, Open Graph and
   // Twitter URL below resolve to an absolute one. Without it Next emits
@@ -61,7 +71,12 @@ export const viewport: Viewport = {
 // where only one is.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="dark" suppressHydrationWarning>
+    <html
+      lang="en"
+      data-theme="dark"
+      className={`${cormorant.variable} ${notoTelugu.variable} ${notoDeva.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         {/* TWO FAMILIES, NOT THREE. Manrope sets every heading, number,
             label and control; Cinzel is the brand lockup and the map labels

@@ -24,7 +24,7 @@ export function FareLock({ children }: { children?: ReactNode }) {
   return (
     <div className="sg-fare__lock">
       <Lock />
-      {children ?? 'Fare locked. No surge after you book.'}
+      {children ?? 'Fare locked. No surprises after you book.'}
     </div>
   );
 }
