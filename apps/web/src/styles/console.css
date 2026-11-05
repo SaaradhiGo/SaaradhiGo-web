@@ -2310,3 +2310,5 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .lo-listview { position: absolute; inset: 0; z-index: 12; overflow: auto; background: var(--ops-bg-field); }
 .lo-listview__head { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-bottom: 1px solid var(--line); }
 @media (max-width: 900px) { .lo-ws { height: auto; } .lo-stage { flex-direction: column; } .lo-canvas { min-height: 460px; } .lo-queue { width: auto; max-height: 260px; } .lo-strip { flex-wrap: wrap; } }
+/* In the workspace the caption is for screen readers only; visible, it ran under the map logo. */
+.lo-map--fill .lo-map__note { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
