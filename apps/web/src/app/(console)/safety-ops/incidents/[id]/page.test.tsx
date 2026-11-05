@@ -45,6 +45,14 @@ describe('incident record page', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'History' }));
     expect(screen.getByText(/called the driver/)).toBeTruthy();
   });
+
+  it('does not call an open case with no live SOS closed', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, status: 200, json: async () => ({
+      status: 'success', data: { ...DETAIL, source: 'ticket', sos: { ...DETAIL.sos, active: 0, unacknowledged: 0 } } }) })));
+    render(<Page />);
+    const head = await screen.findByRole('region', { name: 'Case' });
+    expect(head.textContent).not.toMatch(/Closed/);
+  });
 });
 
 beforeEach(() => {

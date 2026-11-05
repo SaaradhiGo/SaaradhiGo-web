@@ -393,8 +393,9 @@ function CaseHead({ data, now, others }: { data: IncidentDetail; now: number; ot
       </div>
       {others.length ? <span className="ops-case-head__title"><span>{others.join(', ')} {others.length === 1 ? 'is' : 'are'} also here</span></span> : null}
       <div className="ops-case-head__clock">
-        <b className="sg-num">{live ? clockText : 'Closed'}</b>
-        <span>{live ? 'since the first SOS' : (data.outcome ?? '').replace(/_/g, ' ')}</span>
+        {/* An open case with no live SOS (e.g. escalated from a ticket) is still open. */}
+        <b className="sg-num">{live ? clockText : data.status === 'closed' ? 'Closed' : STATUS_LABEL[data.status]}</b>
+        <span>{live ? 'since the first SOS' : data.status === 'closed' ? (data.outcome ?? '').replace(/_/g, ' ') : `opened ${sosClock((now - new Date(data.opened_at).getTime()) / 1000)} ago`}</span>
       </div>
     </section>
   );
