@@ -51,6 +51,16 @@ describe('the tabs', () => {
     expect(screen.getByRole('link', { name: 'Markets' }).getAttribute('aria-current')).toBeNull();
   });
 
+  it('draws Staff and roles for admin.manage only', () => {
+    current = access(['admin.manage']);
+    const { unmount } = render(<PlatformNav />);
+    expect(screen.getAllByRole('link').map((x) => x.getAttribute('href'))).toEqual(['/settings/staff']);
+    unmount();
+    current = access(['platform.read', 'audit.read']);
+    render(<PlatformNav />);
+    expect(screen.queryByRole('link', { name: 'Staff and roles' })).toBeNull();
+  });
+
   it('draws nothing for an operator with none of the capabilities', () => {
     current = access(['trip.read']);
     const { container } = render(<PlatformNav />);

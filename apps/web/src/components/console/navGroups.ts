@@ -86,6 +86,7 @@ export const NAV_GROUPS: NavGroup[] = [
       // The fraud review queue and the detection rules (module 13): `fraud.read`.
       { href: '/fraud', label: 'Fraud and risk', Icon: Flag, need: PAGE_NEEDS.fraud },
       { href: '/settings/audit', label: 'Audit log', Icon: Shield, need: ['audit.read'] },
+      { href: '/settings/staff', label: 'Staff and roles', Icon: Users, need: PAGE_NEEDS.staff },
       // Reports & Analytics (module 14): `report.read`.
       { href: '/reports', label: 'Reports', Icon: BarChart, need: PAGE_NEEDS.reports },
       // No `need`: the operator's OWN authenticator and recovery codes.
