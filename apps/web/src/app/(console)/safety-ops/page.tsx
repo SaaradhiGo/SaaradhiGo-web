@@ -157,8 +157,10 @@ function SafetyInner() {
       render: (r) => <Pill tone={r.status === 'closed' ? 'good' : r.status === 'open' ? 'bad' : 'wait'}>{STATUS_LABEL[r.status]}</Pill>,
     },
     {
-      key: 'opened', label: 'Opened', width: '9rem', num: true,
-      render: (r) => stamp(r.opened_at, r.anchor.timezone ?? timeZoneFor(r.anchor.node)),
+      // Closed cases come newest-closed first, so that tab shows the closing time.
+      key: 'opened', label: filters.tab === 'closed' ? 'Closed' : 'Opened', width: '9rem', num: true,
+      render: (r) => stamp(filters.tab === 'closed' ? (r.closed_at ?? r.opened_at) : r.opened_at,
+        r.anchor.timezone ?? timeZoneFor(r.anchor.node)),
     },
     ...(filters.tab !== 'closed' ? [{
       key: 'act', label: mayRespond ? 'Respond' : 'Open', width: mayRespond ? '24rem' : '7rem',

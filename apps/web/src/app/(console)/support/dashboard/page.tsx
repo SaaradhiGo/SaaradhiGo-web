@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
-import { stamp } from '@/lib/consoleTime';
+import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   type Dashboard, type DashboardStats, PRIORITY_LABEL, dashboardPath, dashboardRangeError,
   formatMedian, formatPct, priorityTone,
@@ -55,6 +55,8 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   const cities = (access?.scopes ?? []).filter((s) => s.kind === 'city');
+  // The viewer's market clock: the chosen city, else their first scope; India by default.
+  const marketTz = timeZoneFor(scope || access?.scopes?.[0]?.code) ?? 'Asia/Kolkata';
   const rangeError = dashboardRangeError(dateFrom, dateTo);
 
   const load = useCallback(async () => {
@@ -132,7 +134,7 @@ export default function DashboardPage() {
       ) : (
         <>
           <p className="help" role="status">
-            {data.date_from} to {data.date_to} · as of {stamp(data.as_of)}
+            {data.date_from} to {data.date_to} · as of {stamp(data.as_of, marketTz)}
             {data.truncated ? ' · very large range: the oldest tickets were left out' : ''}
           </p>
           <div className="ops-metrics mb-4">
