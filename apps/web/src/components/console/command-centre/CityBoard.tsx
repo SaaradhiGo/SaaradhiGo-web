@@ -7,7 +7,6 @@ import {
 import type { AdminAccess } from '@/lib/adminScope';
 import { boardLinks } from '@/lib/boardLinks';
 import { clock, zoneAbbreviation } from '@/lib/consoleTime';
-import { canOpen } from '@/lib/consoleLinks';
 import { MetricTile, Queue, TileGrid } from '@/components/console/ui';
 
 /**
@@ -64,14 +63,11 @@ export function CityBoard({
   row,
   access,
   single,
-  approvalsWaiting,
 }: {
   row: CityRow;
   access: AdminAccess | null;
   /** True when this is the only board on the page: the heading is lighter. */
   single: boolean;
-  /** Requests waiting for this operator to check (not per city); undefined hides the tile. */
-  approvalsWaiting?: number | null;
 }) {
   const country = row.country;
   const tz = row.timezone;
@@ -114,31 +110,7 @@ export function CityBoard({
         </p>
       </header>
 
-      <TileGrid variant="lead">
-        {q.sos_open && links.safety ? (
-          <MetricTile label="Open SOS" tone={sosOpen > 0 ? 'urgent' : 'neutral'} value={formatCount(sosOpen, country)}
-            note={sosOpen > 0 ? `Oldest ${formatAge(q.sos_oldest_open_minutes)} unacknowledged` : 'None open'}
-            href={`/safety-ops?scope=${row.code}`} />
-        ) : null}
-        {approvalsWaiting !== undefined && canOpen(access, 'approvals') ? (
-          <MetricTile label="Approvals waiting for you" tone={approvalsWaiting ? 'wait' : 'neutral'}
-            value={approvalsWaiting === null ? null : formatCount(approvalsWaiting, country)}
-            note="All places" href="/approvals" />
-        ) : null}
-        {links.withdrawals && q.withdrawals_pending ? (
-          <MetricTile label="Payouts waiting" tone={(q.withdrawals_pending.now ?? 0) > 0 ? 'wait' : 'neutral'}
-            value={formatCount(q.withdrawals_pending.now, country)}
-            note={(q.withdrawals_pending.now ?? 0) > 0 ? `Oldest ${Math.round(q.withdrawals_oldest_pending_hours ?? 0)} h` : 'Nobody waiting'}
-            href={`/finance/payouts?status=pending&scope=${row.code}`} />
-        ) : null}
-        {links.drivers ? (
-          <MetricTile label="KYC queue" tone={(q.kyc_awaiting.now ?? 0) > 0 ? 'wait' : 'neutral'}
-            value={formatCount(q.kyc_awaiting.now, country)} note="Drivers with documents to check"
-            href={`/kyc?scope=${row.code}`} />
-        ) : null}
-      </TileGrid>
-
-      <TileGrid variant="dense">
+      <TileGrid>
         {countTile('Requested', row.trips.requested, country, w, {
           href: to(links.trips, `/trips?scope=${row.code}`), note: noRequests ? emptyNote : undefined,
         })}

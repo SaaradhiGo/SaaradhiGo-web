@@ -140,22 +140,22 @@ const NAV = {
 
 /** Every destination on the city board (a tile or a queue), without the city query. */
 const BOARD = {
-  super_admin: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online', '/finance/payouts', '/finance/payouts?status=pending',
-    '/safety-ops', '/support', '/drivers?approved=false', '/kyc'],
+  super_admin: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online', '/finance/payouts',
+    '/safety-ops', '/support', '/drivers?approved=false'],
   city_ops_manager: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online',
-    '/safety-ops', '/support', '/drivers?approved=false', '/kyc'],
+    '/safety-ops', '/support', '/drivers?approved=false'],
   support_agent: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online',
-    '/support', '/drivers?approved=false', '/kyc'],
+    '/support', '/drivers?approved=false'],
   support_lead: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online',
-    '/support', '/drivers?approved=false', '/kyc'],
+    '/support', '/drivers?approved=false'],
   safety_officer: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online',
-    '/safety-ops', '/support', '/drivers?approved=false', '/kyc'],
-  kyc_verifier: ['/drivers?status=online', '/drivers?approved=false', '/kyc'],
-  finance: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online', '/finance/payouts', '/finance/payouts?status=pending',
-    '/support', '/drivers?approved=false', '/kyc'],
+    '/safety-ops', '/support', '/drivers?approved=false'],
+  kyc_verifier: ['/drivers?status=online', '/drivers?approved=false'],
+  finance: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online', '/finance/payouts',
+    '/support', '/drivers?approved=false'],
   marketing: [],
   analyst: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online',
-    '/drivers?approved=false', '/kyc'],
+    '/drivers?approved=false'],
 } as const;
 
 const strip = (href: string) => href.replace(/[?&]scope=[^&]*/, '').replace(/\?$/, '');

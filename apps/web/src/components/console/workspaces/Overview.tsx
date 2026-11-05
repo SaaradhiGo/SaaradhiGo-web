@@ -16,6 +16,7 @@ import {
 import { LiveMap } from '@/components/console/liveops/LiveMap';
 import { HealthChip, StatusChip } from '@/components/console/kit/StatusChip';
 import { MetricCard } from '@/components/console/kit/MetricCard';
+import { ActionTiles } from '@/components/console/kit/ActionTiles';
 import { NeedsActionInbox } from '@/components/console/kit/NeedsActionInbox';
 import { SuperAdminBanner } from '@/components/console/command-centre/SuperAdminBanner';
 import { SelfApprovalNotice } from '@/components/console/SelfApprovalNotice';
@@ -129,6 +130,8 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
           </p>
         </div>
       </header>
+
+      <ActionTiles access={access} />
 
       <div className="ops-ws__grid ops-ws__grid--c">
         <div className="ops-ws__main">
@@ -344,9 +347,11 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
         </div>
       </header>
 
+      <ActionTiles access={access} />
+
       <div className="ops-ws__grid ops-ws__grid--d">
         <div className="ops-ws__main">
-          <div className="ops-metrics">
+          <div className="ops-metrics ops-metrics--dense">
             <MetricCard label="Requests · last hour" value={n ? fmt(n.requests) : null} points={reqPoints}
               usual={againstUsual(n?.requests ?? null, usual?.requests ?? null)} />
             <MetricCard label="Fulfilment" value={fulfil === null ? null : `${fulfil}%`}

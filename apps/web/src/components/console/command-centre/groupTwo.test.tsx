@@ -1,10 +1,9 @@
-/** Group 2 polish: lead tiles, the quiet Super Admin chip, approved-driver caveats. */
+/** Group 2 polish: Overview lead tiles, the quiet Super Admin chip, approved-driver caveats. */
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AdminAccess } from '@/lib/adminScope';
-import type { CityRow } from '@/lib/commandCentre';
 import { approvedCaveats } from '@/lib/drivers';
-import { CityBoard } from './CityBoard';
+import { ActionTiles } from '@/components/console/kit/ActionTiles';
 import { SuperAdminChip } from './SuperAdminBanner';
 
 let path = '/trips';
@@ -21,33 +20,24 @@ const access = (shortfall = 0): AdminAccess => ({
   scopes: [], unrestricted: true, access_model: 'assignments', super_admin_shortfall: shortfall,
 }) as AdminAccess;
 
-const pair = (now: number | null) => ({ now, last_week: null });
-const ROW = {
-  code: 'IN-TG-HYD', name: 'Hyderabad', status: 'active', country: 'IN', currency: 'INR', timezone: 'Asia/Kolkata',
-  window: { key: 'today', start: '2026-10-27T01:30:00Z', end: '2026-10-28T01:30:00Z', last_week_start: '', last_week_end: '' },
-  trips: { requested: pair(1), accepted: pair(1), completed: pair(1), cancelled: pair(0), unfulfilled: pair(0) },
-  rates: { unfulfilled_rate: pair(0), acceptance_rate: pair(90), avg_eta_minutes: pair(4) },
-  money: null,
-  drivers: { online_now: pair(1), online_source: 'db', active: pair(1) },
-  riders: { active_24h: pair(1) },
-  queues: { sos_open: pair(2), sos_oldest_open_minutes: 5, tickets_open: pair(0), tickets_raised: pair(0),
-    withdrawals_pending: pair(3), withdrawals_oldest_pending_hours: 4, kyc_awaiting: pair(7), alerts_open: pair(0) },
-} as unknown as CityRow;
+vi.mock('@/lib/consoleQueues', async (orig) => ({
+  ...(await orig<typeof import('@/lib/consoleQueues')>()),
+  fetchQueueCounts: async () => ({ driversAwaiting: 7, withdrawalsPending: 3, supportOpen: 0, sosOpen: 2, approvalsWaiting: 5 }),
+}));
 
-describe('Command Centre lead tiles', () => {
-  it('lead with the four action tiles, each linked to its filtered list', () => {
-    const { container } = render(<CityBoard row={ROW} access={access()} single approvalsWaiting={5} />);
+describe('Overview lead tiles', () => {
+  it('lead with the four action tiles, each linked to its filtered list', async () => {
+    const { container } = render(<ActionTiles access={access()} />);
+    await screen.findByText('7');
     const lead = container.querySelector('.ops-tiles--lead') as HTMLElement;
-    const hrefs = [...lead.querySelectorAll('a')].map((a) => a.getAttribute('href'));
-    expect(hrefs).toEqual([
-      '/safety-ops?scope=IN-TG-HYD', '/approvals', '/finance/payouts?status=pending&scope=IN-TG-HYD', '/kyc?scope=IN-TG-HYD',
+    expect([...lead.querySelectorAll('a')].map((a) => a.getAttribute('href'))).toEqual([
+      '/safety-ops', '/approvals', '/finance/payouts?status=pending', '/kyc',
     ]);
-    expect(container.querySelector('.ops-tiles--dense')).not.toBeNull();
   });
-  it('draws no approvals tile without the permission', () => {
+  it('draws nothing the operator cannot open', () => {
     const a = { ...access(), permissions: ['trip.read'], roles: [] } as AdminAccess;
-    render(<CityBoard row={ROW} access={a} single approvalsWaiting={5} />);
-    expect(screen.queryByText('Approvals waiting for you')).toBeNull();
+    const { container } = render(<ActionTiles access={a} />);
+    expect(container.querySelector('a')).toBeNull();
   });
 });
 

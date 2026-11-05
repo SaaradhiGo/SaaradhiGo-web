@@ -2252,3 +2252,5 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .ops-tiles--dense { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
 .ops-tiles--dense .ops-tile { min-height: 64px; padding: 9px 12px; }
 .ops-tiles--dense .ops-tile__value { font-size: 18px; }
+
+.ops-metrics--dense .ops-metric__value:not(.ops-metric__value--empty) { font-size: 20px; }

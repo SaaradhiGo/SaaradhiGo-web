@@ -51,9 +51,6 @@ async function countOf(path: string): Promise<number | null> {
   }
 }
 
-/** Requests waiting for this operator to check; null when unknown. */
-export const fetchApprovalsWaiting = () => countOf(QUEUES.approvalsWaiting);
-
 export const QUEUES = {
   // Not a status: a driver awaiting review is one that is not approved.
   // The KYC review queue: documents sent and waiting (the /kyc page lists exactly these).

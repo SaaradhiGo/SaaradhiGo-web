@@ -5,9 +5,7 @@ import {
   CITY_KEY, WINDOW_KEY, Window, isWindow, readStored, writeStored,
 } from '@/lib/commandCentre';
 import { useAlerts, useOverview } from '@/lib/useCommandCentre';
-import { fetchApprovalsWaiting } from '@/lib/consoleQueues';
 import { AdminAccess, getCachedAccess, scopeLabel } from '@/lib/adminScope';
-import { canOpen } from '@/lib/consoleLinks';
 import { boardLinks } from '@/lib/boardLinks';
 import { longDate } from '@/lib/consoleTime';
 import {
@@ -53,13 +51,6 @@ export function CommandCentre({ access: given }: { access?: AdminAccess | null }
     setHydrated(true);
   }, [given]);
 
-  const [approvals, setApprovals] = useState<number | null | undefined>(undefined);
-  useEffect(() => {
-    if (!canOpen(access, 'approvals')) return;
-    let live = true;
-    void fetchApprovalsWaiting().then((n) => { if (live) setApprovals(n); });
-    return () => { live = false; };
-  }, [access]);
   const overview = useOverview(win, city);
   const alerts = useAlerts(city);
 
@@ -175,9 +166,8 @@ export function CommandCentre({ access: given }: { access?: AdminAccess | null }
               <button type="button" className="sg-link" onClick={overview.reload}>Try again</button>
             </p>
           ) : null}
-          {shown.map((row, i) => (
-            <CityBoard key={row.code} row={row} access={access} single={shown.length === 1}
-              approvalsWaiting={i === 0 ? approvals : undefined} />
+          {shown.map((row) => (
+            <CityBoard key={row.code} row={row} access={access} single={shown.length === 1} />
           ))}
         </div>
       )}
