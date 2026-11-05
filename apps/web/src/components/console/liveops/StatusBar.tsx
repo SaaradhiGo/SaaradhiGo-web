@@ -1,54 +1,39 @@
 'use client';
 
-import { ageText, networkTone, type CityStatus } from '@/lib/liveOps';
-import { Pill } from '@/components/console/ui';
+import type { Kpis } from '@/lib/liveOps';
 
 /**
- * One card per city: its network status and the counts behind it.
- *
- * The status is a WORD (Normal, High demand, Critical, Offline) with a colour behind it,
- * never a colour alone. A card is a button that picks that city for the map and the lists;
- * pressing it again goes back to every city. Counts are for the cities the operator may see
- * and nothing else: a city outside their scope has no card, and contributes to no number.
+ * The top strip's KPI chips. A chip is a word and a number; pressing one filters the
+ * attention queue to that kind and turns its map layer on. Danger tone only for open SOS.
  */
+export type ChipKey = 'online' | 'onTrip' | 'waiting' | 'sos' | 'stuck' | 'short';
+
+const CHIPS: { key: ChipKey; label: string; value: (k: Kpis) => number; fullOnly: boolean }[] = [
+  { key: 'online', label: 'Online', value: (k) => k.online, fullOnly: true },
+  { key: 'onTrip', label: 'On a trip', value: (k) => k.onTrip, fullOnly: true },
+  { key: 'waiting', label: 'Waiting for a driver', value: (k) => k.waiting, fullOnly: true },
+  { key: 'sos', label: 'Open SOS', value: (k) => k.sos, fullOnly: true },
+  { key: 'stuck', label: 'Stuck trips', value: (k) => k.stuck, fullOnly: true },
+  { key: 'short', label: 'Areas short of drivers', value: (k) => k.short, fullOnly: false },
+];
+
 export function StatusBar({
-  cities, selected, onSelect,
+  kpis, full, active, onChip,
 }: {
-  cities: CityStatus[];
-  selected: string | null;
-  onSelect: (code: string | null) => void;
+  kpis: Kpis; full: boolean; active: ChipKey | null; onChip: (key: ChipKey) => void;
 }) {
-  if (cities.length === 0) return null;
   return (
-    <ul className="lo-cities" aria-label="Network status by city">
-      {cities.map((c) => {
-        const on = selected === c.code;
-        const word = c.network_status === 'HIGH DEMAND' ? 'High demand'
-          : c.network_status.charAt(0) + c.network_status.slice(1).toLowerCase();
-        const idle = c.online_drivers + c.on_trip_drivers + c.unassigned_trips + c.stale_trips === 0;
+    <ul className="lo-kpis" aria-label="Network at a glance">
+      {CHIPS.filter((c) => full || !c.fullOnly).map((c) => {
+        const n = c.value(kpis);
+        const danger = c.key === 'sos' && n > 0;
         return (
-          <li key={c.code}>
+          <li key={c.key}>
             <button
-              type="button" className={`lo-city ${idle ? 'lo-city--idle' : ''}`} aria-pressed={on}
-              onClick={() => onSelect(on ? null : c.code)}
+              type="button" className={`lo-kpi ${danger ? 'lo-kpi--danger' : ''}`}
+              aria-pressed={active === c.key} onClick={() => onChip(c.key)}
             >
-              <span className="lo-city__head">
-                <b>{c.name}</b>
-                <Pill tone={networkTone(c.network_status)}>{word}</Pill>
-              </span>
-              {idle ? <span className="lo-city__sub">Nothing live here right now</span> : null}
-              <dl className="lo-city__facts">
-                <div><dt>Online</dt><dd>{c.online_drivers}</dd></div>
-                <div><dt>On a trip</dt><dd>{c.on_trip_drivers}</dd></div>
-                <div>
-                  <dt>Waiting for a driver</dt>
-                  <dd>
-                    {c.unassigned_trips}
-                    {c.oldest_unassigned_age_s !== null ? <span className="lo-city__sub"> oldest {ageText(c.oldest_unassigned_age_s)}</span> : null}
-                  </dd>
-                </div>
-                <div><dt>No recent signal</dt><dd>{c.stale_trips}</dd></div>
-              </dl>
+              <b>{n}</b><span>{c.label}</span>
             </button>
           </li>
         );

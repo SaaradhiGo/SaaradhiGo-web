@@ -26,6 +26,10 @@ import { boundsOf, makeProjector, ringPath, type Bounds, type Position } from '@
  * reachable, and the figure's label says so.
  */
 
+/** What a click on the map picks. */
+export type MapPick = { kind: 'alert' | 'driver' | 'trip'; id: number };
+export type Follow = { lat: number; lng: number; n: number };
+
 export type Layers = { drivers: boolean; trips: boolean; alerts: boolean; heatmap: boolean };
 
 type Props = {
@@ -41,6 +45,11 @@ type Props = {
   caption: string;
   /** Cities that decide the view (the ones with something live); null = every zone drawn. */
   focus?: string[] | null;
+  /** Workspace mode: fill the parent, and report clicks instead of navigating. */
+  fill?: boolean;
+  onPick?: (pick: MapPick) => void;
+  /** Pan to this point; a new `n` re-pans. */
+  follow?: Follow | null;
 };
 
 const W = 960;
@@ -72,7 +81,7 @@ function pointBounds(points: Position[]): Bounds | null {
   return points.length ? boundsOf([points]) : null;
 }
 
-function OutlineLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref, windowMinutes, caption, focus }: Props) {
+function OutlineLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref, windowMinutes, caption, focus, fill, onPick }: Props) {
   const rings = useMemo(() => {
     const picked = focus && focus.length ? zones.filter((z) => z.city && focus.includes(z.city)) : [];
     return (picked.length ? picked : zones).flatMap((z) => toPositions(z.rings));
@@ -98,7 +107,7 @@ function OutlineLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref,
 
   if (!bounds || !projector) {
     return (
-      <figure className="lo-map">
+      <figure className={`lo-map ${fill ? 'lo-map--fill' : ''}`}>
         <p className="lo-map__empty">Nothing to draw yet. No zone is configured in this scope.</p>
       </figure>
     );
@@ -108,22 +117,26 @@ function OutlineLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref,
   const inside = (p: { x: number; y: number }) => p.x >= -20 && p.x <= W + 20 && p.y >= -20 && p.y <= H + 20;
 
   return (
-    <figure className="lo-map">
+    <figure className={`lo-map ${fill ? 'lo-map--fill' : ''}`}>
       <svg className="lo-svg" viewBox={`0 0 ${W} ${H}`} role="group" aria-label={caption}>
+        <defs>
+          <pattern id="lo-hatch" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="7" className="lo-hatch__line" />
+          </pattern>
+        </defs>
         {zones.map((z) => toPositions(z.rings).map((ring, i) => (
           <path key={`${z.code}-${i}`} d={ringPath(ring, P)} className="lo-zone"><title>{`${z.name} (${z.code})`}</title></path>
         )))}
 
-        {layers.heatmap ? cells.map((c) => {
+        {layers.heatmap ? cells.filter((c) => shadeLevel(c) > 0).map((c) => {
           const [south, west, north, east] = cellBounds(c);
           const a = at(north, west);
           const b = at(south, east);
           if (!inside(a) && !inside(b)) return null;
-          const level = shadeLevel(c);
           return (
             <rect
               key={`${c.row}:${c.col}`} x={a.x} y={a.y} width={Math.max(1, b.x - a.x)} height={Math.max(1, b.y - a.y)}
-              className={`lo-cell lo-cell--${level}`}
+              className="lo-cell lo-cell--short" fill="url(#lo-hatch)"
             >
               <title>{cellSentence(c, windowMinutes)}</title>
             </rect>
@@ -134,7 +147,11 @@ function OutlineLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref,
           const from = at(t.pickup_lat, t.pickup_lng);
           const to = at(t.drop_lat, t.drop_lng);
           return (
-            <g key={t.id} className={`lo-trip ${t.stale ? 'lo-trip--stale' : ''}`}>
+            <g
+              key={t.id} className={`lo-trip ${t.stale ? 'lo-trip--stale' : ''}`}
+              onClick={onPick ? () => onPick({ kind: 'trip', id: t.id }) : undefined}
+            >
+              <line x1={from.x} y1={from.y} x2={to.x} y2={to.y} className="lo-trip__hit" />
               <line x1={from.x} y1={from.y} x2={to.x} y2={to.y} className="lo-trip__line" />
               <circle cx={from.x} cy={from.y} r={3} className="lo-trip__from" />
               <rect x={to.x - 3} y={to.y - 3} width={6} height={6} className="lo-trip__to" />
@@ -149,6 +166,7 @@ function OutlineLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref,
           const label = `Driver ${d.driver_id}, ${STATUS_WORDS[d.status].toLowerCase()}${d.vehicle_class ? `, ${d.vehicle_class}` : ''}`;
           const href = driverHref(d.driver_id);
           const circle = <circle cx={p.x} cy={p.y} r={5} className={`lo-dot lo-dot--${d.status}`}><title>{label}</title></circle>;
+          if (onPick) return <g key={d.driver_id} onClick={() => onPick({ kind: 'driver', id: d.driver_id })}>{circle}</g>;
           return href ? (
             // Not a tab stop: there may be two thousand, and the list view carries every one.
             <a key={d.driver_id} href={href} tabIndex={-1} aria-label={label}>{circle}</a>
@@ -161,6 +179,7 @@ function OutlineLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref,
             <path
               key={a.id} d={`M${p.x} ${p.y - 9} L${p.x + 8} ${p.y + 6} L${p.x - 8} ${p.y + 6} Z`}
               className={`lo-alert lo-alert--${a.severity}`}
+              onClick={onPick ? () => onPick({ kind: 'alert', id: a.id }) : undefined}
             >
               <title>{`${a.is_sos ? 'SOS: ' : ''}${a.title}`}</title>
             </path>
@@ -169,7 +188,7 @@ function OutlineLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref,
       </svg>
       <figcaption className="lo-map__note">
         Outlines to scale, north up. No map key is configured here, so there is no street map.
-        Every driver, trip and alert on this map is also in the list below.
+        Every driver, trip and alert on this map is also in the list view.
       </figcaption>
     </figure>
   );
@@ -181,6 +200,41 @@ function OutlineLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref,
 
 type Overlay = { setMap: (m: unknown) => void };
 
+/** One absolutely placed hatched div per short cell, positioned from the map projection in draw(). */
+function makeHatchOverlay(maps: any, cells: HeatCell[], onClick: (c: HeatCell) => void): Overlay {
+  class Hatch extends maps.OverlayView {
+    root: HTMLDivElement | null = null;
+    onAdd() {
+      this.root = document.createElement('div');
+      this.root.className = 'lo-hatch-layer';
+      for (const c of cells) {
+        const el = document.createElement('div');
+        el.className = 'lo-hatch';
+        el.dataset.cell = `${c.row}:${c.col}`;
+        el.addEventListener('click', () => onClick(c));
+        this.root.appendChild(el);
+      }
+      this.getPanes().overlayMouseTarget.appendChild(this.root);
+    }
+    draw() {
+      const proj = this.getProjection();
+      if (!proj || !this.root) return;
+      cells.forEach((c, i) => {
+        const [south, west, north, east] = cellBounds(c);
+        const sw = proj.fromLatLngToDivPixel(new maps.LatLng(south, west));
+        const ne = proj.fromLatLngToDivPixel(new maps.LatLng(north, east));
+        const el = this.root!.children[i] as HTMLElement;
+        el.style.left = `${sw.x}px`;
+        el.style.top = `${ne.y}px`;
+        el.style.width = `${Math.max(2, ne.x - sw.x)}px`;
+        el.style.height = `${Math.max(2, sw.y - ne.y)}px`;
+      });
+    }
+    onRemove() { this.root?.remove(); this.root = null; }
+  }
+  return new Hatch() as unknown as Overlay;
+}
+
 const g = () => (window as unknown as { google?: any }).google;
 
 function css(name: string, fallback: string): string {
@@ -188,7 +242,7 @@ function css(name: string, fallback: string): string {
   return v || fallback;
 }
 
-function GoogleLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref, windowMinutes, caption, focus }: Props) {
+function GoogleLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref, windowMinutes, caption, focus, fill, onPick, follow }: Props) {
   const host = useRef<HTMLDivElement | null>(null);
   const map = useRef<unknown>(null);
   const zoneOverlays = useRef<Overlay[]>([]);
@@ -200,6 +254,8 @@ function GoogleLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref, 
   const [themeTick, setThemeTick] = useState(0);
   const hrefRef = useRef(driverHref);
   hrefRef.current = driverHref;
+  const pickRef = useRef(onPick);
+  pickRef.current = onPick;
 
   useEffect(() => {
     const observer = new MutationObserver(() => setThemeTick((n) => n + 1));
@@ -246,27 +302,22 @@ function GoogleLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref, 
     if (!bounds.isEmpty()) { m.fitBounds(bounds, 40); fitted.current = true; }
   }, [zones, focus, themeTick, ensureMap]);
 
-  // Heat cells.
+  // Short-of-drivers cells: hatched gold divs on an OverlayView (Rectangles cannot do patterns).
   useEffect(() => {
     const m = ensureMap();
     if (!m) return;
     clear(cellOverlays);
     if (!layers.heatmap) return;
     const maps = g().maps;
-    const hot = css('--ops-danger', 'rgb(220,90,60)');
-    const calm = css('--ops-ink-4', 'rgb(120,120,120)');
-    for (const c of cells) {
+    const info = new maps.InfoWindow();
+    const overlay = makeHatchOverlay(maps, cells.filter((c) => shadeLevel(c) > 0), (c: HeatCell) => {
       const [south, west, north, east] = cellBounds(c);
-      const level = shadeLevel(c);
-      const rect = new maps.Rectangle({
-        bounds: { south, west, north, east }, map: m, clickable: true, strokeWeight: level ? 1 : 0.5,
-        strokeColor: level ? hot : calm, strokeOpacity: level ? 0.8 : 0.4,
-        fillColor: level ? hot : calm, fillOpacity: level ? 0.12 + 0.12 * level : 0.05, zIndex: 2,
-      });
-      const info = new maps.InfoWindow({ content: cellSentence(c, windowMinutes) });
-      rect.addListener('click', (e: any) => { info.setPosition(e.latLng); info.open(m); });
-      cellOverlays.current.push(rect);
-    }
+      info.setContent(cellSentence(c, windowMinutes));
+      info.setPosition({ lat: (south + north) / 2, lng: (west + east) / 2 });
+      info.open(m);
+    });
+    overlay.setMap(m);
+    cellOverlays.current.push(overlay, { setMap: () => info.close() });
   }, [cells, layers.heatmap, windowMinutes, themeTick, zones, ensureMap]);
 
   // Trips: a line from pickup to drop, a dot at the pickup.
@@ -280,11 +331,13 @@ function GoogleLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref, 
     const quiet = css('--ops-ink-4', 'rgb(120,120,120)');
     for (const t of trips) {
       const colour = t.stale ? quiet : palette.gold;
-      tripOverlays.current.push(new maps.Polyline({
+      const line = new maps.Polyline({
         path: [{ lat: t.pickup_lat, lng: t.pickup_lng }, { lat: t.drop_lat, lng: t.drop_lng }], map: m,
         strokeColor: colour, strokeOpacity: t.stale ? 0.55 : 0.9, strokeWeight: 2, zIndex: 3,
         icons: t.stale ? [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 2 }, offset: '0', repeat: '10px' }] : undefined,
-      }));
+      });
+      line.addListener('click', () => pickRef.current?.({ kind: 'trip', id: t.id }));
+      tripOverlays.current.push(line);
       tripOverlays.current.push(new maps.Marker({
         position: { lat: t.pickup_lat, lng: t.pickup_lng }, map: m, zIndex: 4,
         title: `Trip ${t.id}, ${TRIP_STATE_WORDS[t.state] ?? t.state}`,
@@ -304,10 +357,12 @@ function GoogleLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref, 
     const danger = css('--ops-danger', 'rgb(220,90,60)');
     for (const a of alerts) {
       if (a.lat === null || a.lng === null) continue;
-      alertOverlays.current.push(new maps.Marker({
+      const pin = new maps.Marker({
         position: { lat: a.lat, lng: a.lng }, map: m, zIndex: 8, title: `${a.is_sos ? 'SOS: ' : ''}${a.title}`,
         icon: { path: maps.SymbolPath.BACKWARD_CLOSED_ARROW, scale: 6, fillColor: danger, fillOpacity: 1, strokeColor: palette.noir, strokeWeight: 1.5 },
-      }));
+      });
+      pin.addListener('click', () => pickRef.current?.({ kind: 'alert', id: a.id }));
+      alertOverlays.current.push(pin);
     }
   }, [alerts, layers.alerts, themeTick, zones, ensureMap]);
 
@@ -339,12 +394,20 @@ function GoogleLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref, 
       }
       const marker = new maps.Marker({ position, map: m, icon, title, zIndex: 5 });
       marker.addListener('click', () => {
+        if (pickRef.current) { pickRef.current({ kind: 'driver', id: d.driver_id }); return; }
         const href = hrefRef.current(d.driver_id);
         if (href) window.location.assign(href);
       });
       markers.set(d.driver_id, marker);
     }
   }, [dots, layers.drivers, themeTick, zones, ensureMap]);
+
+  useEffect(() => {
+    const m = map.current as any;
+    if (!m || !follow) return;
+    m.panTo({ lat: follow.lat, lng: follow.lng });
+    if ((m.getZoom?.() ?? 0) < 14) m.setZoom(14);
+  }, [follow]);
 
   useEffect(() => () => {
     for (const list of [zoneOverlays, cellOverlays, tripOverlays, alertOverlays]) clear(list);
@@ -353,10 +416,10 @@ function GoogleLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref, 
   }, []);
 
   return (
-    <figure className="lo-map">
+    <figure className={`lo-map ${fill ? 'lo-map--fill' : ''}`}>
       <div ref={host} className="lo-map__host" role="region" aria-label={caption} />
       <figcaption className="lo-map__note">
-        Every driver, trip and alert on this map is also in the list below.
+        Every driver, trip and alert on this map is also in the list view.
       </figcaption>
     </figure>
   );
