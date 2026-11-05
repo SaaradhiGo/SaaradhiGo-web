@@ -47,7 +47,9 @@ function contentSecurityPolicy(env = process.env) {
     'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
     'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
     'img-src': ["'self'", 'data:', 'blob:', ...google, 'https://*.google.com',
-      'https://*.googleusercontent.com'],
+      'https://*.googleusercontent.com',
+      // KYC documents are shown from short-lived signed URLs on Cloudflare R2 (QA storage since 2026-11-03).
+      'https://*.r2.cloudflarestorage.com'],
     'connect-src': ["'self'", api, ws, ...google, 'https://*.google.com'].filter(Boolean),
     'worker-src': ["'self'", 'blob:'],
     'object-src': ["'none'"],
