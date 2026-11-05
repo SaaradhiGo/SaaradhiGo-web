@@ -339,6 +339,9 @@ export default function DriverDetailPage() {
           <b>{notice.text}</b>
         </div>
       )}
+      {/* Only when there is something to decide or explain; the buttons live in the header. */}
+      {(data.doc_status === 'rejected' && data.doc_rejection_reason) || suspended || (!data.approved && blockers.length > 0)
+        || (data.approval_requests ?? []).some((r) => r.status === 'requested') || rail.length === 0 ? (
           <div className="ops-decide">
             <h2>Decision</h2>
             {data.doc_status === 'rejected' && data.doc_rejection_reason ? (
@@ -363,6 +366,7 @@ export default function DriverDetailPage() {
               <p className="help m-0">You can view this driver but not change them.</p>
             ) : null}
           </div>
+        ) : null}
       <div className="ops-record-page ops-record-page--wide">
         <RecordPanel
           label="Driver"
@@ -383,7 +387,7 @@ export default function DriverDetailPage() {
             {rail.map((key) => (
               <button
                 key={key} type="button"
-                className={key === 'approve' ? 'btn-primary' : key === 'deactivate' ? 'btn-ghost' : 'btn-secondary'}
+                className={`sg-btn sg-btn--sm ${key === 'approve' ? 'sg-btn--primary' : key === 'deactivate' ? 'sg-btn--ghost' : 'sg-btn--secondary'}`}
                 disabled={key === 'approve' && blockers.length > 0}
                 onClick={() => setAction(key)}
               >{RAIL_LABEL[key]}</button>
