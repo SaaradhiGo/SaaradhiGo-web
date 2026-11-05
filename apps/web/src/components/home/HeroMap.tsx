@@ -5,6 +5,7 @@
 export function HeroMap({ pickup, drop }: { pickup: string; drop: string }) {
   const route = 'M190 410 C250 372 300 352 332 292 C364 232 420 196 474 132';
   return (
+    // Paths stay inside the viewBox: anything past it measures wider than a phone.
     <div className="sg-map hp-map" aria-hidden="true">
       <svg viewBox="0 0 640 560" preserveAspectRatio="xMidYMid slice" focusable="false">
         <rect className="m-ground" width="640" height="560" />
@@ -14,7 +15,7 @@ export function HeroMap({ pickup, drop }: { pickup: string; drop: string }) {
           className="m-street"
           transform="rotate(-8 320 280)"
           style={{ strokeWidth: 3 }}
-          d="M-40 -40V600M30 -40V600M100 -40V600M170 -40V600M240 -40V600M310 -40V600M380 -40V600M450 -40V600M520 -40V600M590 -40V600M660 -40V600M-60 20H700M-60 80H700M-60 140H700M-60 200H700M-60 260H700M-60 320H700M-60 380H700M-60 440H700M-60 500H700M-60 560H700"
+          d="M30 0V560M100 0V560M170 0V560M240 0V560M310 0V560M380 0V560M450 0V560M520 0V560M590 0V560M0 20H640M0 80H640M0 140H640M0 200H640M0 260H640M0 320H640M0 380H640M0 440H640M0 500H640"
         />
         <path
           className="m-water"
@@ -23,9 +24,9 @@ export function HeroMap({ pickup, drop }: { pickup: string; drop: string }) {
         <path
           className="m-arterial"
           style={{ strokeWidth: 7 }}
-          d="M-20 200 C120 190 260 215 400 200 C500 190 580 200 660 196M-20 440 C140 430 280 470 420 450 C520 436 600 430 660 436M140 -20 C150 150 130 330 150 580M440 -20 C430 160 450 340 430 580"
+          d="M0 200 C120 190 260 215 400 200 C500 190 580 200 640 196M0 440 C140 430 280 470 420 450 C520 436 600 430 640 436M140 0 C150 150 130 330 150 560M440 0 C430 160 450 340 430 560"
         />
-        <path className="m-highway" style={{ strokeWidth: 11 }} d="M-40 520 Q 280 200 700 -20" />
+        <path className="m-highway" style={{ strokeWidth: 11 }} d="M0 500 Q 280 200 640 10" />
         <text className="m-label" x="470" y="262" style={{ fontSize: 10 }}>KONDAPUR</text>
         <text className="m-label" x="40" y="330" style={{ fontSize: 10 }}>GACHIBOWLI</text>
         <text className="m-label" x="410" y="536" style={{ fontSize: 10 }}>MADHAPUR</text>
