@@ -746,3 +746,11 @@
 @media (max-width: 360px) {
   .hp-hero__title { font-size: 38px; }
 }
+
+/* Fallbacks for the next/font variables (layout.tsx); zero specificity, so the
+   font class next/font puts on <html> always wins. Also declares them for check-css. */
+:where(html) {
+  --f-cormorant: "Cormorant Garamond", Georgia, serif;
+  --f-noto-te: "Noto Serif Telugu", serif;
+  --f-noto-hi: "Noto Serif Devanagari", serif;
+}
