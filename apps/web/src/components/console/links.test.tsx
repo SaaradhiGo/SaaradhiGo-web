@@ -126,7 +126,7 @@ const ROW: CityRow = {
 };
 
 const NAV = {
-  super_admin: ['/dashboard', '/live-ops', '/trips', '/safety-ops', '/support', '/drivers', '/kyc', '/riders', '/finance', '/finance/payments', '/finance/payouts', '/finance/reconciliation', '/promotions', '/promotions/incentives', '/promotions/referrals', '/notifications', '/settings', '/zones', '/pricing', '/settings/integrations', '/approvals', '/fraud', '/settings/audit', '/reports', '/settings/security'],
+  super_admin: ['/dashboard', '/live-ops', '/trips', '/safety-ops', '/support', '/drivers', '/kyc', '/riders', '/finance', '/finance/payments', '/finance/payouts', '/finance/reconciliation', '/promotions', '/promotions/incentives', '/promotions/referrals', '/notifications', '/settings', '/zones', '/pricing', '/settings/integrations', '/approvals', '/fraud', '/settings/audit', '/settings/staff', '/reports', '/settings/security'],
   city_ops_manager: ['/dashboard', '/live-ops', '/trips', '/safety-ops', '/support', '/drivers', '/kyc', '/riders', '/promotions', '/promotions/incentives', '/promotions/referrals', '/notifications', '/settings', '/zones', '/pricing', '/settings/integrations', '/approvals', '/fraud', '/settings/audit', '/reports', '/settings/security'],
   support_agent: ['/dashboard', '/trips', '/support', '/drivers', '/kyc', '/riders', '/notifications', '/settings/security'],
   support_lead: ['/dashboard', '/trips', '/support', '/drivers', '/kyc', '/riders', '/notifications', '/settings/security'],

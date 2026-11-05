@@ -22,7 +22,7 @@ export const canReadIntegrations = (a: AdminAccess | null) => can(a, 'platform.i
 export const canReadAudit = (a: AdminAccess | null) => can(a, 'audit.read');
 export const canCheck = (a: AdminAccess | null) => can(a, 'approval.check');
 
-export type PlatformTab = 'markets' | 'flags' | 'versions' | 'notices' | 'settings' | 'integrations' | 'audit';
+export type PlatformTab = 'markets' | 'flags' | 'versions' | 'notices' | 'settings' | 'integrations' | 'audit' | 'staff';
 
 export const TABS: { key: PlatformTab; href: string; label: string; open: (a: AdminAccess | null) => boolean }[] = [
   { key: 'markets', href: '/settings', label: 'Markets', open: canReadPlatform },
@@ -32,6 +32,7 @@ export const TABS: { key: PlatformTab; href: string; label: string; open: (a: Ad
   { key: 'settings', href: '/settings/platform', label: 'Platform settings', open: canWritePlatform },
   { key: 'integrations', href: '/settings/integrations', label: 'Integrations', open: canReadIntegrations },
   { key: 'audit', href: '/settings/audit', label: 'Audit log', open: canReadAudit },
+  { key: 'staff', href: '/settings/staff', label: 'Staff and roles', open: (a) => can(a, 'admin.manage') },
 ];
 
 /** The tabs this operator may open, in order. Empty when none: the page says so. */
