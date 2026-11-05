@@ -9,7 +9,8 @@ describe('fitPadding', () => {
   });
   it('phone: bottom padding covers the sheet', () => {
     const p = fitPadding({ viewportWidth: 390, panelWidth: 390, panelLeft: 0, sheetHeight: 380 });
-    expect(p.bottom).toBeGreaterThanOrEqual(380);
+    // The destination marker and its glow need ~50px above the sheet edge.
+    expect(p.bottom).toBeGreaterThanOrEqual(380 + 50);
   });
 });
 

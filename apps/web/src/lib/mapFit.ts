@@ -14,5 +14,6 @@ export function fitPadding(args: {
     // panel width + its left gutter + 32px of air before the route starts
     return { top: BASE, right: BASE, bottom: BASE, left: args.panelWidth + args.panelLeft + 32 };
   }
-  return { top: BASE, right: 24, bottom: args.sheetHeight + 24, left: 24 };
+  // 56px clears the destination marker and its glow above the sheet edge.
+  return { top: BASE, right: 24, bottom: args.sheetHeight + 56, left: 24 };
 }
