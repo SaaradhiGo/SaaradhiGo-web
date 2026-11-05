@@ -133,7 +133,6 @@ export default function ZoneDetailPage() {
         <p className="ops-record-page__back"><Link href="/zones">All zones</Link></p>
         <PageHead title="Zone" />
         <Empty title="No such zone" detail="It does not exist, or it is outside your scope." />
-        <p><Link href="/zones" className="ops-linkbtn">Back to zones</Link></p>
       </>
     );
   }
