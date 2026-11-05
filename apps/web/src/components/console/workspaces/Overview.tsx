@@ -330,6 +330,7 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
 
   return (
     <div className="ops-ws">
+      <SuperAdminBanner access={access} />
       <SelfApprovalNotice />
       <header className="ops-ws__head">
         <div>

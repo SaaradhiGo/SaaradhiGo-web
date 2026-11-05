@@ -205,7 +205,7 @@ export function GlobalSearch({ access }: { access: AdminAccess | null }) {
         <div className="ops-search-pop" aria-busy={loading || undefined}>
           {commands.length > 0 && (
             <div role="listbox" id={`${listId}-cmd`} aria-label="Commands" className="ops-search-list">
-              <div role="group" aria-label="Go to" className="ops-search-group">
+              <div role="group" aria-label="Go to" className="ops-search-group ops-search-group--go">
                 <div role="presentation" className="ops-search-group__label">Go to</div>
                 {commands.map((c, i) => (
                   <div

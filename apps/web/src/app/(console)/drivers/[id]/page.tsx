@@ -8,7 +8,7 @@ import { ApiError, api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
 import {
   type DriverActionKey, type DriverActions, KYC_LABEL, REVIEW_LABEL, documentViewPath, driverName,
-  visibleDriverActions,
+  visibleDriverActions, approvedCaveats,
 } from '@/lib/drivers';
 import { cityTime, words } from '@/lib/trips';
 import { DocumentReviewDrawer, DriverActionDrawer, type ReviewTarget } from '@/components/console/DriverActionDrawer';
@@ -380,6 +380,7 @@ export default function DriverDetailPage() {
           </>}
           status={<>
             <Pill tone={kycTone}>{kycLabel}</Pill>
+            {approvedCaveats(data).map((c) => <span key={c}> <Pill tone="wait">{c}</Pill></span>)}
             {suspended ? <> <Pill tone="bad">{data.suspension?.permanent ? 'deactivated' : 'suspended'}</Pill></> : null}
             {' '}<Pill tone={data.status === 'online' ? 'good' : 'neutral'}>{words(data.status)}</Pill>
           </>}

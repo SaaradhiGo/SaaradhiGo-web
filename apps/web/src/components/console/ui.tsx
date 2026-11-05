@@ -359,8 +359,8 @@ export function MetricTile({
     : <div className={cls}>{body}</div>;
 }
 
-export function TileGrid({ children }: { children: ReactNode }) {
-  return <section className="ops-tiles">{children}</section>;
+export function TileGrid({ children, variant }: { children: ReactNode; variant?: 'lead' | 'dense' }) {
+  return <section className={`ops-tiles${variant ? ` ops-tiles--${variant}` : ''}`}>{children}</section>;
 }
 
 /**
