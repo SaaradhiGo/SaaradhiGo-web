@@ -17,8 +17,9 @@ import { ZoneMap, type MapZone, type PointMark } from '@/components/console/zone
 import { ZoneEditor } from '@/components/console/zones/ZoneEditor';
 import { PointTester } from '@/components/console/zones/PointTester';
 import {
-  DataTable, Empty, ErrorState, Fact, Facts, PageHeader, Panel, Pill, Skeleton, type Column,
+  DataTable, Empty, ErrorState, Fact, Facts, Panel, Pill, Skeleton, type Column,
 } from '@/components/console/ui';
+import { PageHead } from '@/components/console/kit/ListBits';
 
 /**
  * One zone: its polygon, settings, pending requests and history, a point tester, and a draft
@@ -129,16 +130,17 @@ export default function ZoneDetailPage() {
   if (notFound) {
     return (
       <>
-        <PageHeader title="Zone" />
+        <p className="ops-record-page__back"><Link href="/zones">All zones</Link></p>
+        <PageHead title="Zone" />
         <Empty title="No such zone" detail="It does not exist, or it is outside your scope." />
-        <p><Link href="/zones" className="ops-linkbtn">Back to zones</Link></p>
       </>
     );
   }
   if (error) {
     return (
       <>
-        <PageHeader title="Zone" />
+        <p className="ops-record-page__back"><Link href="/zones">All zones</Link></p>
+        <PageHead title="Zone" />
         <ErrorState title="The zone could not be loaded" detail={error} onRetry={() => void load()} />
       </>
     );
@@ -146,7 +148,8 @@ export default function ZoneDetailPage() {
   if (!zone) {
     return (
       <>
-        <PageHeader title="Zone" />
+        <p className="ops-record-page__back"><Link href="/zones">All zones</Link></p>
+        <PageHead title="Zone" />
         <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
           <span className="sr-only">Loading the zone</span>
           <Skeleton kind="row" count={5} />

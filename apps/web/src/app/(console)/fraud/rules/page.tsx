@@ -11,8 +11,9 @@ import {
 import { interpretWrite, type ApprovalBody } from '@/lib/trips';
 import { FraudNav, NoFraudAccess } from '@/components/console/fraud/parts';
 import {
-  Drawer, Empty, ErrorState, PageHeader, Panel, Pill, Skeleton,
+  Drawer, Empty, ErrorState, Pill, Skeleton,
 } from '@/components/console/ui';
+import { PageHead, RecordSection } from '@/components/console/kit/ListBits';
 
 /**
  * Fraud & Risk: the detection rules.
@@ -176,13 +177,13 @@ export default function FraudRulesPage() {
   useEffect(() => { if (may) void load(); }, [load, may]);
 
   if (!canOpen(access, 'fraud') || !may) {
-    return (<><PageHeader title="Fraud & Risk" /><NoFraudAccess /></>);
+    return (<><PageHead title="Fraud & Risk" /><NoFraudAccess /></>);
   }
 
   return (
     <>
-      <PageHeader title="Fraud & Risk"
-        subtitle="The detection rules and their numbers, per country. Rules only raise flags; they never act on an account or on money." />
+      <PageHead title="Fraud & Risk"
+        summary="The detection rules and their numbers, per country. Rules only raise flags; they never act on an account or on money." />
       <FraudNav />
       {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
       {error ? (
@@ -195,14 +196,14 @@ export default function FraudRulesPage() {
       ) : data.length === 0 ? (
         <Empty title="No rules in your scope" detail="Rules are configured per country, and none is in a country you can see." />
       ) : data.map((c) => (
-        <Panel key={c.country} title={`${c.country_name} (${c.country})`}>
+        <RecordSection key={c.country} title={`${c.country_name} (${c.country})`}>
           <div className="fr-rules">
             {c.rules.map((r) => (
               <RuleCard key={r.rule_key} country={c.country} rule={r} mayEdit={c.may_edit}
                 onEdit={(rule) => setEditing({ country: c.country, rule })} />
             ))}
           </div>
-        </Panel>
+        </RecordSection>
       ))}
       {editing && (
         <EditDrawer country={editing.country} rule={editing.rule} onClose={() => setEditing(null)}

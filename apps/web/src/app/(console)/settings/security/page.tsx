@@ -5,8 +5,9 @@ import {
   ApiError, MfaStatus, fetchMfaStatus, regenerateRecoveryCodes, writeRecoveryLow,
 } from '@/lib/api';
 import {
-  ErrorState, PageHeader, Panel, Pill, Skeleton,
+  ErrorState, Pill, Skeleton,
 } from '@/components/console/ui';
+import { PageHead, RecordSection } from '@/components/console/kit/ListBits';
 import { RecoveryCodesScreen } from '@/components/console/RecoveryCodes';
 import { Alert, Eye, KeyRound } from '@/components/console/icons';
 import { REVEAL_LIMIT_PER_MINUTE, useRevealStats } from '@/lib/reveal';
@@ -114,13 +115,13 @@ export default function SecurityPage() {
 
   return (
     <>
-      <PageHeader
+      <PageHead
         title="Security"
-        subtitle="Your authenticator and the recovery codes that stand in for it."
+        summary="Your authenticator and the recovery codes that stand in for it."
       />
 
       <div className="ops-stack">
-        <Panel title="Two-step sign-in">
+        <RecordSection title="Two-step sign-in">
           {status === undefined ? (
             <Skeleton kind="text" />
           ) : status === null ? (
@@ -165,10 +166,10 @@ export default function SecurityPage() {
             ) : null}
             </>
           )}
-        </Panel>
+        </RecordSection>
 
         {status && status.mfa_enabled && status.enrolled ? (
-          <Panel title="Recovery codes">
+          <RecordSection title="Recovery codes">
             {mode === 'status' && (
               <div className="ops-stack ops-stack--tight">
                 <p className="ops-prose">
@@ -242,10 +243,10 @@ export default function SecurityPage() {
                 onDone={done}
               />
             )}
-          </Panel>
+          </RecordSection>
         ) : null}
 
-        <Panel title="Personal data reveals">
+        <RecordSection title="Personal data reveals">
           <dl className="ops-facts">
             <div className="ops-fact">
               <dt>Reveals this session</dt>
@@ -265,7 +266,7 @@ export default function SecurityPage() {
             and the fields; it stays on screen only until you leave the page
             or mask it again, and the limit is {REVEAL_LIMIT_PER_MINUTE} reveals a minute.
           </p>
-        </Panel>
+        </RecordSection>
       </div>
     </>
   );

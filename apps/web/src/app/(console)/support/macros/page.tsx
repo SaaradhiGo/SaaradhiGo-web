@@ -11,8 +11,9 @@ import {
 } from '@/lib/supportDesk';
 import { ButtonLink } from '@/components/sg/Button';
 import {
-  Column, DataTable, Drawer, Empty, ErrorState, PageHeader, Panel, Pill, Skeleton,
+  Column, DataTable, Drawer, Empty, ErrorState, Pill, Skeleton,
 } from '@/components/console/ui';
+import { PageHead, RecordSection } from '@/components/console/kit/ListBits';
 
 /**
  * Macros: saved replies.
@@ -92,9 +93,9 @@ export default function MacrosPage() {
 
   return (
     <>
-      <PageHeader
+      <PageHead
         title="Macros"
-        subtitle="Saved replies. Placeholders are filled in on the server for the ticket you use them on."
+        summary="Saved replies. Placeholders are filled in on the server for the ticket you use them on."
         actions={
           <>
             {may ? <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setDraft({ ...BLANK })}>New macro</button> : null}
@@ -105,7 +106,7 @@ export default function MacrosPage() {
       {notice && <div className="alert-success mb-5" role="status"><b>{notice}</b></div>}
       {!may ? <p className="help">You can use macros but not change them. Changing macros needs the support.macro permission.</p> : null}
 
-      <Panel flush>
+      <RecordSection title="Macros">
         {macros === null ? (
           <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
             <span className="sr-only">Loading macros</span>
@@ -127,7 +128,7 @@ export default function MacrosPage() {
             </div>
           </div>
         ) : null}
-      </Panel>
+      </RecordSection>
 
       {draft ? (
         <MacroDrawer
