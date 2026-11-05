@@ -13,8 +13,9 @@ import { interpretWrite, newIdempotencyKey } from '@/lib/trips';
 import { PageLink } from '@/components/console/PageLink';
 import { FinanceNav } from '@/components/console/finance';
 import {
-  DataTable, Drawer, Empty, ErrorState, Fact, Facts, PageHeader, Panel, Pill, Skeleton,
+  DataTable, Drawer, Empty, ErrorState, Pill, Skeleton,
 } from '@/components/console/ui';
+import { PageHead, RecordFacts, RecordSection } from '@/components/console/kit/ListBits';
 
 /**
  * Payout settings: each country's fee, minimum, stuck-payout hours and
@@ -73,7 +74,7 @@ function SettingsInner() {
 
   return (
     <>
-      <PageHeader title="Finance" subtitle="Payout settings per country. A change is a request that a second admin approves." />
+      <PageHead title="Finance" summary="Payout settings per country. A change is a request that a second admin approves." />
       <FinanceNav />
       {notice && (
         <div className={notice.kind === 'pending' ? 'ops-confirm mb-4' : 'alert-success mb-4'} role="status">
@@ -92,21 +93,19 @@ function SettingsInner() {
       ) : (
         <div className="grid gap-4">
           {data?.countries.map((c) => (
-            <Panel key={c.country} title={`${c.name} · ${c.currency}`}>
+            <RecordSection key={c.country} title={`${c.name} · ${c.currency}`}>
               {c.config ? (
                 <>
-                  <Facts>
-                    <Fact label="Transfer fee">{Number(c.config.fee_percent)}%</Fact>
-                    <Fact label="Minimum withdrawal">{formatMinor(c.config.minimum_withdrawal_minor, c.currency)}</Fact>
-                    <Fact label="A payout is stuck after">
-                      {c.config.stuck_payout_hours ? `${c.config.stuck_payout_hours} hours` : 'Not checked'}
-                    </Fact>
-                    <Fact label="Payout schedule">{scheduleLabel(c.config)}</Fact>
-                    <Fact label="A reward under review is held for">{c.config.reward_hold_days ?? FRAUD_MONEY_DEFAULTS.reward_hold_days} days, then released if the flag is not decided</Fact>
-                    <Fact label="A recovery takes at most">{c.config.recovery_max_percent ?? FRAUD_MONEY_DEFAULTS.recovery_max_percent}% of any one payout</Fact>
-                    <Fact label="A payout hold lasts at most">{c.config.payout_hold_max_days ?? FRAUD_MONEY_DEFAULTS.payout_hold_max_days} days unless renewed</Fact>
-                    <Fact label="Version">v{c.config.version} · since {stamp(c.config.valid_from)}</Fact>
-                  </Facts>
+                  <RecordFacts rows={[
+                    ['Transfer fee', <>{Number(c.config.fee_percent)}%</>],
+                    ['Minimum withdrawal', formatMinor(c.config.minimum_withdrawal_minor, c.currency)],
+                    ['A payout is stuck after', c.config.stuck_payout_hours ? `${c.config.stuck_payout_hours} hours` : 'Not checked'],
+                    ['Payout schedule', scheduleLabel(c.config)],
+                    ['A reward under review is held for', <>{c.config.reward_hold_days ?? FRAUD_MONEY_DEFAULTS.reward_hold_days} days, then released if the flag is not decided</>],
+                    ['A recovery takes at most', <>{c.config.recovery_max_percent ?? FRAUD_MONEY_DEFAULTS.recovery_max_percent}% of any one payout</>],
+                    ['A payout hold lasts at most', <>{c.config.payout_hold_max_days ?? FRAUD_MONEY_DEFAULTS.payout_hold_max_days} days unless renewed</>],
+                    ['Version', <>v{c.config.version} · since {stamp(c.config.valid_from)}</>],
+                  ]} />
                   {c.payout_approval_blocked && (
                     <div className="ops-note ops-note--warn mt-3" role="status">
                       <b>{c.payout_approval_blocked_reason}</b>
@@ -177,7 +176,7 @@ function SettingsInner() {
               ) : (
                 <p className="help m-0">{c.message ?? 'Not configured.'}</p>
               )}
-            </Panel>
+            </RecordSection>
           ))}
           <p className="help m-0">
             Payout queue: <PageLink page="finance" href="/finance/payouts">Finance &gt; Payouts</PageLink>.

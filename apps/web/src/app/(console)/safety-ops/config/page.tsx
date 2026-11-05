@@ -8,8 +8,9 @@ import {
   CONFIG_FIELDS, configPatch, configValue, emergencyLine, type ConfigPage, type ConfigRow,
 } from '@/lib/safety';
 import {
-  Drawer, Empty, ErrorState, PageHeader, Panel, Pill, Skeleton,
+  Drawer, Empty, ErrorState, Pill, Skeleton,
 } from '@/components/console/ui';
+import { PageHead, RecordSection } from '@/components/console/kit/ListBits';
 
 /**
  * Safety settings: the per-country timers, thresholds and emergency numbers.
@@ -133,9 +134,9 @@ export default function SafetyConfigPage() {
 
   return (
     <>
-      <PageHeader
+      <PageHead
         title="Safety settings"
-        subtitle={<><Link href="/safety-ops">Safety</Link> · timers, detection thresholds and emergency numbers, one set per country</>}
+        summary={<><Link href="/safety-ops">Safety</Link> · timers, detection thresholds and emergency numbers, one set per country</>}
       />
       {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
 
@@ -147,12 +148,12 @@ export default function SafetyConfigPage() {
       ) : error && !page ? (
         <ErrorState title="The safety settings could not be loaded" detail={error} onRetry={() => void load()} />
       ) : page && page.results.length === 0 ? (
-        <Panel><Empty title="No country in your scope" detail="Safety settings are per country." /></Panel>
+        <Empty title="No country in your scope" detail="Safety settings are per country." />
       ) : page ? (
         <div className="ops-config">
           {!page.can_edit && <p className="help" role="note">You can read these. Changing them needs the safety.config permission.</p>}
           {page.results.map((row) => (
-            <Panel
+            <RecordSection
               key={row.country}
               title={`${row.name} (${row.country})`}
               action={page.can_edit ? (
@@ -209,7 +210,7 @@ export default function SafetyConfigPage() {
                   </ol>
                 </>
               )}
-            </Panel>
+            </RecordSection>
           ))}
         </div>
       ) : null}

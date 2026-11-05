@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
 import { canOpen } from '@/lib/consoleLinks';
@@ -10,8 +10,9 @@ import {
 } from '@/lib/notifications';
 import { NoAccess, NotificationsNav, messageOf } from '@/components/console/notifications';
 import {
-  DataTable, ErrorState, Fact, Facts, PageHeader, Panel, Pill, Skeleton, TableToolbar,
+  DataTable, ErrorState, Pill, Skeleton, TableToolbar,
 } from '@/components/console/ui';
+import { PageHead, RecordFacts, RecordSection } from '@/components/console/kit/ListBits';
 
 /**
  * Notifications: providers.
@@ -54,13 +55,13 @@ export default function ProvidersPage() {
   ], []);
 
   if (!canOpen(access, 'notifications')) {
-    return (<><PageHeader title="Notifications" /><NoAccess /></>);
+    return (<><PageHead title="Notifications" /><NoAccess /></>);
   }
 
   return (
     <>
-      <PageHeader title="Notifications"
-        subtitle="Which provider carries each channel in each country, and whether it is live. This page shows whether credentials are present, never what they are." />
+      <PageHead title="Notifications"
+        summary="Which provider carries each channel in each country, and whether it is live. This page shows whether credentials are present, never what they are." />
       <NotificationsNav />
 
       {error ? (
@@ -72,32 +73,30 @@ export default function ProvidersPage() {
         </div>
       ) : (
         <div className="grid gap-4">
-          <Panel title="Sending">
-            <Facts>
-              <Fact label="Live sending">
-                {state.live_send ? <Pill tone="good">On</Pill> : <><Pill tone="wait">Off</Pill> <span className="muted">every external channel uses the stub</span></>}
-              </Fact>
-              <Fact label="Environment">{state.production ? 'Production' : 'Not production'}</Fact>
-              <Fact label="Test allowlist">
+          <RecordSection title="Sending">
+            <RecordFacts rows={[
+              ['Live sending', state.live_send ? <Pill tone="good">On</Pill> : <><Pill tone="wait">Off</Pill> <span className="muted">every external channel uses the stub</span></>],
+              ['Environment', state.production ? 'Production' : 'Not production'],
+              ['Test allowlist', <>
                 {state.allowlist_size} recipient{state.allowlist_size === 1 ? '' : 's'}
                 {state.allowlist_applies ? ' (only these receive anything)' : state.live_send ? ' (not applied in production)' : ' (applies only when live sending is on)'}
-              </Fact>
-              {Object.entries(state.quiet_hours).map(([country, hours]) => (
-                <Fact key={country} label={`Promotional quiet hours · ${country}`}>{hoursWords(hours)}, recipient local time</Fact>
-              ))}
-            </Facts>
+              </>],
+              ...Object.entries(state.quiet_hours).map(([country, hours]): [string, ReactNode] => [
+                `Promotional quiet hours · ${country}`, <>{hoursWords(hours)}, recipient local time</>,
+              ]),
+            ]} />
             <p className="help mt-3 mb-0">
               Quiet hours apply to promotional messages only; the exact TRAI and TCPA windows still need legal confirmation before
               any live promotional send.
             </p>
-          </Panel>
+          </RecordSection>
 
-          <Panel title="Providers by channel and country" flush>
+          <RecordSection title="Providers by channel and country">
             <TableToolbar summary={`${state.providers.length} routes`} density={density} onDensity={setDensity} />
             <DataTable caption="Providers by channel and country" rows={state.providers} columns={columns}
               rowKey={(r) => `${r.channel}-${r.country}`} density={density}
               defaultSort={{ key: 'ch', dir: 'asc' }} maxHeight={false} />
-          </Panel>
+          </RecordSection>
         </div>
       )}
     </>

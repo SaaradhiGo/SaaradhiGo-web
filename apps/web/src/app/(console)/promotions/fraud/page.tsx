@@ -10,7 +10,9 @@ import { canReadFraud, evidenceSummary, type Queue } from '@/lib/fraud';
 import { NoAccess, PromotionsNav } from '@/components/console/promotions';
 import { messageOf } from '@/components/console/notifications';
 import { SeverityPill, StatusPill } from '@/components/console/fraud/parts';
-import { Empty, ErrorState, PageHeader, Panel, Skeleton } from '@/components/console/ui';
+import { Empty, ErrorState, Skeleton } from '@/components/console/ui';
+import { PageHead, RecordSection } from '@/components/console/kit/ListBits';
+
 
 /**
  * Promotions: fraud flags, in short.
@@ -38,7 +40,7 @@ export default function FraudFlagsPage() {
   useEffect(() => { if (may) void load(); }, [load, may]);
 
   if (!canOpen(access, 'promotions') || !may) {
-    return (<><PageHeader title="Promotions" /><NoAccess what="Fraud flags" /></>);
+    return (<><PageHead title="Promotions" /><NoAccess what="Fraud flags" /></>);
   }
 
   const status = data?.facets.status ?? {};
@@ -47,11 +49,11 @@ export default function FraudFlagsPage() {
 
   return (
     <>
-      <PageHeader title="Promotions"
-        subtitle="A referral reward that is blocked raises a fraud flag. Reviewing them happens in Fraud & Risk." />
+      <PageHead title="Promotions"
+        summary="A referral reward that is blocked raises a fraud flag. Reviewing them happens in Fraud & Risk." />
       <PromotionsNav />
 
-      <Panel title="Referral abuse flags">
+      <RecordSection title="Referral abuse flags">
         {error ? (
           <ErrorState title="The flags could not be loaded" detail={error} onRetry={() => void load()} />
         ) : data === null ? (
@@ -83,7 +85,7 @@ export default function FraudFlagsPage() {
         <p className="mt-3">
           <Link href={ALL_REFERRAL_FLAGS} className="sg-btn sg-btn--secondary sg-btn--sm">Open in Fraud &amp; Risk</Link>
         </p>
-      </Panel>
+      </RecordSection>
     </>
   );
 }
