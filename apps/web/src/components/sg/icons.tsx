@@ -13,7 +13,7 @@
 
 type IconProps = { className?: string };
 
-/* --- interface ---------------------------------------------------------- */
+/* --- interface */
 
 export function ArrowRight({ className }: IconProps) {
   return (
@@ -134,7 +134,7 @@ export function Close({ className }: IconProps) {
   );
 }
 
-/* --- vehicle glyphs, on the previews' 32-box ----------------------------- */
+/* --- vehicle glyphs, on the previews' 32-box */
 
 export function BikeGlyph({ className }: IconProps) {
   return (

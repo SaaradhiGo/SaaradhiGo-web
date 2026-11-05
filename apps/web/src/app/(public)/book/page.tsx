@@ -403,7 +403,7 @@ function BookPageInner() {
       });
   }, [tripState, pickup, destination, driverPos]);
 
-  // --- pickup ------------------------------------------------------------
+  // --- pickup
 
   const loadServiceability = useCallback(async (point: LatLng) => {
     setError(null);
@@ -611,7 +611,7 @@ function BookPageInner() {
     };
   }, [activeField, pickupQuery, query]);
 
-  // --- destination -------------------------------------------------------
+  // --- destination
 
   async function runSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -676,7 +676,7 @@ function BookPageInner() {
     setDestinationLabel(`${lat}, ${lng}`);
   }
 
-  // --- quote -------------------------------------------------------------
+  // --- quote
 
   /**
    * Price EVERY category the zone offers, so the rider compares instead of
@@ -814,7 +814,7 @@ function BookPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, tripId, tripState]);
 
-  // --- request -----------------------------------------------------------
+  // --- request
 
   /** The booking as a URL, so signing in can come straight back to it. */
   function bookingUrl() {
@@ -1036,7 +1036,7 @@ function BookPageInner() {
     }
   }
 
-  // --- render ------------------------------------------------------------
+  // --- render
 
   if (signedIn === null) {
     return (
@@ -1057,7 +1057,7 @@ function BookPageInner() {
   // Sign-in happens at CONFIRM -- see `requestRide` -- because that is the
   // point where a trip is actually created against a person.
 
-  // --- presentation ------------------------------------------------------
+  // --- presentation
 
   /**
    * What to call the trip, in the rider's words.
@@ -1167,7 +1167,7 @@ function BookPageInner() {
         {error && <Alert kind="error">{error}</Alert>}
         {notice && <Alert kind="info">{notice}</Alert>}
 
-        {/* ---------------- the journey and the fare ---------------- */}
+        {/* the journey and the fare */}
         {stage !== 'matched' && stage !== 'done' && stage !== 'requesting' && (
           <GlassPanel
             title={bothEndsSet ? 'Choose a ride' : 'Book a ride'}
@@ -1351,7 +1351,7 @@ function BookPageInner() {
               </div>
             )}
 
-            {/* ---------------- the vehicle classes ---------------- */}
+            {/* the vehicle classes */}
             {bothEndsSet && service?.serviceable && (
               service.vehicle_types.length === 0 ? (
                 <Alert kind="info">
@@ -1420,7 +1420,7 @@ function BookPageInner() {
               )
             )}
 
-            {/* ---------------- how it settles ---------------- */}
+            {/* how it settles */}
             {quote && (
               /* TODO(payments): the design's row reads "UPI · srini@okaxis"
                  with a "Change" link. There is no saved payment method and no
@@ -1436,7 +1436,7 @@ function BookPageInner() {
               </div>
             )}
 
-            {/* ---------------- who is booking ---------------- */}
+            {/* who is booking */}
             {identify && (
               <div className="border-t border-line pt-sg-4">
                 <h2 className="text-lg font-semibold mt-0 mb-sg-3">
@@ -1463,7 +1463,7 @@ function BookPageInner() {
               </p>
             )}
 
-            {/* ---------------- confirm ---------------- */}
+            {/* confirm */}
             {quote && !identify && (
               <div className="sg-ws__primary">
                 {/* The label says what the button DOES, for everyone.
@@ -1494,8 +1494,8 @@ function BookPageInner() {
           </GlassPanel>
         )}
 
-        {/* ---------------- the live trip ---------------- */}
-        {/* ---------------- finding a driver ---------------- */}
+        {/* the live trip */}
+        {/* finding a driver */}
         {finding && (
           <GlassPanel title="Finding your Saaradhi">
             <p className="sg-sheet__sub m-0" role="status">
@@ -1670,7 +1670,7 @@ function BookPageInner() {
           </GlassPanel>
         )}
 
-        {/* ---------------- the trip is over ---------------- */}
+        {/* the trip is over */}
         {stage === 'done' && (
           <GlassPanel>
             <div className="grid justify-items-center gap-sg-3 text-center">

@@ -261,9 +261,7 @@ export function haversineKm(a: LatLng, b: LatLng): number {
   return Math.round(2 * R * Math.asin(Math.sqrt(h)) * 100) / 100;
 }
 
-// ---------------------------------------------------------------------------
 // WebSocket
-// ---------------------------------------------------------------------------
 
 function wsBase(): string {
   const explicit = process.env.NEXT_PUBLIC_WS_BASE_URL;

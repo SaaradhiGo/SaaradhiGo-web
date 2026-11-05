@@ -1,21 +1,15 @@
 import type { Metadata, Viewport } from 'next';
-import { Cormorant_Garamond, Noto_Serif_Devanagari, Noto_Serif_Telugu } from 'next/font/google';
 import { SITE_URL } from '@/lib/support';
 import './globals.css';
+import '../styles/fonts.css';
 
 // The root layout now serves BOTH the public site and the ops console, so
 // its metadata has to be the neutral default. Each route group overrides it:
 // `(public)/layout.tsx` for the marketing pages, and the console pages for
 // themselves. Leaving 'Ops Console' here put an internal tool's name in the
 // browser tab and in search results for every public page.
-// Display serif for homepage headlines; Telugu and Hindi get their own
-// serifs because Cormorant has no coverage for them (see `--font-display`).
-const cormorant = Cormorant_Garamond({
-  subsets: ['latin'], weight: ['400', '500', '600'], style: ['normal', 'italic'],
-  display: 'swap', variable: '--f-cormorant',
-});
-const notoTelugu = Noto_Serif_Telugu({ subsets: ['telugu'], display: 'swap', variable: '--f-noto-te' });
-const notoDeva = Noto_Serif_Devanagari({ subsets: ['devanagari'], display: 'swap', variable: '--f-noto-hi' });
+// Every webfont is self-hosted from public/fonts (src/styles/fonts.css): builds
+// and visitors never fetch fonts from Google (owner, 2026-11-05).
 
 export const metadata: Metadata = {
   // `metadataBase` is what makes every relative canonical, Open Graph and
@@ -74,36 +68,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       data-theme="dark"
-      className={`${cormorant.variable} ${notoTelugu.variable} ${notoDeva.variable}`}
       suppressHydrationWarning
     >
-      <head>
-        {/* TWO FAMILIES, NOT THREE. Manrope sets every heading, number,
-            label and control; Cinzel is the brand lockup and the map labels
-            and nothing else.
-
-            Cormorant Garamond is gone. It set the headings on /book and the
-            auth pages while the public pages used Manrope, so the typeface
-            changed under a visitor mid-journey -- and it has no Telugu or
-            Devanagari coverage, so those locales fell back to a third face
-            again. Dropping it removes the inconsistency and one
-            render-blocking font request with it.
-
-            `display=swap` so text is readable while they load: a
-            ride-hailing page that hides its fares behind a webfont has
-            failed at the one thing it is for. */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href={
-            'https://fonts.googleapis.com/css2'
-            + '?family=Manrope:wght@500;600;700;800'
-            + '&family=Cinzel:wght@500;600;700'
-            + '&display=swap'
-          }
-        />
-      </head>
       {/* `sg` scopes the design system's box-sizing, family and colour. */}
       <body className="sg">{children}</body>
     </html>

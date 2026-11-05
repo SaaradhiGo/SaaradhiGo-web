@@ -1,5 +1,4 @@
 /* SaaradhiGo public homepage.
-   ---------------------------------------------------------------------------
    The homepage's own layout, to the implementation contract's metrics:
    1200px content column, 72px header, 32px desktop / 20px mobile gutters, and
    an 8 / 16 / 24 / 32 / 48 / 64 / 96 spacing scale.
@@ -12,8 +11,7 @@
    Every colour is a token. Deliberately absent, per the contract: gradients,
    glows, decorative eyebrow rules, italic headline flourishes, and the
    rounded-card-for-everything habit. Borders are 1px `line`; the only
-   generous radius is on the hero photograph.
-   ------------------------------------------------------------------------- */
+   generous radius is on the hero photograph. */
 
 :root {
   --hp-max: 1200px;
@@ -53,7 +51,7 @@
   color: var(--ink-muted);
 }
 
-/* --- header ------------------------------------------------------------- */
+/* --- header */
 
 .hp-header {
   position: sticky; top: 0; z-index: 40;
@@ -112,7 +110,7 @@
 }
 .hp-drawer__session > .sg-btn { width: 100%; }
 
-/* --- hero --------------------------------------------------------------- */
+/* --- hero */
 
 /* NO `min-height`. It reserved 520px whether the hero needed it or not, and
    the column does not: title, subtitle and the two fields come to about
@@ -151,7 +149,7 @@
 /* The slot a licensed photograph goes into. It states what is missing
    instead of standing in for it with a decorative graphic. */
 
-/* --- booking control ---------------------------------------------------- */
+/* --- booking control */
 
 .hp-field { position: relative; display: grid; gap: 6px; }
 .hp-field__label {
@@ -195,7 +193,7 @@
   font-family: var(--font-sans); font-size: 14px; color: var(--danger); margin: 0;
 }
 
-/* --- ride categories ---------------------------------------------------- */
+/* --- ride categories */
 
 .hp-rides { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 48px; padding: 0; list-style: none; }
 .hp-ride { display: grid; gap: 12px; align-content: start; }
@@ -209,7 +207,7 @@
 .hp-ride h3 { margin: 0; font-family: var(--font-sans); font-size: 18px; font-weight: 700; color: var(--ink); }
 .hp-ride p { margin: 0; font-family: var(--font-sans); font-size: 15px; line-height: 1.5; color: var(--ink-muted); }
 
-/* --- numbered steps ----------------------------------------------------- */
+/* --- numbered steps */
 
 .hp-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; margin: 48px 0 0; padding: 0; list-style: none; }
 .hp-step__n {
@@ -219,10 +217,10 @@
 .hp-step h3 { margin: 12px 0 8px; font-family: var(--font-sans); font-size: 20px; font-weight: 700; color: var(--ink); }
 .hp-step p { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--ink-muted); }
 
-/* --- split section (drive) ---------------------------------------------- */
+/* --- split section (drive) */
 
 
-/* --- safety: a factual list, not marketing cards ------------------------ */
+/* --- safety: a factual list, not marketing cards */
 
 .hp-facts { margin: 48px 0 0; padding: 0; list-style: none; display: grid; gap: 0; }
 .hp-fact {
@@ -235,13 +233,13 @@
 .hp-fact h3 { margin: 0 0 6px; font-family: var(--font-sans); font-size: 17px; font-weight: 700; color: var(--ink); }
 .hp-fact p { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--ink-muted); max-width: 70ch; }
 
-/* --- closing ------------------------------------------------------------ */
+/* --- closing */
 
 .hp-closing { padding: 96px 0; border-top: 1px solid var(--line); }
 .hp-closing .hp-lead { margin-left: 0; }
 .hp-closing__actions { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 16px; }
 
-/* --- footer ------------------------------------------------------------- */
+/* --- footer */
 
 .hp-footer { background: var(--noir); border-top: 1px solid var(--line); padding: 64px 0 32px; }
 .hp-footer__top { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; justify-content: space-between; }
@@ -258,7 +256,7 @@
 }
 .hp-footer__legal { display: flex; gap: 24px; }
 
-/* --- responsive ---------------------------------------------------------
+/* --- responsive
    Checked at 320, 390, 768, 1024 and 1440. */
 
 @media (max-width: 1024px) {
@@ -299,7 +297,7 @@
   .hp-hero__title { font-size: 30px; }
 }
 
-/* --- language + country picker ------------------------------------------ */
+/* --- language + country picker */
 
 .hp-lang { position: relative; flex: none; }
 .hp-lang__button {
@@ -352,10 +350,10 @@
 }
 @media (min-width: 769px) { .hp-nav__mobile { display: none; } }
 
-/* --- app section --------------------------------------------------------- */
+/* --- app section */
 
 
-/* --- hero booking extras ------------------------------------------------- */
+/* --- hero booking extras */
 
 .hp-locate {
   display: inline-flex; align-items: center; gap: 8px;
@@ -378,7 +376,7 @@
   .hp-lang__button { padding: 0 10px; }
 }
 
-/* --- interior public pages ----------------------------------------------
+/* --- interior public pages
    /ride, /drive, /safety, /about and /help share one shell, so the site
    reads as one site rather than five pages that each invented a layout.
 
@@ -535,7 +533,7 @@
   color: var(--ink-muted); max-width: 60ch;
 }
 
-/* --- the bar between the drawer and a roomy desktop --------------------
+/* --- the bar between the drawer and a roomy desktop
    The header is a three-part row -- logo, links, session controls -- and how
    wide it is depends on the language. Measured at a 1024px viewport, which
    leaves 960px of content: English needed 838px, Hindi 853, Telugu 950, and
@@ -568,7 +566,7 @@
   .hp-qa--split > div:last-child { border-bottom: 1px solid var(--line); }
 }
 
-/* --- the signed-out booking screen -------------------------------------
+/* --- the signed-out booking screen
    The trip a visitor built on the homepage, repeated back to them before
    they are asked to sign in. It is the first thing on the page because it
    is the thing they already did: the screen is a receipt for their effort,
@@ -711,8 +709,18 @@
 }
 .hp-ride__art svg { width: 76px; height: 50px; }
 .hp-ride h3 { font-family: var(--font-display); font-size: 26px; font-weight: 500; }
-.hp-ride p { font-size: 14px; }
-.hp-ride__from { font: 800 14px/20px var(--font-sans); color: var(--gold-text); margin-top: 4px; }
+.hp-ride p { font-size: 15px; }
+.hp-ride__from { font: 800 15px/22px var(--font-sans); color: var(--gold-text); margin-top: 4px; }
+/* Owner, 2026-11-05: description and price at 15–16px on desktop. */
+@media (min-width: 768px) {
+  .hp-ride p { font-size: 16px; }
+  .hp-ride__from { font-size: 16px; line-height: 24px; }
+}
+/* Only the price waits for the API; it holds the line's height meanwhile. */
+.hp-ride__from-skel {
+  display: block; width: 72px; height: 20px; margin-top: 6px;
+  border-radius: var(--radius-sm); background: var(--bg-200);
+}
 
 /* Noir band: pure black with gold hairlines top and bottom. */
 .hp-band { background: var(--noir); border-top: 1px solid var(--gold-line); border-bottom: 1px solid var(--gold-line); }
@@ -747,8 +755,7 @@
   .hp-hero__title { font-size: 38px; }
 }
 
-/* Fallbacks for the next/font variables (layout.tsx); zero specificity, so the
-   font class next/font puts on <html> always wins. Also declares them for check-css. */
+/* The display families (self-hosted in fonts.css), as the variables the site uses. */
 :where(html) {
   --f-cormorant: "Cormorant Garamond", Georgia, serif;
   --f-noto-te: "Noto Serif Telugu", serif;

@@ -68,7 +68,7 @@ export function HomeContent() {
 
       <RideCategories />
 
-      {/* 3 — Getting there is simple ------------------------------------- */}
+      {/* 3 — Getting there is simple */}
       <section className="hp hp-section" id="how-it-works" aria-labelledby="how">
         <h2 id="how" className="hp-h2">
           {t.steps.heading}
@@ -84,7 +84,7 @@ export function HomeContent() {
         </ol>
       </section>
 
-      {/* 4 — Drive with SaaradhiGo --------------------------------------- */}
+      {/* 4 — Drive with SaaradhiGo */}
       <section className="hp hp-section" id="drive" aria-labelledby="drive-h">
         <div>
           <div>
@@ -130,7 +130,7 @@ export function HomeContent() {
         </div>
       </section>
 
-      {/* 7 — Closing ----------------------------------------------------- */}
+      {/* 7 — Closing */}
       <section className="hp" aria-labelledby="closing">
         <div className="hp-closing">
           <h2 id="closing" className="hp-h2">
