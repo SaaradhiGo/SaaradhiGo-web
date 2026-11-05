@@ -384,16 +384,23 @@
 .sg-hero__sub { margin: 0 0 var(--space-6); color: var(--ink-muted); }
 
 /* The booking / live-trip workspace: a floating 430px panel over the map. */
-.sg-ws { position: relative; min-height: calc(100vh - 80px); padding: 36px var(--space-7); overflow: hidden; }
+/* One screen: the workspace is the viewport under the nav (80px), so the panel
+   never needs the page to scroll; its own body scrolls and the primary pins. */
+.sg-ws { position: relative; height: calc(100vh - 80px); height: calc(100dvh - 80px); min-height: 560px; padding: 36px var(--space-7); overflow: hidden; box-sizing: border-box; }
 .sg-ws__map { position: absolute; inset: 0; z-index: 0; }
-.sg-ws__panel { position: relative; z-index: 2; width: 430px; max-width: 100%; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-content: start; }
-.sg-ws .sg-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+/* Fades the map behind the panel and its gutter so the route reads clear of it. */
+.sg-ws__scrim { position: absolute; inset: 0 auto 0 0; width: 580px; pointer-events: none; background: linear-gradient(90deg, var(--bg-000) 0%, var(--bg-000) 55%, transparent 100%); opacity: .9; }
+.sg-ws__panel { position: relative; z-index: 2; width: 430px; max-width: 100%; max-height: 100%; display: flex; flex-direction: column; gap: var(--space-3); }
+.sg-ws__panel > .sg-panel { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.sg-ws__help { margin: 0; flex: none; }
+.sg-ws .sg-vehicle { padding-top: 8px; padding-bottom: 8px; }
+.sg-ws .sg-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); align-content: start; }
 .sg-ws .sg-panel__title { margin: 0; }
 
 /* A journey recap: two rows, each with its own marker shape. */
 .sg-summary { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: var(--space-4); border-radius: var(--radius-md); background: var(--bg-200); border: 1px solid var(--line); }
 .sg-summary > div { min-width: 0; display: flex; gap: var(--space-3); align-items: center; font: 600 14px/20px var(--font-sans); }
-.sg-summary small { color: var(--ink-muted); font-weight: 500; margin-left: auto; font-size: 13px; }
+.sg-summary small { color: var(--ink-muted); font-weight: 500; margin-left: auto; font-size: 13px; white-space: nowrap; flex: none; }
 
 /* Marketing sections. */
 .sg-wrap { padding: 0 var(--space-7); }
@@ -433,7 +440,9 @@
 .sg-foot__base { display: flex; justify-content: space-between; gap: var(--space-4); padding-top: var(--space-5); font: 500 13px/18px var(--font-sans); }
 
 /* The panel's primary action, as its own row so the phone rule can pin it. */
-.sg-ws__primary { display: grid; gap: var(--space-2); }
+.sg-ws__primary { display: grid; gap: var(--space-2); position: sticky; bottom: 0; z-index: 5;
+  margin: 0 calc(var(--space-5) * -1) calc(var(--space-5) * -1);
+  padding: var(--space-3) var(--space-5) var(--space-5); background: var(--bg-100); border-top: 1px solid var(--line); }
 
 /* The bottom sheet, for phones. The map is on top, the sheet is pinned to the
    bottom of the viewport, and the single primary action sits at the foot of
@@ -459,9 +468,13 @@
   .sg-hero__map { height: 220px; min-height: 0; }
   .sg-classes--three { grid-template-columns: 1fr; }
 
-  .sg-ws { min-height: 0; padding: 0; }
-  .sg-ws__map { position: relative; inset: auto; height: 44vh; min-height: 260px; }
-  .sg-ws__panel { width: 100%; gap: var(--space-3); }
+  /* The map fills the screen and the sheet rides over its lower part; the
+     page fits the screen, and the map is padded by the sheet's height. */
+  .sg-ws { height: calc(100vh - 64px); height: calc(100dvh - 64px); min-height: 0; padding: 0; }
+  .sg-ws__scrim { display: none; }
+  .sg-ws__panel { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; max-height: 62%; gap: 0; }
+  .sg-ws__help { padding: var(--space-2) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); background: var(--bg-100); }
+  .sg-ws__panel > [role="alert"], .sg-ws__panel > .alert { margin: 0 var(--space-4) var(--space-2); }
 
   .sg-wrap, .sg-section { padding-left: var(--space-4); padding-right: var(--space-4); }
   .sg-page { padding: var(--space-5) var(--space-4) var(--space-7); }
@@ -497,12 +510,8 @@
      Letting it scroll away with the content is how the button that books the
      ride ends up off-screen on the device most riders are using. */
   .sg-ws__primary {
-    position: sticky; bottom: 0; z-index: 5;
-    margin: 0 calc(var(--space-4) * -1);
-    padding: var(--space-3) var(--space-4)
-             calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
-    background: var(--bg-100);
-    border-top: 1px solid var(--line);
+    margin: 0 calc(var(--space-4) * -1) calc(var(--space-5) * -1);
+    padding: var(--space-3) var(--space-4) var(--space-4);
   }
 
   /* Every control a thumb has to hit. `--sm` is desktop-only by design. */

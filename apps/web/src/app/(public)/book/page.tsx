@@ -18,12 +18,15 @@ import {
   placeToPoint,
   quoteFare,
   rideHistory,
+  rideMeta,
   routeBetween,
   searchPlaces,
   serviceabilityAt,
   driverFromInfo,
+  formatPlate,
   tripDetail,
 } from '@/lib/booking';
+import { FitPadding, fitPadding } from '@/lib/mapFit';
 import MapSurface from '@/components/MapSurface';
 import { GuestCheckout } from '@/components/booking/GuestCheckout';
 import { TripSafety } from '@/components/booking/TripSafety';
@@ -236,6 +239,32 @@ function BookPageInner() {
   const [cancelReason, setCancelReason] = useState<string>(
     RIDER_CANCEL_REASONS[4].value,
   );
+
+  // Padding that keeps the route clear of the panel (desktop) or sheet (phone).
+  const panelRef = useRef<HTMLElement | null>(null);
+  const [mapPad, setMapPad] = useState<FitPadding | null>(null);
+  useEffect(() => {
+    const el = panelRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      const next = fitPadding({
+        viewportWidth: window.innerWidth,
+        panelWidth: r.width,
+        panelLeft: r.left,
+        sheetHeight: window.innerHeight - r.top,
+      });
+      setMapPad((cur) => (cur && JSON.stringify(cur) === JSON.stringify(next) ? cur : next));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [signedIn]);
 
   const requestSocket = useRef<RideSocket | null>(null);
   const tripSocket = useRef<RideSocket | null>(null);
@@ -1046,7 +1075,9 @@ function BookPageInner() {
    */
   const driverName = typeof driver?.name === 'string' ? driver.name : null;
   const driverFirstName = driverName ? driverName.split(/\s+/)[0] : null;
-  const plate = driver && driver.vehicle_number ? String(driver.vehicle_number) : null;
+  const plate = driver && driver.vehicle_number
+    ? formatPlate(String(driver.vehicle_number))
+    : null;
 
   function tripHeadline(): string {
     if (tripState === 'cancelled') return 'Ride cancelled';
@@ -1065,6 +1096,10 @@ function BookPageInner() {
     }
     return 'Finding your Saaradhi';
   }
+
+  // Nobody has accepted yet: the request is out, or the trip is still "requested".
+  const finding = stage === 'requesting'
+    || (stage === 'matched' && !driverName && (tripState === 'requested' || tripState === ''));
 
   const tripTone: 'success' | 'danger' | 'neutral' =
     tripState === 'cancelled' ? 'danger' : tripState ? 'success' : 'neutral';
@@ -1113,28 +1148,17 @@ function BookPageInner() {
       <div className="sg-ws__map">
         <MapSurface
           className="h-full"
-          zoneName={service?.zone?.name}
-          currency={service?.zone?.currency}
-          vehicleCount={service?.vehicle_types?.length ?? null}
           pickup={pickup}
           destination={destination}
           driver={driverPos}
           routePolyline={routePoints}
+          fitPadding={mapPad}
         >
-          {/* One floating label, for the one fact worth putting on the map:
-              the locked fare. It is aria-hidden, because the same number is
-              in the panel beside it, in reading order. */}
-          {fare && stage !== 'done' && (
-            <MapLabel left="72%" top="26%">
-              {destinationLabel ? `${destinationLabel.split(',')[0]} · ` : ''}
-              <b className="sg-num">{fare}</b>
-            </MapLabel>
-          )}
         </MapSurface>
-        <div className="sg-scrim-bottom md:hidden" />
+        <div className="sg-ws__scrim" />
       </div>
 
-      <section className="sg-ws__panel">
+      <section className="sg-ws__panel" ref={panelRef}>
         {/* The page's heading. The panels carry the visible titles, as the
             design has them, so this exists for the document outline and for
             anyone navigating by headings. */}
@@ -1144,7 +1168,7 @@ function BookPageInner() {
         {notice && <Alert kind="info">{notice}</Alert>}
 
         {/* ---------------- the journey and the fare ---------------- */}
-        {stage !== 'matched' && stage !== 'done' && (
+        {stage !== 'matched' && stage !== 'done' && stage !== 'requesting' && (
           <GlassPanel
             title={bothEndsSet ? 'Choose a ride' : 'Book a ride'}
             action={
@@ -1374,13 +1398,7 @@ function BookPageInner() {
                           key={v.type}
                           category={v.type}
                           name={publicRideName(v.type, BOOKING_RIDE_NAMES)}
-                          /* TODO(eta, seats): the design's meta line is "5 min
-                             away · 4 seats". Neither is available --
-                             `/pricing/vehicle-types/` returns a category code
-                             and a description, and there is no endpoint for a
-                             nearby-driver ETA per class. The server's own
-                             description is shown instead of a fabricated ETA. */
-                          meta={v.description || null}
+                          meta={rideMeta(v.type, q) ?? (v.description || null)}
                           fare={
                             priced
                               ? formatFare(
@@ -1419,7 +1437,7 @@ function BookPageInner() {
             )}
 
             {/* ---------------- who is booking ---------------- */}
-            {identify && stage !== 'requesting' && (
+            {identify && (
               <div className="border-t border-line pt-sg-4">
                 <h2 className="text-lg font-semibold mt-0 mb-sg-3">
                   Book as a guest
@@ -1439,8 +1457,14 @@ function BookPageInner() {
               </div>
             )}
 
+            {quote && !identify && signedIn === false && (
+              <p className="caption text-ink-subtle m-0">
+                You can book as a guest — no password needed.
+              </p>
+            )}
+
             {/* ---------------- confirm ---------------- */}
-            {quote && !identify && stage !== 'requesting' && (
+            {quote && !identify && (
               <div className="sg-ws__primary">
                 {/* The label says what the button DOES, for everyone.
                     It used to read "Sign in to confirm Sedan" for a
@@ -1459,36 +1483,64 @@ function BookPageInner() {
                   <ArrowRight />
                 </Button>
                 <FareLock>Fare locked. No surprises after you book.</FareLock>
-                {signedIn === false && (
-                  <p className="caption text-ink-subtle mt-sg-2">
-                    You can book as a guest — no password needed.
-                  </p>
-                )}
               </div>
             )}
 
-            {stage === 'requesting' && (
-              <div className="sg-ws__primary">
-                <div className="sg-progress" aria-hidden="true">
-                  <i />
-                </div>
-                <p className="caption text-ink-muted mt-sg-3" role="status">
-                  Finding you a driver. Dispatch connection: {socketState}.
-                </p>
+          </GlassPanel>
+        )}
+
+        {/* ---------------- the live trip ---------------- */}
+        {/* ---------------- finding a driver ---------------- */}
+        {finding && (
+          <GlassPanel title="Finding your Saaradhi">
+            <p className="sg-sheet__sub m-0" role="status">
+              We are asking drivers near you. This usually takes under a minute.
+            </p>
+            <div className="sg-progress" aria-hidden="true">
+              <i />
+            </div>
+            {quote && (
+              <FareSummary
+                label="Your fare"
+                amount={quote.estimated_fare}
+                currency={quote.currency ?? service?.zone?.currency}
+                badge={<Badge tone="neutral">Cash</Badge>}
+              />
+            )}
+            <p className="caption text-ink-subtle m-0">Dispatch connection: {socketState}</p>
+            {tripId && (
+              <div className="grid gap-sg-3">
+                <label htmlFor="cancel-reason" className="form-label">
+                  Need to cancel?
+                </label>
+                <select
+                  id="cancel-reason"
+                  className="input"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                >
+                  {RIDER_CANCEL_REASONS.map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+                <Button variant="ghost" block onClick={doCancel} disabled={busy}>
+                  {busy ? 'Cancelling…' : 'Cancel request'}
+                </Button>
               </div>
             )}
           </GlassPanel>
         )}
 
-        {/* ---------------- the live trip ---------------- */}
-        {stage === 'matched' && (
+        {stage === 'matched' && !finding && (
           <GlassPanel>
             {/* Wraps: on a 390px phone the status badge ("driver is waiting at
                 your pickup") squeezed the headline into a one-word column and
                 ran off the edge (PRODUCT_AUDIT §2). */}
             <div className="flex flex-wrap items-start justify-between gap-sg-3">
               <div className="min-w-0 flex-1 basis-[220px]">
-                <h2 className="display-lg text-[28px] leading-[34px] sm:text-[34px] sm:leading-[40px] m-0">
+                <h2 className="display-lg text-[28px] leading-[34px] sm:text-[28px] sm:leading-[34px] m-0">
                   {tripHeadline()}
                 </h2>
                 <p className="sg-sheet__sub">
@@ -1649,13 +1701,21 @@ function BookPageInner() {
                 endpoint and tipping are not built, so neither is shown: a
                 star control that discards the tap is worse than no control. */}
 
+            <Button
+              variant="primary"
+              size="lg"
+              block
+              onClick={() => window.location.assign('/book')}
+            >
+              Done
+            </Button>
             <ButtonLink href="/my-trips" variant="secondary" block>
               See your trips
             </ButtonLink>
           </GlassPanel>
         )}
 
-        <p className="caption text-ink-subtle">
+        <p className="caption text-ink-subtle sg-ws__help">
           Need help?{' '}
           <Link href="/contact" className="sg-link">
             Contact support

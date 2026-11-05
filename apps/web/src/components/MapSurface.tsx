@@ -51,6 +51,7 @@ export default function MapSurface({
   routePolyline = null,
   driver = null,
   cityCentre = null,
+  fitPadding = null,
   children,
 }: {
   /** Force the placeholder off even when no provider is configured. */
@@ -72,6 +73,8 @@ export default function MapSurface({
    * own pickup, which is the one thing this surface must never imply.
    */
   cityCentre?: MapPoint | null;
+  /** Keeps the route clear of a panel or sheet drawn over the map. */
+  fitPadding?: { top: number; right: number; bottom: number; left: number } | null;
   /** Floating `MapLabel` pills and scrims, drawn over the surface. */
   children?: React.ReactNode;
 }) {
@@ -134,6 +137,11 @@ export default function MapSurface({
     observer.observe(target, { attributes: true, attributeFilter: ['data-theme'] });
     return () => observer.disconnect();
   }, []);
+
+  // A primitive key, so a new padding object with the same numbers is no refit.
+  const padKey = fitPadding
+    ? `${fitPadding.top}|${fitPadding.right}|${fitPadding.bottom}|${fitPadding.left}`
+    : "";
 
   // Draw. Re-runs whenever the journey or the theme changes.
   useEffect(() => {
@@ -328,11 +336,16 @@ export default function MapSurface({
       if (pickup && !destination && !driver && !routePolyline) {
         m.setCenter(pickup);
         m.setZoom(15);
+        // Centre in the free part of the map, clear of the panel or sheet.
+        if (fitPadding) {
+          m.panBy(-(fitPadding.left - fitPadding.right) / 2, -(fitPadding.top - fitPadding.bottom) / 2);
+        }
       } else {
-        m.fitBounds(bounds, 48);
+        m.fitBounds(bounds, fitPadding ?? 48);
       }
     }
-  }, [live, pickup, destination, routePolyline, driver, cityCentre, themeTick]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [live, pickup, destination, routePolyline, driver, cityCentre, themeTick, padKey]);
 
   // A map is drawn only when the library loaded AND there is a real point to
   // show. Anything else keeps the honest placeholder.
@@ -357,7 +370,12 @@ export default function MapSurface({
       {/* Scrims and floating labels, over the surface. */}
       {showingMap && children}
 
-      <div className="absolute inset-0 grid place-items-center p-sg-6 text-center pointer-events-none">
+      <div
+        className="absolute inset-0 grid place-items-center p-sg-6 text-center pointer-events-none"
+        style={fitPadding ? {
+          padding: `${fitPadding.top}px ${fitPadding.right}px ${fitPadding.bottom}px ${fitPadding.left}px`,
+        } : undefined}
+      >
         {ready || showingMap ? null : (
           <div className="max-w-sm">
             <svg
