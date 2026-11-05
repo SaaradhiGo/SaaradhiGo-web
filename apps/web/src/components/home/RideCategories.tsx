@@ -31,6 +31,10 @@ export function formatFrom(value: unknown, currency?: string | null): string | n
   }
 }
 
+const DEFAULT_CLASSES: { type: string; description?: string; min_fare?: string | null }[] = [
+  { type: 'auto' }, { type: 'mini' }, { type: 'sedan' }, { type: 'suv' },
+];
+
 export function RideCategories() {
   const { t, language } = useLocale();
   const h = HOME_COPY[language];
@@ -57,7 +61,10 @@ export function RideCategories() {
     };
   }, []);
 
-  const categories = service?.vehicle_types ?? null;
+  // The classes the site launches with, shown at once; the API list replaces them
+  // when it arrives, and only the price waits (skeleton) for it.
+  const loading = service === null && !failed;
+  const categories = service?.vehicle_types ?? DEFAULT_CLASSES;
 
   return (
     <section className="hp hp-section" id="rides" aria-labelledby="rides-h">
@@ -71,31 +78,12 @@ export function RideCategories() {
         <p className="hp-lead">{h.ridesLead}</p>
       </div>
 
-      {failed && <p className="hp-lead">{t.rides.failed}</p>}
-
-      {categories === null && !failed && (
-        <>
-          <ul className="hp-rides" aria-hidden="true">
-            {[0, 1, 2, 3].map((i) => (
-              <li key={i} className="hp-ride">
-                <span className="h-9 w-14 rounded-sg-sm bg-bg-200 animate-pulse" />
-                <span className="h-5 w-24 rounded-sg-sm bg-bg-200 animate-pulse" />
-                <span className="h-10 w-full rounded-sg-sm bg-bg-200 animate-pulse" />
-              </li>
-            ))}
-          </ul>
-          <p className="sr-only" role="status">
-            Loading ride classes
-          </p>
-        </>
-      )}
-
-      {categories !== null && categories.length === 0 && !failed && (
+      {service !== null && categories.length === 0 && (
         <p className="hp-lead">No ride classes are published yet.</p>
       )}
 
-      {categories !== null && categories.length > 0 && (
-        <ul className="hp-rides">
+      {categories.length > 0 && (
+        <ul className="hp-rides" aria-busy={loading || undefined}>
           {categories.map((c) => {
             const key = rideBlurbKey(c.type);
             const Fallback = vehicleGlyphFor(c.type);
@@ -108,7 +96,9 @@ export function RideCategories() {
                 </span>
                 <h3>{publicRideName(c.type, t.rideNames)}</h3>
                 {blurb && <p>{blurb}</p>}
-                {from && (
+                {loading ? (
+                  <span className="hp-ride__from-skel animate-pulse" aria-hidden="true" />
+                ) : from && (
                   <span className="hp-ride__from">
                     {h.from} {from}
                   </span>

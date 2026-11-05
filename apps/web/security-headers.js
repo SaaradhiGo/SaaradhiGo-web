@@ -8,8 +8,8 @@
 //   'self'                      the app's own pages, chunks, /_next/image
 //   API origin (+ its ws/wss)    NEXT_PUBLIC_API_BASE_URL / NEXT_PUBLIC_WS_BASE_URL:
 //                                REST calls and the live-ops / booking sockets
-//   fonts.googleapis.com         the Manrope / Cinzel stylesheet (app/layout.tsx)
-//   fonts.gstatic.com            the font files that stylesheet points at
+//   fonts.googleapis.com         Google Maps' own font stylesheet (site fonts are self-hosted)
+//   fonts.gstatic.com            the font files Maps' stylesheet points at
 //   *.googleapis.com, *.gstatic.com, *.google.com, *.googleusercontent.com
 //                                the Maps JavaScript API (lib/googleMaps.ts): its
 //                                loader, tiles, markers and the requests it makes,
