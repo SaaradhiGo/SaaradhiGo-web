@@ -89,8 +89,9 @@
   --radius-lg: 22px;
   --radius-xl: 32px;
   --radius-pill: 999px;
-  /* No display serif. One heading family, `--font-sans`, everywhere.
-     See the font link in app/layout.tsx for why. */
+  /* Display serif for the homepage's headlines and promises only; the app
+     UI stays on `--font-sans`. Telugu and Hindi swap serifs under :lang(). */
+  --font-display: var(--f-cormorant, "Cormorant Garamond"), Georgia, serif;
   --font-sans: "Manrope", "Noto Sans", "Noto Sans Telugu", "Noto Sans Devanagari", system-ui, sans-serif;
   --font-brand: "Cinzel", "Trajan Pro", Georgia, serif;
 }

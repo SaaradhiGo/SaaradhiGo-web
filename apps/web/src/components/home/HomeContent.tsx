@@ -1,16 +1,19 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { ButtonLink } from '@/components/sg/Button';
 import { HeroBooking } from '@/components/home/HeroBooking';
+import { HeroMap } from '@/components/home/HeroMap';
+import { Logo } from '@/components/sg/Logo';
+import { PromiseStrip } from '@/components/sg/PromiseStrip';
 import { RideCategories } from '@/components/home/RideCategories';
+import { HOME_COPY } from '@/i18n/home';
 import { Lock, Phone, Shield } from '@/components/sg/icons';
-import { useT } from '@/i18n/LocaleProvider';
+import { useLocale } from '@/i18n/LocaleProvider';
 
 /**
- * The homepage, in the locked order: hero, ride categories, how it works,
- * drive, safety, apps, closing. The footer comes from the layout.
+ * The homepage: hero, promises, ride classes, how it works, drive, safety
+ * band, closing. The footer comes from the layout.
  *
  * "WHERE WE OPERATE" IS GONE, as instructed -- the section, its city chips,
  * its heading and its anchor. The dispatcher's service zones are untouched:
@@ -23,7 +26,8 @@ import { useT } from '@/i18n/LocaleProvider';
  * runtime.
  */
 export function HomeContent() {
-  const t = useT();
+  const { t, language } = useLocale();
+  const h = HOME_COPY[language];
 
   const STEPS = [
     { n: '01', title: t.steps.s1t, body: t.steps.s1b },
@@ -41,45 +45,27 @@ export function HomeContent() {
 
   return (
     <>
-      {/* 1 — Hero ------------------------------------------------------- */}
-      {/* 1 — Hero -------------------------------------------------------
-          NO PHOTOGRAPH. There was one, and it was a phone snapshot of two
-          men standing in a road. A hero image has to be better than the
-          typography it sits beside, and nothing available under a free
-          licence was. So the hero is the headline and the one thing this
-          page is for: the two fields and the button. */}
+      {/* Hero: copy and the booking panel on the left, a decorative map on the
+          right. The panel is where the destination suggestions drop down, so
+          no ancestor may clip it. */}
       <section className="hp hp-hero-band" aria-labelledby="hero-title">
         <div className="hp-hero">
+          <span className="sg-eyebrow">{h.eyebrow}</span>
           <h1 id="hero-title" className="hp-hero__title">
-            {t.hero.titleTop}
-            <span>{t.hero.titleBottom}</span>
+            {h.titleTop}
+            <em>{h.titleBottom}</em>
           </h1>
-          <p className="hp-hero__sub">{t.hero.subtitle}</p>
-          <HeroBooking />
+          <p className="hp-hero__sub">{h.subtitle}</p>
+          <div className="hp-panel">
+            <h2 className="hp-panel__title">{h.panelTitle}</h2>
+            <HeroBooking />
+          </div>
         </div>
-
-        {/* The chariot the brand is named for. It is DECORATION, so it is
-            marked as such and carries no alt text: a screen reader that
-            announced "a charioteer driving two horses" before the pickup
-            field would be reading out the wallpaper. It sits behind the
-            column and is hidden on a phone, where there is no room beside
-            the form and it would only sit under the text. */}
-        <Image
-          className="hp-hero__mark"
-          src="/brand/chariot.png"
-          alt=""
-          aria-hidden="true"
-          width={516}
-          height={360}
-          // 460px is the widest it is ever drawn; `sizes` keeps the
-          // optimiser from shipping a larger variant than the CSS uses.
-          sizes="(max-width: 1023px) 0px, 440px"
-          draggable={false}
-          priority
-        />
+        <HeroMap pickup={h.mapPickup} drop={h.mapDrop} />
       </section>
 
-      {/* 2 — Choose your ride -------------------------------------------- */}
+      <PromiseStrip />
+
       <RideCategories />
 
       {/* 3 — Getting there is simple ------------------------------------- */}
@@ -117,50 +103,30 @@ export function HomeContent() {
         </div>
       </section>
 
-      {/* 5 — Safety ------------------------------------------------------ */}
-      <section className="hp hp-section" id="safety" aria-labelledby="safety-h">
-        <h2 id="safety-h" className="hp-h2">
-          {t.safety.heading}
-        </h2>
-        <p className="hp-lead">{t.safety.lead}</p>
-        <ul className="hp-facts">
-          {SAFETY.map(({ icon: Icon, title, body }) => (
-            <li key={title} className="hp-fact">
-              <span className="hp-fact__icon" aria-hidden="true">
-                <Icon />
-              </span>
-              <div>
-                <h3>{title}</h3>
-                <p>{body}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* 6 — The apps ----------------------------------------------------
-          NO QR CODES AND NO STORE LINKS. Neither app is published, so there
-          is no listing a code could point at; a QR that resolves to nothing
-          is worse than no QR. Both are marked "coming soon" and the section
-          says what works in the browser today. */}
-      <section className="hp hp-section" id="apps" aria-labelledby="apps-h">
-        <h2 id="apps-h" className="hp-h2">
-          {t.apps.heading}
-        </h2>
-        <p className="hp-lead">{t.apps.lead}</p>
-        <div className="hp-apps">
-          <div className="hp-app">
-            <div>
-              <h3>{t.apps.rider}</h3>
-              <span>{t.apps.comingSoon}</span>
-            </div>
+      {/* Noir band: pure black, gold hairlines, the emblem. Safety only; the
+          features listed are the ones that ship. */}
+      <section className="hp-band sg-on-noir" id="safety" aria-labelledby="safety-h">
+        <div className="hp hp-band__in">
+          <div>
+            <span className="sg-eyebrow">{h.bandEyebrow}</span>
+            <h2 id="safety-h" className="hp-h2">
+              {h.bandHeading} <em>{h.bandHeadingEm}</em>
+            </h2>
+            <ul className="hp-facts">
+              {SAFETY.map(({ icon: Icon, title, body }) => (
+                <li key={title} className="hp-fact">
+                  <span className="hp-fact__icon" aria-hidden="true">
+                    <Icon />
+                  </span>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{body}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="hp-app">
-            <div>
-              <h3>{t.apps.driver}</h3>
-              <span>{t.apps.comingSoon}</span>
-            </div>
-          </div>
+          <Logo variant="emblem" className="hp-band__emblem" />
         </div>
       </section>
 

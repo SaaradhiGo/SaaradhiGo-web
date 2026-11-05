@@ -1458,7 +1458,7 @@ function BookPageInner() {
                   {fare ? ` · ${fare}` : ''}
                   <ArrowRight />
                 </Button>
-                <FareLock>Fare locked. No surge after you book.</FareLock>
+                <FareLock>Fare locked. No surprises after you book.</FareLock>
                 {signedIn === false && (
                   <p className="caption text-ink-subtle mt-sg-2">
                     You can book as a guest — no password needed.
