@@ -64,6 +64,7 @@ const PAGES: PageSpec[] = [
   { page: 'platform', label: 'Countries and cities', href: '/settings', words: ['countries', 'cities', 'markets'] },
   { page: 'platform', label: 'Audit log', href: '/settings/audit', words: ['audit', 'log'] },
   { page: 'staff', label: 'Staff and roles', href: '/settings/staff', words: ['staff', 'roles', 'operators', 'invite'] },
+  { page: 'dataRequests', label: 'Data requests', href: '/settings/data-requests', words: ['data', 'privacy', 'erasure', 'export', 'gdpr', 'dpdp'] },
 ];
 
 export function commandsFor(term: string, access: AdminAccess | null): Command[] {
