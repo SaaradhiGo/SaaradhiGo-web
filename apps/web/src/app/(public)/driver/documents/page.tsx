@@ -119,7 +119,8 @@ function DocumentRow({
 
 export default function DriverDocumentsPage() {
   const router = useRouter();
-  const session = useSession();
+  // Ask the server, as the driver home does: a cached role can be stale.
+  const session = useSession({ refresh: true });
   const role = session.status === 'in' ? session.role : null;
 
   const [data, setData] = useState<Onboarding | null>(null);

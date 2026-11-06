@@ -19,6 +19,7 @@ import {
   driverVehicles,
   rows,
 } from '@/lib/driver';
+import { formatExact, formatFare } from '@/lib/money';
 import { messageFor } from '@/lib/publicAuth';
 import { useSession } from '@/lib/useSession';
 
@@ -43,11 +44,14 @@ import { useSession } from '@/lib/useSession';
  * rather than rendering a zero: a driver reading "₹0" when the earnings
  * call failed has been told something false about their own week.
  */
-function money(value: string | number | null | undefined, currency = '₹') {
-  if (value === null || value === undefined || value === '') return null;
-  const n = Number(value);
-  if (!Number.isFinite(n)) return null;
-  return `${currency}${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+/** "Commission ₹173 · 5 trips"; commission only when the API sends it. */
+function todayNote(e: EarningsSummary | null | undefined): string | undefined {
+  if (!e) return undefined;
+  const parts: string[] = [];
+  const commission = formatFare(e.today_commission, 'INR');
+  if (commission) parts.push(`Commission ${commission}`);
+  if (e.today_trips !== undefined) parts.push(`${e.today_trips} trip${e.today_trips === 1 ? '' : 's'}`);
+  return parts.length ? parts.join(' · ') : undefined;
 }
 
 function Stat({
@@ -204,20 +208,17 @@ export default function DriverHomePage() {
         </section>
       ) : (
         <section className="grid gap-sg-3 sm:grid-cols-3">
+          {/* Summaries in whole rupees; the wallet is a payout line, exact. */}
           <Stat
-            label="Earned today"
+            label="You keep today"
             large
-            value={money(earnings?.today_net)}
-            note={
-              earnings?.today_trips !== undefined
-                ? `${earnings.today_trips} trip${earnings.today_trips === 1 ? '' : 's'}`
-                : undefined
-            }
+            value={formatFare(earnings?.today_net, 'INR')}
+            note={todayNote(earnings)}
           />
-          <Stat label="All time" value={money(earnings?.total_net)}
+          <Stat label="All time, after commission" value={formatFare(earnings?.total_net, 'INR')}
                 note={earnings?.total_trips !== undefined ? `${earnings.total_trips} trips` : undefined} />
-          <Stat label="Wallet" value={money(earnings?.wallet_balance)}
-                note="Available to withdraw" />
+          <Stat label="Wallet" value={formatExact(earnings?.wallet_balance, 'INR')}
+                note={Number(earnings?.wallet_balance) < 0 ? 'Commission you owe on cash trips' : 'Available to withdraw'} />
         </section>
       )}
 
@@ -328,7 +329,7 @@ export default function DriverHomePage() {
                 </span>
                 <span className="caption text-ink-muted">
                   {t.status || 'unknown'}
-                  {money(t.total_fare ?? t.fare) ? ` · ${money(t.total_fare ?? t.fare)}` : ''}
+                  {formatExact(t.total_fare ?? t.fare, 'INR') ? ` · ${formatExact(t.total_fare ?? t.fare, 'INR')}` : ''}
                 </span>
               </li>
             ))}
