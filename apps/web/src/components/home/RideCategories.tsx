@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { publicRideName, rideBlurbKey } from '@/lib/vehicles';
+import { classColourFor, publicRideName, rideBlurbKey } from '@/lib/vehicles';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { HOME_COPY } from '@/i18n/home';
 import { vehicleGlyphFor } from '@/components/sg/icons';
@@ -15,6 +15,11 @@ import { serviceabilityAt, type Serviceability } from '@/lib/booking';
  * "from" shows only when the endpoint returns a `min_fare` for the class;
  * nothing is hard-coded, so no price line is better than a wrong one. There
  * is no per-card action: choosing a class needs a priced trip, which /book owns.
+ *
+ * ONLY THE CLASSES PRICING RETURNS (owner, 2026-11-05). While the list loads,
+ * unnamed placeholder cards hold the space; if it fails, no class is shown.
+ * Each card is drawn in its class colour: the glyph in the colour, the tile in
+ * a 14% tint of it.
  */
 
 /** Whole units in the zone's currency, or null when there is no usable fare. */
@@ -31,9 +36,7 @@ export function formatFrom(value: unknown, currency?: string | null): string | n
   }
 }
 
-const DEFAULT_CLASSES: { type: string; description?: string; min_fare?: string | null }[] = [
-  { type: 'auto' }, { type: 'mini' }, { type: 'sedan' }, { type: 'suv' },
-];
+const PLACEHOLDER_CARDS = 4;
 
 export function RideCategories() {
   const { t, language } = useLocale();
@@ -61,10 +64,8 @@ export function RideCategories() {
     };
   }, []);
 
-  // The classes the site launches with, shown at once; the API list replaces them
-  // when it arrives, and only the price waits (skeleton) for it.
   const loading = service === null && !failed;
-  const categories = service?.vehicle_types ?? DEFAULT_CLASSES;
+  const categories = service?.vehicle_types ?? [];
 
   return (
     <section className="hp hp-section" id="rides" aria-labelledby="rides-h">
@@ -82,6 +83,18 @@ export function RideCategories() {
         <p className="hp-lead">No ride classes are published yet.</p>
       )}
 
+      {loading && (
+        <ul className="hp-rides" aria-busy="true" aria-label={h.ridesHeading}>
+          {Array.from({ length: PLACEHOLDER_CARDS }, (_, i) => (
+            <li key={i} className="hp-ride hp-ride--placeholder" aria-hidden="true">
+              <span className="hp-ride__art" />
+              <span className="hp-ride__name-skel animate-pulse" />
+              <span className="hp-ride__from-skel animate-pulse" />
+            </li>
+          ))}
+        </ul>
+      )}
+
       {categories.length > 0 && (
         <ul className="hp-rides" aria-busy={loading || undefined}>
           {categories.map((c) => {
@@ -90,15 +103,13 @@ export function RideCategories() {
             const blurb = c.description?.trim() || (key ? t.rideBlurbs[key] : null);
             const from = formatFrom(c.min_fare, service?.zone?.currency);
             return (
-              <li key={c.type} className="hp-ride">
+              <li key={c.type} className="hp-ride" data-class={classColourFor(c.type) ?? undefined}>
                 <span className="hp-ride__art" aria-hidden="true">
                   {rideGlyph(key) ?? <Fallback />}
                 </span>
                 <h3>{publicRideName(c.type, t.rideNames)}</h3>
                 {blurb && <p>{blurb}</p>}
-                {loading ? (
-                  <span className="hp-ride__from-skel animate-pulse" aria-hidden="true" />
-                ) : from && (
+                {from && (
                   <span className="hp-ride__from">
                     {h.from} {from}
                   </span>

@@ -9,7 +9,7 @@ import { usePages } from '@/i18n/usePages';
  *
  * Every step here is a step the product actually performs: the service-area
  * check before pricing, the per-class fares from the pricing service, the
- * four-digit PIN the driver must enter, the live position on the map, and
+ * six-digit PIN the driver must enter, the live position on the map, and
  * cash settlement. Nothing about wallets, scheduled rides, fare splitting or
  * loyalty, none of which exist.
  */

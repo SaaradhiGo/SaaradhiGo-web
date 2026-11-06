@@ -1593,7 +1593,7 @@ function BookPageInner() {
                 </span>
                 <span className="sg-pin sg-num">
                   {pickupOtp.split('').map((digit, i) => (
-                    // A four-digit PIN repeats digits; the position is the
+                    // A six-digit PIN repeats digits; the position is the
                     // only stable key it has.
                     // eslint-disable-next-line react/no-array-index-key
                     <span key={i}>{digit}</span>

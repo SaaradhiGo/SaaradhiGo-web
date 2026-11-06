@@ -65,7 +65,7 @@ const en: PagesCopy = {
       },
       {
         h: 'Request, then share your PIN',
-        p: 'Once you request a ride we look for a nearby driver. When one accepts you see their name and vehicle number, and a four-digit PIN. The driver cannot start the trip until you give it to them.',
+        p: 'Once you request a ride we look for a nearby driver. When one accepts you see their name and vehicle number, and a six-digit PIN. The driver cannot start the trip until you give it to them.',
       },
       {
         h: 'Follow the trip as it happens',
@@ -126,7 +126,7 @@ const en: PagesCopy = {
     sections: [
       {
         h: 'A PIN starts every ride',
-        p: 'When a driver accepts your trip you are shown a four-digit PIN. The driver has to enter it to begin, and it is checked on our servers rather than inside the app, so the trip cannot be started without you.',
+        p: 'When a driver accepts your trip you are shown a six-digit PIN. The driver has to enter it to begin, and it is checked on our servers rather than inside the app, so the trip cannot be started without you.',
       },
       {
         h: 'The trip is tracked while it runs',
@@ -185,7 +185,7 @@ const en: PagesCopy = {
       {
         h: 'During your trip',
         items: [
-          'Give your driver the four-digit PIN shown on your screen. They cannot start the trip without it.',
+          'Give your driver the six-digit PIN shown on your screen. They cannot start the trip without it.',
           'Your driver’s position updates on the map while the trip runs.',
           'Trips are settled in cash with the driver today.',
         ],
@@ -257,7 +257,7 @@ const hi: PagesCopy = {
     sections: [
       { h: 'बताएं आप कहाँ हैं और कहाँ जाना है', p: 'पिकअप और गंतव्य टाइप करें, या अपना वर्तमान स्थान उपयोग करें। आगे बढ़ने से पहले हम जाँचते हैं कि आपका पिकअप सेवा क्षेत्र में है या नहीं, ताकि आपको कार चुनने के बाद नहीं, तुरंत पता चले।' },
       { h: 'चुनने से पहले हर श्रेणी की तुलना करें', p: 'हर श्रेणी का किराया आपकी यात्रा के लिए तय होकर एक साथ दिखता है, ताकि आप तुलना करें, न कि बाद में कीमत जानें। जिस श्रेणी का किराया हम नहीं निकाल सकते, वह अनुमान दिखाने के बजाय यही बताती है।' },
-      { h: 'अनुरोध करें, फिर अपना पिन दें', p: 'अनुरोध के बाद हम पास का ड्राइवर खोजते हैं। स्वीकार करने पर आपको उनका नाम, वाहन नंबर और चार अंकों का पिन दिखता है। जब तक आप पिन नहीं देते, ड्राइवर यात्रा शुरू नहीं कर सकता।' },
+      { h: 'अनुरोध करें, फिर अपना पिन दें', p: 'अनुरोध के बाद हम पास का ड्राइवर खोजते हैं। स्वीकार करने पर आपको उनका नाम, वाहन नंबर और छह अंकों का पिन दिखता है। जब तक आप पिन नहीं देते, ड्राइवर यात्रा शुरू नहीं कर सकता।' },
       { h: 'यात्रा को साथ-साथ देखें', p: 'पूरी यात्रा के दौरान ड्राइवर की स्थिति मानचित्र पर अपडेट होती है और रास्ता खींचा जाता है। यात्रा शुरू होने से पहले आप उसी स्क्रीन से रद्द कर सकते हैं।' },
       { h: 'अंत में भुगतान करें', p: 'फ़िलहाल यात्राएँ ड्राइवर को नकद में चुकाई जाती हैं। आपकी यात्रा का इतिहास आपके खाते में है।' },
     ],
@@ -286,7 +286,7 @@ const hi: PagesCopy = {
     metaDescription: 'SaaradhiGo पर आज चल रही सुरक्षा सुविधाएँ: सर्वर पर जाँचा जाने वाला राइड पिन, लाइव ट्रिप ट्रैकिंग, और संचालन टीम तक पहुँचने वाले सुरक्षा अलर्ट।',
     lead: 'ये सुविधाएँ आज प्लेटफ़ॉर्म पर चल रही हैं। जो योजना में है पर बना नहीं, उसे हमने जानबूझकर नहीं गिनाया।',
     sections: [
-      { h: 'हर सवारी पिन से शुरू होती है', p: 'ड्राइवर के स्वीकार करते ही आपको चार अंकों का पिन दिखता है। शुरू करने के लिए ड्राइवर को वह डालना पड़ता है, और उसकी जाँच ऐप में नहीं, हमारे सर्वर पर होती है — यानी आपके बिना यात्रा शुरू नहीं हो सकती।' },
+      { h: 'हर सवारी पिन से शुरू होती है', p: 'ड्राइवर के स्वीकार करते ही आपको छह अंकों का पिन दिखता है। शुरू करने के लिए ड्राइवर को वह डालना पड़ता है, और उसकी जाँच ऐप में नहीं, हमारे सर्वर पर होती है — यानी आपके बिना यात्रा शुरू नहीं हो सकती।' },
       { h: 'यात्रा के दौरान ट्रैकिंग', p: 'पूरी यात्रा में ड्राइवर की स्थिति आपके मानचित्र पर अपडेट होती है और जो रास्ता तय हो रहा है वह खींचा जाता है। अगर गाड़ी अपेक्षा से अलग चल रही हो, आप देख सकते हैं।' },
       { h: 'अलर्ट किसी व्यक्ति तक पहुँचता है', p: 'यात्रा के दौरान उठाया गया सुरक्षा अलर्ट यात्रा और उसके स्थान के साथ हमारी संचालन टीम तक पहुँचता है। कोई व्यक्ति उसे पूरे संदर्भ के साथ देखता है।' },
       { h: 'हम क्या दावा नहीं करते', p: 'हम चौबीसों घंटे स्टाफ़ वाला आपातकालीन डेस्क नहीं चलाते, आपातकालीन सेवाओं से हमारी कोई साझेदारी नहीं है, हम यात्राएँ रिकॉर्ड नहीं करते, और हम बीमा कवर नहीं देते। तत्काल ख़तरे में पहले स्थानीय आपातकालीन सेवाओं से संपर्क करें।' },
@@ -311,7 +311,7 @@ const hi: PagesCopy = {
     sections: [],
     groups: [
       { h: 'सवारी बुक करना', items: ['बुकिंग पेज पर पिकअप और गंतव्य चुनें, फिर चुनने से पहले हर श्रेणी के किराए की तुलना करें।', 'यदि आपका पिकअप सेवा क्षेत्र से बाहर है तो कार चुनने से पहले हम बता देंगे।', 'यात्रा शुरू होने से पहले किसी भी समय आप ट्रिप स्क्रीन से रद्द कर सकते हैं।'] },
-      { h: 'यात्रा के दौरान', items: ['स्क्रीन पर दिख रहा चार अंकों का पिन ड्राइवर को दें। उसके बिना वे यात्रा शुरू नहीं कर सकते।', 'यात्रा चलते समय ड्राइवर की स्थिति मानचित्र पर अपडेट होती है।', 'फ़िलहाल यात्राएँ ड्राइवर को नकद में चुकाई जाती हैं।'] },
+      { h: 'यात्रा के दौरान', items: ['स्क्रीन पर दिख रहा छह अंकों का पिन ड्राइवर को दें। उसके बिना वे यात्रा शुरू नहीं कर सकते।', 'यात्रा चलते समय ड्राइवर की स्थिति मानचित्र पर अपडेट होती है।', 'फ़िलहाल यात्राएँ ड्राइवर को नकद में चुकाई जाती हैं।'] },
       { h: 'आपका खाता', items: ['अपने ईमेल पते से खाता बनाएँ, और भेजे गए संदेश से उसकी पुष्टि करें।', 'साइन इन न कर पाएँ तो साइन-इन पेज पर पासवर्ड रीसेट लिंक का उपयोग करें।', 'आपकी पिछली यात्राएँ "मेरी यात्राएँ" में हैं।'] },
       { h: 'हमारे साथ ड्राइविंग', items: ['लाइसेंस, वाहन पंजीकरण और बीमा के साथ ऑनलाइन आवेदन करें।', 'पहली यात्रा से पहले आपके दस्तावेज़ देखे जाते हैं।', 'हर ट्रिप ऑफ़र स्वीकार करने से पहले अपना किराया दिखाता है।'] },
       { h: 'सुरक्षा', items: ['हर सवारी एक पिन से शुरू होती है जिसकी जाँच हमारे सर्वर पर होती है।', 'यात्रा के दौरान उठाया गया सुरक्षा अलर्ट यात्रा के साथ हमारी संचालन टीम तक पहुँचता है।', 'तत्काल ख़तरे में पहले स्थानीय आपातकालीन सेवाओं से संपर्क करें।'] },
@@ -345,7 +345,7 @@ const te: PagesCopy = {
     sections: [
       { h: 'మీరు ఎక్కడ ఉన్నారో, ఎక్కడికి వెళ్తున్నారో చెప్పండి', p: 'పికప్ మరియు గమ్యాన్ని టైప్ చేయండి, లేదా మీ ప్రస్తుత ప్రదేశాన్ని ఉపయోగించండి. ముందుకు వెళ్లే ముందు మీ పికప్ సేవా ప్రాంతంలో ఉందా అని తనిఖీ చేస్తాం, తద్వారా కారు ఎంచుకున్న తర్వాత కాకుండా వెంటనే తెలుస్తుంది.' },
       { h: 'ఎంచుకునే ముందు ప్రతి తరగతిని పోల్చండి', p: 'ప్రతి తరగతికి మీ ప్రయాణానికి ధర నిర్ణయించి కలిపి చూపిస్తాం, తద్వారా మీరు పోల్చుకుంటారు, తర్వాత ధర తెలుసుకోరు. ధర నిర్ణయించలేని తరగతి ఊహను చూపకుండా అదే చెబుతుంది.' },
-      { h: 'అభ్యర్థించండి, ఆపై పిన్ ఇవ్వండి', p: 'అభ్యర్థించిన తర్వాత దగ్గరలోని డ్రైవర్‌ను వెతుకుతాం. ఒకరు అంగీకరించగానే వారి పేరు, వాహన నంబర్ మరియు నాలుగు అంకెల పిన్ కనిపిస్తాయి. మీరు పిన్ ఇచ్చే వరకు డ్రైవర్ ప్రయాణాన్ని మొదలుపెట్టలేరు.' },
+      { h: 'అభ్యర్థించండి, ఆపై పిన్ ఇవ్వండి', p: 'అభ్యర్థించిన తర్వాత దగ్గరలోని డ్రైవర్‌ను వెతుకుతాం. ఒకరు అంగీకరించగానే వారి పేరు, వాహన నంబర్ మరియు ఆరు అంకెల పిన్ కనిపిస్తాయి. మీరు పిన్ ఇచ్చే వరకు డ్రైవర్ ప్రయాణాన్ని మొదలుపెట్టలేరు.' },
       { h: 'ప్రయాణాన్ని అప్పటికప్పుడు చూడండి', p: 'ప్రయాణం పొడవునా డ్రైవర్ స్థానం మ్యాప్‌లో నవీకరించబడుతుంది, మార్గం గీయబడుతుంది. ప్రయాణం మొదలవ్వని వరకు అదే స్క్రీన్ నుంచి రద్దు చేయవచ్చు.' },
       { h: 'చివర్లో చెల్లించండి', p: 'ప్రస్తుతం ప్రయాణాలు డ్రైవర్‌కు నగదు రూపంలో చెల్లించబడతాయి. మీ ప్రయాణ చరిత్ర మీ ఖాతాలో ఉంటుంది.' },
     ],
@@ -374,7 +374,7 @@ const te: PagesCopy = {
     metaDescription: 'SaaradhiGoలో ఈరోజు పనిచేస్తున్న భద్రతా సదుపాయాలు: సర్వర్‌లో ధృవీకరించే రైడ్ పిన్, ప్రత్యక్ష ప్రయాణ ట్రాకింగ్, ఆపరేషన్స్ బృందానికి చేరే భద్రతా హెచ్చరికలు.',
     lead: 'ఇవి ఈరోజు ప్లాట్‌ఫామ్‌లో పనిచేస్తున్న సదుపాయాలు. ప్రణాళికలో ఉండి ఇంకా నిర్మించనిదాన్ని ఉద్దేశపూర్వకంగా చేర్చలేదు.',
     sections: [
-      { h: 'ప్రతి ప్రయాణం పిన్‌తో మొదలవుతుంది', p: 'డ్రైవర్ అంగీకరించగానే మీకు నాలుగు అంకెల పిన్ కనిపిస్తుంది. మొదలుపెట్టడానికి డ్రైవర్ దాన్ని నమోదు చేయాలి, అది యాప్‌లో కాదు మా సర్వర్‌లలో తనిఖీ అవుతుంది — అంటే మీరు లేకుండా ప్రయాణం మొదలవ్వదు.' },
+      { h: 'ప్రతి ప్రయాణం పిన్‌తో మొదలవుతుంది', p: 'డ్రైవర్ అంగీకరించగానే మీకు ఆరు అంకెల పిన్ కనిపిస్తుంది. మొదలుపెట్టడానికి డ్రైవర్ దాన్ని నమోదు చేయాలి, అది యాప్‌లో కాదు మా సర్వర్‌లలో తనిఖీ అవుతుంది — అంటే మీరు లేకుండా ప్రయాణం మొదలవ్వదు.' },
       { h: 'ప్రయాణం జరుగుతుండగా ట్రాకింగ్', p: 'ప్రయాణం పొడవునా డ్రైవర్ స్థానం మీ మ్యాప్‌లో నవీకరించబడుతుంది, ప్రయాణిస్తున్న రహదారి గీయబడుతుంది. కారు మీరు ఊహించిన విధంగా వెళ్లకపోతే మీరు చూడగలరు.' },
       { h: 'హెచ్చరిక ఒక వ్యక్తికి చేరుతుంది', p: 'ప్రయాణంలో లేవనెత్తిన భద్రతా హెచ్చరిక, ప్రయాణం మరియు దాని స్థానంతో కలిపి మా ఆపరేషన్స్ బృందానికి చేరుతుంది. ఒక వ్యక్తి దాన్ని పూర్తి సందర్భంతో చూస్తారు.' },
       { h: 'మేము చెప్పని విషయాలు', p: 'మేము ఇరవై నాలుగు గంటల సిబ్బందితో కూడిన అత్యవసర డెస్క్ నడపం, అత్యవసర సేవలతో మాకు భాగస్వామ్యం లేదు, ప్రయాణాలను రికార్డ్ చేయం, బీమా కవర్ ఇవ్వం. తక్షణ ప్రమాదంలో ముందుగా స్థానిక అత్యవసర సేవలను సంప్రదించండి.' },
@@ -399,7 +399,7 @@ const te: PagesCopy = {
     sections: [],
     groups: [
       { h: 'ప్రయాణం బుక్ చేయడం', items: ['బుకింగ్ పేజీలో పికప్, గమ్యం ఎంచుకోండి, ఎంచుకునే ముందు ప్రతి తరగతి ధరను పోల్చండి.', 'మీ పికప్ సేవా ప్రాంతం వెలుపల ఉంటే కారు ఎంచుకునే ముందే చెబుతాం.', 'ప్రయాణం మొదలవ్వని ఎప్పుడైనా ట్రిప్ స్క్రీన్ నుంచి రద్దు చేయవచ్చు.'] },
-      { h: 'మీ ప్రయాణంలో', items: ['స్క్రీన్‌పై కనిపించే నాలుగు అంకెల పిన్‌ను డ్రైవర్‌కు ఇవ్వండి. అది లేకుండా వారు ప్రయాణాన్ని మొదలుపెట్టలేరు.', 'ప్రయాణం సాగుతుండగా డ్రైవర్ స్థానం మ్యాప్‌లో నవీకరించబడుతుంది.', 'ప్రస్తుతం ప్రయాణాలు డ్రైవర్‌కు నగదు రూపంలో చెల్లించబడతాయి.'] },
+      { h: 'మీ ప్రయాణంలో', items: ['స్క్రీన్‌పై కనిపించే ఆరు అంకెల పిన్‌ను డ్రైవర్‌కు ఇవ్వండి. అది లేకుండా వారు ప్రయాణాన్ని మొదలుపెట్టలేరు.', 'ప్రయాణం సాగుతుండగా డ్రైవర్ స్థానం మ్యాప్‌లో నవీకరించబడుతుంది.', 'ప్రస్తుతం ప్రయాణాలు డ్రైవర్‌కు నగదు రూపంలో చెల్లించబడతాయి.'] },
       { h: 'మీ ఖాతా', items: ['మీ ఇమెయిల్ చిరునామాతో ఖాతా సృష్టించి, మేము పంపే సందేశం ద్వారా దాన్ని ధృవీకరించండి.', 'సైన్ ఇన్ చేయలేకపోతే సైన్-ఇన్ పేజీలోని పాస్‌వర్డ్ రీసెట్ లింక్ ఉపయోగించండి.', 'మీ గత ప్రయాణాలు "నా ప్రయాణాలు"లో ఉంటాయి.'] },
       { h: 'మాతో డ్రైవింగ్', items: ['లైసెన్స్, వాహన రిజిస్ట్రేషన్, బీమాతో ఆన్‌లైన్‌లో దరఖాస్తు చేయండి.', 'మీ మొదటి ప్రయాణానికి ముందు మీ పత్రాలు పరిశీలించబడతాయి.', 'ప్రతి ట్రిప్ ఆఫర్ స్వీకరించే ముందు దాని ధరను చూపుతుంది.'] },
       { h: 'భద్రత', items: ['ప్రతి ప్రయాణం మా సర్వర్‌లలో ధృవీకరించే పిన్‌తో మొదలవుతుంది.', 'ప్రయాణంలో లేవనెత్తిన భద్రతా హెచ్చరిక ప్రయాణంతో కలిపి మా ఆపరేషన్స్ బృందానికి చేరుతుంది.', 'తక్షణ ప్రమాదంలో ముందుగా స్థానిక అత్యవసర సేవలను సంప్రదించండి.'] },
@@ -433,7 +433,7 @@ const es: PagesCopy = {
     sections: [
       { h: 'Indica dónde estás y a dónde vas', p: 'Escribe la recogida y el destino, o usa tu ubicación actual. Comprobamos que la recogida esté dentro de una zona de servicio antes de seguir, para que lo sepas de inmediato y no después de elegir coche.' },
       { h: 'Compara cada categoría antes de elegir', p: 'Cada categoría se tarifica para tu trayecto exacto y se muestra junta, de modo que comparas en lugar de descubrir el precio después. Una categoría que no podemos tarificar lo dice en vez de mostrar una estimación.' },
-      { h: 'Solicita y comparte tu PIN', p: 'Al solicitar el viaje buscamos un conductor cercano. Cuando alguien acepta ves su nombre, la matrícula y un PIN de cuatro dígitos. El conductor no puede empezar el viaje hasta que se lo des.' },
+      { h: 'Solicita y comparte tu PIN', p: 'Al solicitar el viaje buscamos un conductor cercano. Cuando alguien acepta ves su nombre, la matrícula y un PIN de seis dígitos. El conductor no puede empezar el viaje hasta que se lo des.' },
       { h: 'Sigue el viaje mientras ocurre', p: 'La posición del conductor se actualiza en el mapa durante todo el trayecto y la ruta se dibuja a medida que avanzas. Puedes cancelar desde la misma pantalla mientras el viaje no haya comenzado.' },
       { h: 'Paga al final', p: 'Hoy los viajes se liquidan en efectivo con el conductor. Tu historial está en tu cuenta.' },
     ],
@@ -462,7 +462,7 @@ const es: PagesCopy = {
     metaDescription: 'Las funciones de seguridad activas hoy en SaaradhiGo: un PIN verificado en el servidor, seguimiento del viaje en directo y alertas que llegan a operaciones.',
     lead: 'Estas funciones están activas hoy en la plataforma. Hemos dejado fuera a propósito todo lo que está planeado pero no construido.',
     sections: [
-      { h: 'Un PIN inicia cada viaje', p: 'Cuando un conductor acepta tu viaje ves un PIN de cuatro dígitos. El conductor tiene que introducirlo para empezar, y se comprueba en nuestros servidores y no dentro de la aplicación, así que el viaje no puede comenzar sin ti.' },
+      { h: 'Un PIN inicia cada viaje', p: 'Cuando un conductor acepta tu viaje ves un PIN de seis dígitos. El conductor tiene que introducirlo para empezar, y se comprueba en nuestros servidores y no dentro de la aplicación, así que el viaje no puede comenzar sin ti.' },
       { h: 'El viaje se sigue mientras ocurre', p: 'La posición del conductor se actualiza en tu mapa durante todo el trayecto y la vía recorrida se dibuja sobre la marcha. Si el coche no va como esperas, puedes verlo.' },
       { h: 'Una alerta llega a una persona', p: 'Una alerta de seguridad durante un viaje llega a nuestro equipo de operaciones con el trayecto y su ubicación. Alguien la ve con el contexto ya incluido.' },
       { h: 'Lo que no afirmamos', p: 'No tenemos una central de emergencias atendida las veinticuatro horas, no tenemos acuerdos con servicios de emergencia, no grabamos los viajes y no ofrecemos cobertura de seguro. Si estás en peligro inmediato, contacta primero con los servicios de emergencia locales.' },
@@ -487,7 +487,7 @@ const es: PagesCopy = {
     sections: [],
     groups: [
       { h: 'Reservar un viaje', items: ['Indica recogida y destino en la página de reserva y compara la tarifa de cada categoría antes de elegir.', 'Si tu recogida está fuera de una zona de servicio te lo diremos antes de que elijas coche.', 'Puedes cancelar desde la pantalla del viaje en cualquier momento antes de que empiece.'] },
-      { h: 'Durante tu viaje', items: ['Dale al conductor el PIN de cuatro dígitos que aparece en tu pantalla. Sin él no puede empezar.', 'La posición del conductor se actualiza en el mapa mientras dura el viaje.', 'Hoy los viajes se liquidan en efectivo con el conductor.'] },
+      { h: 'Durante tu viaje', items: ['Dale al conductor el PIN de seis dígitos que aparece en tu pantalla. Sin él no puede empezar.', 'La posición del conductor se actualiza en el mapa mientras dura el viaje.', 'Hoy los viajes se liquidan en efectivo con el conductor.'] },
       { h: 'Tu cuenta', items: ['Crea una cuenta con tu correo y confírmala desde el mensaje que te enviamos.', 'Si no puedes iniciar sesión, usa el enlace de restablecer contraseña.', 'Tus viajes anteriores están en Mis viajes.'] },
       { h: 'Conducir con nosotros', items: ['Solicítalo en línea con tu permiso, el registro del vehículo y el seguro.', 'Revisamos tus documentos antes de tu primer viaje.', 'Cada oferta muestra su tarifa antes de aceptarla.'] },
       { h: 'Seguridad', items: ['Cada viaje empieza con un PIN que se verifica en nuestros servidores.', 'Una alerta de seguridad durante un viaje llega a nuestro equipo de operaciones con el trayecto.', 'Si estás en peligro inmediato, contacta primero con los servicios de emergencia locales.'] },

@@ -50,6 +50,8 @@ export function HomeContent() {
           no ancestor may clip it. */}
       <section className="hp hp-hero-band" aria-labelledby="hero-title">
         <div className="hp-hero">
+          {/* The owner's full logo leads the hero, on black (2026-11-05). */}
+          <Logo variant="lockup" className="hp-hero__logo" label="Saaradhi Go" />
           <span className="sg-eyebrow">{h.eyebrow}</span>
           <h1 id="hero-title" className="hp-hero__title">
             {h.titleTop}
