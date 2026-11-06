@@ -126,7 +126,7 @@ export function HomeContent() {
               ))}
             </ul>
           </div>
-          <Logo variant="emblem" className="hp-band__emblem" />
+          <Logo variant="badge-full" className="hp-band__emblem" />
         </div>
       </section>
 

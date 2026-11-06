@@ -69,6 +69,7 @@ for (const f of cssFiles) {
 
 // 2 and 3. where tokens are declared
 const ROOT_PART = /^(:root|\[data-theme=["'](dark|light)["']\])$/;
+const SCOPED_PART = /^(\.(ops|login)(\[data-theme=["'](dark|light)["']\])?|:lang\((te|hi)\))$/;
 const declared = new Set();
 const darkTokens = new Set();
 const lightTokens = new Set();
@@ -84,6 +85,11 @@ for (const [f, ast] of parsed) {
       ? parent.selector.split(',').map((s) => s.trim())
       : [];
     const isRoot = parts.length > 0 && parts.every((p) => ROOT_PART.test(p));
+    // Two documented scopes that are not theme roots (owner, 2026-11-05):
+    // the console's pinned pre-redesign palette under `.ops` / `.login`, and
+    // the per-script font stack under `:lang(te)` / `:lang(hi)`.
+    const isScoped = parts.length > 0 && parts.every((p) => SCOPED_PART.test(p));
+    if (isScoped) return;
     if (!isRoot) {
       const where = parent?.type === 'rule' ? `inside \`${parent.selector}\`` : `inside a ${parent?.type ?? 'non-rule'}`;
       problems.push(`${rel(f)}:${decl.source?.start?.line ?? '?'}: token ${decl.prop} declared ${where}; tokens belong on :root / [data-theme] only`);

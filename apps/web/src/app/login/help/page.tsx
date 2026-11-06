@@ -22,7 +22,7 @@ export default function LoginHelpPage() {
     <div className="login" data-theme={theme}>
       <aside className="login__brand sg-on-noir">
         <Link href="/login" className="login__lockup" aria-label="Saaradhi Go, back to sign in">
-          <Logo variant="emblem" />
+          <Logo variant="badge" />
           <span>Saaradhi Go</span>
         </Link>
         <div className="login__hero">

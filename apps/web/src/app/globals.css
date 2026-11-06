@@ -39,9 +39,9 @@
        as a type class (Manrope 11/16, 700, .12em tracking) and a form label
        cannot also be that.
 
-   TYPE        Cormorant Garamond for headlines and promises; Manrope for
-               every number, label and control; Cinzel for the brand name,
-               eyebrows and map labels. Nothing else.
+   TYPE        Anek (Latin, Telugu, Devanagari) for everything; Cinzel 600
+               only for "Saaradhi Go" beside the badge. The console keeps
+               Manrope. Nothing else.
    CONTROLS    48px minimum touch target on mobile. Every control shows a
                2px `focus-ring` at 2px offset -- never `outline: none`
                without a replacement, because the ring is the only thing a

@@ -53,7 +53,7 @@ export const metadata: Metadata = {
 // `noir`, so the browser chrome and the area behind a rubber-band scroll match
 // the nav rather than flashing white above it.
 export const viewport: Viewport = {
-  themeColor: '#090708',
+  themeColor: '#000000',
   colorScheme: 'dark',
 };
 

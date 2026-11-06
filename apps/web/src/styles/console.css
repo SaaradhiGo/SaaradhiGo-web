@@ -1091,17 +1091,16 @@ a.ops-alert:hover { background: var(--ops-wash); }
   color: var(--on-noir);
   border-right: 1px solid rgba(255, 215, 0, 0.14);
 }
-/* The backdrop: the brand's own chariot as a mask, tinted gold at a few
-   percent, under a scrim. No photograph to load, no gradient dressed as
-   depth -- a few kilobytes of artwork that is already in the bundle. */
+/* The backdrop: the owner's full logo as a mask, tinted gold at a few
+   percent, under a scrim (the old chariot clip-art is retired, 2026-11-05). */
 .login__brand::before {
   content: '';
   position: absolute; right: -8%; bottom: -6%;
-  width: 78%; aspect-ratio: 516 / 360;
+  width: 62%; aspect-ratio: 2271 / 2461;
   background: var(--gold-500);
   opacity: 0.06;
-  -webkit-mask: url('/brand/chariot.png') center / contain no-repeat;
-  mask: url('/brand/chariot.png') center / contain no-repeat;
+  -webkit-mask: url('/brand/lockup-gold.svg') center / contain no-repeat;
+  mask: url('/brand/lockup-gold.svg') center / contain no-repeat;
   pointer-events: none;
 }
 .login__brand::after {
