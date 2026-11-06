@@ -446,7 +446,7 @@ function LoginInner() {
     <div className="login" data-theme={theme}>
       <aside className="login__brand sg-on-noir">
         <Link href="/" className="login__lockup" aria-label="Saaradhi Go, public site">
-          <Logo variant="emblem" />
+          <Logo variant="badge" />
           <span>Saaradhi Go</span>
         </Link>
 

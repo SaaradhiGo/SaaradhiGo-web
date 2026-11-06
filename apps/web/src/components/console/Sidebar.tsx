@@ -63,7 +63,7 @@ export function Sidebar({
       {/* Named by its own text while that text is visible; only the
           collapsed rail, where the words are hidden, needs a label. */}
       <Link href={home} className="ops__brand" aria-label={collapsed ? 'Saaradhi Go Admin, home' : undefined}>
-        <Logo variant="emblem" />
+        <Logo variant="badge" />
         <span className="ops__wordmark">
           Saaradhi Go
           <small>Admin</small>

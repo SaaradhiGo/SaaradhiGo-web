@@ -63,7 +63,7 @@
   display: flex; align-items: center; gap: 32px;
 }
 .hp-nav__logo { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; flex: none; }
-.hp-nav__logo .sg-logo { width: 40px; }
+.hp-nav__logo .sg-logo { width: 48px; }
 .hp-nav__name {
   font-family: var(--font-brand); font-size: 18px; font-weight: 600;
   letter-spacing: 0.06em; color: var(--gold-500); white-space: nowrap;
@@ -639,22 +639,17 @@
 
 /* --- design-system pass: display serif, hero, promise, rides, band -------- */
 
-:lang(te) { --font-display: var(--f-noto-te, "Noto Serif Telugu"), serif; }
-:lang(hi) { --font-display: var(--f-noto-hi, "Noto Serif Devanagari"), serif; }
-
 .hp-h2, .hp-hero__title, .hp-panel__title, .sg-promise p {
   font-family: var(--font-display);
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 .hp-h2 { font-size: 44px; line-height: 1.1; margin-top: 16px; }
+/* Anek has no italic, and a synthesised slant distorts Telugu and Hindi
+   conjuncts, so the gold line is set upright in every language. */
 .hp-h2 em, .hp-hero__title em {
-  font-style: italic; color: var(--gold-text); font-weight: 500;
+  font-style: normal; color: var(--gold-text); font-weight: 800;
 }
-/* Noto Serif Telugu and Devanagari have no italic; a synthesised slant
-   distorts the conjuncts, so the gold line stays upright there. */
-:lang(te) .hp-h2 em, :lang(te) .hp-hero__title em,
-:lang(hi) .hp-h2 em, :lang(hi) .hp-hero__title em { font-style: normal; }
 :lang(te) .hp-hero__title, :lang(hi) .hp-hero__title { line-height: 1.3; }
 
 /* Hero: text column + framed map. No overflow clipping on the band, so
@@ -693,7 +688,7 @@
 .hp-map__tag text { fill: var(--on-noir); font: 700 12px var(--font-sans); }
 
 .hp-promise { padding-top: 0; padding-bottom: 0; }
-.sg-promise h3 { font-family: var(--font-brand); }
+.sg-promise h3 { font-family: var(--font-sans); }
 .sg-promise p { font-size: 24px; line-height: 1.25; }
 
 .hp-split { display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; align-items: end; }
@@ -708,7 +703,7 @@
   display: block; height: auto; border: 0; background: none; border-radius: 0; color: var(--gold-text);
 }
 .hp-ride__art svg { width: 76px; height: 50px; }
-.hp-ride h3 { font-family: var(--font-display); font-size: 26px; font-weight: 500; }
+.hp-ride h3 { font-family: var(--font-display); font-size: 26px; font-weight: 800; }
 .hp-ride p { font-size: 15px; }
 .hp-ride__from { font: 800 15px/22px var(--font-sans); color: var(--gold-text); margin-top: 4px; }
 /* Owner, 2026-11-05: description and price at 15–16px on desktop. */
@@ -755,9 +750,3 @@
   .hp-hero__title { font-size: 38px; }
 }
 
-/* The display families (self-hosted in fonts.css), as the variables the site uses. */
-:where(html) {
-  --f-cormorant: "Cormorant Garamond", Georgia, serif;
-  --f-noto-te: "Noto Serif Telugu", serif;
-  --f-noto-hi: "Noto Serif Devanagari", serif;
-}

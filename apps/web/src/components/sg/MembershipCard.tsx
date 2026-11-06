@@ -34,9 +34,9 @@ export function MembershipCard({
 }) {
   return (
     <div className={`sg-member sg-on-noir ${className}`.trim()}>
-      <Logo variant="emblem" className="wm" />
+      <Logo variant="badge-full" className="wm" />
       <div className="flex items-center gap-sg-3">
-        <Logo variant="emblem" width={44} />
+        <Logo variant="badge" width={44} />
         <span className="sg-member__tier">{tier.toUpperCase()}</span>
       </div>
       <div className="sg-member__name">
