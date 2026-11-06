@@ -21,7 +21,7 @@ import {
  * WHAT "GUEST" MEANS HERE, AND WHY IT IS NOT LESS THAN IT SOUNDS
  *
  * There is no anonymous trip. A trip is dispatched to a driver who has to
- * call someone at the kerb, a four-digit PIN is checked against a person,
+ * call someone at the kerb, a six-digit PIN is checked against a person,
  * the ride appears in a history and a receipt goes somewhere. The server
  * models all of that against an account, and a web page cannot wish that
  * away.

@@ -33,6 +33,26 @@ const DISPLAY_KEY: Record<string, RideKey> = {
   suv: 'suv',
 };
 
+/** The colour family each backend code is drawn in (hybrid design, 2026-11-05).
+ *  The same mapping is used by the rider and driver apps. An unknown code has
+ *  none and is drawn neutral. */
+export type ClassColour = 'bike' | 'auto' | 'car' | 'comfort' | 'suv' | 'premium';
+const CLASS_COLOUR: Record<string, ClassColour> = {
+  bike: 'bike',
+  auto: 'auto',
+  hatchback: 'car',
+  mini: 'car',
+  sedan: 'comfort',
+  suv: 'suv',
+  premium: 'premium',
+  black: 'premium',
+  luxury: 'premium',
+};
+
+export function classColourFor(type: string): ClassColour | null {
+  return CLASS_COLOUR[type.trim().toLowerCase()] ?? null;
+}
+
 /** The display key for a backend code, or null when there is none. */
 export function rideBlurbKey(type: string): RideKey | null {
   return DISPLAY_KEY[type.trim().toLowerCase()] ?? null;
