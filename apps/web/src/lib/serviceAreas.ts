@@ -59,12 +59,22 @@ export async function fetchCategoriesAt(point: LatLng): Promise<Serviceability> 
 }
 
 /**
- * The first service area the homepage can illustrate.
+ * The service area the homepage illustrates: the launch city, else the first with a centre.
  *
  * "First with a centre" rather than "first": a zone this build has no
  * coordinate for cannot centre a map or price a category list, so the page
  * falls through to one that can instead of rendering an empty section.
  */
 export function primaryArea(areas: ServiceArea[]): ServiceArea | null {
-  return areas.find((a) => a.centre !== null) ?? areas[0] ?? null;
+  return (
+    areas.find((a) => a.zone.code === LAUNCH_ZONE && a.centre !== null)
+    ?? areas.find((a) => a.centre !== null) ?? areas[0] ?? null
+  );
 }
+
+/**
+ * The launch city, which the homepage names ("Now in Hyderabad"). The zones
+ * endpoint lists cities by code, so "the first one" was Vijayawada: the hero
+ * map and the search both went there (QA, 2026-11-06).
+ */
+export const LAUNCH_ZONE = 'IN-TG-HYD';
