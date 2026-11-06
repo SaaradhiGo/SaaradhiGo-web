@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   description: 'SaaradhiGo — ride-hailing in India.',
   manifest: '/manifest.webmanifest',
   applicationName: 'Saaradhi Go',
-  appleWebApp: { title: 'Saaradhi Go', capable: true, statusBarStyle: 'black-translucent' },
+  appleWebApp: { title: 'Saaradhi Go', capable: true, statusBarStyle: 'default' },
   alternates: { canonical: '/' },
   openGraph: {
     type: 'website',
@@ -50,26 +50,27 @@ export const metadata: Metadata = {
   },
 };
 
-// `noir`, so the browser chrome and the area behind a rubber-band scroll match
-// the nav rather than flashing white above it.
+// The browser chrome follows the theme: ivory in Daylight, black in dark.
 export const viewport: Viewport = {
-  themeColor: '#000000',
-  colorScheme: 'dark',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#faf7f2' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+  ],
+  colorScheme: 'light dark',
 };
 
-// THEME SWITCHING IS GONE FROM THE PUBLIC SITE. `data-theme="dark"` on
-// <html> is now the whole story: there is no stored preference to read back
-// and so no inline script in the <head> at all. The light theme's tokens
-// stay in the stylesheet because the console sets `data-theme` itself, but
-// the approved public experience is one surface, finished, rather than two
-// where only one is.
+// DAYLIGHT IS THE DEFAULT (owner, 2026-11-06); black and gold is the dark
+// option. The visitor's choice lives in localStorage and a cookie
+// (`sg-theme`). This runs before first paint, so the page never flashes the
+// other theme. The console and its sign-in set `data-theme` themselves.
+const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem('sg-theme');if(t!=='light'&&t!=='dark'){var m=document.cookie.match(/(?:^|; )sg-theme=(light|dark)/);t=m?m[1]:'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      data-theme="dark"
-      suppressHydrationWarning
-    >
+    <html lang="en" data-theme="light" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       {/* `sg` scopes the design system's box-sizing, family and colour. */}
       <body className="sg">{children}</body>
     </html>

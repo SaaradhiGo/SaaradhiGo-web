@@ -18,9 +18,9 @@ import type { Language } from './locales';
  * a brand is not localisation.
  */
 const en: {
-  nav: Record<'ride' | 'drive' | 'safety' | 'about' | 'help' | 'contact' | 'login' | 'signup' | 'menuOpen' | 'menuClose' | 'language', string>;
+  nav: Record<'ride' | 'drive' | 'safety' | 'about' | 'help' | 'contact' | 'login' | 'signup' | 'menuOpen' | 'menuClose' | 'language' | 'toDark' | 'toLight', string>;
   hero: Record<'titleTop' | 'titleBottom' | 'subtitle' | 'pickupLabel' | 'pickupPlaceholder' | 'destLabel' | 'destPlaceholder' | 'cta' | 'useLocation' | 'locating', string>;
-  validation: Record<'pickupRequired' | 'destRequired' | 'geoDenied' | 'geoUnsupported' | 'searchFailed' | 'searchThrottled', string>;
+  validation: Record<'pickupRequired' | 'destRequired' | 'geoDenied' | 'geoUnsupported' | 'searchFailed' | 'searchThrottled' | 'notInArea', string>;
   rides: Record<'heading' | 'lead' | 'loading' | 'failed' | 'empty', string>;
   rideNames: Record<'auto' | 'mini' | 'sedan' | 'suv', string>;
   rideBlurbs: Record<'auto' | 'mini' | 'sedan' | 'suv', string>;
@@ -45,6 +45,8 @@ const en: {
     signup: 'Sign up',
     menuOpen: 'Open menu',
     menuClose: 'Close menu',
+    toDark: 'Switch to dark theme',
+    toLight: 'Switch to light theme',
     language: 'Language',
   },
   hero: {
@@ -66,6 +68,7 @@ const en: {
     geoUnsupported: 'This browser cannot share your location. Type a pickup point instead.',
     searchFailed: 'We could not search just now. Please try again.',
     searchThrottled: 'Too many searches right now. Wait a moment and try again, or sign in to continue.',
+    notInArea: 'We are not in {area} yet.',
   },
   rides: {
     heading: 'Choose your ride',
@@ -155,6 +158,8 @@ const hi: Messages = {
     signup: 'साइन अप',
     menuOpen: 'मेनू खोलें',
     menuClose: 'मेनू बंद करें',
+    toDark: 'डार्क थीम पर जाएँ',
+    toLight: 'लाइट थीम पर जाएँ',
     language: 'भाषा',
   },
   hero: {
@@ -176,6 +181,7 @@ const hi: Messages = {
     geoUnsupported: 'यह ब्राउज़र आपका स्थान साझा नहीं कर सकता। इसके बजाय पिकअप स्थान टाइप करें।',
     searchFailed: 'अभी खोज नहीं हो सकी। कृपया फिर से प्रयास करें।',
     searchThrottled: 'अभी बहुत अधिक खोजें हो रही हैं। थोड़ी देर बाद प्रयास करें, या जारी रखने के लिए लॉग इन करें।',
+    notInArea: 'हम अभी {area} में नहीं हैं।',
   },
   rides: {
     heading: 'अपनी सवारी चुनें',
@@ -259,6 +265,8 @@ const te: Messages = {
     signup: 'సైన్ అప్',
     menuOpen: 'మెనూ తెరవండి',
     menuClose: 'మెనూ మూసివేయండి',
+    toDark: 'డార్క్ థీమ్‌కు మారండి',
+    toLight: 'లైట్ థీమ్‌కు మారండి',
     language: 'భాష',
   },
   hero: {
@@ -280,6 +288,7 @@ const te: Messages = {
     geoUnsupported: 'ఈ బ్రౌజర్ మీ ప్రదేశాన్ని పంచుకోలేదు. బదులుగా పికప్ ప్రదేశాన్ని టైప్ చేయండి.',
     searchFailed: 'ఇప్పుడే వెతకలేకపోయాం. దయచేసి మళ్లీ ప్రయత్నించండి.',
     searchThrottled: 'ప్రస్తుతం చాలా ఎక్కువ శోధనలు జరుగుతున్నాయి. కొద్దిసేపటి తర్వాత ప్రయత్నించండి, లేదా కొనసాగించడానికి లాగిన్ అవ్వండి.',
+    notInArea: 'మేము ఇంకా {area}లో లేము.',
   },
   rides: {
     heading: 'మీ ప్రయాణాన్ని ఎంచుకోండి',
@@ -363,6 +372,8 @@ const es: Messages = {
     signup: 'Registrarse',
     menuOpen: 'Abrir menú',
     menuClose: 'Cerrar menú',
+    toDark: 'Cambiar al tema oscuro',
+    toLight: 'Cambiar al tema claro',
     language: 'Idioma',
   },
   hero: {
@@ -384,6 +395,7 @@ const es: Messages = {
     geoUnsupported: 'Este navegador no puede compartir tu ubicación. Escribe un lugar de recogida.',
     searchFailed: 'No pudimos buscar en este momento. Inténtalo de nuevo.',
     searchThrottled: 'Demasiadas búsquedas en este momento. Espera un poco e inténtalo de nuevo, o inicia sesión para continuar.',
+    notInArea: 'Todavía no estamos en {area}.',
   },
   rides: {
     heading: 'Elige tu viaje',

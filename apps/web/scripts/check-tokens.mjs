@@ -36,6 +36,12 @@ const ALLOWED = [
     reason: 'the <meta name="theme-color"> value, read by browser chrome',
   },
   {
+    // The one light map style the website and both apps share
+    // (design/maps/sg_map_light.json). The Maps API takes colour strings only.
+    file: path.join('src', 'lib', 'maps', 'sg_map_light.json'),
+    reason: 'the shared Google Maps light style, identical in all three surfaces',
+  },
+  {
     // The logo artwork as the designers traced it. These are mask sources:
     // the fill never renders, and the mark is coloured by the `logo` token.
     dir: path.join('public', 'brand'),

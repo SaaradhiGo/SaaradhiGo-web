@@ -1,0 +1,101 @@
+/* THE PUBLIC TYPE SCALE (owner, 2026-11-06). The only place the public site sets
+   a font size, weight or tracking. Fluid in rem, so it follows browser zoom and
+   the reader's own font size from a 320px phone to a 1440px desktop. Weights
+   500 / 600 / 700 only, Anek at normal width; 800 is for the logo alone. */
+:root {
+  --fs-display: clamp(2rem, 1.25rem + 3vw, 3.5rem);
+  --fs-h2: clamp(1.625rem, 1.25rem + 1.5vw, 2.25rem);
+  --fs-h3: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  --fs-lead: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+  --fs-body: 1rem;
+  --fs-small: 0.875rem;
+  --fs-label: 0.8125rem;
+  --fs-nav: 0.9375rem;
+  --fs-button: 1rem;
+  --fs-button-lg: 1.0625rem;
+  --fs-fare: clamp(2.25rem, 1.8rem + 2vw, 3rem);
+  --measure: 65ch;
+}
+.sg { font-family: var(--font-sans); font-size: var(--fs-body); font-weight: 500; line-height: 1.5; font-stretch: 100%; }
+.sg p { max-width: var(--measure); }
+
+/* Display: the one hero headline per page. */
+.display-xl, .hp-hero__title, .hp-h1, .sg-hero__h1 {
+  font-size: var(--fs-display); font-weight: 700; line-height: 1.08; letter-spacing: -0.015em;
+}
+:lang(te) .hp-hero__title, :lang(hi) .hp-hero__title,
+:lang(te) .hp-h1, :lang(hi) .hp-h1 { line-height: 1.3; letter-spacing: normal; }
+.hp-hero__title em, .hp-h2 em { font-weight: 700; }
+
+/* H2: sections. */
+.display-lg, .heading, .hp-h2, .sg-h2 { font-size: var(--fs-h2); font-weight: 700; line-height: 1.15; }
+
+/* H3: card and panel titles. */
+.title, .hp-panel__title, .sg-panel__title, .hp-ride h3, .hp-step h3, .hp-fact h3,
+.hp-block h2, .hp-caveat h2, .hp-qa dt, .hp-topic h2, .sg-class h3, .sg-member__name,
+.sg-promise p, .fare {
+  font-size: var(--fs-h3); font-weight: 600; line-height: 1.25;
+}
+.fare { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* Lead paragraph. */
+.hp-lead, .hp-hero__sub, .body-lg { font-size: var(--fs-lead); font-weight: 500; line-height: 1.55; }
+
+/* Body. */
+.body, .hp-step p, .hp-fact p, .hp-block p, .hp-caveat p, .hp-qa dd, .hp-topic li, .hp-topic p,
+.hp-ride p, .hp-field__box input, .hp-suggest button, .bk-trip__row, .hp-lang__item,
+.hp-drawer a, .sg-black__list li, .sg-account__head strong, .auth-route__title {
+  font-size: var(--fs-body); font-weight: 500; line-height: 1.5;
+}
+.hp-drawer a, .sg-account__head strong, .auth-route__title, .bk-trip__row strong { font-weight: 600; }
+.hp-lang__item[aria-pressed="true"] { font-weight: 600; }
+
+/* Small text and captions: asides, never paragraphs of the page. */
+.caption, .hp-error, .hp-hint, .hp-footer__base, .hp-lang__note, .sg-summary small,
+.auth-route__hint, .sg-account__head span, .sg-account__note, .sg-footer a,
+.hp-footer__nav a, .hp-footer__legal a {
+  font-size: var(--fs-small); font-weight: 500; line-height: 1.45;
+}
+.hp-hint, .hp-lang__note { max-width: var(--measure); }
+
+/* Labels: 13px 600, a little open. Not capitals. */
+.label, .hp-field__label, .sg-field__label, .bk-trip__label, .bk-available h2, .hp-lang__section,
+.sg-badge, .sg-member__meta, .sg-store small, .hp-step__n, .hp-blocks--numbered .hp-block::before,
+.sg-class .sg-from, .sg-member__tier, .sg-account__role, .sg-account__avatar, .sg-plate {
+  font-size: var(--fs-label); font-weight: 600; line-height: 1.4; letter-spacing: 0.06em;
+}
+.sg-account__avatar { letter-spacing: 0; line-height: 1; }
+.sg-plate { text-transform: uppercase; font-variant-numeric: tabular-nums; }
+.sg-account__role { font-size: var(--fs-label) !important; }
+
+/* Eyebrows: the label, in capitals. */
+.eyebrow, .sg-eyebrow, .sg-promise h3, .sg-promise h4, .sg-footer h2, .sg-footer h5 {
+  font-size: var(--fs-label); font-weight: 600; line-height: 1.4; letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+/* Nav links and the controls that sit with them. */
+.hp-nav__link, .sg-nav a.sg-nav__link, .hp-lang__button, .hp-lang__chip, .hp-locate,
+.sg-account__chip, .sg-account__menu a, .sg-link {
+  font-size: var(--fs-nav); font-weight: 600;
+}
+
+/* Buttons. They grow with their text, so the height is a floor, not a box. */
+.sg-btn { font-size: var(--fs-button); font-weight: 600; line-height: 1.25; height: auto; min-height: 48px; padding-top: 8px; padding-bottom: 8px; }
+.sg-btn--lg { font-size: var(--fs-button-lg); min-height: 56px; }
+.sg-btn--sm { min-height: 44px; }
+
+/* The big fare; the price line on a class card. Tabular figures. */
+.fare-xl, .sg-fare__total { font-size: var(--fs-fare); font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.sg-fare__total small { font-size: var(--fs-h3); font-weight: 600; }
+.hp-ride__from { font-size: var(--fs-body); font-weight: 600; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.sg-fare__rows li strong, .sg-driver__rating { font-weight: 600; }
+
+/* Long Telugu and Hindi words wrap rather than run off a phone. */
+.sg h1, .sg h2, .sg h3, .sg p, .sg li, .sg dt, .sg dd { overflow-wrap: break-word; }
+
+/* Tap targets: 44px for every control on the public site (gate, 2026-11-06). */
+.hp-lang__button, .sg-account__chip { min-height: 44px; min-width: 44px; justify-content: center; }
+.hp-locate { min-height: 44px; }
+.sg-field__action { min-width: 44px; min-height: 44px; place-items: center; }
+/* The whole field box is the target, not the 24px line of text inside it. */
+.hp-field__box input, .sg-field input { align-self: stretch; min-height: 44px; }

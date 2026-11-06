@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/sg/Button';
 import { ArrowRight } from '@/components/sg/icons';
-import { LatLng, Place, placeToPoint, searchPlaces } from '@/lib/booking';
+import { LatLng, Place, placeToPoint, searchPlaces, serviceabilityAt } from '@/lib/booking';
 import { fetchServiceAreas, primaryArea } from '@/lib/serviceAreas';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { HOME_COPY } from '@/i18n/home';
@@ -66,6 +66,10 @@ export function HeroBooking() {
   // Where to bias the place search. Starts as the first live service area
   // and is replaced by the rider's own position the moment they share it.
   const [searchNear, setSearchNear] = useState<LatLng | null>(null);
+  // The active city: suggestions are RESTRICTED to its zone (owner, 2026-11-06).
+  const [area, setArea] = useState<{ code: string; name: string } | null>(null);
+  /** Coordinates of the chosen places, resolved once on choosing. */
+  const [resolved, setResolved] = useState<{ pickup?: LatLng; dest?: LatLng }>({});
   const { t, language } = useLocale();
 
   useEffect(() => {
@@ -73,6 +77,7 @@ export function HeroBooking() {
     fetchServiceAreas()
       .then((areas) => {
         const area = primaryArea(areas);
+        if (!cancelled && area) setArea({ code: area.zone.code, name: area.zone.city || area.zone.name });
         if (!cancelled && area?.centre) {
           // Only as a default: an explicit location wins, and is set below.
           setSearchNear((current) => current ?? area.centre);
@@ -97,7 +102,7 @@ export function HeroBooking() {
     }
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      searchPlaces(text, searchNear, active === 'pickup' ? 'pickup' : 'drop')
+      searchPlaces(text, searchNear, active === 'pickup' ? 'pickup' : 'drop', area?.code)
         .then((places) => {
           setSuggestions(places);
           setSearchNote(null);
@@ -121,10 +126,11 @@ export function HeroBooking() {
     // language's message on screen. `searchNear` is here so that sharing a
     // location re-runs the search around the rider rather than leaving the
     // city-centre results on screen.
-  }, [active, pickupText, destText, searchNear, t.validation.searchThrottled]);
+  }, [active, pickupText, destText, searchNear, area?.code, t.validation.searchThrottled]);
 
   function choose(place: Place) {
-    if (active === 'pickup') {
+    const which = active === 'pickup' ? 'pickup' : 'dest';
+    if (which === 'pickup') {
       setPickupPlace(place);
       setPickupText(place.description);
     } else {
@@ -133,6 +139,17 @@ export function HeroBooking() {
     }
     setSuggestions([]);
     setActive(null);
+    // A place outside every service area says so at once, not at booking.
+    void placeToPoint(place.place_id, which === 'pickup' ? 'pickup' : 'drop')
+      .then(async (point) => {
+        if (!point) return;
+        setResolved((r) => ({ ...r, [which]: point }));
+        const where = await serviceabilityAt(point).catch(() => null);
+        if (where && !where.serviceable && area) {
+          setErrors((p) => ({ ...p, [which]: t.validation.notInArea.replace('{area}', area.name) }));
+        }
+      })
+      .catch(() => { /* resolved again at submit */ });
   }
 
   async function submit() {
@@ -154,11 +171,11 @@ export function HeroBooking() {
       if (pickupPoint) {
         params.set('pickup', `${pickupPoint.lat},${pickupPoint.lng}`);
       } else if (pickupPlace) {
-        const p = await placeToPoint(pickupPlace.place_id);
+        const p = resolved.pickup ?? await placeToPoint(pickupPlace.place_id);
         if (p) params.set('pickup', `${p.lat},${p.lng}`);
       }
       if (destPlace) {
-        const d = await placeToPoint(destPlace.place_id, 'drop');
+        const d = resolved.dest ?? await placeToPoint(destPlace.place_id, 'drop');
         if (d) params.set('dest', `${d.lat},${d.lng}`);
       }
     } catch {
@@ -236,6 +253,7 @@ export function HeroBooking() {
           onChange={(e) => {
             setValue(e.target.value);
             clearPlace();
+            setResolved((r) => ({ ...r, [which]: undefined }));
             if (errors[which]) setErrors((p) => ({ ...p, [which]: undefined }));
           }}
           // Closing on blur would eat the click on a suggestion, so the list
