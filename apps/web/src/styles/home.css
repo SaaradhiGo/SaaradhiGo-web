@@ -36,18 +36,12 @@
 .hp-h2 {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 30px;
-  line-height: 1.15;
-  font-weight: 700;
-  letter-spacing: -0.02em;
   color: var(--ink);
 }
 .hp-lead {
   margin: 14px 0 0;
   max-width: 62ch;
   font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.6;
   color: var(--ink-muted);
 }
 
@@ -55,7 +49,7 @@
 
 .hp-header {
   position: sticky; top: 0; z-index: 40;
-  background: var(--noir);
+  background: var(--bg-100);
   border-bottom: 1px solid var(--line);
 }
 .hp-nav {
@@ -66,39 +60,51 @@
 .hp-nav__logo .sg-logo { width: 48px; }
 .hp-nav__name {
   font-family: var(--font-brand); font-size: 18px; font-weight: 600;
-  letter-spacing: 0.06em; color: var(--gold-500); white-space: nowrap;
+  letter-spacing: 0.06em; color: var(--logo); white-space: nowrap;
 }
 /* Centre group, so the links sit between the logo and the session controls. */
 .hp-nav__links { display: flex; gap: 4px; margin: 0 auto; }
 .hp-nav__link {
-  font-family: var(--font-sans); font-size: 14px; font-weight: 600;
-  color: var(--on-noir-muted); text-decoration: none;
+  font-family: var(--font-sans);
+  color: var(--ink-muted); text-decoration: none;
   padding: 8px 12px; border-radius: var(--radius-sm);
   transition: color 140ms ease, background-color 140ms ease;
 }
-.hp-nav__link:hover { color: var(--on-noir); background: var(--bg-200); }
-.hp-nav__link[aria-current="page"] { color: var(--on-noir); }
+.hp-nav__link:hover { color: var(--ink); background: var(--bg-200); }
+.hp-nav__link[aria-current="page"] { color: var(--ink); box-shadow: inset 0 -2px 0 var(--gold-500); }
 .hp-nav__session { display: flex; align-items: center; gap: 8px; flex: none; }
+/* The homepage logo waits for the hero's to scroll away (NavBar). */
+.hp-nav__logo { transition: opacity 160ms ease; }
+.hp-nav__logo[data-hidden="true"] { opacity: 0; visibility: hidden; }
+/* The theme switch: 44px, sun in dark and moon in light. */
+.hp-theme {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 44px; height: 44px; padding: 0; cursor: pointer;
+  background: none; border: 1px solid var(--line-strong); border-radius: var(--radius-pill);
+  color: var(--ink);
+}
+.hp-theme:hover { border-color: var(--gold-500); }
+.hp-theme svg { width: 20px; height: 20px; }
 
 .hp-nav__toggle {
   display: none; width: 44px; height: 44px; margin-left: auto;
   align-items: center; justify-content: center;
   background: none; border: 1px solid var(--line); border-radius: var(--radius-sm);
-  color: var(--on-noir); cursor: pointer;
+  color: var(--ink); cursor: pointer;
 }
 .hp-nav__toggle svg { width: 22px; height: 22px; }
 
 .hp-drawer {
-  background: var(--noir);
+  background: var(--bg-100);
   border-bottom: 1px solid var(--line);
   padding: 8px var(--hp-gutter) 24px;
 }
 .hp-drawer a {
   display: flex; align-items: center; min-height: 48px;
-  font-family: var(--font-sans); font-size: 16px; font-weight: 600;
-  color: var(--on-noir-muted); text-decoration: none;
+  font-family: var(--font-sans);
+  color: var(--ink-muted); text-decoration: none;
 }
-.hp-drawer a[aria-current="page"] { color: var(--on-noir); }
+.hp-drawer a[aria-current="page"] { color: var(--ink); }
 /* A COLUMN, NOT A ROW. This was a flex row carrying two controls, which
    fitted while they were "Log in" and "Sign up". A signed-in person has a
    role link AND an account chip, and the chip opens a 260px menu: at 390px
@@ -130,17 +136,13 @@
 .hp-hero__title {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 44px;
-  line-height: 1.08;
-  font-weight: 700;
-  letter-spacing: -0.03em;
   color: var(--ink);
 }
 /* The second line is the brand moment, and the only one on the page. */
 .hp-hero__title span { display: block; color: var(--gold-text); }
 .hp-hero__sub {
   margin: 24px 0 0;
-  font-family: var(--font-sans); font-size: 18px; line-height: 1.6;
+  font-family: var(--font-sans);
   color: var(--ink-muted); max-width: 46ch;
 }
 .hp-hero__form { margin-top: 32px; display: grid; gap: 12px; max-width: 460px; }
@@ -153,8 +155,7 @@
 
 .hp-field { position: relative; display: grid; gap: 6px; }
 .hp-field__label {
-  font-family: var(--font-sans); font-size: 12px; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-subtle);
+  font-family: var(--font-sans); color: var(--ink-subtle);
 }
 .hp-field__box {
   display: flex; align-items: center; gap: 12px;
@@ -167,7 +168,7 @@
 .hp-field__box:focus-within { border-color: var(--gold-500); }
 .hp-field__box input {
   all: unset; flex: 1; min-width: 0;
-  font-family: var(--font-sans); font-size: 16px; color: var(--ink);
+  font-family: var(--font-sans); color: var(--ink);
 }
 .hp-field__box input::placeholder { color: var(--ink-subtle); }
 .hp-field__box[data-invalid="true"] { border-color: var(--danger); }
@@ -184,13 +185,13 @@
 .hp-suggest button {
   display: block; width: 100%; text-align: left;
   padding: 12px; border: 0; background: none; cursor: pointer;
-  font-family: var(--font-sans); font-size: 15px; color: var(--ink);
+  font-family: var(--font-sans); color: var(--ink);
   border-radius: var(--radius-sm);
 }
 .hp-suggest button:hover, .hp-suggest button:focus-visible { background: var(--bg-300); }
 
 .hp-error {
-  font-family: var(--font-sans); font-size: 14px; color: var(--danger); margin: 0;
+  font-family: var(--font-sans); color: var(--danger); margin: 0;
 }
 
 /* --- ride categories */
@@ -215,18 +216,17 @@
 .hp-ride[data-class="premium"] .hp-ride__art { color: var(--class-premium); background: var(--class-premium-bg); border-color: var(--gold-line); }
 .hp-ride[data-class]:not([data-class="premium"]) h3 { color: var(--cls); }
 .hp-ride__name-skel { display: block; height: 22px; width: 60%; border-radius: var(--radius-sm); background: var(--bg-200); }
-.hp-ride h3 { margin: 0; font-family: var(--font-sans); font-size: 18px; font-weight: 700; color: var(--ink); }
-.hp-ride p { margin: 0; font-family: var(--font-sans); font-size: 15px; line-height: 1.5; color: var(--ink-muted); }
+.hp-ride h3 { margin: 0; font-family: var(--font-sans); color: var(--ink); }
+.hp-ride p { margin: 0; font-family: var(--font-sans); color: var(--ink-muted); }
 
 /* --- numbered steps */
 
 .hp-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; margin: 48px 0 0; padding: 0; list-style: none; }
 .hp-step__n {
-  font-family: var(--font-sans); font-size: 14px; font-weight: 700;
-  letter-spacing: 0.08em; color: var(--gold-text);
+  font-family: var(--font-sans); color: var(--gold-text);
 }
-.hp-step h3 { margin: 12px 0 8px; font-family: var(--font-sans); font-size: 20px; font-weight: 700; color: var(--ink); }
-.hp-step p { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--ink-muted); }
+.hp-step h3 { margin: 12px 0 8px; font-family: var(--font-sans); color: var(--ink); }
+.hp-step p { margin: 0; font-family: var(--font-sans); color: var(--ink-muted); }
 
 /* --- split section (drive) */
 
@@ -241,8 +241,8 @@
 .hp-fact:last-child { border-bottom: 1px solid var(--line); }
 .hp-fact__icon { color: var(--gold-text); margin-top: 2px; }
 .hp-fact__icon svg { width: 24px; height: 24px; }
-.hp-fact h3 { margin: 0 0 6px; font-family: var(--font-sans); font-size: 17px; font-weight: 700; color: var(--ink); }
-.hp-fact p { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--ink-muted); max-width: 70ch; }
+.hp-fact h3 { margin: 0 0 6px; font-family: var(--font-sans); color: var(--ink); }
+.hp-fact p { margin: 0; font-family: var(--font-sans); color: var(--ink-muted); max-width: 70ch; }
 
 /* --- closing */
 
@@ -257,13 +257,13 @@
 .hp-footer__nav { display: flex; flex-wrap: wrap; gap: 8px 24px; }
 .hp-footer__nav a,
 .hp-footer__legal a {
-  font-family: var(--font-sans); font-size: 15px; color: var(--on-noir-muted); text-decoration: none;
+  font-family: var(--font-sans); color: var(--on-noir-muted); text-decoration: none;
 }
 .hp-footer__nav a:hover, .hp-footer__legal a:hover { color: var(--on-noir); }
 .hp-footer__base {
   margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line);
   display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between;
-  font-family: var(--font-sans); font-size: 14px; color: var(--on-noir-muted);
+  font-family: var(--font-sans); color: var(--on-noir-muted);
 }
 .hp-footer__legal { display: flex; gap: 24px; }
 
@@ -272,7 +272,6 @@
 
 @media (max-width: 1024px) {
   .hp-hero { padding: 48px 0 8px; }
-  .hp-hero__title { font-size: 40px; }
   .hp-steps { gap: 32px; }
 }
 
@@ -289,12 +288,9 @@
   .hp-section + .hp-section { padding-top: 0; }
   .hp-closing { padding: 64px 0; }
   .hp-steps { grid-template-columns: 1fr; gap: 32px; }
-  .hp-h2 { font-size: 24px; }
 }
 
 @media (max-width: 480px) {
-  .hp-hero__title { font-size: 34px; }
-  .hp-hero__sub { font-size: 15px; }
   /* Two across still reads at 390; one across wastes the fold. */
   .hp-rides { grid-template-columns: repeat(2, 1fr); gap: 16px; }
   .hp-ride__art { height: 88px; }
@@ -305,7 +301,6 @@
    rather than squeezing two cards into 140px each. */
 @media (max-width: 360px) {
   .hp-rides { grid-template-columns: 1fr; }
-  .hp-hero__title { font-size: 30px; }
 }
 
 /* --- language + country picker */
@@ -315,10 +310,10 @@
   display: inline-flex; align-items: center; gap: 8px;
   height: 36px; padding: 0 12px;
   background: none; border: 1px solid var(--line); border-radius: var(--radius-pill);
-  color: var(--on-noir-muted); cursor: pointer;
-  font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+  color: var(--ink-muted); cursor: pointer;
+  font-family: var(--font-sans);
 }
-.hp-lang__button:hover { color: var(--on-noir); border-color: var(--line-strong); }
+.hp-lang__button:hover { color: var(--ink); border-color: var(--line-strong); }
 .hp-lang__button svg { width: 18px; height: 18px; flex: none; }
 
 .hp-lang__panel {
@@ -328,15 +323,14 @@
   border-radius: var(--radius-md); box-shadow: var(--shadow-panel);
 }
 .hp-lang__section {
-  font-family: var(--font-sans); font-size: 11px; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-subtle);
+  font-family: var(--font-sans); color: var(--ink-subtle);
   margin: 4px 4px 8px;
 }
 .hp-lang__row { display: flex; gap: 8px; margin-bottom: 12px; }
 .hp-lang__chip {
   flex: 1; height: 36px; border-radius: var(--radius-sm);
   background: var(--bg-200); border: 1px solid var(--line); cursor: pointer;
-  font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--ink);
+  font-family: var(--font-sans); color: var(--ink);
 }
 .hp-lang__chip[aria-pressed="true"] { border-color: var(--gold-500); background: var(--gold-soft); }
 .hp-lang__list { display: grid; gap: 2px; }
@@ -344,14 +338,13 @@
   display: flex; align-items: center; justify-content: space-between;
   width: 100%; min-height: 44px; padding: 0 10px;
   background: none; border: 0; border-radius: var(--radius-sm); cursor: pointer;
-  font-family: var(--font-sans); font-size: 15px; color: var(--ink); text-align: left;
+  font-family: var(--font-sans); color: var(--ink); text-align: left;
 }
 .hp-lang__item:hover { background: var(--bg-200); }
-.hp-lang__item[aria-pressed="true"] { color: var(--gold-text); font-weight: 700; }
+.hp-lang__item[aria-pressed="true"] { color: var(--gold-text); }
 .hp-lang__item svg { width: 16px; height: 16px; flex: none; }
 .hp-lang__note {
-  margin: 12px 4px 2px; font-family: var(--font-sans); font-size: 12px;
-  line-height: 1.5; color: var(--ink-subtle);
+  margin: 12px 4px 2px; font-family: var(--font-sans); color: var(--ink-subtle);
 }
 
 /* The picker stays in the bar on mobile, beside the menu button. */
@@ -369,7 +362,7 @@
 .hp-locate {
   display: inline-flex; align-items: center; gap: 8px;
   background: none; border: 0; padding: 0; cursor: pointer; width: fit-content;
-  font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--gold-text);
+  font-family: var(--font-sans); color: var(--gold-text);
 }
 .hp-locate:disabled { opacity: 0.6; cursor: default; }
 .hp-locate svg { width: 16px; height: 16px; }
@@ -405,14 +398,10 @@
 .hp-h1 {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 34px;
-  line-height: 1.15;
-  font-weight: 700;
-  letter-spacing: -0.02em;
   color: var(--ink);
   max-width: 28ch;
 }
-.hp-masthead .hp-lead { font-size: 17px; max-width: 66ch; margin-top: 16px; }
+.hp-masthead .hp-lead { max-width: 66ch; margin-top: 16px; }
 
 .hp-blocks { margin: 0; padding: 0; list-style: none; display: grid; gap: 48px; }
 
@@ -431,17 +420,11 @@
 .hp-block h2 {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 19px;
-  line-height: 1.25;
-  font-weight: 700;
-  letter-spacing: -0.01em;
   color: var(--ink);
 }
 .hp-block p {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.6;
   color: var(--ink-muted);
   max-width: 62ch;
 }
@@ -452,7 +435,7 @@
 .hp-blocks--numbered .hp-block::before {
   counter-increment: hp-block;
   content: counter(hp-block, decimal-leading-zero);
-  font-family: var(--font-sans); font-size: 15px; font-weight: 700;
+  font-family: var(--font-sans);
   color: var(--gold-text); padding-top: 6px; font-variant-numeric: tabular-nums;
 }
 
@@ -468,16 +451,16 @@
   border-left: 3px solid var(--gold-500);
   background: var(--bg-100);
 }
-.hp-caveat h2 { margin: 0 0 8px; font-family: var(--font-sans); font-size: 18px; font-weight: 700; color: var(--ink); }
-.hp-caveat p { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.65; color: var(--ink-muted); max-width: 70ch; }
+.hp-caveat h2 { margin: 0 0 8px; font-family: var(--font-sans); color: var(--ink); }
+.hp-caveat p { margin: 0; font-family: var(--font-sans); color: var(--ink-muted); max-width: 70ch; }
 
 /* Questions and answers, as rules rather than accordions: four short
    answers are faster to read than four things to click. */
 .hp-qa { margin: 48px 0 0; padding: 0; list-style: none; }
 .hp-qa > div { padding: 24px 0; border-top: 1px solid var(--line); }
 .hp-qa > div:last-child { border-bottom: 1px solid var(--line); }
-.hp-qa dt { font-family: var(--font-sans); font-size: 17px; font-weight: 700; color: var(--ink); }
-.hp-qa dd { margin: 8px 0 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.65; color: var(--ink-muted); max-width: 70ch; }
+.hp-qa dt { font-family: var(--font-sans); color: var(--ink); }
+.hp-qa dd { margin: 8px 0 0; font-family: var(--font-sans); color: var(--ink-muted); max-width: 70ch; }
 
 /* Help topics: two columns of short answers on desktop, one on a phone. */
 /* COLUMNS, NOT A GRID. Five topics in a two-column grid puts three in the
@@ -488,11 +471,11 @@
 .hp-topic:last-child { margin-bottom: 0; }
 .hp-topic h2 {
   margin: 0 0 16px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
-  font-family: var(--font-sans); font-size: 18px; font-weight: 700; color: var(--ink);
+  font-family: var(--font-sans); color: var(--ink);
 }
 .hp-topic ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
 .hp-topic li {
-  font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--ink-muted);
+  font-family: var(--font-sans); color: var(--ink-muted);
   padding-left: 18px; position: relative;
 }
 .hp-topic li::before {
@@ -504,7 +487,6 @@
    band rather than a hero competing with the page's own title. */
 
 @media (max-width: 1023px) {
-  .hp-h1 { font-size: 32px; }
   .hp-block { grid-template-columns: 1fr; }
   .hp-block h2 { margin-bottom: 12px; }
   .hp-blocks--numbered .hp-block { grid-template-columns: 56px minmax(0, 1fr); }
@@ -513,14 +495,11 @@
 
 @media (max-width: 768px) {
   .hp-masthead { padding-top: 48px; }
-  .hp-h1 { font-size: 28px; }
-  .hp-masthead .hp-lead { font-size: 16px; }
   .hp-blocks { gap: 40px; }
   .hp-topics { columns: 1; }
   }
 
 @media (max-width: 480px) {
-  .hp-h1 { font-size: 26px; }
   .hp-blocks--numbered .hp-block { grid-template-columns: 36px minmax(0, 1fr); gap: 0 12px; }
   .hp-caveat { padding: 20px; }
 }
@@ -533,14 +512,14 @@
    than body text because it is an aside, not a paragraph of the page. */
 .hp-hint {
   margin: 16px 0 0;
-  font-family: var(--font-sans); font-size: 14px; line-height: 1.6;
+  font-family: var(--font-sans);
   color: var(--ink-subtle); max-width: 60ch;
 }
 
 /* A topic whose answer is a sentence rather than a list of them. */
 .hp-topic p {
   margin: 0;
-  font-family: var(--font-sans); font-size: 16px; line-height: 1.6;
+  font-family: var(--font-sans);
   color: var(--ink-muted); max-width: 60ch;
 }
 
@@ -598,15 +577,13 @@
   gap: 12px;
   margin: 0;
   padding: 16px 0;
-  font-family: var(--font-sans); font-size: 16px; line-height: 1.4;
+  font-family: var(--font-sans);
 }
 .bk-trip__row + .bk-trip__row { border-top: 1px solid var(--line); }
 .bk-trip__row .hp-field__marker { align-self: center; }
-.bk-trip__label {
-  font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--ink-subtle);
+.bk-trip__label { color: var(--ink-subtle);
 }
-.bk-trip__row strong { font-weight: 600; color: var(--ink); }
+.bk-trip__row strong { color: var(--ink); }
 
 /* What is really available at this pickup, from the pricing service. No
    fares: the quote endpoint is authenticated, so there is nothing honest to
@@ -615,8 +592,7 @@
 .bk-available { margin: 40px 0 0; }
 .bk-available h2 {
   margin: 0 0 16px;
-  font-family: var(--font-sans); font-size: 13px; font-weight: 700;
-  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-subtle);
+  font-family: var(--font-sans); color: var(--ink-subtle);
 }
 .bk-available ul {
   margin: 0; padding: 0; list-style: none;
@@ -626,7 +602,7 @@
   padding: 8px 16px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-pill);
-  font-family: var(--font-sans); font-size: 15px; font-weight: 600; color: var(--ink);
+  font-family: var(--font-sans); color: var(--ink);
 }
 .bk-available .hp-hint { margin-top: 12px; }
 
@@ -639,8 +615,6 @@
 /* The signed-out booking screen: the trip and its actions on the left, a
    photograph holding the right. Single column under 1024px, where the
    photograph goes under the actions rather than squeezing them. */
-@media (max-width: 1024px) {
-    }
 
 /* The signed-out booking screen, now that the photograph beside it is gone.
    Capped rather than full width: a line of body text running 1200px is not
@@ -652,53 +626,71 @@
 
 .hp-h2, .hp-hero__title, .hp-panel__title, .sg-promise p {
   font-family: var(--font-display);
-  font-weight: 800;
-  letter-spacing: -0.03em;
 }
-.hp-h2 { font-size: 44px; line-height: 1.1; margin-top: 16px; }
+.hp-h2 { margin-top: 16px; }
 /* Anek has no italic, and a synthesised slant distorts Telugu and Hindi
    conjuncts, so the gold line is set upright in every language. */
 .hp-h2 em, .hp-hero__title em {
-  font-style: normal; color: var(--gold-text); font-weight: 800;
+  font-style: normal; color: var(--gold-text);
 }
-:lang(te) .hp-hero__title, :lang(hi) .hp-hero__title { line-height: 1.3; }
 
-/* Hero: text column + framed map. No overflow clipping on the band, so
-   the destination suggestions can drop over the section below. */
+/* Hero (owner, 2026-11-06). Phone: one column, no map, the booking panel
+   straight after the headline. Tablet: the 420px panel beside the map.
+   Desktop: two halves inside the 1200px column. No overflow clipping on the
+   band, so the destination suggestions can drop over the section below. */
 .hp-hero-band {
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 48px; align-items: stretch; position: relative; z-index: 2;
+  display: grid; grid-template-columns: minmax(0, 1fr);
+  gap: 32px; align-items: stretch; position: relative; z-index: 2;
 }
-.hp-hero__logo { width: 132px; margin-bottom: 28px; background: var(--gold-500); }
-@media (max-width: 640px) { .hp-hero__logo { width: 120px; margin-bottom: 20px; } }
+@media (min-width: 600px) {
+  .hp-hero-band:has(.hp-map) { grid-template-columns: minmax(0, 420px) minmax(0, 1fr); }
+}
+@media (min-width: 1024px) {
+  .hp-hero-band:has(.hp-map) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; }
+}
+.hp-hero__logo { width: 132px; margin-bottom: 28px; background: var(--logo); }
 .hp-hero { max-width: none; padding: 72px 0 48px; display: flex; flex-direction: column; align-items: flex-start; }
-.hp-hero__title {
-  margin: 20px 0 0; font-size: 72px; line-height: 1.02; letter-spacing: -0.02em; color: var(--ink);
-}
+.hp-hero__title { margin: 20px 0 0; color: var(--ink); max-width: 18ch; }
 .hp-hero__title em { display: block; }
 .hp-hero__sub { margin-top: 20px; }
 
 .hp-panel {
   position: relative; z-index: 30; width: 100%; max-width: 460px; margin-top: 32px;
-  padding: 28px 24px 24px;
-  background: var(--bg-100); border: 1px solid var(--gold-line); border-radius: var(--radius-lg);
+  padding: 28px 24px 24px; box-sizing: border-box;
+  background: var(--bg-100); border: 1px solid var(--line); border-radius: var(--radius-lg);
   box-shadow: var(--shadow-panel);
 }
-.hp-panel__title { margin: 0; font-size: 28px; line-height: 1.2; color: var(--ink); }
+.hp-panel__title { margin: 0; color: var(--ink); }
 .hp-panel .hp-hero__form { margin-top: 20px; max-width: none; }
-.hp-suggest { z-index: 60; max-height: 240px; overflow-y: auto; border-color: var(--gold-line); }
+.hp-suggest { z-index: 60; max-height: 240px; overflow-y: auto; }
 
+/* A real Google map only (HeroMap): hidden until its tiles have drawn. */
 .hp-map {
-  margin: 72px 0 48px; min-height: 480px;
-  border: 1px solid var(--gold-line); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-panel);
+  position: relative; overflow: hidden; margin: 72px 0 48px; min-height: 480px;
+  border: 1px solid var(--line); border-radius: var(--radius-lg);
+  background: var(--map-ground);
+  opacity: 0; transition: opacity 240ms ease;
 }
-.hp-map__tag rect { fill: var(--noir); stroke: var(--gold-line); }
-.hp-map__tag text { fill: var(--on-noir); font: 700 12px var(--font-sans); }
+.hp-map[data-live="true"] { opacity: 1; }
+.hp-map__canvas { position: absolute; inset: 0; }
+
+@media (max-width: 1023px) {
+  .hp-hero { padding: 48px 0 32px; }
+  .hp-panel { max-width: 420px; }
+  .hp-map { margin: 48px 0 32px; min-height: 420px; }
+}
+@media (max-width: 599px) {
+  .hp-map { display: none; }
+  .hp-hero { padding: 32px 0 24px; }
+  .hp-hero__logo { width: 112px; margin-bottom: 16px; }
+  .hp-panel { max-width: none; margin-top: 24px; padding: 20px 16px 16px; }
+  .hp-hero__logo, .sg-eyebrow, .hp-hero__title { order: 0; }
+  .hp-panel { order: 1; }
+  .hp-hero__sub { order: 2; margin-top: 24px; }
+}
 
 .hp-promise { padding-top: 0; padding-bottom: 0; }
 .sg-promise h3 { font-family: var(--font-sans); }
-.sg-promise p { font-size: 24px; line-height: 1.25; }
 
 .hp-split { display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; align-items: end; }
 .hp-split .hp-lead { margin: 0; }
@@ -712,14 +704,9 @@
   display: block; height: auto; border: 0; background: none; border-radius: 0; color: var(--gold-text);
 }
 .hp-ride__art svg { width: 76px; height: 50px; }
-.hp-ride h3 { font-family: var(--font-display); font-size: 26px; font-weight: 800; }
-.hp-ride p { font-size: 15px; }
-.hp-ride__from { font: 800 15px/22px var(--font-sans); color: var(--gold-text); margin-top: 4px; }
+.hp-ride h3 { font-family: var(--font-display); }
+.hp-ride__from { font-family: var(--font-sans); color: var(--gold-text); margin-top: 4px; }
 /* Owner, 2026-11-05: description and price at 15–16px on desktop. */
-@media (min-width: 768px) {
-  .hp-ride p { font-size: 16px; }
-  .hp-ride__from { font-size: 16px; line-height: 24px; }
-}
 /* Only the price waits for the API; it holds the line's height meanwhile. */
 .hp-ride__from-skel {
   display: block; width: 72px; height: 20px; margin-top: 6px;
@@ -735,27 +722,15 @@
 .hp-section + .hp-band { margin-top: 0; }
 
 @media (max-width: 1024px) {
-  .hp-hero__title { font-size: 56px; }
   .hp-hero-band { gap: 32px; }
 }
 @media (max-width: 900px) {
-  .hp-hero-band { grid-template-columns: 1fr; gap: 0; }
-  .hp-hero { padding: 40px 0 32px; }
-  .hp-map { margin: 0 0 40px; min-height: 240px; order: 2; }
   .hp-split { grid-template-columns: 1fr; gap: 16px; }
   .hp-band__in { grid-template-columns: 1fr; padding-top: 64px; padding-bottom: 64px; }
   .hp-band__emblem { display: none; }
 }
-@media (max-width: 768px) {
-  .hp-h2 { font-size: 32px; }
-}
 @media (max-width: 480px) {
-  .hp-hero__title { font-size: 44px; }
   .hp-panel { padding: 24px 16px 16px; }
   .hp-ride { padding: 16px; }
-  .hp-ride h3 { font-size: 22px; }
-}
-@media (max-width: 360px) {
-  .hp-hero__title { font-size: 38px; }
 }
 

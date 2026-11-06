@@ -150,7 +150,7 @@ export default function MapSurface({
     if (!g?.maps) return;
 
     const palette = readMapPalette();
-    const styles = mapStyles(palette);
+    const styles = mapStyles(palette, { publicSite: true });
 
     const centre = pickup ?? destination ?? cityCentre ?? null;
     if (!map.current) {
@@ -247,7 +247,8 @@ export default function MapSurface({
           icon: {
             path: DESTINATION_SQUARE,
             scale: 0.8,
-            fillColor: palette.gold,
+            // Daylight: an ink square with a marigold centre. Dark: gold with a noir centre.
+            fillColor: palette.theme === 'light' ? palette.ink : palette.gold,
             fillOpacity: 1,
             strokeColor: palette.surface,
             strokeWeight: 4,
@@ -264,8 +265,8 @@ export default function MapSurface({
           zIndex: 6,
           icon: {
             path: g.maps.SymbolPath.CIRCLE,
-            scale: 2.5,
-            fillColor: palette.noir,
+            scale: palette.theme === 'light' ? 3.5 : 2.5,
+            fillColor: palette.theme === 'light' ? palette.gold : palette.noir,
             fillOpacity: 1,
             strokeWeight: 0,
           },
@@ -305,26 +306,29 @@ export default function MapSurface({
         // `gold-500` at 14% -- the token is the rgba form of exactly that --
         // and the Maps API takes a colour plus an opacity rather than an rgba
         // string, so it is expressed as the pair here.
-        add(
-          new g.maps.Polyline({
-            path,
-            map: m,
-            clickable: false,
-            zIndex: 1,
-            strokeColor: palette.gold,
-            strokeOpacity: 0.14,
-            strokeWeight: 18,
-          }),
-        );
+        // Daylight: a plain 5px ink line. Dark: the gold line over its glow.
+        if (palette.theme === 'dark') {
+          add(
+            new g.maps.Polyline({
+              path,
+              map: m,
+              clickable: false,
+              zIndex: 1,
+              strokeColor: palette.gold,
+              strokeOpacity: 0.14,
+              strokeWeight: 18,
+            }),
+          );
+        }
         add(
           new g.maps.Polyline({
             path,
             map: m,
             clickable: false,
             zIndex: 2,
-            strokeColor: palette.gold,
+            strokeColor: palette.route,
             strokeOpacity: 1,
-            strokeWeight: 4.5,
+            strokeWeight: palette.theme === 'light' ? 5 : 4.5,
           }),
         );
         for (const point of path) bounds.extend(point);

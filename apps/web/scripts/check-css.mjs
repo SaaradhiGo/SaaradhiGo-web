@@ -68,7 +68,9 @@ for (const f of cssFiles) {
 }
 
 // 2 and 3. where tokens are declared
-const ROOT_PART = /^(:root|\[data-theme=["'](dark|light)["']\])$/;
+// Daylight is the default since 2026-11-06: `:root:not([data-theme="dark"])` is
+// the light root, and `.sg-on-noir` bands carry the dark tokens in both themes.
+const ROOT_PART = /^(:root|:root:not\(\[data-theme=["']dark["']\]\)|\[data-theme=["'](dark|light)["']\]|\.sg-on-noir:not\(\.login__brand\))$/;
 const SCOPED_PART = /^(\.(ops|login)(\[data-theme=["'](dark|light)["']\])?|:lang\((te|hi)\))$/;
 const declared = new Set();
 const darkTokens = new Set();
@@ -96,8 +98,8 @@ for (const [f, ast] of parsed) {
       return;
     }
     const sel = parent.selector;
-    const forDark = /:root/.test(sel) || /data-theme=["']dark["']/.test(sel);
-    const forLight = /data-theme=["']light["']/.test(sel);
+    const forDark = parts.some((p) => p === ':root' || /^\[data-theme=["']dark["']\]$/.test(p));
+    const forLight = parts.some((p) => /^\[data-theme=["']light["']\]$/.test(p) || p.startsWith(':root:not'));
     const plainRoot = parts.every((p) => p === ':root');
     if (forDark) darkTokens.add(decl.prop);
     if (forLight || plainRoot) lightTokens.add(decl.prop);

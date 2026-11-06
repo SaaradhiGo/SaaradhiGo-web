@@ -45,12 +45,13 @@ export function HomeContent() {
 
   return (
     <>
-      {/* Hero: copy and the booking panel on the left, a decorative map on the
-          right. The panel is where the destination suggestions drop down, so
-          no ancestor may clip it. */}
+      {/* Hero: copy and the booking panel, and on tablet and desktop a real
+          map of the city. The panel is where the destination suggestions drop
+          down, so no ancestor may clip it. */}
       <section className="hp hp-hero-band" aria-labelledby="hero-title">
         <div className="hp-hero">
-          {/* The owner's full logo leads the hero, on black (2026-11-05). */}
+          {/* The owner's full logo leads the hero; the nav shows the badge only
+              once this has scrolled away (2026-11-06). */}
           <Logo variant="lockup" className="hp-hero__logo" label="Saaradhi Go" />
           <span className="sg-eyebrow">{h.eyebrow}</span>
           <h1 id="hero-title" className="hp-hero__title">
@@ -63,7 +64,7 @@ export function HomeContent() {
             <HeroBooking />
           </div>
         </div>
-        <HeroMap pickup={h.mapPickup} drop={h.mapDrop} />
+        <HeroMap />
       </section>
 
       <PromiseStrip />

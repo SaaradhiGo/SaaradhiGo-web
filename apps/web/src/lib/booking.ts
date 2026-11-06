@@ -148,6 +148,8 @@ export async function searchPlaces(
   query: string,
   near?: LatLng | null,
   field: SearchField = 'pickup',
+  /** A service-zone code: suggestions are then restricted to that zone. */
+  zone?: string | null,
 ): Promise<Place[]> {
   // BIAS THE SEARCH, OR GET THE WRONG HEMISPHERE. Unbiased, the autocomplete
   // is worldwide: "Banjara" typed by a rider in Hyderabad returned
@@ -157,9 +159,12 @@ export async function searchPlaces(
   // sent.
   const data = await api.post<{ predictions?: Place[]; results?: Place[] }>(
     '/ride/maps/geocode',
-    near
-      ? { input: query, location: `${near.lat},${near.lng}`, session_token: sessionToken(field) }
-      : { input: query, session_token: sessionToken(field) },
+    {
+      input: query,
+      session_token: sessionToken(field),
+      ...(near ? { location: `${near.lat},${near.lng}` } : {}),
+      ...(zone ? { zone } : {}),
+    },
     readRiderToken(),
   );
   return data?.predictions ?? data?.results ?? [];

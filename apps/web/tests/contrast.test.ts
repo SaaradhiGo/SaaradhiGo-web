@@ -24,8 +24,8 @@ function block(selector: string): Record<string, string> {
 }
 
 const THEMES = {
-  dark: block(':root, [data-theme="dark"]'),
-  light: block('[data-theme="light"]'),
+  dark: block('[data-theme="dark"], .sg-on-noir:not(.login__brand)'),
+  light: block(':root:not([data-theme="dark"]), [data-theme="light"]'),
 };
 
 type RGBA = [number, number, number, number];

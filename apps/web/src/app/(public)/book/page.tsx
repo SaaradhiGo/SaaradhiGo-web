@@ -28,6 +28,7 @@ import {
 } from '@/lib/booking';
 import { FitPadding, fitPadding } from '@/lib/mapFit';
 import MapSurface from '@/components/MapSurface';
+import { fetchServiceAreas, primaryArea } from '@/lib/serviceAreas';
 import { GuestCheckout } from '@/components/booking/GuestCheckout';
 import { TripSafety } from '@/components/booking/TripSafety';
 import { messageFor, readRiderToken } from '@/lib/publicAuth';
@@ -188,6 +189,13 @@ function BookPageInner() {
   const [destinationLabel, setDestinationLabel] = useState('');
 
   const [service, setService] = useState<Serviceability | null>(null);
+  // Suggestions stay inside the rider's zone, or the first live city until a
+  // pickup is known (owner, 2026-11-06).
+  const [defaultZone, setDefaultZone] = useState<string | null>(null);
+  useEffect(() => {
+    fetchServiceAreas().then((a) => setDefaultZone(primaryArea(a)?.zone.code ?? null)).catch(() => {});
+  }, []);
+  const searchZone = service?.zone?.code ?? defaultZone;
   const [vehicleType, setVehicleType] = useState('');
   const [quote, setQuote] = useState<FareQuote | null>(null);
   // One quote per category, so the rider can compare. `null` means that
@@ -517,7 +525,7 @@ function BookPageInner() {
 
     setBusy(true);
     try {
-      const found = await searchPlaces(typed, null, 'pickup');
+      const found = await searchPlaces(typed, null, 'pickup', searchZone);
       setPickupPlaces(found);
       if (found.length === 0) setNotice('No places matched that search.');
     } catch (err) {
@@ -590,7 +598,7 @@ function BookPageInner() {
 
     if (searchTimer.current) clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
-      searchPlaces(typed, null, activeField === 'pickup' ? 'pickup' : 'drop')
+      searchPlaces(typed, null, activeField === 'pickup' ? 'pickup' : 'drop', searchZone)
         .then((found) => {
           if (activeField === 'pickup') setPickupPlaces(found);
           else setPlaces(found);
@@ -609,7 +617,7 @@ function BookPageInner() {
     return () => {
       if (searchTimer.current) clearTimeout(searchTimer.current);
     };
-  }, [activeField, pickupQuery, query]);
+  }, [activeField, pickupQuery, query, searchZone]);
 
   // --- destination
 
@@ -620,7 +628,7 @@ function BookPageInner() {
     if (!query.trim()) return;
     setBusy(true);
     try {
-      const found = await searchPlaces(query.trim(), null, 'drop');
+      const found = await searchPlaces(query.trim(), null, 'drop', searchZone);
       setPlaces(found);
       if (found.length === 0) setNotice('No places matched that search.');
     } catch (err) {

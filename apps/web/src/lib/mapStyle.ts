@@ -23,6 +23,8 @@
  */
 
 /** The tokens the map style and the markers need, resolved for the current theme. */
+import LIGHT_STYLE from './maps/sg_map_light.json';
+
 export type MapPalette = {
   ground: string;
   street: string;
@@ -35,6 +37,9 @@ export type MapPalette = {
   pickup: string;
   noir: string;
   surface: string;
+  ink: string;
+  route: string;
+  theme: 'light' | 'dark';
 };
 
 function token(styles: CSSStyleDeclaration, name: string, fallback: string): string {
@@ -67,6 +72,9 @@ export function readMapPalette(): MapPalette {
     pickup: token(styles, '--pickup', 'rgb(70,201,139)'),
     noir: token(styles, '--noir', 'rgb(9,7,8)'),
     surface: token(styles, '--bg-100', 'rgb(19,17,16)'),
+    ink: token(styles, '--ink', 'rgb(27,26,23)'),
+    route: token(styles, '--route', 'rgb(255,215,0)'),
+    theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light',
   };
 }
 
@@ -95,7 +103,10 @@ export type MapTypeStyle = {
   stylers: Record<string, string | number>[];
 };
 
-export function mapStyles(p: MapPalette): MapTypeStyle[] {
+export function mapStyles(p: MapPalette, opts: { publicSite?: boolean } = {}): MapTypeStyle[] {
+  // The public site's Daylight map is the one light style the apps use too
+  // (design/maps/sg_map_light.json). The console keeps its token-built map.
+  if (opts.publicSite && p.theme === 'light') return LIGHT_STYLE as MapTypeStyle[];
   return [
     // The ground, and the default for anything not named below.
     { elementType: 'geometry', stylers: [{ color: p.ground }] },

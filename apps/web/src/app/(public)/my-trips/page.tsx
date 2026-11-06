@@ -136,12 +136,12 @@ export default function MyTripsPage() {
                       <span aria-hidden className="h-2 w-2 shrink-0 rounded-[2px] bg-gold-500" />
                       <span className="truncate">{t.destination_address || 'Destination'}</span>
                     </p>
-                    <p className="text-xs text-ink-subtle">{tripWhen(t.requested_at)}</p>
+                    <p className="text-sm text-ink-subtle">{tripWhen(t.requested_at)}</p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="font-semibold sg-num">{amount ?? '–'}</p>
-                    <p className="text-xs text-ink-subtle">{statusLabel(t.status)}</p>
-                    {paid && <p className="text-xs text-ink-subtle">{paid}</p>}
+                    <p className="text-sm text-ink-subtle">{statusLabel(t.status)}</p>
+                    {paid && <p className="text-sm text-ink-subtle">{paid}</p>}
                   </div>
                 </div>
               </li>

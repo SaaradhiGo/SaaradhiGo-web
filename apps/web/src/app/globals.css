@@ -8,6 +8,8 @@
 /* The public homepage's own layout. Marketing only: it does not reach the
    booking or trip screens. */
 @import '../styles/home.css';
+/* The type scale, last, so it is the only word on size and weight. */
+@import '../styles/type.css';
 
 @tailwind base;
 @tailwind components;
