@@ -76,3 +76,25 @@ export function formatDistance(
   if (value === null || value === undefined || !Number.isFinite(value)) return null;
   return `${value.toFixed(1)} ${unit ?? 'km'}`;
 }
+
+/**
+ * An exact amount for a ledger or receipt line: "₹1,151.29", "₹185",
+ * "-₹49.32". Paise only when there are any; summaries use `formatFare`.
+ */
+export function formatExact(
+  amount: string | number | null | undefined,
+  currency?: string | null,
+): string | null {
+  if (amount === null || amount === undefined || amount === '') return null;
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return null;
+  const abs = Math.abs(n);
+  const cents = Math.round(abs * 100) % 100 !== 0;
+  const digits = abs.toLocaleString('en-IN', {
+    minimumFractionDigits: cents ? 2 : 0,
+    maximumFractionDigits: cents ? 2 : 0,
+  });
+  const symbol = currencySymbol(currency);
+  const body = symbol.length === 1 ? `${symbol}${digits}` : `${symbol} ${digits}`.trim();
+  return n < 0 ? `-${body}` : body;
+}

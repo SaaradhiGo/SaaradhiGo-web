@@ -57,6 +57,7 @@ export type EarningsSummary = {
   total_trips?: number;
   today_earned?: string;
   today_net?: string;
+  today_commission?: string;
   today_trips?: number;
   wallet_balance?: string;
   cash_collected?: string;
