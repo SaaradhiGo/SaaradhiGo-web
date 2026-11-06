@@ -20,6 +20,7 @@
     "verify:driver-docs": "node scripts/verify-driver-docs.mjs",
     "verify:site": "node scripts/site-cert.mjs",
     "verify:phone-width": "node scripts/verify-phone-width.mjs",
+    "verify:no-title-dash": "node scripts/verify-no-title-dash.mjs",
     "verify:scope": "node scripts/verify-scope.mjs",
     "shoot:console": "node scripts/shoot-console.mjs",
     "a11y:console": "node scripts/a11y-console.mjs",

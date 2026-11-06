@@ -127,6 +127,29 @@ for (const [name, where] of used) {
   if (!declared.has(name)) problems.push(`${where}: var(${name}) but no stylesheet declares ${name}`);
 }
 
+// 5. no decorative dash before a title (owner, 2026-11-06). A ::before or
+// ::after on an eyebrow, title, heading, label or panel that paints a thin
+// short bar (height 3px or less, width 80px or less, a background) is the
+// "— WAYS TO RIDE" rule the owner asked to remove everywhere.
+const TITLE_LIKE = /(eyebrow|kicker|title|heading|label|panel|\bh[1-6]\b)[^,]*::?(before|after)/i;
+const px = (v) => {
+  const m = /^(\d+(?:\.\d+)?)px$/.exec((v ?? '').trim());
+  return m ? Number(m[1]) : null;
+};
+for (const [f, ast] of parsed) {
+  ast.walkRules((rule) => {
+    if (!TITLE_LIKE.test(rule.selector)) return;
+    const d = {};
+    rule.walkDecls((decl) => { d[decl.prop] = decl.value; });
+    const h = px(d.height);
+    const w = px(d.width);
+    const bg = d.background ?? d['background-color'];
+    if (h !== null && h <= 3 && w !== null && w <= 80 && bg && !/^(none|transparent)$/.test(bg.trim())) {
+      problems.push(`${rel(f)}:${rule.source?.start?.line ?? '?'}: \`${rule.selector}\` draws a dash before a title; eyebrows and titles are plain text`);
+    }
+  });
+}
+
 if (problems.length > 0) {
   console.error('CSS check failed:\n');
   for (const p of problems) console.error(`  ${p}`);

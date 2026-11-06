@@ -105,7 +105,6 @@
 
 /* Panel — the floating booking card */
 .sg-panel { background: var(--bg-100); border-radius: var(--radius-lg); padding: var(--space-6) var(--space-5) var(--space-5); box-shadow: var(--shadow-panel); border: 1px solid var(--gold-line); position: relative; }
-.sg-panel::before { content: ""; position: absolute; left: 50%; width: 56px; margin-left: -28px; top: -1px; height: 2px; background: var(--gold-500); border-radius: 0 0 2px 2px; }
 .sg-panel__title { font: 700 21px/1.25 var(--font-sans); letter-spacing: -.015em; margin: 0 0 var(--space-5); }
 .sg-panel__note { font: 500 13px/18px var(--font-sans); color: var(--ink-subtle); text-align: center; margin: var(--space-3) 0 0; }
 
@@ -272,8 +271,8 @@
 .sg-statusbar i::after { content: ""; position: absolute; inset: 1.5px 5px 1.5px 1.5px; background: currentColor; border-radius: 1px; }
 
 /* Premium details */
-.sg-eyebrow { display: inline-flex; align-items: center; gap: var(--space-3); font: 700 13px/18px var(--font-sans); letter-spacing: .14em; text-transform: uppercase; color: var(--gold-text); }
-.sg-eyebrow::before { content: ""; width: 28px; height: 1px; background: var(--gold-500); }
+.sg-eyebrow { display: inline-flex; align-items: center; font: 700 13px/18px var(--font-sans); letter-spacing: .14em; text-transform: uppercase; color: var(--gold-text); }
+/* No dash before an eyebrow (owner, 2026-11-06): plain uppercase label text. */
 .sg-promise { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--gold-line); border-bottom: 1px solid var(--gold-line); }
 .sg-promise > div { padding: var(--space-6) var(--space-5); display: grid; gap: var(--space-2); align-content: start; }
 .sg-promise > div + div { border-left: 1px solid var(--gold-line); }
