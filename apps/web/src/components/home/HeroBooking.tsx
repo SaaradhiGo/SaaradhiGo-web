@@ -212,8 +212,13 @@ export function HeroBooking() {
         setPickupText(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
         setPickupPlace(null);
         setPickupPoint({ lat: latitude, lng: longitude });
-        // From here on, search around the rider rather than the city.
+        // From here on, search around the rider, inside their own zone.
         setSearchNear({ lat: latitude, lng: longitude });
+        serviceabilityAt({ lat: latitude, lng: longitude })
+          .then((where) => {
+            if (where.zone) setArea({ code: where.zone.code, name: where.zone.name });
+          })
+          .catch(() => { /* keep the launch city */ });
         setErrors((p) => ({ ...p, pickup: undefined }));
         setLocating(false);
       },
