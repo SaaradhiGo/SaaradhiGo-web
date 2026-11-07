@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { LANGUAGES, LANGUAGE_INFO } from '@/i18n/locales';
+import { useTr } from '@/i18n/website';
 
 /**
  * Language. That is the whole control.
@@ -13,7 +14,8 @@ import { LANGUAGES, LANGUAGE_INFO } from '@/i18n/locales';
  * a rider choosing how to read the site is not telling us where they are.
  */
 export function LanguagePicker() {
-  const { language, t, setLanguage } = useLocale();
+  const { language, setLanguage } = useLocale();
+  const tr = useTr();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement | null>(null);
 
@@ -43,13 +45,13 @@ export function LanguagePicker() {
         aria-expanded={open}
         aria-haspopup="true"
         onClick={() => setOpen((v) => !v)}
-        aria-label={t.nav.language}
+        aria-label={tr('Language')}
       >
         <GlobeIcon />
       </button>
 
       {open && (
-        <div className="s-lang__panel" role="group" aria-label={t.nav.language}>
+        <div className="s-lang__panel" role="group" aria-label={tr('Language')}>
           {LANGUAGES.map((code) => (
             <button
               key={code}

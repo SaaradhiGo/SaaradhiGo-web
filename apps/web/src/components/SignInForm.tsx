@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Alert, Field, SubmitButton } from '@/components/form';
 import PhoneField, { usePhoneMarkets } from '@/components/PhoneField';
+import { useTr } from '@/i18n/website';
 import { nationalLooksValid, toE164 } from '@/lib/markets';
 import { safeReturnTo } from '@/lib/returnTo';
 import {
@@ -34,6 +35,7 @@ import {
  * people to reset a password that was never wrong.
  */
 export default function SignInForm({ role }: { role: PublicRole }) {
+  const tr = useTr();
   const router = useRouter();
   const search = useSearchParams();
   // `?method=mobile` opens on the code route. /forgot-password sends a
@@ -160,7 +162,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
       <div
         className="s-seg"
         role="tablist"
-        aria-label="How to sign in"
+        aria-label={tr('How to sign in')}
       >
           {(['email', 'phone'] as const).map((m) => (
             <button
@@ -174,7 +176,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
                 setUnverified(false);
               }}
             >
-              {m === 'email' ? 'Email' : 'Mobile'}
+              {tr(m === 'email' ? 'Email' : 'Mobile')}
             </button>
           ))}
       </div>
@@ -191,7 +193,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
       {mode === 'email' ? (
         <form onSubmit={submitEmail} className="s-form" noValidate>
           <Field
-            label="Email address"
+            label={tr('Email address')}
             name="email"
             type="email"
             autoComplete="email"
@@ -201,7 +203,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
             autoFocus
           />
           <Field
-            label="Password"
+            label={tr('Password')}
             name="password"
             type="password"
             autoComplete="current-password"
@@ -209,12 +211,12 @@ export default function SignInForm({ role }: { role: PublicRole }) {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <SubmitButton busy={busy} busyLabel="Signing you in…">
-            Sign in
+          <SubmitButton busy={busy} busyLabel="Logging you in…">
+            {tr('Log in')}
           </SubmitButton>
           <p className="text-sm">
             <Link href="/forgot-password" className="sg-link">
-              Forgot your password?
+              {tr('Forgot your password?')}
             </Link>
           </p>
         </form>

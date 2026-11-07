@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Alert, Field, SubmitButton } from '@/components/form';
 import PhoneField, { usePhoneMarkets } from '@/components/PhoneField';
+import { useSite } from '@/i18n/site';
+import { useTr } from '@/i18n/website';
 import { ApiError } from '@/lib/api';
 import { nationalLooksValid, toE164 } from '@/lib/markets';
 import { safeReturnTo } from '@/lib/returnTo';
@@ -91,6 +93,8 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
   const next = safeReturnTo(search.get('next'), home);
 
   const [tab, setTab] = useState<Tab>('email');
+  const tr = useTr();
+  const auth = useSite().auth;
 
   const [fullName, setFullName] = useState('');
   const [country, setCountry] = useState('');
@@ -301,14 +305,14 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           href={`${role === 'driver' ? '/driver/sign-in' : '/sign-in'}?next=${encodeURIComponent(next)}`}
           className="s-btn s-btn--outline s-submit"
         >
-          Go to sign in
+          Go to log in
         </Link>
       </div>
     );
   }
 
   const tabs = (
-    <div className="s-seg" role="tablist" aria-label="Sign up with">
+    <div className="s-seg" role="tablist" aria-label={tr('Sign up with')}>
       {(['email', 'mobile'] as const).map((t) => (
         <button
           key={t}
@@ -317,7 +321,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           aria-selected={tab === t}
           onClick={() => switchTab(t)}
         >
-          {t === 'email' ? 'Email' : 'Mobile'}
+          {tr(t === 'email' ? 'Email' : 'Mobile')}
         </button>
       ))}
     </div>
@@ -371,7 +375,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           Mobile number | (empty), Password | Confirm password. */}
       <div className="s-grid">
         <Field
-          label="Full name"
+          label={tr('Full name')}
           name="fullName"
           autoComplete="name"
           value={fullName}
@@ -382,7 +386,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
 
         {tab === 'email' && (
           <Field
-            label="Email"
+            label={tr('Email')}
             name="email"
             type="email"
             autoComplete="email"
@@ -403,15 +407,15 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           national={national}
           onNationalChange={setNational}
           error={errors.phone}
-          label="Mobile number"
-          help={tab === 'email' || smsToAnyone ? 'We text a code to confirm it.' : 'QA test numbers get a fixed code, no SMS.'}
+          label={tr('Mobile number')}
+          help={tab === 'email' || smsToAnyone ? tr('We text a code to confirm it.') : 'QA test numbers get a fixed code, no SMS.'}
         />
         <span className="s-only-desk" aria-hidden="true" />
 
         {tab === 'email' ? (
           <>
             <Field
-              label="Password"
+              label={tr('Password')}
               className="s-half"
               name="password"
               type="password"
@@ -419,11 +423,11 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               error={errors.password}
-              help="At least 10 characters."
+              help={tr('At least 10 characters.')}
               required
             />
             <Field
-              label="Confirm password"
+              label={tr('Confirm password')}
               className="s-half"
               name="confirmPassword"
               type="password"
@@ -453,7 +457,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           {/* The number is proved by SMS before the account exists, so a number
               this environment cannot text cannot sign up here either. */}
           <SubmitButton busy={busy} busyLabel="Sending a code…" disabled={!phoneUsable && national.trim() !== ''}>
-            Create account
+            {tr('Create account')}
           </SubmitButton>
           {!phoneUsable && national.trim() !== '' && (
             <p className="s-help">
@@ -489,8 +493,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
       )}
 
       <p className="s-auth__fine">
-        By creating an account you agree to the <Link href="/terms">Terms</Link> and{' '}
-        <Link href="/privacy">Privacy Policy</Link>.
+        {agreement(auth.agree, <Link key="t" href="/terms">{auth.terms}</Link>, <Link key="p" href="/privacy">{auth.privacy}</Link>)}
       </p>
     </form>
   );
@@ -512,4 +515,11 @@ function regionDefault(markets: { default_country: string; countries: { code: st
     /* an old browser without Intl.Locale keeps the default */
   }
   return markets.default_country;
+}
+
+/** The agreement line with its two links in place of {terms} and {privacy}. */
+function agreement(line: string, terms: React.ReactNode, privacy: React.ReactNode) {
+  return line.split(/(\{terms\}|\{privacy\})/).map((part, i) =>
+    part === '{terms}' ? terms : part === '{privacy}' ? privacy : <span key={i}>{part}</span>,
+  );
 }

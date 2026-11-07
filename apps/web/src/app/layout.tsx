@@ -36,7 +36,11 @@ export const metadata: Metadata = {
     title: 'SaaradhiGo',
     description:
       'Fair rides for riders and drivers. The fare is agreed before the trip starts.',
+    // The server renders English; the other languages are a stored
+    // preference on the same URL, and LocaleHead switches this tag in the
+    // browser (owner, 2026-11-07).
     locale: 'en_IN',
+    alternateLocale: ['te_IN', 'hi_IN', 'es_ES'],
     // NO og:image. There was one, pointing at the homepage photograph, and
     // the photographs are gone. A link preview with a broken image is worse
     // than a link preview with none: one looks unfinished, the other looks

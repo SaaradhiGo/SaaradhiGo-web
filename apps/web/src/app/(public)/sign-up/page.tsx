@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { KeepNextLink } from '@/components/KeepNextLink';
 import { AuthShell } from '@/components/form';
 import RegisterForm from '@/components/RegisterForm';
+import { Tr } from '@/i18n/website';
 
 export const metadata: Metadata = {
   title: 'Sign up — SaaradhiGo',
@@ -22,9 +23,9 @@ export default function Page() {
       title="Create your account"
       alt={
         <>
-          Have one?{' '}
+          <Tr>Have one?</Tr>{' '}
           <Suspense fallback={null}>
-            <KeepNextLink href="/sign-in">Log in</KeepNextLink>
+            <KeepNextLink href="/sign-in"><Tr>Log in</Tr></KeepNextLink>
           </Suspense>
         </>
       }

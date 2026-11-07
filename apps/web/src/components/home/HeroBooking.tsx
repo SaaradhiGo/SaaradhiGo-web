@@ -8,6 +8,7 @@ import { LatLng, Place, placeToPoint, searchPlaces, serviceabilityAt } from '@/l
 import { fetchServiceAreas, primaryArea } from '@/lib/serviceAreas';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useSite } from '@/i18n/site';
+import { SITE_FLAGS } from '@/lib/siteFlags';
 
 /**
  * Pickup, destination, and the one action the homepage is for.
@@ -319,14 +320,18 @@ export function HeroBooking() {
         void submit();
       }}
     >
-      <div className="s-book__modes s-only-desk" role="group" aria-label={h.tripType}>
-        <button type="button" className="s-book__mode" aria-pressed="true">
-          {h.rideNow}
-        </button>
-        <button type="button" className="s-book__mode" disabled>
-          {h.schedule}
-        </button>
-      </div>
+      {/* Ride now / Schedule waits for scheduled rides in the backend
+          (owner, 2026-11-07). With one option there is no switch. */}
+      {SITE_FLAGS.scheduledRides && (
+        <div className="s-book__modes s-only-desk" role="group" aria-label={h.tripType}>
+          <button type="button" className="s-book__mode" aria-pressed="true">
+            {h.rideNow}
+          </button>
+          <button type="button" className="s-book__mode" disabled>
+            {h.schedule}
+          </button>
+        </div>
+      )}
       <div className="s-book__fields">
         <span className="s-book__dots s-only-desk" aria-hidden="true" />
         {field('pickup', h.pickup, phone ? h.pickupPlaceholderPhone : h.pickupPlaceholder, pickupText, setPickupText, () => {

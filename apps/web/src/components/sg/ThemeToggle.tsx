@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Moon, Sun } from './icons';
-import { useT } from '@/i18n/LocaleProvider';
+import { useTr } from '@/i18n/website';
 
 type Theme = 'light' | 'dark';
 
@@ -17,7 +17,7 @@ function current(): Theme {
  * layout's script reads either back before the next first paint.
  */
 export function ThemeToggle() {
-  const t = useT();
+  const tr = useTr();
   const [theme, setTheme] = useState<Theme>('light');
   useEffect(() => setTheme(current()), []);
 
@@ -34,8 +34,8 @@ export function ThemeToggle() {
       type="button"
       className="s-icon-btn"
       onClick={flip}
-      aria-label={theme === 'dark' ? t.nav.toLight : t.nav.toDark}
-      title={theme === 'dark' ? t.nav.toLight : t.nav.toDark}
+      aria-label={tr(theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme')}
+      title={tr(theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme')}
     >
       {theme === 'dark' ? <Sun /> : <Moon />}
     </button>

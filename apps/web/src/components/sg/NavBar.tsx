@@ -7,7 +7,7 @@ import AuthNav from '@/components/AuthNav';
 import { Close, Menu } from './icons';
 import { LanguagePicker } from './LanguagePicker';
 import { ThemeToggle } from './ThemeToggle';
-import { useT } from '@/i18n/LocaleProvider';
+import { useTr } from '@/i18n/website';
 
 /**
  * The public header (approved design, 2026-11-07): 84px of black, the
@@ -22,16 +22,16 @@ import { useT } from '@/i18n/LocaleProvider';
  * and a menu; the drawer holds the links, the language and the session.
  */
 const LINKS = [
-  { key: 'ride', href: '/ride' },
-  { key: 'drive', href: '/drive' },
-  { key: 'safety', href: '/safety' },
-  { key: 'about', href: '/about' },
-  { key: 'help', href: '/help' },
+  { label: 'Ride', href: '/ride' },
+  { label: 'Drive', href: '/drive' },
+  { label: 'Safety', href: '/safety' },
+  { label: 'About', href: '/about' },
+  { label: 'Help', href: '/help' },
 ] as const;
 
 export function NavBar({ quiet }: { quiet?: boolean }) {
   const pathname = usePathname();
-  const t = useT();
+  const tr = useTr();
   const [open, setOpen] = useState(false);
 
   // `/book` owns the page's gold button in every one of its states.
@@ -47,7 +47,7 @@ export function NavBar({ quiet }: { quiet?: boolean }) {
   return (
     <header className="s-header s-cb">
       <nav className="s-wrap s-header__bar" aria-label="Main">
-        <Link href="/" className="s-brand" aria-label="SaaradhiGo home">
+        <Link href="/" className="s-brand" aria-label={tr('SaaradhiGo home')}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="s-brand__mark" src="/brand/emblem-gold.svg" alt="" width={76} height={66} />
           <span className="s-brand__name">Saaradhi Go</span>
@@ -61,7 +61,7 @@ export function NavBar({ quiet }: { quiet?: boolean }) {
               className="s-nav__link"
               aria-current={isCurrent(l.href) ? 'page' : undefined}
             >
-              {t.nav[l.key]}
+              {tr(l.label)}
             </Link>
           ))}
         </div>
@@ -79,7 +79,7 @@ export function NavBar({ quiet }: { quiet?: boolean }) {
             className="s-icon-btn"
             aria-expanded={open}
             aria-controls="s-drawer"
-            aria-label={open ? t.nav.menuClose : t.nav.menuOpen}
+            aria-label={tr(open ? 'Close menu' : 'Open menu')}
             onClick={() => setOpen((v) => !v)}
           >
             {open ? <Close /> : <Menu />}
@@ -96,7 +96,7 @@ export function NavBar({ quiet }: { quiet?: boolean }) {
               className="s-drawer__link"
               aria-current={isCurrent(l.href) ? 'page' : undefined}
             >
-              {t.nav[l.key]}
+              {tr(l.label)}
             </Link>
           ))}
           <div className="s-drawer__end">

@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useState } from 'react';
 import { Market, Markets, fetchMarkets } from '@/lib/markets';
+import { useTr } from '@/i18n/website';
 
 /**
  * Country selector + national number, the pair every phone input needs.
@@ -54,6 +55,7 @@ export default function PhoneField({
   label?: string;
 }) {
   const id = useId();
+  const tr = useTr();
   const countryId = `${id}-country`;
   const numberId = `${id}-number`;
   const errorId = `${id}-error`;
@@ -104,7 +106,7 @@ export default function PhoneField({
       <span className="s-phonebox">
         <select
           id={countryId}
-          aria-label="Country code"
+          aria-label={tr('Country code')}
           value={countryCode}
           onChange={(e) => onCountryChange(e.target.value)}
           disabled={loading || list.length === 0}

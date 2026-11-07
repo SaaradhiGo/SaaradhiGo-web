@@ -14,11 +14,19 @@
 //   sideways     horizontal scroll at 360, 390, 768, 1024 or 1440
 //   visual       more than 3% of pixels differ from screenshots/*.png at
 //                1440x900 by pixelmatch (diff images in DIFFS, default
-//                layout-diff/)
+//                layout-diff/); Home against baseline/Home.png, recorded
+//                when the Schedule switch was hidden (AUDIT §28.10)
+//   languages    sizes, weights, family, fit, fold, sideways and logo again in
+//                te, hi and es at 1440x900, 1366x768, 390x844 and 360x740
+//   english      a string from design/i18n/website.en.json visible on a te,
+//                hi or es page (text, aria-label, placeholder, title, <title>)
+//                where the files translate it
+//   schedule     a Ride now / Schedule control visible (scheduledRides is off)
+//   404          an unknown URL without the header logo and the footer
 //
 //   SITE=http://localhost:3100 npm run check-layout
-//   SHOTS=dir also saves the contact sheet (1440x900 and 390x844, light and
-//   dark, Telugu at 390).
+//   SHOTS=dir also saves the contact sheet (1440x900 and 390x844: en light
+//   and dark; te, hi and es light). BASELINE=1 rewrites baseline/Home.png.
 import { chromium } from 'playwright-core';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
@@ -29,15 +37,26 @@ const SITE = process.env.SITE || 'http://localhost:3100';
 const SHOTS = process.env.SHOTS;
 const DIFFS = process.env.DIFFS || 'layout-diff';
 const REF = path.resolve('../../design/website-2026-11-07/screenshots');
+const BASE = path.resolve('../../design/website-2026-11-07/baseline');
+const I18N = path.resolve('src/i18n/website');
+const LANGS = ['te', 'hi', 'es'];
+// English that a translated page must not show: every string the files
+// translate differently, per language.
+const english = JSON.parse(readFileSync(path.join(I18N, 'en.json'), 'utf8'));
+const LEAKS = Object.fromEntries(LANGS.map((l) => {
+  const tr = JSON.parse(readFileSync(path.join(I18N, `${l}.json`), 'utf8'));
+  return [l, Object.keys(english).filter((k) => tr[k] && tr[k] !== k)];
+}));
+const MISSING_PAGE = '/this-page-does-not-exist';
 const FIT = ['/ride', '/drive', '/safety', '/about', '/help', '/sign-up', '/sign-in'];
 const PAGES = ['/', ...FIT];
 const REF_FOR = {
-  '/': 'Home.png', '/ride': 'Ride.png', '/drive': 'Drive.png', '/safety': 'Safety.png',
+  '/': '../baseline/Home.png', '/ride': 'Ride.png', '/drive': 'Drive.png', '/safety': 'Safety.png',
   '/about': 'About.png', '/help': 'Help.png', '/sign-up': 'SignUp.png',
 };
-// The reference homepage shows the app band (rows 1628-1878); it stays off
-// until the store listings exist, so those rows are cut from the reference.
-const REF_CUT = { '/': [1628, 1878] };
+// Home is compared with its own baseline (the reference less the Schedule
+// switch and the app band, which stays off until the store listings exist).
+const REF_CUT = {};
 // Logo artwork: the reference draws logo.jpg, the brief has us use the
 // repo's vector logo, so these boxes (x, y, w, h) are not compared: About's
 // logo panel, and on every page the header and footer emblems (measured).
@@ -58,6 +77,17 @@ const COUNTRIES = {
 const failures = [];
 const fail = (msg) => failures.push(msg);
 
+// A page whose script never yields (an endless loop) must fail the gate, not
+// hang it: each page gets 30s to answer, the whole run 40 minutes.
+setTimeout(() => {
+  console.log('FAIL the layout gate did not finish in 40 minutes');
+  process.exit(1);
+}, 40 * 60 * 1000).unref();
+const answers = (page, work) => Promise.race([
+  work,
+  new Promise((_, reject) => setTimeout(() => reject(new Error(`${page.url()} did not answer in 30s (frozen page?)`)), 30000)),
+]);
+
 const browser = await chromium.launch(process.env.CHROME_PATH
   ? { executablePath: process.env.CHROME_PATH } : { channel: 'chrome' });
 
@@ -76,7 +106,7 @@ async function open(p, width, height, { theme = 'light', lang = 'en' } = {}) {
   }, { theme, lang });
   const page = await ctx.newPage();
   await page.goto(SITE + p, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => {});
-  await page.evaluate(() => document.fonts.ready);
+  await answers(page, page.evaluate(() => document.fonts.ready));
   return { page, ctx };
 }
 
@@ -107,13 +137,26 @@ const measure = (page) => page.evaluate(({ phone }) => {
   const header = document.querySelector('header');
   const main = document.querySelector('main');
   const r = brand?.getBoundingClientRect();
-  const fares = [...document.querySelectorAll('button, a')]
-    .find((b) => /^\s*See fares\s*$/.test(b.textContent || '') && vis(b));
+  const fares = [...document.querySelectorAll('.s-book__go')].find(vis);
+  const notice = document.querySelector('.s-notice');
+  const schedule = [...document.querySelectorAll('.s-book__mode, button, a')]
+    .find((b) => vis(b) && (b.classList.contains('s-book__mode') || /^\s*Schedule\s*$/.test(b.textContent || '')));
+  const strings = new Set([document.title]);
+  for (const el of document.querySelectorAll('body *')) {
+    if (!vis(el)) continue;
+    for (const c of el.childNodes) if (c.nodeType === 3 && c.textContent.trim()) strings.add(c.textContent.replace(/\s+/g, ' ').trim());
+    for (const a of ['aria-label', 'placeholder', 'title']) if (el.getAttribute(a)) strings.add(el.getAttribute(a).trim());
+  }
+  const leaks = (window.LEAKS_ || []).filter((k) => strings.has(k));
   const text = document.body.innerText.replace(/©\s*\d{4}/g, '');
   return {
     sizes: sizes.slice(0, 6), weights: weights.slice(0, 6),
     logo: !!brand && vis(brand) && !!name && vis(name) && r.top >= 0 && r.bottom <= innerHeight,
     header: header ? header.getBoundingClientRect().height : 0,
+    notice: notice ? notice.getBoundingClientRect().height : 0,
+    schedule: schedule ? (schedule.textContent || '').trim() : null,
+    leaks: leaks.slice(0, 6),
+    footer: !!document.querySelector('footer .s-footer__mark'),
     main: main ? main.getBoundingClientRect().height : 0,
     page: document.documentElement.scrollHeight,
     sideways: document.documentElement.scrollWidth > document.documentElement.clientWidth,
@@ -123,11 +166,12 @@ const measure = (page) => page.evaluate(({ phone }) => {
   };
 }, { phone: page.viewportSize().width < 768 });
 
-async function prime(page) {
-  await page.evaluate(({ sizes, phone, numbers, banned }) => {
+async function prime(page, lang = 'en') {
+  await page.evaluate(({ sizes, phone, numbers, banned, leaks }) => {
     window.SIZES_ = sizes; window.PHONE_ = phone;
     window.NUMBERS_ = new RegExp(numbers); window.BANNED_ = new RegExp(banned);
-  }, { sizes: [...SIZES], phone: [...PHONE_ONLY], numbers: NUMBERS.source, banned: BANNED.source });
+    window.LEAKS_ = leaks;
+  }, { sizes: [...SIZES], phone: [...PHONE_ONLY], numbers: NUMBERS.source, banned: BANNED.source, leaks: LEAKS[lang] || [] });
   // The page functions read these names unqualified.
   await page.evaluate(() => { globalThis.SIZES_ = window.SIZES_; globalThis.PHONE_ = window.PHONE_; });
 }
@@ -147,7 +191,8 @@ async function families(page) {
     const { attributes } = await cdp.send('DOM.getAttributes', { nodeId });
     const cls = attributes[attributes.indexOf('class') + 1] || '';
     if (/s-brand__name/.test(cls)) continue;
-    if (used.some((f) => !/^Inter/.test(f))) wrong.push(`${cls.split(' ')[0] || 'node'} ${used.join('+')}`);
+    // Inter for Latin; Noto Sans Telugu and Devanagari draw only their scripts.
+    if (used.some((f) => !/^(Inter|Noto Sans Telugu|Noto Sans Devanagari)/.test(f))) wrong.push(`${cls.split(' ')[0] || 'node'} ${used.join('+')}`);
   }
   await cdp.detach();
   return wrong.slice(0, 6);
@@ -186,56 +231,76 @@ function diff(shot, refFile, cut, mask) {
 
 const heights = {};
 const AT = [[1440, 900], [1366, 768], [1024, 768], [768, 1024], [390, 844], [360, 740]];
-for (const p of PAGES) {
-  for (const [w, h] of AT) {
-    const { page, ctx } = await open(p, w, h);
-    await prime(page);
-    const m = await measure(page);
-    const at = `${p} at ${w}x${h}`;
-    heights[`${p} ${w}`] = m.page;
-    if (!m.logo) fail(`${at}: the header logo is not visible at load`);
-    if (m.sideways) fail(`${at}: scrolls sideways`);
-    if (m.sizes.length) fail(`${at}: font size off the scale: ${m.sizes.join('; ')}`);
-    if (m.weights.length) fail(`${at}: weight other than 400/600: ${m.weights.join('; ')}`);
-    if (m.number) fail(`${at}: a number in the copy: "${m.number}"`);
-    if (m.banned) fail(`${at}: banned word in the copy: "${m.banned}"`);
-    const desk = w >= 1366;
-    if (desk && FIT.includes(p) && m.main > h - m.header) {
-      fail(`${at}: main content is ${Math.round(m.main)}px, taller than the ${Math.round(h - m.header)}px under the header`);
-    }
-    if (p === '/' && (desk || w === 390) && !(m.seeFares && m.seeFares <= h)) {
-      fail(`${at}: "See fares" is below the fold (${m.seeFares})`);
-    }
-    if (w === 1440) {
-      const wrong = await families(page);
-      if (wrong.length) fail(`${at}: text not drawn in Inter: ${wrong.join('; ')}`);
-      if (REF_FOR[p] && existsSync(path.join(REF, REF_FOR[p]))) {
-        const shot = await page.screenshot({ fullPage: true });
-        const emblems = await page.evaluate(() => ['.s-brand__mark', '.s-footer__mark'].map((q) => {
-          const r = document.querySelector(q).getBoundingClientRect();
-          return [Math.floor(r.left), Math.floor(r.top + scrollY), Math.ceil(r.width), Math.ceil(r.height)];
-        }));
-        const d = diff(shot, path.join(REF, REF_FOR[p]), REF_CUT[p], [...(REF_MASK[p] || []), ...emblems]);
-        mkdirSync(DIFFS, { recursive: true });
-        const base = p === '/' ? 'home' : p.slice(1);
-        writeFileSync(path.join(DIFFS, `${base}-diff.png`), d.png);
-        writeFileSync(path.join(DIFFS, `${base}-ours.png`), shot);
-        heights[`${p} diff`] = Number((d.share * 100).toFixed(2));
-        if (d.share > MAX_DIFF) fail(`${at}: ${(d.share * 100).toFixed(1)}% of pixels differ from ${REF_FOR[p]} (max 3%)`);
-      }
-    }
+const AT_LANG = [[1440, 900], [1366, 768], [390, 844], [360, 740]];
+const RUNS = [
+  ...PAGES.flatMap((p) => AT.map(([w, h]) => ({ p, w, h, lang: 'en' }))),
+  ...LANGS.flatMap((lang) => PAGES.flatMap((p) => AT_LANG.map(([w, h]) => ({ p, w, h, lang })))),
+  ...['en', ...LANGS].flatMap((lang) => [[1440, 900], [390, 844]].map(([w, h]) => ({ p: MISSING_PAGE, w, h, lang }))),
+];
+for (const { p, w, h, lang } of RUNS) {
+  const { page, ctx } = await open(p, w, h, { lang });
+  await prime(page, lang);
+  const m = await answers(page, measure(page));
+  const at = `${p}${lang === 'en' ? '' : ` [${lang}]`} at ${w}x${h}`;
+  heights[`${p} ${lang} ${w}`] = m.page;
+  if (!m.logo) fail(`${at}: the header logo is not visible at load`);
+  if (p === MISSING_PAGE) {
+    if (!m.footer) fail(`${at}: the 404 page has no footer`);
     await ctx.close();
+    continue;
   }
+  if (m.sideways) fail(`${at}: scrolls sideways`);
+  if (m.sizes.length) fail(`${at}: font size off the scale: ${m.sizes.join('; ')}`);
+  if (m.weights.length) fail(`${at}: weight other than 400/600: ${m.weights.join('; ')}`);
+  if (m.number) fail(`${at}: a number in the copy: "${m.number}"`);
+  if (m.banned) fail(`${at}: banned word in the copy: "${m.banned}"`);
+  if (m.leaks.length) fail(`${at}: English left untranslated: ${m.leaks.map((x) => `"${x}"`).join('; ')}`);
+  if (m.schedule !== null) fail(`${at}: a Schedule control is visible ("${m.schedule}") while scheduledRides is off`);
+  const desk = w >= 1366;
+  // The notice (te/hi/es) sits between the header and the page, so it counts.
+  const room = h - m.header - m.notice;
+  if (desk && FIT.includes(p) && m.main > room) {
+    fail(`${at}: main content is ${Math.round(m.main)}px, taller than the ${Math.round(room)}px under the header`);
+  }
+  if (p === '/' && (desk || w === 390) && !(m.seeFares && m.seeFares <= h)) {
+    fail(`${at}: "See fares" is below the fold (${m.seeFares})`);
+  }
+  if (w === 1440) {
+    const wrong = await families(page);
+    if (wrong.length) fail(`${at}: text not drawn in Inter or Noto: ${wrong.join('; ')}`);
+  }
+  if (w === 1440 && lang === 'en' && REF_FOR[p]) {
+    const shot = await page.screenshot({ fullPage: true });
+    const emblems = await page.evaluate(() => ['.s-brand__mark', '.s-footer__mark'].map((q) => {
+      const r = document.querySelector(q).getBoundingClientRect();
+      return [Math.floor(r.left), Math.floor(r.top + scrollY), Math.ceil(r.width), Math.ceil(r.height)];
+    }));
+    if (p === '/' && process.env.BASELINE) {
+      mkdirSync(BASE, { recursive: true });
+      writeFileSync(path.join(BASE, 'Home.png'), shot);
+    }
+    if (existsSync(path.join(REF, REF_FOR[p]))) {
+      const d = diff(shot, path.join(REF, REF_FOR[p]), REF_CUT[p], [...(REF_MASK[p] || []), ...emblems]);
+      mkdirSync(DIFFS, { recursive: true });
+      const base = p === '/' ? 'home' : p.slice(1);
+      writeFileSync(path.join(DIFFS, `${base}-diff.png`), d.png);
+      writeFileSync(path.join(DIFFS, `${base}-ours.png`), shot);
+      heights[`${p} diff`] = Number((d.share * 100).toFixed(2));
+      if (d.share > MAX_DIFF) fail(`${at}: ${(d.share * 100).toFixed(1)}% of pixels differ from ${REF_FOR[p]} (max 3%)`);
+    } else fail(`${at}: reference ${REF_FOR[p]} is missing`);
+  }
+  await ctx.close();
 }
 
 if (SHOTS) {
   mkdirSync(SHOTS, { recursive: true });
   const runs = [];
   for (const theme of ['light', 'dark']) for (const [w, h] of [[1440, 900], [390, 844]]) runs.push({ w, h, theme, lang: 'en' });
-  runs.push({ w: 390, h: 844, theme: 'light', lang: 'te' });
-  for (const p of PAGES) for (const r of runs) {
+  for (const lang of LANGS) for (const [w, h] of [[1440, 900], [390, 844]]) runs.push({ w, h, theme: 'light', lang });
+  for (const p of [...PAGES, MISSING_PAGE]) for (const r of runs) {
     const { page, ctx } = await open(p, r.w, r.h, r);
-    const name = `${p === '/' ? 'home' : p.slice(1)}-${r.w}-${r.theme}${r.lang === 'te' ? '-te' : ''}.png`;
+    const slug = p === '/' ? 'home' : p === MISSING_PAGE ? '404' : p.slice(1);
+    const name = `${slug}-${r.w}-${r.theme}${r.lang === 'en' ? '' : `-${r.lang}`}.png`;
     await page.screenshot({ path: path.join(SHOTS, name), fullPage: true });
     await ctx.close();
   }
