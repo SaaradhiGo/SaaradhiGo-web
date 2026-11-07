@@ -13,12 +13,15 @@
 //   see fares    "See fares" below the fold at 1440x900, 1366x768, 390x844
 //   sideways     horizontal scroll at 360, 390, 768, 1024 or 1440
 //   visual       more than 3% of pixels differ from screenshots/*.png at
-//                1440x900 (diff images in DIFFS, default layout-diff/)
+//                1440x900 by pixelmatch (diff images in DIFFS, default
+//                layout-diff/)
 //
 //   SITE=http://localhost:3100 npm run check-layout
 //   SHOTS=dir also saves the contact sheet (1440x900 and 390x844, light and
 //   dark, Telugu at 390).
 import { chromium } from 'playwright-core';
+import pixelmatch from 'pixelmatch';
+import { PNG } from 'pngjs';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -150,51 +153,35 @@ async function families(page) {
   return wrong.slice(0, 6);
 }
 
-// Share of pixels that differ from the reference, compared in the browser so
-// the gate needs no image library. Full resolution; a pixel differs when any
-// channel moves by more than 32 (text anti-aliasing stays under that).
-async function diff(page, shot, refFile, cut, mask) {
-  const ref = 'data:image/png;base64,' + readFileSync(refFile).toString('base64');
-  const ours = 'data:image/png;base64,' + shot.toString('base64');
-  return page.evaluate(async ({ ref, ours, cut, mask }) => {
-    // Decoded without colour management: a PNG's own gamma or profile must
-    // not move the reference's pixels before they are compared.
-    const load = (src) => createImageBitmap(
-      new Blob([Uint8Array.from(atob(src.split(',')[1]), (c) => c.charCodeAt(0))], { type: 'image/png' }),
-      { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
-    const [a, b] = await Promise.all([load(ref), load(ours)]);
-    // The reference, with any rows that are deliberately absent cut out.
-    const refH = cut ? a.height - (cut[1] - cut[0]) : a.height;
-    const W = a.width, H = refH;
-    const draw = (img, rows) => {
-      const c = document.createElement('canvas'); c.width = W; c.height = H;
-      const x = c.getContext('2d');
-      x.fillStyle = '#ff00ff'; x.fillRect(0, 0, W, H);
-      for (const [sy, sh, dy] of rows) x.drawImage(img, 0, sy, img.width, sh, 0, dy, W, sh);
-      return x.getImageData(0, 0, W, H);
-    };
-    const refRows = cut ? [[0, cut[0], 0], [cut[1], a.height - cut[1], cut[0]]] : [[0, a.height, 0]];
-    const A = draw(a, refRows);
-    const B = draw(b, [[0, Math.min(b.height, refH), 0]]);
-    const out = document.createElement('canvas'); out.width = W; out.height = H;
-    const ox = out.getContext('2d'); const D = ox.createImageData(W, H);
-    const hidden = new Uint8Array(W * H);
-    for (const [mx, my, mw, mh] of mask) {
-      for (let y = Math.max(0, my); y < Math.min(H, my + mh); y++) hidden.fill(1, y * W + Math.max(0, mx), y * W + Math.min(W, mx + mw));
+// Share of pixels that differ from the reference: pixelmatch at its default
+// threshold (0.1), not counting anti-aliased pixels, so a glyph edge that
+// Linux and Windows rasterise differently is not a difference. Rows the
+// reference shows but this build deliberately omits are cut from the
+// reference; masked boxes (logo artwork) are not compared.
+function diff(shot, refFile, cut, mask) {
+  const a = PNG.sync.read(readFileSync(refFile));
+  const b = PNG.sync.read(shot);
+  const W = a.width;
+  const H = cut ? a.height - (cut[1] - cut[0]) : a.height;
+  const ref = new PNG({ width: W, height: H });
+  if (cut) {
+    a.data.copy(ref.data, 0, 0, cut[0] * W * 4);
+    a.data.copy(ref.data, cut[0] * W * 4, cut[1] * W * 4);
+  } else a.data.copy(ref.data);
+  const ours = new PNG({ width: W, height: H });
+  ours.data.fill(0);
+  for (let y = 0; y < Math.min(H, b.height); y++) b.data.copy(ours.data, y * W * 4, y * b.width * 4, y * b.width * 4 + Math.min(W, b.width) * 4);
+  let hidden = 0;
+  for (const [mx, my, mw, mh] of mask) {
+    for (let y = Math.max(0, my); y < Math.min(H, my + mh); y++) {
+      const from = (y * W + Math.max(0, mx)) * 4, to = (y * W + Math.min(W, mx + mw)) * 4;
+      ref.data.copy(ours.data, from, from, to);
+      hidden += (to - from) / 4;
     }
-    let bad = 0, area = W * H - hidden.reduce((n, v) => n + v, 0);
-    const masked = (i) => hidden[i / 4] === 1;
-    for (let i = 0; i < A.data.length; i += 4) {
-      if (masked(i)) { D.data[i] = D.data[i + 1] = D.data[i + 2] = 120; D.data[i + 3] = 255; continue; }
-      const d = Math.max(Math.abs(A.data[i] - B.data[i]), Math.abs(A.data[i + 1] - B.data[i + 1]), Math.abs(A.data[i + 2] - B.data[i + 2]));
-      const g = (A.data[i] + A.data[i + 1] + A.data[i + 2]) / 3;
-      if (d > 32) { bad++; D.data[i] = 230; D.data[i + 1] = 0; D.data[i + 2] = 0; }
-      else { D.data[i] = D.data[i + 1] = D.data[i + 2] = 200 + g / 5; }
-      D.data[i + 3] = 255;
-    }
-    ox.putImageData(D, 0, 0);
-    return { share: bad / area, png: out.toDataURL('image/png') };
-  }, { ref, ours, cut, mask });
+  }
+  const out = new PNG({ width: W, height: H });
+  const bad = pixelmatch(ref.data, ours.data, out.data, W, H, { threshold: 0.1, includeAA: false });
+  return { share: bad / (W * H - hidden), png: PNG.sync.write(out) };
 }
 
 const heights = {};
@@ -228,10 +215,10 @@ for (const p of PAGES) {
           const r = document.querySelector(q).getBoundingClientRect();
           return [Math.floor(r.left), Math.floor(r.top + scrollY), Math.ceil(r.width), Math.ceil(r.height)];
         }));
-        const d = await diff(page, shot, path.join(REF, REF_FOR[p]), REF_CUT[p], [...(REF_MASK[p] || []), ...emblems]);
+        const d = diff(shot, path.join(REF, REF_FOR[p]), REF_CUT[p], [...(REF_MASK[p] || []), ...emblems]);
         mkdirSync(DIFFS, { recursive: true });
         const base = p === '/' ? 'home' : p.slice(1);
-        writeFileSync(path.join(DIFFS, `${base}-diff.png`), Buffer.from(d.png.split(',')[1], 'base64'));
+        writeFileSync(path.join(DIFFS, `${base}-diff.png`), d.png);
         writeFileSync(path.join(DIFFS, `${base}-ours.png`), shot);
         heights[`${p} diff`] = Number((d.share * 100).toFixed(2));
         if (d.share > MAX_DIFF) fail(`${at}: ${(d.share * 100).toFixed(1)}% of pixels differ from ${REF_FOR[p]} (max 3%)`);
