@@ -62,7 +62,8 @@ const measure = (page) => page.evaluate(() => {
   const small = [], heavy = [], padded = [];
   for (const el of document.querySelectorAll('body *')) {
     const own = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
-    if (own && vis(el) && !el.closest('.sr-only, .skip-link')) {
+    // Google's map attribution is Google's to size, not ours.
+    if (own && vis(el) && !el.closest('.sr-only, .skip-link, .gm-style')) {
       const s = getComputedStyle(el);
       if (parseFloat(s.fontSize) < 13) small.push(`${el.tagName.toLowerCase()}.${el.className} ${s.fontSize}`);
       if (Number(s.fontWeight) > 700) heavy.push(`${el.tagName.toLowerCase()}.${el.className} ${s.fontWeight}`);
