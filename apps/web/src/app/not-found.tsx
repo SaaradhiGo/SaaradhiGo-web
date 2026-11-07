@@ -7,7 +7,7 @@ export default function NotFound() {
     <main className="min-h-screen grid place-items-center px-4 text-center">
       <div>
         <p className="text-gold-text font-semibold">404</p>
-        <h1 className="mt-2 text-2xl font-bold">We could not find that page</h1>
+        <h1 className="mt-2 text-heading font-semibold">We could not find that page</h1>
         <p className="mt-3 text-sm text-ink-subtle max-w-sm">
           The link may be old, or the page may have moved.
         </p>

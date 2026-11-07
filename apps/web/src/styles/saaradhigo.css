@@ -219,7 +219,7 @@
    ran off a 390px screen. The row wraps and the boxes shrink to fit. */
 .sg-row--pin { flex-wrap: wrap; }
 @media (max-width: 767px) {
-  .sg-pin span { width: 32px; height: 40px; font-size: 18px; }
+  .sg-pin span { width: 32px; height: 40px; font-size: var(--text-body); }
 }
 .sg-pin span { width: 36px; height: 44px; border-radius: var(--radius-sm); background: var(--bg-300); display: grid; place-items: center;
   font: 800 20px/1 var(--font-sans); font-variant-numeric: tabular-nums; color: var(--ink); border: 1px solid var(--line-strong); }

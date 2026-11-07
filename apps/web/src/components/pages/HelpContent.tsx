@@ -1,68 +1,71 @@
 'use client';
 
 import { useState } from 'react';
-import { ButtonLink } from '@/components/sg/Button';
-import { Masthead } from './PageShell';
-import { usePages } from '@/i18n/usePages';
-import { Search } from '@/components/sg/icons';
+import Link from 'next/link';
+import { SearchIcon } from '@/components/sg/SiteIcons';
+import { useSite } from '@/i18n/site';
 
 /**
- * /help -- a search box over the questions, the questions as a collapsed
- * accordion in two columns, and a contact card (owner, 2026-11-06). Fits one
- * screen at 1366x768 with every question closed.
- *
- * The search filters these questions in the page; there is no knowledge base
- * behind it, and when nothing matches it hands the visitor to /contact.
+ * /help (approved design, 2026-11-07; Help.html): a search that filters the
+ * questions as you type, four topics, the top questions in two columns, and
+ * a way to reach a person. Answers are only what the product does today.
  */
 export function HelpContent() {
-  const p = usePages().help;
+  const h = useSite().help;
   const [q, setQ] = useState('');
-  const needle = q.trim().toLocaleLowerCase();
-  const shown = needle
-    ? p.faqs.filter((f) => `${f.h} ${f.p}`.toLocaleLowerCase().includes(needle))
-    : p.faqs;
+  const needle = q.trim().toLowerCase();
+  const faqs = needle
+    ? h.faqs.filter((f) => `${f.q} ${f.a}`.toLowerCase().includes(needle))
+    : h.faqs;
 
   return (
-    <>
-      <Masthead title={p.title} lead={p.lead} />
-
-      <section className="hp hp-section">
-        <label className="hp-search">
-          <Search />
-          <span className="sr-only">{p.searchLabel}</span>
+    <section className="s-wrap s-page s-cb">
+      <div className="s-headrow">
+        <div>
+          <h1 className="t-heading">{h.title}</h1>
+          <p className="s-lead" style={{ marginTop: 8 }}>{h.lead}</p>
+        </div>
+        <label className="s-search">
+          <SearchIcon />
           <input
             type="search"
+            aria-label={h.searchLabel}
+            placeholder={h.searchPlaceholder}
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={p.searchPlaceholder}
           />
         </label>
+      </div>
 
-        {shown.length ? (
-          <ul className="hp-faqs">
-            {shown.map((f) => (
-              <li key={f.h}>
-                <details className="hp-faq" open={needle ? true : undefined}>
-                  <summary>{f.h}</summary>
-                  <p>{f.p}</p>
-                </details>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="hp-faqs__none" role="status">{p.noMatch}</p>
-        )}
+      <div className="s-topics">
+        {h.topics.map((t) => (
+          <Link key={t.title} href={t.href} className="s-topic">
+            <b>{t.title}</b>
+            <span>{t.body}</span>
+          </Link>
+        ))}
+      </div>
 
-        <div className="hp-card hp-help-contact">
-          <div>
-            <h2>{p.contactHeading}</h2>
-            <p>{p.contactBody}</p>
-          </div>
-          <ButtonLink href="/contact" variant="secondary">
-            {p.contactCta}
-          </ButtonLink>
-        </div>
-      </section>
-    </>
+      <h2 id="faqs" className="t-title s-faqs-title">{h.faqTitle}</h2>
+      <div className="s-faqs">
+        {faqs.map((f) => (
+          <details key={f.q} className="s-faq">
+            <summary>
+              {f.q} <span aria-hidden="true">+</span>
+            </summary>
+            <p>{f.a}</p>
+          </details>
+        ))}
+      </div>
+      {faqs.length === 0 && <p className="t-muted" role="status">{h.noMatch}</p>}
+
+      <div className="s-contact">
+        <span>
+          <b className="t-title">{h.contactTitle}</b>
+          <span>{h.contactBody}</span>
+        </span>
+        <Link href="/contact" className="s-btn s-btn--primary">{h.contactCta}</Link>
+      </div>
+    </section>
   );
 }

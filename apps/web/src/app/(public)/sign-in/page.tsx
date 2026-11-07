@@ -19,22 +19,21 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <AuthShell
-      title="Sign in"
-      intro="Use the email address and password on your account."
+      title="Log in"
+      alt={
+        <>
+          New here?{' '}
+          <Suspense fallback={null}>
+            <KeepNextLink href="/sign-up">Create an account</KeepNextLink>
+          </Suspense>
+        </>
+      }
       footer={
         <>
-          <p>
-            New to SaaradhiGo?{' '}
-            <Suspense fallback={null}>
-              <KeepNextLink href="/sign-up">Create an account</KeepNextLink>
-            </Suspense>
-          </p>
-          <p>
-            Driver?{' '}
-            <Suspense fallback={null}>
-              <KeepNextLink href="/driver/sign-in">Sign in as a driver</KeepNextLink>
-            </Suspense>
-          </p>
+          Driver?{' '}
+          <Suspense fallback={null}>
+            <KeepNextLink href="/driver/sign-in">Log in as a driver</KeepNextLink>
+          </Suspense>
         </>
       }
     >

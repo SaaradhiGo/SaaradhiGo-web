@@ -4,34 +4,23 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import AuthNav from '@/components/AuthNav';
-import { Logo } from './Logo';
 import { Close, Menu } from './icons';
 import { LanguagePicker } from './LanguagePicker';
 import { ThemeToggle } from './ThemeToggle';
 import { useT } from '@/i18n/LocaleProvider';
 
 /**
- * The public header: logo left, links centred, session controls right.
+ * The public header (approved design, 2026-11-07): 84px of black, the
+ * chariot emblem and "Saaradhi Go" in Cinzel on the left, the five pages in
+ * the middle, then the language globe, the theme switch, Log in and Sign up.
  *
- * THE BAR FOLLOWS THE THEME (owner, 2026-11-06): ivory with the deep-gold
- * logo in Daylight, black and gold in dark.
+ * The emblem shows at load on every page and links home. It is cropped from
+ * the vector logo (public/brand/emblem-gold.svg), so it has no lettering of
+ * its own; the name beside it is text.
  *
- * THE LOGO IS ALWAYS THERE (owner, 2026-11-06): the badge and "Saaradhi Go"
- * show at load on every page, the homepage included, and link home. The full
- * logo lives on About and in the footer.
- *
- * EVERY LINK RESOLVES TO A PAGE OF ITS OWN. These were homepage anchors
- * while /ride, /safety, /about and /help did not exist; all five are real
- * routes now, so the header no longer sends a visitor to a fragment and
- * nothing points at `href="#"`.
- *
- * The theme switch sits just left of Log in / Sign up, and beside the menu
- * button on a phone.
- *
- * Under 768px the links collapse into a drawer holding the same items plus
- * the session controls, which are hidden from the bar at that width.
+ * Under 1100px the bar is 68px with the emblem, the name, the theme switch
+ * and a menu; the drawer holds the links, the language and the session.
  */
-/** Labels come from the dictionary; the hrefs never move. */
 const LINKS = [
   { key: 'ride', href: '/ride' },
   { key: 'drive', href: '/drive' },
@@ -53,27 +42,23 @@ export function NavBar({ quiet }: { quiet?: boolean }) {
     setOpen(false);
   }, [pathname]);
 
-  // An anchor on the homepage is not a page of its own, so it is never
-  // `aria-current`. Without this every nav item lights up on `/`.
-  const isCurrent = (href: string) => {
-    if (href.includes('#')) return false;
-    return href === '/' ? pathname === '/' : pathname.startsWith(href);
-  };
+  const isCurrent = (href: string) => pathname.startsWith(href);
 
   return (
-    <header className="hp-header">
-      <nav className="hp hp-nav" aria-label="Main">
-        <Link href="/" className="hp-nav__logo" aria-label="SaaradhiGo home">
-          <Logo variant="badge" />
-          <span className="hp-nav__name">Saaradhi Go</span>
+    <header className="s-header s-cb">
+      <nav className="s-wrap s-header__bar" aria-label="Main">
+        <Link href="/" className="s-brand" aria-label="SaaradhiGo home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="s-brand__mark" src="/brand/emblem-gold.svg" alt="" width={76} height={66} />
+          <span className="s-brand__name">Saaradhi Go</span>
         </Link>
 
-        <div className="hp-nav__links">
+        <div className="s-nav">
           {LINKS.map((l) => (
             <Link
               key={l.href}
               href={l.href}
-              className="hp-nav__link"
+              className="s-nav__link"
               aria-current={isCurrent(l.href) ? 'page' : undefined}
             >
               {t.nav[l.key]}
@@ -81,21 +66,19 @@ export function NavBar({ quiet }: { quiet?: boolean }) {
           ))}
         </div>
 
-        <div className="hp-nav__session">
+        <div className="s-header__end">
           <LanguagePicker />
           <ThemeToggle />
           <AuthNav quiet={quietHere} />
         </div>
 
-        {/* On a phone the bar keeps the logo, the language and the menu. */}
-        <div className="hp-nav__mobile">
-          <LanguagePicker compact />
+        <div className="s-header__phone">
           <ThemeToggle />
           <button
             type="button"
-            className="hp-nav__toggle"
+            className="s-icon-btn"
             aria-expanded={open}
-            aria-controls="hp-drawer"
+            aria-controls="s-drawer"
             aria-label={open ? t.nav.menuClose : t.nav.menuOpen}
             onClick={() => setOpen((v) => !v)}
           >
@@ -105,17 +88,19 @@ export function NavBar({ quiet }: { quiet?: boolean }) {
       </nav>
 
       {open && (
-        <div id="hp-drawer" className="hp-drawer">
+        <div id="s-drawer" className="s-drawer">
           {LINKS.map((l) => (
             <Link
               key={l.href}
               href={l.href}
+              className="s-drawer__link"
               aria-current={isCurrent(l.href) ? 'page' : undefined}
             >
               {t.nav[l.key]}
             </Link>
           ))}
-          <div className="hp-drawer__session">
+          <div className="s-drawer__end">
+            <LanguagePicker />
             <AuthNav quiet={quietHere} />
           </div>
         </div>

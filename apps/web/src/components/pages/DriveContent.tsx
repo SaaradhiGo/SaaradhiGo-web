@@ -1,61 +1,67 @@
 'use client';
 
-import { ButtonLink } from '@/components/sg/Button';
-import { Masthead } from './PageShell';
-import { usePages } from '@/i18n/usePages';
-import { Card, Check, Clock } from '@/components/sg/icons';
+import Link from 'next/link';
+import { CardIcon, EyeIcon, ListIcon } from '@/components/sg/SiteIcons';
+import { useSite } from '@/i18n/site';
 
 /**
- * /drive -- three things the driver app does today, what an application
- * needs, and the button. Fits one screen at 1366x768 (owner, 2026-11-06).
+ * /drive (approved design, 2026-11-07; Drive.html): what a driver sees
+ * before accepting, what they need to apply, and the request card beside a
+ * photo spot. The request shows its fare, commission and earning as bars,
+ * never numbers.
  *
- * EACH CARD IS TRUE OF THE PRODUCT TODAY: every offer carries its fare; the
- * earnings screen lists each trip's fare, commission and net; and a driver
- * withdraws earnings to the UPI or bank details on file
- * (/driver/withdrawals/request/). The requirements are the documents the
- * onboarding flow asks for.
+ * PHOTO: a neutral placeholder of the design's size and radius until a real
+ * driver is photographed with their consent. No stock faces, no generated
+ * people (AUDIT TODO(photo)).
  */
-const ICONS = [Clock, Check, Card];
-
 export function DriveContent() {
-  const p = usePages().drive;
+  const d = useSite().drive;
+  const icons = [<EyeIcon key="e" />, <ListIcon key="l" />, <CardIcon key="c" />];
 
   return (
-    <>
-      <Masthead title={p.title} lead={p.lead} />
-
-      <section className="hp hp-section">
-        <ul className="hp-cards">
-          {p.sections.map((s, i) => {
-            const Icon = ICONS[i] ?? Check;
-            return (
-              <li className="hp-card" key={s.h}>
-                <span className="hp-card__icon" aria-hidden="true"><Icon /></span>
-                <h2>{s.h}</h2>
-                <p>{s.p}</p>
-              </li>
-            );
-          })}
-        </ul>
-
-        <div className="hp-need">
-          <h2 id="drive-needs" className="hp-panel__title">{p.needHeading}</h2>
-          <ul className="hp-check" aria-labelledby="drive-needs">
-            {p.needs.map((n) => (
-              <li key={n}><Check />{n}</li>
-            ))}
+    <section className="s-wrap s-page s-two s-two--center s-cb">
+      <div>
+        <div className="t-label">{d.label}</div>
+        <h1 className="t-heading" style={{ marginTop: 8 }}>{d.title}</h1>
+        <div className="s-features">
+          {d.features.map((f, i) => (
+            <div key={f.title} className="s-feature">
+              <span className="s-tile s-tile--gold">{icons[i]}</span>
+              <span>
+                <b>{f.title}</b>
+                <span>{f.body}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="s-needs">
+          <b>{d.needTitle}</b>
+          <ul className="s-needs__chips">
+            {d.needs.map((n) => <li key={n}>{n}</li>)}
           </ul>
+          <p>{d.needNote}</p>
         </div>
+        <div className="s-actions">
+          <Link href="/driver/sign-up" className="s-btn s-btn--primary s-btn--lg">{d.start}</Link>
+          <Link href="/driver/sign-in" className="s-btn s-btn--outline s-btn--lg">{d.signIn}</Link>
+        </div>
+      </div>
 
-        <div className="hp-actions">
-          <ButtonLink href="/driver/sign-up" variant="primary" size="lg">
-            {p.cta}
-          </ButtonLink>
-          <ButtonLink href="/driver/sign-in" variant="ghost" size="lg">
-            {p.cta2}
-          </ButtonLink>
+      <div className="s-photo-wrap">
+        <div className="s-photo" role="img" aria-label="Photo placeholder">
+          <span><b>{d.photoLabel.toUpperCase()}</b>{d.photoNote}</span>
         </div>
-      </section>
-    </>
+        <div className="s-request" aria-hidden="true">
+          <div className="t-label">{d.requestLabel}</div>
+          <div className="s-bars">
+            <div className="s-bar"><span>{d.fare}</span><i style={{ width: 56 }} /></div>
+            <div className="s-bar"><span>{d.commission}</span><i style={{ width: 36 }} /></div>
+            <div className="s-bar s-bar--earn"><span>{d.earn}</span><i style={{ width: 48 }} /></div>
+          </div>
+          <div className="s-request__accept">{d.accept}</div>
+          <div className="s-request__note">{d.requestNote}</div>
+        </div>
+      </div>
+    </section>
   );
 }

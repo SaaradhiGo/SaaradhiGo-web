@@ -32,7 +32,7 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
-      className="hp-theme"
+      className="s-icon-btn"
       onClick={flip}
       aria-label={theme === 'dark' ? t.nav.toLight : t.nav.toDark}
       title={theme === 'dark' ? t.nav.toLight : t.nav.toDark}

@@ -234,7 +234,7 @@ export default function DriverDocumentsPage() {
   if (session.status === 'out') {
     return (
       <div className="sg-page max-w-md">
-        <h1 className="text-3xl font-bold">Your documents</h1>
+        <h1 className="text-heading font-semibold">Your documents</h1>
         <div className="card mt-6 space-y-4">
           <Alert kind="info">Sign in with your driver account to continue.</Alert>
           <ButtonLink
@@ -252,7 +252,7 @@ export default function DriverDocumentsPage() {
   if (role !== 'driver') {
     return (
       <div className="sg-page max-w-md">
-        <h1 className="text-3xl font-bold">Your documents</h1>
+        <h1 className="text-heading font-semibold">Your documents</h1>
         <div className="card mt-6 space-y-4">
           <Alert kind="info">
             This page belongs to a driver account. You are signed in as a{' '}
@@ -280,7 +280,7 @@ export default function DriverDocumentsPage() {
     <div className="sg-page max-w-3xl space-y-sg-6">
       <header className="flex items-start justify-between gap-sg-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold m-0">Your documents</h1>
+          <h1 className="text-heading font-semibold m-0">Your documents</h1>
           <p className="text-ink-muted mt-sg-1 m-0">
             {data?.country === 'IN'
               ? 'What the Motor Vehicles Aggregator Guidelines require before you can be dispatched.'
@@ -309,7 +309,7 @@ export default function DriverDocumentsPage() {
       {data && (
         <section className="card space-y-sg-3">
           <div className="flex items-center justify-between gap-sg-3">
-            <h2 className="text-xl font-semibold m-0">Progress</h2>
+            <h2 className="text-title font-semibold m-0">Progress</h2>
             <span className="caption text-ink-muted sg-num">
               {complete} of {total}
             </span>
@@ -333,7 +333,7 @@ export default function DriverDocumentsPage() {
 
       {/* --- the driver's own documents ----------------------------------- */}
       <section className="space-y-sg-3">
-        <h2 className="text-xl font-semibold">About you</h2>
+        <h2 className="text-title font-semibold">About you</h2>
         {data === null ? (
           <p className="text-ink-subtle">Loading…</p>
         ) : (
@@ -372,7 +372,7 @@ export default function DriverDocumentsPage() {
 
       {/* --- the vehicle --------------------------------------------------- */}
       <section className="space-y-sg-3">
-        <h2 className="text-xl font-semibold">Your vehicle</h2>
+        <h2 className="text-title font-semibold">Your vehicle</h2>
 
         {data?.vehicle ? (
           <>

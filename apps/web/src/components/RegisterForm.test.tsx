@@ -51,7 +51,7 @@ describe('RegisterForm, email route', () => {
     render(<RegisterForm role="rider" />);
     fill('Full name', 'Asha Rao');
     fill('Mobile number', '9876543210');
-    fill('Email address', 'asha@example.test');
+    fill('Email', 'asha@example.test');
     fill('Password', 'Monsoon-Ferry-2026!');
     fill('Confirm password', 'Monsoon-Ferry-2026!');
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }));

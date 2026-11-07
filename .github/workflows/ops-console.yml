@@ -119,12 +119,22 @@ jobs:
       - name: No preview code in the production bundle
         run: npm run check-no-preview
 
-      # The rendered layout gate (owner, 2026-11-06): header logo at load,
-      # content pages fit 1440x900 and 1366x768, "See fares" and "Create
-      # account" above the fold, no sideways scroll, no text under 13px, no
-      # weight over 700, no Anek, no padding over 48px. Chrome is on the runner.
+      # The public site against the approved design of 2026-11-07
+      # (design/website-2026-11-07): the five sizes and two weights, Inter,
+      # no numbers or banned words in the copy, the header logo, pages that
+      # fit 1440x900 and 1366x768, "See fares" above the fold, no sideways
+      # scroll, and at most 3% of pixels off the reference screenshots.
+      - name: Type tokens
+        run: npm run check-type
       - name: Layout gate
         run: |
           npx next start -p 3100 &
           npx --yes wait-on@8.0.1 -t 60000 http://localhost:3100/
-          SITE=http://localhost:3100 npm run check-layout
+          SITE=http://localhost:3100 DIFFS=layout-diff npm run check-layout
+      - name: Upload layout diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: layout-diff
+          path: apps/web/layout-diff/
+          if-no-files-found: ignore

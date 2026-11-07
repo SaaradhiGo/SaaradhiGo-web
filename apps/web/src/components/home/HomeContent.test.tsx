@@ -1,5 +1,5 @@
-/** Homepage render: hero lines present, no "surge", no "Coming soon". */
-import { render, screen, waitFor } from '@testing-library/react';
+/** Homepage render (design of 2026-11-07): the design copy, no numbers, no city, no "Coming soon", no app band without store links. */
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -27,22 +27,21 @@ import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { HomeContent } from './HomeContent';
 
 describe('HomeContent', () => {
-  it('renders the design copy with real prices only', async () => {
-    const { container } = render(
+  it('renders the design copy with no numbers, no city and no app band', () => {
+    render(
       <LocaleProvider>
         <HomeContent />
       </LocaleProvider>,
     );
-    expect(screen.getByText('Know the fare')).toBeTruthy();
-    expect(screen.getByText('before you get in.')).toBeTruthy();
-    expect(screen.getByText('Now in Hyderabad')).toBeTruthy();
-    expect(screen.getByRole('button', { name: /See fares/ })).toBeTruthy();
-    await waitFor(() => expect(screen.getByText('Mini')).toBeTruthy());
-    expect(screen.getByText('from ₹49')).toBeTruthy();
-    expect(screen.getByText('from ₹129')).toBeTruthy();
-    expect(screen.getAllByText(/^from /)).toHaveLength(2);
-    const text = container.textContent ?? '';
-    expect(/surge/i.test(text)).toBe(false);
-    expect(/coming soon/i.test(text)).toBe(false);
+    expect(screen.getByText('Fair for riders.')).toBeTruthy();
+    expect(screen.getByText('Fair for drivers.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'See fares' })).toBeTruthy();
+    expect(screen.getByText('Honest for the rider. Honest for the driver.')).toBeTruthy();
+    expect(screen.getAllByText('Trip fare').length).toBeGreaterThan(0);
+    const text = document.body.textContent || '';
+    expect(/[₹$€£]\s?\d|\d{4,6}/.test(text)).toBe(false);
+    expect(/Hyderabad|UPI|Aadhaar/.test(text)).toBe(false);
+    expect(/surge|coming soon/i.test(text)).toBe(false);
+    expect(screen.queryByText('Get the SaaradhiGo app')).toBeNull();
   });
 });

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: 'SaaradhiGo — Your city. Your ride.',
   description:
     "Wherever you're headed, find a ride that works for you. See the fare "
-    + 'before you book, share a PIN to start, and track the trip live.',
+    + 'before you book, share a ride code to start, and track the trip live.',
   // NO `hreflang` HERE, DELIBERATELY. The five locales share one URL --
   // the preference is stored, not routed -- and `hreflang` declares that a
   // DIFFERENT URL serves a different language. Pointing all five at `/` is

@@ -10,6 +10,8 @@
 @import '../styles/home.css';
 /* The type scale, last, so it is the only word on size and weight. */
 @import '../styles/type.css';
+/* The approved design of 2026-11-07: tokens and the public pages. */
+@import '../styles/site.css';
 
 @tailwind base;
 @tailwind components;
@@ -115,7 +117,7 @@ body {
    shapes rebased onto tokens. */
 
 .btn-primary {
-  @apply inline-flex items-center justify-center gap-2 min-h-[48px] bg-gold-500 text-on-gold font-bold
+  @apply inline-flex items-center justify-center gap-2 min-h-[48px] bg-gold-500 text-on-gold font-semibold
          rounded-sg-md px-5 py-2.5 transition-colors duration-press
          hover:bg-gold-300 disabled:cursor-not-allowed;
 }
@@ -186,7 +188,7 @@ body {
 }
 
 .tag {
-  @apply text-xs px-2 py-0.5 rounded-sg-pill border border-line;
+  @apply text-sm px-2 py-0.5 rounded-sg-pill border border-line;
 }
 
 /* --- map surface ---------------------------------------------------------

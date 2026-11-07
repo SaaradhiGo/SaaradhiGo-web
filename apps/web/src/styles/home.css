@@ -63,7 +63,7 @@
 .hp-nav__logo { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; flex: none; }
 .hp-nav__logo .sg-logo { width: 48px; }
 .hp-nav__name {
-  font-family: var(--font-brand); font-size: 18px; font-weight: 600;
+  font-family: var(--font-brand); font-size: var(--text-title); font-weight: 600;
   letter-spacing: 0.06em; color: var(--logo); white-space: nowrap;
 }
 /* Centre group, so the links sit between the logo and the session controls. */
@@ -381,7 +381,7 @@
   .hp-nav { gap: 12px; }
   .hp-nav__logo { gap: 8px; }
   .hp-nav__logo .sg-logo { width: 34px; }
-  .hp-nav__name { font-size: 15px; letter-spacing: 0.02em; }
+  .hp-nav__name { font-size: var(--text-body); letter-spacing: 0.02em; }
   .hp-nav__mobile { gap: 4px; }
   .hp-lang__button { padding: 0 10px; }
 }
@@ -804,7 +804,7 @@
 .hp-faq { border-top: 1px solid var(--line); }
 .hp-faq summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 52px; cursor: pointer; list-style: none; color: var(--ink); }
 .hp-faq summary::-webkit-details-marker { display: none; }
-.hp-faq summary::after { content: '+'; color: var(--gold-text); font-size: 1.25rem; line-height: 1; }
+.hp-faq summary::after { content: '+'; color: var(--gold-text); font-size: var(--text-title); line-height: 1; }
 .hp-faq[open] summary::after { content: '2'; }
 .hp-faq p { margin: 0 0 16px; color: var(--ink-muted); }
 .hp-faqs__none { color: var(--ink-muted); }

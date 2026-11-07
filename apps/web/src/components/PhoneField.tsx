@@ -70,13 +70,10 @@ export default function PhoneField({
   // full international number instead, which the server normalises anyway.
   if (failed) {
     return (
-      <div>
-        <label htmlFor={numberId} className="form-label">
-          {label}
-        </label>
+      <div className="s-field">
+        <label htmlFor={numberId}>{label}</label>
         <input
           id={numberId}
-          className="input"
           type="tel"
           inputMode="tel"
           autoComplete="tel"
@@ -88,11 +85,11 @@ export default function PhoneField({
           autoFocus={autoFocus}
           required
         />
-        <p id={helpId} className="help">
+        <p id={helpId} className="s-help">
           With the country code, e.g. +15550123456
         </p>
         {error && (
-          <p id={errorId} className="field-error">
+          <p id={errorId} className="s-err">
             {error}
           </p>
         )}
@@ -100,59 +97,46 @@ export default function PhoneField({
     );
   }
 
+  // One box, the calling code then the number (approved design, 2026-11-07).
   return (
-    <div>
-      <div className="grid grid-cols-[minmax(0,9rem)_1fr] gap-3">
-        <div>
-          <label htmlFor={countryId} className="form-label">
-            Country
-          </label>
-          <select
-            id={countryId}
-            className="input"
-            value={countryCode}
-            onChange={(e) => onCountryChange(e.target.value)}
-            disabled={loading || list.length === 0}
-          >
-            {loading && <option value="">Loading…</option>}
-            {!loading && list.length === 0 && (
-              <option value="">Unavailable</option>
-            )}
-            {list.map((m) => (
-              <option key={m.code} value={m.code}>
-                {m.name} +{m.calling_code}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor={numberId} className="form-label">
-            {label}
-          </label>
-          <input
-            id={numberId}
-            className="input"
-            type="tel"
-            inputMode="numeric"
-            autoComplete="tel-national"
-            value={national}
-            onChange={(e) => onNationalChange(e.target.value)}
-            aria-invalid={error ? 'true' : undefined}
-            aria-describedby={describedBy || undefined}
-            autoFocus={autoFocus}
-            required
-          />
-        </div>
-      </div>
-
+    <div className="s-field">
+      <label htmlFor={numberId}>{label}</label>
+      <span className="s-phonebox">
+        <select
+          id={countryId}
+          aria-label="Country code"
+          value={countryCode}
+          onChange={(e) => onCountryChange(e.target.value)}
+          disabled={loading || list.length === 0}
+        >
+          {loading && <option value="">…</option>}
+          {!loading && list.length === 0 && <option value="">–</option>}
+          {list.map((m) => (
+            <option key={m.code} value={m.code} title={m.name}>
+              +{m.calling_code}
+            </option>
+          ))}
+        </select>
+        <input
+          id={numberId}
+          type="tel"
+          inputMode="numeric"
+          autoComplete="tel-national"
+          value={national}
+          onChange={(e) => onNationalChange(e.target.value)}
+          aria-invalid={error ? 'true' : undefined}
+          aria-describedby={describedBy || undefined}
+          autoFocus={autoFocus}
+          required
+        />
+      </span>
       {help && (
-        <p id={helpId} className="help">
+        <p id={helpId} className="s-help">
           {help}
         </p>
       )}
       {error && (
-        <p id={errorId} className="field-error">
+        <p id={errorId} className="s-err">
           {error}
         </p>
       )}

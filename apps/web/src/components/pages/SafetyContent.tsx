@@ -1,51 +1,54 @@
 'use client';
 
-import { Masthead } from './PageShell';
-import { usePages } from '@/i18n/usePages';
-import { Alert, Lock, Phone, Shield, UserCheck } from '@/components/sg/icons';
+import Link from 'next/link';
+import { TripMiniMap } from '@/components/art/MiniMaps';
+import { CallIcon, KeyLockIcon, ShieldCheckIcon } from '@/components/sg/SiteIcons';
+import { useSite } from '@/i18n/site';
 
 /**
- * /safety -- the four safety features that exist, and the emergency line.
- * Fits one screen at 1366x768 (owner, 2026-11-06).
- *
- * EVERY CLAIM WAS CHECKED IN THE BACKEND. The PIN is compared server-side in
- * the trip consumer; the driver's coordinates are broadcast over the trip
- * socket; an SOS raised during a ride is dispatched to the operations
- * console with the trip attached; a driver's documents are approved before
- * they can go online.
- *
- * The emergency line says plainly what does not exist -- no staffed desk, no
- * ride recording, no insurance -- and points to real emergency services
- * first. Implying otherwise is the most harmful thing this page could do.
+ * /safety (approved design, 2026-11-07; Safety.html): the four things built
+ * into every trip, then what to do in an emergency. No country's emergency
+ * number: the visitor is told to call their local one first.
  */
-const ICONS = [Lock, Phone, Shield, UserCheck];
-
 export function SafetyContent() {
-  const p = usePages().safety;
+  const s = useSite().safety;
+
+  const art = [
+    <div key="code" className="s-scard__art s-scard__art--noir"><KeyLockIcon /></div>,
+    <div key="live" className="s-scard__art s-scard__art--map">
+      <TripMiniMap />
+    </div>,
+    <div key="sos" className="s-scard__art s-scard__art--red"><span>{s.sos}</span></div>,
+    <div key="check" className="s-scard__art s-scard__art--green"><ShieldCheckIcon />{s.checked}</div>,
+  ];
 
   return (
-    <>
-      <Masthead title={p.title} lead={p.lead} />
-
-      <section className="hp hp-section">
-        <ul className="hp-cards hp-cards--4">
-          {p.sections.map((s, i) => {
-            const Icon = ICONS[i] ?? Shield;
-            return (
-              <li className="hp-card" key={s.h}>
-                <span className="hp-card__icon" aria-hidden="true"><Icon /></span>
-                <h2>{s.h}</h2>
-                <p>{s.p}</p>
-              </li>
-            );
-          })}
-        </ul>
-
-        <div className="hp-emergency" role="note">
-          <Alert />
-          <p>{p.emergency}</p>
+    <section className="s-wrap s-page s-cb">
+      <div className="s-headrow">
+        <div>
+          <h1 className="t-heading">{s.title}</h1>
+          <p className="s-lead">{s.lead}</p>
         </div>
-      </section>
-    </>
+      </div>
+
+      <div className="s-cards4">
+        {s.cards.map((c, i) => (
+          <div key={c.title} className="s-scard">
+            {art[i]}
+            <b className="t-title">{c.title}</b>
+            <span>{c.body}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="s-emergency">
+        <span className="s-emergency__icon"><CallIcon /></span>
+        <span className="s-emergency__text">
+          <b className="t-title">{s.emergencyTitle}</b>
+          <span>{s.emergencyBody}</span>
+        </span>
+        <Link href="/contact" className="s-btn s-btn--ghost-dark">{s.report}</Link>
+      </div>
+    </section>
   );
 }

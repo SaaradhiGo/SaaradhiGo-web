@@ -77,7 +77,7 @@ const sections = [
 export default function TermsPage() {
   return (
     <article className="sg-page max-w-3xl">
-      <h1 className="text-3xl font-bold">Terms of service</h1>
+      <h1 className="text-heading font-semibold">Terms of service</h1>
 
       <p
         className="mt-5 alert alert-info"
@@ -90,7 +90,7 @@ export default function TermsPage() {
 
       {sections.map((s) => (
         <section key={s.h} className="mt-8">
-          <h2 className="text-xl font-semibold text-gold-text">{s.h}</h2>
+          <h2 className="text-title font-semibold text-gold-text">{s.h}</h2>
           {s.p.map((para) => (
             <p key={para.slice(0, 40)} className="mt-3 text-sm text-ink-muted leading-relaxed">
               {para}

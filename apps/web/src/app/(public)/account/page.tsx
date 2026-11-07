@@ -70,7 +70,7 @@ export default function AccountPage() {
   if (session.status === 'out') {
     return (
       <div className="sg-page max-w-md">
-        <h1 className="text-3xl font-bold">Your account</h1>
+        <h1 className="text-heading font-semibold">Your account</h1>
         <div className="card mt-6 space-y-4">
           <Alert kind="info">Sign in to see your profile and details.</Alert>
           <ButtonLink href="/sign-in?next=%2Faccount" variant="primary" block>
@@ -123,7 +123,7 @@ export default function AccountPage() {
     <div className="sg-page max-w-2xl space-y-sg-5">
       <header className="flex items-start justify-between gap-sg-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold m-0">
+          <h1 className="text-heading font-semibold m-0">
             {user?.full_name?.trim() || 'Your account'}
           </h1>
           <p className="text-ink-muted mt-sg-1 m-0">
@@ -137,7 +137,7 @@ export default function AccountPage() {
       {saved && <Alert kind="success">Your details are saved.</Alert>}
 
       <section className="card space-y-sg-4">
-        <h2 className="text-xl font-semibold m-0">Profile</h2>
+        <h2 className="text-title font-semibold m-0">Profile</h2>
 
         {editing ? (
           <form onSubmit={onSave} className="space-y-4" noValidate>
@@ -211,7 +211,7 @@ export default function AccountPage() {
       </section>
 
       <section className="card space-y-sg-3">
-        <h2 className="text-xl font-semibold m-0">
+        <h2 className="text-title font-semibold m-0">
           {role === 'driver' ? 'Driving' : 'Riding'}
         </h2>
         {role === 'driver' ? (
@@ -226,7 +226,7 @@ export default function AccountPage() {
       </section>
 
       <section className="card space-y-sg-3">
-        <h2 className="text-xl font-semibold m-0">Session</h2>
+        <h2 className="text-title font-semibold m-0">Session</h2>
         <Button
           variant="ghost"
           onClick={() => {

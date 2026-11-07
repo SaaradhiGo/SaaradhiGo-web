@@ -1,6 +1,8 @@
 'use client';
 
 import { useId } from 'react';
+import { TickIcon } from '@/components/sg/SiteIcons';
+import { useSite } from '@/i18n/site';
 
 /**
  * Form primitives shared by every auth page.
@@ -32,24 +34,21 @@ export function Field({
     .join(' ');
 
   return (
-    <div className={className}>
-      <label htmlFor={id} className="form-label">
-        {label}
-      </label>
+    <div className={`s-field ${className ?? ''}`}>
+      <label htmlFor={id}>{label}</label>
       <input
         id={id}
-        className="input"
         aria-invalid={error ? 'true' : undefined}
         aria-describedby={describedBy || undefined}
         {...props}
       />
       {help && (
-        <p id={helpId} className="help">
+        <p id={helpId} className="s-help">
           {help}
         </p>
       )}
       {error && (
-        <p id={errorId} className="field-error">
+        <p id={errorId} className="s-err">
           {error}
         </p>
       )}
@@ -71,12 +70,7 @@ export function Alert({
   kind: 'error' | 'success' | 'info';
   children: React.ReactNode;
 }) {
-  const cls =
-    kind === 'error'
-      ? 'alert-error'
-      : kind === 'success'
-        ? 'alert-success'
-        : 'alert-info';
+  const cls = `s-alert s-alert--${kind}`;
   return (
     <p className={cls} role={kind === 'error' ? 'alert' : 'status'}>
       {children}
@@ -104,7 +98,7 @@ export function SubmitButton({
   return (
     <button
       type="submit"
-      className="btn-primary w-full"
+      className="s-btn s-btn--primary s-submit"
       disabled={Boolean(busy) || Boolean(disabled)}
       aria-busy={busy || undefined}
       {...props}
@@ -118,22 +112,44 @@ export function SubmitButton({
 export function AuthShell({
   title,
   intro,
+  alt,
   children,
   footer,
 }: {
   title: string;
   intro?: string;
+  /** "Have one? Log in": the way to the other form, beside the title. */
+  alt?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
-  // A 640px card (owner, 2026-11-06): the whole sign-up form and its button
-  // fit 1366x768 without scrolling, two columns of fields from 640px up.
+  // Sign up and Log in (approved design, 2026-11-07; SignUp.html): the logo
+  // and what an account gives you on black, the form card beside it. The
+  // whole form and its button fit 1366x768. On a phone the card is the page.
+  const a = useSite().auth;
   return (
-    <div className="hp auth-page">
-      <h1 className="auth-title">{title}</h1>
-      {intro && <p className="sg-lead">{intro}</p>}
-      <div className="auth-card">{children}</div>
-      {footer && <div className="auth-foot caption">{footer}</div>}
-    </div>
+    <section className="s-wrap s-page s-auth s-cb">
+      <div className="s-auth__aside">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/lockup-gold.svg" alt="SaaradhiGo logo" width={172} height={186} />
+        <div>
+          <div className="t-heading">{a.asideTitle}</div>
+          <ul>
+            {a.asideList.map((x) => (
+              <li key={x}><TickIcon />{x}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <div className="s-auth__card">
+        <div className="s-auth__head">
+          <h1 className="t-heading">{title}</h1>
+          {alt && <span>{alt}</span>}
+        </div>
+        {intro && <p className="t-muted" style={{ margin: 0 }}>{intro}</p>}
+        {children}
+        {footer && <div className="s-auth__fine">{footer}</div>}
+      </div>
+    </section>
   );
 }

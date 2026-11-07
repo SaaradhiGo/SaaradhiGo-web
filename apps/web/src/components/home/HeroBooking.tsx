@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/sg/Button';
-import { ArrowRight } from '@/components/sg/icons';
+import { DropMark, PickupMark } from '@/components/art/MiniMaps';
+import { LocateIcon } from '@/components/sg/SiteIcons';
 import { LatLng, Place, placeToPoint, searchPlaces, serviceabilityAt } from '@/lib/booking';
 import { fetchServiceAreas, primaryArea } from '@/lib/serviceAreas';
 import { useLocale } from '@/i18n/LocaleProvider';
-import { HOME_COPY } from '@/i18n/home';
+import { useSite } from '@/i18n/site';
 
 /**
  * Pickup, destination, and the one action the homepage is for.
@@ -70,7 +70,18 @@ export function HeroBooking() {
   const [area, setArea] = useState<{ code: string; name: string } | null>(null);
   /** Coordinates of the chosen places, resolved once on choosing. */
   const [resolved, setResolved] = useState<{ pickup?: LatLng; dest?: LatLng }>({});
-  const { t, language } = useLocale();
+  const { t } = useLocale();
+  const h = useSite().home;
+  // The phone design words the pickup as an invitation to use the location.
+  const [phone, setPhone] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia('(max-width: 767px)');
+    const on = () => setPhone(mq.matches);
+    on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -238,17 +249,12 @@ export function HeroBooking() {
     setValue: (v: string) => void,
     clearPlace: () => void,
   ) => (
-    <div className="hp-field">
-      <label className="hp-field__label" htmlFor={`hp-${which}`}>
-        {label}
-      </label>
-      <div className="hp-field__box" data-invalid={errors[which] ? 'true' : undefined}>
-        <span
-          className={`hp-field__marker hp-field__marker--${which === 'pickup' ? 'pickup' : 'drop'}`}
-          aria-hidden="true"
-        />
+    <div className="s-book__field">
+      <div className="s-book__box" data-invalid={errors[which] ? 'true' : undefined}>
+        {which === 'pickup' ? <PickupMark className="s-book__marker" /> : <DropMark className="s-book__marker" />}
         <input
           id={`hp-${which}`}
+          aria-label={label}
           value={value}
           placeholder={placeholder}
           autoComplete="off"
@@ -261,8 +267,6 @@ export function HeroBooking() {
             setResolved((r) => ({ ...r, [which]: undefined }));
             if (errors[which]) setErrors((p) => ({ ...p, [which]: undefined }));
           }}
-          // Closing on blur would eat the click on a suggestion, so the list
-          // is dismissed by Escape or by choosing something.
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
               setSuggestions([]);
@@ -274,14 +278,26 @@ export function HeroBooking() {
             }
           }}
         />
+        {which === 'pickup' && (
+          <button
+            type="button"
+            className="s-book__locate"
+            onClick={useMyLocation}
+            disabled={locating}
+            aria-label={locating ? t.hero.locating : h.useLocation}
+            title={h.useLocation}
+          >
+            <LocateIcon />
+          </button>
+        )}
       </div>
       {errors[which] && (
-        <p className="hp-error" id={`hp-${which}-error`} role="alert">
+        <p className="s-book__error" id={`hp-${which}-error`} role="alert">
           {errors[which]}
         </p>
       )}
       {active === which && suggestions.length > 0 && (
-        <div className="hp-suggest" role="group" aria-label={`${label} suggestions`}>
+        <div className="s-book__suggest" role="group" aria-label={`${label} suggestions`}>
           {suggestions.map((p) => (
             <button key={p.place_id} type="button" onClick={() => choose(p)}>
               {p.description}
@@ -292,42 +308,43 @@ export function HeroBooking() {
     </div>
   );
 
+  // Scheduling is drawn in the design but the backend has no scheduled trips
+  // yet (no scheduled time on a Trip, nothing dispatches later), so the tab
+  // is shown and disabled rather than taking a booking it cannot keep.
   return (
-    <div className="hp-hero__form">
-      {field('pickup', t.hero.pickupLabel, t.hero.pickupPlaceholder, pickupText, setPickupText, () => {
-        setPickupPlace(null);
-        setPickupPoint(null);
-      })}
-
-      <button type="button" className="hp-locate" onClick={useMyLocation} disabled={locating}>
-        <LocateIcon />
-        {locating ? t.hero.locating : t.hero.useLocation}
-      </button>
-
-      {field('dest', t.hero.destLabel, t.hero.destPlaceholder, destText, setDestText, () => setDestPlace(null))}
+    <form
+      className="s-book"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void submit();
+      }}
+    >
+      <div className="s-book__modes s-only-desk" role="group" aria-label={h.tripType}>
+        <button type="button" className="s-book__mode" aria-pressed="true">
+          {h.rideNow}
+        </button>
+        <button type="button" className="s-book__mode" disabled>
+          {h.schedule}
+        </button>
+      </div>
+      <div className="s-book__fields">
+        <span className="s-book__dots s-only-desk" aria-hidden="true" />
+        {field('pickup', h.pickup, phone ? h.pickupPlaceholderPhone : h.pickupPlaceholder, pickupText, setPickupText, () => {
+          setPickupPlace(null);
+          setPickupPoint(null);
+        })}
+        {field('dest', h.dest, h.destPlaceholder, destText, setDestText, () => setDestPlace(null))}
+      </div>
 
       {searchNote && (
-        <p className="hp-error" role="status">
+        <p className="s-book__error" role="status">
           {searchNote}
         </p>
       )}
 
-      <div className="mt-sg-2">
-        <Button variant="primary" size="lg" block onClick={submit} disabled={busy}>
-          {HOME_COPY[language].cta}
-          <ArrowRight />
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function LocateIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="7" />
-      <circle cx="12" cy="12" r="2.5" fill="currentColor" />
-      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-    </svg>
+      <button type="submit" className="s-btn s-btn--primary s-book__go" disabled={busy}>
+        {h.seeFares}
+      </button>
+    </form>
   );
 }
