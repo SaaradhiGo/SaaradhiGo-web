@@ -820,8 +820,13 @@
 .hp-cta .hp-actions { margin-top: 16px; }
 @media (max-width: 767px) { .hp-cta { grid-template-columns: 1fr; } }
 @media (max-width: 599px) {
-  .sg-promise > div { padding: 16px 0; }
-  .hp-step h3 { margin-top: 4px; }
+  .sg-promise > div { padding: 12px 0; }
+  .hp-rides { gap: 12px; }
+  .hp-ride { padding: 12px; gap: 6px; }
+  /* The steps as a compact numbered list, the number beside the title. */
+  .hp-step { display: grid; grid-template-columns: 32px minmax(0, 1fr); column-gap: 8px; }
+  .hp-step__n { grid-row: span 2; padding-top: 4px; }
+  .hp-step h3 { margin: 0 0 4px; }
 }
 
 /* Sign up and Log in: a 640px card, two columns of fields on desktop. */
