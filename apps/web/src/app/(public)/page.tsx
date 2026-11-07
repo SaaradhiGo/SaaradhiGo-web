@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import { localized } from '@/i18n/server';
 import { HomeContent } from '@/components/home/HomeContent';
 
 /**
@@ -8,7 +8,7 @@ import { HomeContent } from '@/components/home/HomeContent';
  * metadata; everything below the fold is in `HomeContent`, which needs the
  * locale and therefore the client.
  */
-export const metadata: Metadata = {
+export const generateMetadata = localized({
   title: 'SaaradhiGo — Fair for riders. Fair for drivers.',
   description: 'See the fare before you book, share a ride code to start, and track the trip live.',
   // NO `hreflang` HERE, DELIBERATELY. The five locales share one URL --
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   // (`/en-IN`, `/te-IN`, ...) and declare absolute URLs for each, with
   // `x-default` on the English one. That is locale routing, which is a
   // larger change than this page.
-};
+});
 
 export default function HomePage() {
   return <HomeContent />;

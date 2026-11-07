@@ -1,11 +1,11 @@
-import type { Metadata } from 'next';
+import { localized } from '@/i18n/server';
 import { SUPPORT_EMAIL } from '@/lib/support';
 
-export const metadata: Metadata = {
+export const generateMetadata = localized({
   title: 'Terms of service — SaaradhiGo',
   description: 'The terms on which you use SaaradhiGo as a rider or a driver.',
   alternates: { canonical: '/terms' },
-};
+});
 
 // Same standing as the privacy page: written from how the platform actually
 // behaves, and explicitly a draft. Terms allocate liability, and that is a

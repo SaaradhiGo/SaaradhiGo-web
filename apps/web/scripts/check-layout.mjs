@@ -23,6 +23,9 @@
 //                where the files translate it
 //   schedule     a Ride now / Schedule control visible (scheduledRides is off)
 //   404          an unknown URL without the header logo and the footer
+//   first html   with the sg-language cookie set to te, hi or es, the HTML the
+//                server sends for a marketing page lacks the translated H1, or
+//                its <html lang> or <title> differs from the page after load
 //
 //   SITE=http://localhost:3100 npm run check-layout
 //   SHOTS=dir also saves the contact sheet (1440x900 and 390x844: en light
@@ -98,6 +101,7 @@ async function open(p, width, height, { theme = 'light', lang = 'en' } = {}) {
   const ctx = await browser.newContext({ viewport: { width, height }, locale: 'en-IN' });
   await ctx.route('**/pricing/countries/**', (r) => r.fulfill({ json: COUNTRIES }));
   await ctx.route('**/pricing/zones/**', (r) => r.fulfill({ json: { zones: [] } }));
+  await ctx.addCookies([{ name: 'sg-language', value: lang, url: SITE }]);
   await ctx.addInitScript(({ theme, lang }) => {
     try {
       localStorage.setItem('sg-theme', theme);
@@ -230,6 +234,8 @@ function diff(shot, refFile, cut, mask) {
 }
 
 const heights = {};
+// What each page shows after load, per language, for the first-HTML check.
+const LOADED = {};
 const AT = [[1440, 900], [1366, 768], [1024, 768], [768, 1024], [390, 844], [360, 740]];
 const AT_LANG = [[1440, 900], [1366, 768], [390, 844], [360, 740]];
 const RUNS = [
@@ -266,6 +272,11 @@ for (const { p, w, h, lang } of RUNS) {
     fail(`${at}: "See fares" is below the fold (${m.seeFares})`);
   }
   if (w === 1440) {
+    LOADED[`${p} ${lang}`] = await page.evaluate(() => ({
+      h1: (document.querySelector('h1')?.textContent || '').replace(/\s+/g, ' ').trim(),
+      title: document.title,
+      lang: document.documentElement.lang,
+    }));
     const wrong = await families(page);
     if (wrong.length) fail(`${at}: text not drawn in Inter or Noto: ${wrong.join('; ')}`);
   }
@@ -290,6 +301,30 @@ for (const { p, w, h, lang } of RUNS) {
     } else fail(`${at}: reference ${REF_FOR[p]} is missing`);
   }
   await ctx.close();
+}
+
+// The server renders in the cookie's language, so the first HTML already
+// matches the page after load: nothing switches (owner, 2026-11-07).
+const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+const text = (html) => html.replace(/<[^>]*>/g, '')
+  .replace(/&(#x?[0-9a-f]+|\w+);/gi, (m, e) => (e[0] === '#'
+    ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : Number(e.slice(1)))
+    : ENTITIES[e] ?? m))
+  .replace(/\s+/g, ' ').trim();
+for (const lang of LANGS) for (const p of PAGES) {
+  const at = `${p} [${lang}] first HTML`;
+  const html = await fetch(SITE + p, { headers: { cookie: `sg-language=${lang}` }, signal: AbortSignal.timeout(30000) })
+    .then((r) => r.text()).catch(() => '');
+  const h1 = text((html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || '');
+  const title = text((html.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '');
+  const htmlLang = (html.match(/<html[^>]*\slang="([^"]*)"/) || [])[1];
+  const loaded = LOADED[`${p} ${lang}`];
+  const english = LOADED[`${p} en`];
+  if (!loaded || !english) { fail(`${at}: the page did not load in the browser`); continue; }
+  if (!h1) fail(`${at}: no H1 in the server's HTML`);
+  else if (h1 !== loaded.h1 || h1 === english.h1) fail(`${at}: H1 is "${h1}", the page shows "${loaded.h1}" after load`);
+  if (htmlLang !== loaded.lang) fail(`${at}: <html lang="${htmlLang}">, "${loaded.lang}" after load`);
+  if (title !== loaded.title) fail(`${at}: <title> is "${title}", "${loaded.title}" after load`);
 }
 
 if (SHOTS) {
