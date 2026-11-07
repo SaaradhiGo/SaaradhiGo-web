@@ -320,7 +320,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           role="tab"
           aria-selected={tab === t}
           onClick={() => switchTab(t)}
-          className={`flex-1 min-h-[40px] rounded-lg text-sm font-medium transition-colors duration-150 ${
+          className={`flex-1 min-h-[44px] rounded-lg text-sm font-medium transition-colors duration-150 ${
             tab === t ? 'bg-gold-500 text-on-gold' : 'text-ink-muted hover:text-ink'
           }`}
         >
@@ -367,16 +367,19 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
   return (
     <form
       onSubmit={tab === 'email' ? onCreateAccount : onSendCode}
-      className="space-y-4"
+      className="auth-form"
       noValidate
     >
       {tabs}
 
       {formError && <Alert kind="error">{formError}</Alert>}
 
+      {/* Two columns from 640px (owner, 2026-11-06): Full name | Email,
+          Country + Mobile number | (empty), Password | Confirm password. */}
       <Field
         label="Full name"
         name="fullName"
+        className="auth-half"
         autoComplete="name"
         value={fullName}
         onChange={(e) => setFullName(e.target.value)}
@@ -384,54 +387,55 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
         required
       />
 
+      {tab === 'email' && (
+        <Field
+          label="Email address"
+          className="auth-half"
+          name="email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          error={errors.email}
+          required
+        />
+      )}
+
       {/* EVERY ROUTE ASKS FOR THE NUMBER, because the driver has to be able
           to call at the pickup and `phone_number` is the account's identity.
           On the email route it was a second screen; it is simply the next
           field now. */}
-      <PhoneField
-        markets={markets}
-        failed={marketsFailed}
-        countryCode={country}
-        onCountryChange={setCountry}
-        national={national}
-        onNationalChange={setNational}
-        error={errors.phone}
-        label="Mobile number"
-        help={
-          tab === 'email'
-            ? 'We text a code to confirm it. Your driver calls this at the pickup; you sign in with your email.'
-            : smsToAnyone
-              ? 'We will text you a 6-digit code to confirm your number.'
-              : 'Approved QA test numbers receive a fixed code without an SMS being sent.'
-        }
-      />
+      <div className="auth-half auth-row">
+        <PhoneField
+          markets={markets}
+          failed={marketsFailed}
+          countryCode={country}
+          onCountryChange={setCountry}
+          national={national}
+          onNationalChange={setNational}
+          error={errors.phone}
+          label="Mobile number"
+          help={tab === 'email' || smsToAnyone ? 'We text you a code' : 'QA test numbers get a fixed code, no SMS'}
+        />
+      </div>
 
       {tab === 'email' ? (
         <>
           <Field
-            label="Email address"
-            name="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            error={errors.email}
-            help="We send your receipts here, and you sign in with it."
-            required
-          />
-          <Field
             label="Password"
+            className="auth-half auth-row"
             name="password"
             type="password"
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             error={errors.password}
-            help="At least 10 characters. A few unrelated words make a strong password."
+            help="At least 10 characters"
             required
           />
           <Field
             label="Confirm password"
+            className="auth-half"
             name="confirmPassword"
             type="password"
             autoComplete="new-password"
@@ -464,13 +468,14 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           )}
           <Field
             label="Email address (optional)"
+            className="auth-half auth-row"
             name="email"
             type="email"
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             error={errors.email}
-            help="For receipts. You can add it later instead."
+            help="For receipts; optional"
           />
           {/* Disabled rather than failing on press: a tester typing a real
               number into an environment that texts nobody used to get an

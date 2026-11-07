@@ -85,7 +85,7 @@ const en: {
     suv: 'A larger car for groups travelling together.',
   },
   steps: {
-    heading: 'Getting there is simple',
+    heading: 'How it works',
     s1t: 'Enter your destination',
     s1b: 'Choose where you want to go.',
     s2t: 'Choose your ride',
@@ -198,7 +198,7 @@ const hi: Messages = {
     suv: 'साथ यात्रा करने वाले समूहों के लिए बड़ी कार।',
   },
   steps: {
-    heading: 'वहाँ पहुँचना आसान है',
+    heading: 'यह कैसे काम करता है',
     s1t: 'अपना गंतव्य दर्ज करें',
     s1b: 'चुनें कि आप कहाँ जाना चाहते हैं।',
     s2t: 'अपनी सवारी चुनें',
@@ -305,7 +305,7 @@ const te: Messages = {
     suv: 'కలిసి ప్రయాణించే బృందాలకు పెద్ద కారు.',
   },
   steps: {
-    heading: 'చేరుకోవడం చాలా సులభం',
+    heading: 'ఇది ఎలా పనిచేస్తుంది',
     s1t: 'మీ గమ్యాన్ని నమోదు చేయండి',
     s1b: 'మీరు ఎక్కడికి వెళ్లాలనుకుంటున్నారో ఎంచుకోండి.',
     s2t: 'మీ ప్రయాణాన్ని ఎంచుకోండి',
@@ -412,7 +412,7 @@ const es: Messages = {
     suv: 'Un coche más grande para grupos que viajan juntos.',
   },
   steps: {
-    heading: 'Llegar es sencillo',
+    heading: 'Cómo funciona',
     s1t: 'Introduce tu destino',
     s1b: 'Elige a dónde quieres ir.',
     s2t: 'Elige tu viaje',

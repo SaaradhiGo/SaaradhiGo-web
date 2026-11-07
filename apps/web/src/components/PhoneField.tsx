@@ -89,7 +89,7 @@ export default function PhoneField({
           required
         />
         <p id={helpId} className="help">
-          Include your country code, for example +15550123456.
+          With the country code, e.g. +15550123456
         </p>
         {error && (
           <p id={errorId} className="field-error">

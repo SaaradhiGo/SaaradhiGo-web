@@ -1,48 +1,49 @@
 'use client';
 
-import Link from 'next/link';
-import { Blocks, Masthead } from './PageShell';
+import { Masthead } from './PageShell';
 import { usePages } from '@/i18n/usePages';
-import { useT } from '@/i18n/LocaleProvider';
+import { Alert, Lock, Phone, Shield, UserCheck } from '@/components/sg/icons';
 
 /**
- * /safety -- the three safety features that exist, and an explicit list of
- * the ones that do not.
+ * /safety -- the four safety features that exist, and the emergency line.
+ * Fits one screen at 1366x768 (owner, 2026-11-06).
  *
- * EVERY CLAIM WAS CHECKED IN THE BACKEND BEFORE IT WAS WRITTEN. The PIN is
- * compared server-side in the trip consumer, so "verified on our servers" is
- * literal; the driver's coordinates are broadcast over the trip socket; an
- * alert raised during a ride is dispatched to the operations console with
- * the trip attached.
+ * EVERY CLAIM WAS CHECKED IN THE BACKEND. The PIN is compared server-side in
+ * the trip consumer; the driver's coordinates are broadcast over the trip
+ * socket; an SOS raised during a ride is dispatched to the operations
+ * console with the trip attached; a driver's documents are approved before
+ * they can go online.
  *
- * The last block is the important one. A safety page that implies a staffed
- * emergency desk, insurance cover or an emergency-services partnership when
- * none exists is the single most harmful thing this site could say, so it
- * says the opposite, plainly, and points to real emergency services first.
+ * The emergency line says plainly what does not exist -- no staffed desk, no
+ * ride recording, no insurance -- and points to real emergency services
+ * first. Implying otherwise is the most harmful thing this page could do.
  */
+const ICONS = [Lock, Phone, Shield, UserCheck];
+
 export function SafetyContent() {
   const p = usePages().safety;
-  const t = useT();
-  const blocks = p.sections.slice(0, -1);
-  const caveat = p.sections[p.sections.length - 1];
 
   return (
     <>
       <Masthead title={p.title} lead={p.lead} />
 
+      <section className="hp hp-section">
+        <ul className="hp-cards hp-cards--4">
+          {p.sections.map((s, i) => {
+            const Icon = ICONS[i] ?? Shield;
+            return (
+              <li className="hp-card" key={s.h}>
+                <span className="hp-card__icon" aria-hidden="true"><Icon /></span>
+                <h2>{s.h}</h2>
+                <p>{s.p}</p>
+              </li>
+            );
+          })}
+        </ul>
 
-      <section className="hp hp-section--tight">
-        <Blocks blocks={blocks} />
-
-        <div className="hp-caveat">
-          <h2>{caveat.h}</h2>
-          <p>{caveat.p}</p>
-        </div>
-
-        <div className="hp-actions">
-          <Link href="/contact" className="sg-link">
-            {t.closing.support}
-          </Link>
+        <div className="hp-emergency" role="note">
+          <Alert />
+          <p>{p.emergency}</p>
         </div>
       </section>
     </>

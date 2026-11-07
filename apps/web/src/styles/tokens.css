@@ -121,17 +121,17 @@
   --radius-lg: 22px;
   --radius-xl: 32px;
   --radius-pill: 999px;
-  /* Anek, one family across Latin, Telugu and Devanagari (fonts.css). Each
-     script's face covers only its own range, so a mixed line draws every
-     word in Anek; :lang() puts the active script first. Cinzel is for the
+  /* Noto Sans, one family across Latin, Telugu and Devanagari (fonts.css).
+     Each script's face covers only its own range, so a mixed line draws
+     every word in Noto; :lang() puts the active script first. Cinzel is for the
      "Saaradhi Go" lettering beside the badge, never headings or body. */
-  --font-sans: "Anek Latin", "Anek Telugu", "Anek Devanagari", system-ui, sans-serif;
+  --font-sans: "Noto Sans", "Noto Sans Telugu", "Noto Sans Devanagari", system-ui, sans-serif;
   --font-display: var(--font-sans);
   --font-brand: "Cinzel", "Trajan Pro", Georgia, serif;
 }
-/* Anek per script; every size and weight lives in type.css (2026-11-06). */
-:lang(te) { --font-sans: "Anek Telugu", "Anek Latin", "Anek Devanagari", system-ui, sans-serif; }
-:lang(hi) { --font-sans: "Anek Devanagari", "Anek Latin", "Anek Telugu", system-ui, sans-serif; }
+/* Noto per script; every size and weight lives in type.css (2026-11-06). */
+:lang(te) { --font-sans: "Noto Sans Telugu", "Noto Sans", "Noto Sans Devanagari", system-ui, sans-serif; }
+:lang(hi) { --font-sans: "Noto Sans Devanagari", "Noto Sans", "Noto Sans Telugu", system-ui, sans-serif; }
 .sg-num, .fare, .fare-xl { font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) { .sg *, .sg *::before, .sg *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }
 

@@ -1,44 +1,66 @@
 'use client';
 
-import Link from 'next/link';
+import { useState } from 'react';
+import { ButtonLink } from '@/components/sg/Button';
 import { Masthead } from './PageShell';
 import { usePages } from '@/i18n/usePages';
-import { useT } from '@/i18n/LocaleProvider';
+import { Search } from '@/components/sg/icons';
 
 /**
- * /help -- short answers grouped by the thing the visitor is doing.
+ * /help -- a search box over the questions, the questions as a collapsed
+ * accordion in two columns, and a contact card (owner, 2026-11-06). Fits one
+ * screen at 1366x768 with every question closed.
  *
- * NOT A SEARCH BOX OVER AN EMPTY KNOWLEDGE BASE. There are five topics and
- * about fifteen answers; a search field over that is theatre, and a search
- * field over nothing is worse. When the answer is not here the page hands
- * the visitor to /contact, which explains the real routes to a person.
+ * The search filters these questions in the page; there is no knowledge base
+ * behind it, and when nothing matches it hands the visitor to /contact.
  */
 export function HelpContent() {
   const p = usePages().help;
-  const t = useT();
+  const [q, setQ] = useState('');
+  const needle = q.trim().toLocaleLowerCase();
+  const shown = needle
+    ? p.faqs.filter((f) => `${f.h} ${f.p}`.toLocaleLowerCase().includes(needle))
+    : p.faqs;
 
   return (
     <>
       <Masthead title={p.title} lead={p.lead} />
 
       <section className="hp hp-section">
-        <ul className="hp-topics">
-          {p.groups.map((g) => (
-            <li className="hp-topic" key={g.h}>
-              <h2>{g.h}</h2>
-              <ul>
-                {g.items.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
+        <label className="hp-search">
+          <Search />
+          <span className="sr-only">{p.searchLabel}</span>
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={p.searchPlaceholder}
+          />
+        </label>
 
-        <div className="hp-actions">
-          <Link href="/contact" className="sg-link">
-            {t.closing.support}
-          </Link>
+        {shown.length ? (
+          <ul className="hp-faqs">
+            {shown.map((f) => (
+              <li key={f.h}>
+                <details className="hp-faq" open={needle ? true : undefined}>
+                  <summary>{f.h}</summary>
+                  <p>{f.p}</p>
+                </details>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="hp-faqs__none" role="status">{p.noMatch}</p>
+        )}
+
+        <div className="hp-card hp-help-contact">
+          <div>
+            <h2>{p.contactHeading}</h2>
+            <p>{p.contactBody}</p>
+          </div>
+          <ButtonLink href="/contact" variant="secondary">
+            {p.contactCta}
+          </ButtonLink>
         </div>
       </section>
     </>

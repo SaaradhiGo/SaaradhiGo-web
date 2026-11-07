@@ -5,8 +5,9 @@ import { Logo } from './Logo';
 import { useT } from '@/i18n/LocaleProvider';
 
 /**
- * The public footer: the lockup, the same navigation as the header, and the
- * two legal documents.
+ * The public footer: the lockup (at most 96px tall), the header's links in
+ * columns, then one line with the year and the two legal documents. At most
+ * 200px tall on desktop and 280px on a phone (check-layout).
  *
  * EVERY LINK RESOLVES TO A ROUTE THAT EXISTS. No invented contact details,
  * no social accounts, no app-store badges, no `href="#"`. The navigation is
@@ -33,7 +34,7 @@ export function Footer() {
     <footer className="hp-footer sg-on-noir">
       <div className="hp">
         <div className="hp-footer__top">
-          <Logo variant="lockup" width={132} label="SaaradhiGo" />
+          <Logo variant="lockup" className="hp-footer__logo" label="SaaradhiGo" />
           <nav className="hp-footer__nav" aria-label="Footer">
             {NAV.map((l) => (
               <Link key={l.key} href={l.href}>
@@ -42,7 +43,6 @@ export function Footer() {
             ))}
           </nav>
         </div>
-
 
         <div className="hp-footer__base">
           <span>© {new Date().getFullYear()} SaaradhiGo</span>
