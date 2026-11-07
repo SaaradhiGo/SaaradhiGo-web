@@ -74,7 +74,7 @@ function VerifyEmailInner() {
             Your email address is confirmed. You can sign in now.
           </Alert>
           <Link href="/sign-in" className="btn-primary w-full">
-            Sign in
+            Log in
           </Link>
         </div>
       )}

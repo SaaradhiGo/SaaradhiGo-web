@@ -1,4 +1,4 @@
-/** Homepage render (design of 2026-11-07): the design copy, no numbers, no city, no "Coming soon", no app band without store links. */
+/** Homepage render (design of 2026-11-07): the design copy, no numbers, no city, no "Coming soon", no app band without store links, no Schedule switch. */
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -43,5 +43,8 @@ describe('HomeContent', () => {
     expect(/Hyderabad|UPI|Aadhaar/.test(text)).toBe(false);
     expect(/surge|coming soon/i.test(text)).toBe(false);
     expect(screen.queryByText('Get the SaaradhiGo app')).toBeNull();
+    // Scheduled rides do not exist yet: no Ride now / Schedule switch.
+    expect(screen.queryByText('Schedule')).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Trip type' })).toBeNull();
   });
 });

@@ -86,7 +86,7 @@ function ResetPasswordInner() {
             Your password is set, and you have been signed out everywhere else.
           </Alert>
           <Link href="/sign-in" className="btn-primary w-full">
-            Sign in
+            Log in
           </Link>
         </div>
       ) : (

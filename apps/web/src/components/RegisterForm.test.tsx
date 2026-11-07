@@ -36,6 +36,7 @@ vi.mock('@/lib/publicAuth', async (importOriginal) => {
 });
 
 import RegisterForm from './RegisterForm';
+import { LocaleProvider } from '@/i18n/LocaleProvider';
 
 function fill(label: RegExp | string, value: string) {
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
@@ -48,7 +49,7 @@ describe('RegisterForm, email route', () => {
   });
 
   it('texts a code, verifies it, then creates the account with the proof', async () => {
-    render(<RegisterForm role="rider" />);
+    render(<LocaleProvider><RegisterForm role="rider" /></LocaleProvider>);
     fill('Full name', 'Asha Rao');
     fill('Mobile number', '9876543210');
     fill('Email', 'asha@example.test');

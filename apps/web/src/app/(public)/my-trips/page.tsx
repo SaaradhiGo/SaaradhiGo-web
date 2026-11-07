@@ -80,9 +80,9 @@ export default function MyTripsPage() {
       <div className="max-w-md mx-auto">
         <h1 className="text-heading font-semibold">Your trips</h1>
         <div className="card mt-6 space-y-4">
-          <Alert kind="info">Sign in to see your trips and receipts.</Alert>
+          <Alert kind="info">Log in to see your trips and receipts.</Alert>
           <Link href="/sign-in" className="btn-primary w-full">
-            Sign in
+            Log in
           </Link>
         </div>
       </div>

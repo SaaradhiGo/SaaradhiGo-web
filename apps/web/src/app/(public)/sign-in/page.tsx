@@ -3,10 +3,11 @@ import type { Metadata } from 'next';
 import { KeepNextLink } from '@/components/KeepNextLink';
 import { AuthShell } from '@/components/form';
 import SignInForm from '@/components/SignInForm';
+import { Tr } from '@/i18n/website';
 
 export const metadata: Metadata = {
-  title: 'Sign in — SaaradhiGo',
-  description: 'Sign in to your SaaradhiGo rider account.',
+  title: 'Log in — SaaradhiGo',
+  description: 'Log in to your SaaradhiGo rider account.',
 };
 
 // WRAPPED IN SUSPENSE BECAUSE THE FORM READS `next`.
@@ -22,17 +23,17 @@ export default function Page() {
       title="Log in"
       alt={
         <>
-          New here?{' '}
+          <Tr>New here?</Tr>{' '}
           <Suspense fallback={null}>
-            <KeepNextLink href="/sign-up">Create an account</KeepNextLink>
+            <KeepNextLink href="/sign-up"><Tr>Create an account</Tr></KeepNextLink>
           </Suspense>
         </>
       }
       footer={
         <>
-          Driver?{' '}
+          <Tr>Driver?</Tr>{' '}
           <Suspense fallback={null}>
-            <KeepNextLink href="/driver/sign-in">Log in as a driver</KeepNextLink>
+            <KeepNextLink href="/driver/sign-in"><Tr>Log in as a driver</Tr></KeepNextLink>
           </Suspense>
         </>
       }

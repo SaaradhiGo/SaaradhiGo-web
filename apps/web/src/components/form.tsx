@@ -3,6 +3,7 @@
 import { useId } from 'react';
 import { TickIcon } from '@/components/sg/SiteIcons';
 import { useSite } from '@/i18n/site';
+import { useTr } from '@/i18n/website';
 
 /**
  * Form primitives shared by every auth page.
@@ -127,11 +128,12 @@ export function AuthShell({
   // and what an account gives you on black, the form card beside it. The
   // whole form and its button fit 1366x768. On a phone the card is the page.
   const a = useSite().auth;
+  const tr = useTr();
   return (
     <section className="s-wrap s-page s-auth s-cb">
       <div className="s-auth__aside">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/lockup-gold.svg" alt="SaaradhiGo logo" width={172} height={186} />
+        <img src="/brand/lockup-gold.svg" alt={tr('SaaradhiGo logo')} width={172} height={186} />
         <div>
           <div className="t-heading">{a.asideTitle}</div>
           <ul>
@@ -143,7 +145,7 @@ export function AuthShell({
       </div>
       <div className="s-auth__card">
         <div className="s-auth__head">
-          <h1 className="t-heading">{title}</h1>
+          <h1 className="t-heading">{typeof title === 'string' ? tr(title) : title}</h1>
           {alt && <span>{alt}</span>}
         </div>
         {intro && <p className="t-muted" style={{ margin: 0 }}>{intro}</p>}

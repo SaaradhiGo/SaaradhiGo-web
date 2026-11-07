@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useT } from '@/i18n/LocaleProvider';
+import { useTr } from '@/i18n/website';
 import { useSite } from '@/i18n/site';
 
 /**
@@ -11,15 +11,15 @@ import { useSite } from '@/i18n/site';
  * no store badges. On a phone the links sit in a three-column grid.
  */
 const NAV = [
-  { key: 'ride', href: '/ride' },
-  { key: 'drive', href: '/drive' },
-  { key: 'safety', href: '/safety' },
-  { key: 'about', href: '/about' },
-  { key: 'help', href: '/help' },
+  { label: 'Ride', href: '/ride' },
+  { label: 'Drive', href: '/drive' },
+  { label: 'Safety', href: '/safety' },
+  { label: 'About', href: '/about' },
+  { label: 'Help', href: '/help' },
 ] as const;
 
 export function Footer() {
-  const t = useT();
+  const tr = useTr();
   const s = useSite();
 
   return (
@@ -35,8 +35,8 @@ export function Footer() {
         </div>
         <nav className="s-footer__nav" aria-label="Footer">
           {NAV.map((l) => (
-            <Link key={l.key} href={l.href}>
-              {t.nav[l.key]}
+            <Link key={l.href} href={l.href}>
+              {tr(l.label)}
             </Link>
           ))}
           <Link href="/contact" className="s-footer__phone-link">

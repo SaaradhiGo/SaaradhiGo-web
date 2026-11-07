@@ -565,3 +565,25 @@
 .s-mock-row__swatch--0 { background: var(--d-green-bg); }
 .s-mock-row__swatch--1 { background: var(--d-violet-bg); }
 .s-mock-row__swatch--2 { background: var(--d-steel-bg); }
+
+/* The draft-translation line under the header (te/hi/es, owner 2026-11-07). */
+.s-notice { background: var(--c-muted); color: var(--c-text-2); border-bottom: 1px solid var(--c-border); }
+.s-notice__in { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; font-size: var(--text-small); line-height: var(--leading-small); }
+.s-notice__close { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-right: -4px; border: 0; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
+/* The notice already parts the page from the header, so while it shows the
+   page's own padding gives way: translated lines run longer and the content
+   pages must still fit 1366x768 without a smaller font (owner, 2026-11-07). */
+.site:has(.s-notice) .s-page { padding-top: 16px; padding-bottom: 16px; }
+.s-notice__close svg { width: 16px; height: 16px; }
+.s-notice__close:hover { background: var(--c-surface); }
+
+/* 404, inside the public frame. */
+.s-missing { text-align: center; padding-top: 96px; padding-bottom: 96px; }
+.s-missing .s-lead { max-width: 480px; margin-left: auto; margin-right: auto; }
+.s-missing__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 28px; }
+
+/* Phones: a label longer than the screen (Spanish, Hindi, Telugu) wraps
+   inside its button instead of pushing the page sideways. */
+@media (max-width: 767px) {
+  .s-btn { white-space: normal; height: auto; min-height: 48px; padding-top: 12px; padding-bottom: 12px; text-align: center; max-width: 100%; }
+}

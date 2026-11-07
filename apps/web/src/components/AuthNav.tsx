@@ -7,6 +7,7 @@ import { Button, ButtonLink } from '@/components/sg/Button';
 import { clearRiderTokens } from '@/lib/publicAuth';
 import { useSession } from '@/lib/useSession';
 import { useT } from '@/i18n/LocaleProvider';
+import { useTr } from '@/i18n/website';
 
 /**
  * The right-hand side of the nav.
@@ -84,6 +85,7 @@ const ROLE_LABEL: Record<string, string> = {
 export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
   const router = useRouter();
   const t = useT();
+  const tr = useTr();
   const session = useSession();
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement | null>(null);
@@ -117,10 +119,10 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
     return (
       <>
         <Link href="/sign-in" className="s-header__login">
-          {t.nav.login}
+          {tr('Log in')}
         </Link>
         <Link href="/sign-up" className={quiet ? 's-header__login' : 's-header__signup'}>
-          {t.nav.signup}
+          {tr('Sign up')}
         </Link>
       </>
     );

@@ -1,5 +1,6 @@
 import { useLocale } from './LocaleProvider';
 import type { Language } from './locales';
+import { translateCopy } from './website';
 
 /**
  * Copy for the public pages, word for word from the approved design
@@ -150,9 +151,9 @@ export type SiteCopy = {
     confirm: string;
     confirmShort: string;
     create: string;
-    agreeA: string;
+    /** {terms} and {privacy} are the two links, in every language. */
+    agree: string;
     terms: string;
-    agreeB: string;
     privacy: string;
     signInTitle: string;
     newHere: string;
@@ -358,9 +359,8 @@ const en: SiteCopy = {
     confirm: 'Confirm password',
     confirmShort: 'Confirm',
     create: 'Create account',
-    agreeA: 'By creating an account you agree to the ',
+    agree: 'By creating an account you agree to the {terms} and {privacy}.',
     terms: 'Terms',
-    agreeB: ' and ',
     privacy: 'Privacy Policy',
     signInTitle: 'Log in',
     newHere: 'New here?',
@@ -369,11 +369,16 @@ const en: SiteCopy = {
 };
 
 /**
- * The other languages fall back to English until their translations of this
- * copy are reviewed (AUDIT §29). The language picker still switches the
- * header, the forms' validation and every page that keeps its old copy.
+ * Telugu, Hindi and Spanish come from the translation files (design/i18n,
+ * 2026-11-07; src/i18n/website.ts), looked up by the English above. A string
+ * the files do not cover stays in English (AUDIT §28.10).
  */
-export const SITE: Record<Language, SiteCopy> = { en, te: en, hi: en, es: en } as Record<Language, SiteCopy>;
+export const SITE: Record<Language, SiteCopy> = {
+  en,
+  te: translateCopy(en, 'te'),
+  hi: translateCopy(en, 'hi'),
+  es: translateCopy(en, 'es'),
+};
 
 export function useSite(): SiteCopy {
   const { language } = useLocale();

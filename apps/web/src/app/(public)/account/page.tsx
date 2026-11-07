@@ -72,9 +72,9 @@ export default function AccountPage() {
       <div className="sg-page max-w-md">
         <h1 className="text-heading font-semibold">Your account</h1>
         <div className="card mt-6 space-y-4">
-          <Alert kind="info">Sign in to see your profile and details.</Alert>
+          <Alert kind="info">Log in to see your profile and details.</Alert>
           <ButtonLink href="/sign-in?next=%2Faccount" variant="primary" block>
-            Sign in
+            Log in
           </ButtonLink>
         </div>
       </div>
