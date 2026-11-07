@@ -1,42 +1,36 @@
 'use client';
 
-import { Logo } from '@/components/sg/Logo';
-import { usePages } from '@/i18n/usePages';
+import { useSite } from '@/i18n/site';
 
 /**
- * /about -- the full logo (at most 220px tall), two short paragraphs and the
- * three promises. Fits one screen at 1366x768 (owner, 2026-11-06).
- *
- * NO FABRICATED COMPANY FACTS. No founding date, headcount, funding, trip
- * counts, investor logos or testimonials. The second paragraph says plainly
- * how early the company is.
+ * /about (approved design, 2026-11-07; About.html): the full logo on black,
+ * what "Saaradhi" means and why the company exists, then three promises.
+ * No founder name, no quotes.
  */
 export function AboutContent() {
-  const p = usePages().about;
-  const promises = p.sections.slice(0, 3);
-  const where = p.sections[3];
+  const a = useSite().about;
 
   return (
-    <>
-      <section className="hp hp-about">
-        <Logo variant="lockup" className="hp-about__logo" label="Saaradhi Go" />
-        <div>
-          <h1 className="hp-h1">{p.title}</h1>
-          <p className="hp-lead">{p.lead}</p>
-          {where && <p>{where.p}</p>}
+    <section className="s-wrap s-page s-cb">
+      <div className="s-about">
+        <div className="s-about__logo">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/lockup-gold.svg" alt={a.logoAlt} width={212} height={230} />
         </div>
-      </section>
-
-      <section className="hp hp-section">
-        <ul className="hp-cards">
-          {promises.map((s) => (
-            <li className="hp-card" key={s.h}>
-              <h2>{s.h}</h2>
-              <p>{s.p}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </>
+        <div>
+          <div className="t-label">{a.label}</div>
+          <h1 className="t-heading">{a.title}</h1>
+          <p>{a.body}</p>
+        </div>
+      </div>
+      <div className="s-cards3">
+        {a.cards.map((c) => (
+          <div key={c.title} className="s-card">
+            <b className="t-title">{c.title}</b>
+            <p>{c.body}</p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

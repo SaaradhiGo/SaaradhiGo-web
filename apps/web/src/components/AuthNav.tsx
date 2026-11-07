@@ -116,12 +116,12 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
   if (session.status === 'out') {
     return (
       <>
-        <ButtonLink href="/sign-in" variant="ghost" size="sm">
+        <Link href="/sign-in" className="s-header__login">
           {t.nav.login}
-        </ButtonLink>
-        <ButtonLink href="/sign-up" variant={quiet ? 'secondary' : 'primary'} size="sm">
+        </Link>
+        <Link href="/sign-up" className={quiet ? 's-header__login' : 's-header__signup'}>
           {t.nav.signup}
-        </ButtonLink>
+        </Link>
       </>
     );
   }

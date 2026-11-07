@@ -1447,7 +1447,7 @@ function BookPageInner() {
             {/* who is booking */}
             {identify && (
               <div className="border-t border-line pt-sg-4">
-                <h2 className="text-lg font-semibold mt-0 mb-sg-3">
+                <h2 className="text-title font-semibold mt-0 mb-sg-3">
                   Book as a guest
                 </h2>
                 <GuestCheckout
@@ -1553,7 +1553,7 @@ function BookPageInner() {
                 ran off the edge (PRODUCT_AUDIT §2). */}
             <div className="flex flex-wrap items-start justify-between gap-sg-3">
               <div className="min-w-0 flex-1 basis-[220px]">
-                <h2 className="display-lg text-[28px] leading-[34px] sm:text-[28px] sm:leading-[34px] m-0">
+                <h2 className="display-lg text-heading m-0">
                   {tripHeadline()}
                 </h2>
                 <p className="sg-sheet__sub">
@@ -1687,7 +1687,7 @@ function BookPageInner() {
                   <Check className="h-7 w-7" />
                 </span>
               )}
-              <h2 className="display-lg text-[38px] leading-[42px] m-0">
+              <h2 className="display-lg text-display m-0">
                 {tripState === 'cancelled' ? 'Ride cancelled' : 'You have arrived'}
               </h2>
               {destinationLabel && <p className="sg-sheet__sub m-0">{destinationLabel}</p>}

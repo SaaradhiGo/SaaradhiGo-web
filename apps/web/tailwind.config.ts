@@ -25,6 +25,14 @@ const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      // The five public sizes (approved design, 2026-11-07; site.css).
+      fontSize: {
+        display: ['var(--text-display)', { lineHeight: 'var(--leading-display)' }],
+        heading: ['var(--text-heading)', { lineHeight: 'var(--leading-heading)' }],
+        title: ['var(--text-title)', { lineHeight: 'var(--leading-title)' }],
+        body: ['var(--text-body)', { lineHeight: 'var(--leading-body)' }],
+        small: ['var(--text-small)', { lineHeight: 'var(--leading-small)' }],
+      },
       colors: {
         // The black band: nav and the Saaradhi Black section, in BOTH themes.
         noir: 'var(--noir)',

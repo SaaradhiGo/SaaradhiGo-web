@@ -68,7 +68,7 @@ function Stat({
   return (
     <div className="card">
       <span className="caption text-ink-subtle block">{label}</span>
-      <strong className={`sg-num block mt-sg-1 ${large ? 'text-4xl' : 'text-2xl'}`}>
+      <strong className={`sg-num block mt-sg-1 ${large ? 'text-display' : 'text-heading'}`}>
         {value ?? <span className="text-ink-subtle text-base">Unavailable</span>}
       </strong>
       {note && <span className="caption text-ink-muted block mt-sg-1">{note}</span>}
@@ -111,7 +111,7 @@ export default function DriverHomePage() {
   if (session.status === 'out') {
     return (
       <div className="sg-page max-w-md">
-        <h1 className="text-3xl font-bold">Driver home</h1>
+        <h1 className="text-heading font-semibold">Driver home</h1>
         <div className="card mt-6 space-y-4">
           <Alert kind="info">Sign in with your driver account to see it.</Alert>
           <ButtonLink href="/driver/sign-in?next=%2Fdriver%2Fhome" variant="primary" block>
@@ -125,7 +125,7 @@ export default function DriverHomePage() {
   if (role !== 'driver') {
     return (
       <div className="sg-page max-w-md">
-        <h1 className="text-3xl font-bold">Driver home</h1>
+        <h1 className="text-heading font-semibold">Driver home</h1>
         <div className="card mt-6 space-y-4">
           <Alert kind="info">
             You are signed in as a {role === 'admin' ? 'operator' : 'rider'}.
@@ -158,7 +158,7 @@ export default function DriverHomePage() {
     <div className="sg-page max-w-3xl space-y-sg-6">
       <header className="flex items-end justify-between gap-sg-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold m-0">
+          <h1 className="text-heading font-semibold m-0">
             {firstName ? `Hello, ${firstName}` : 'Driver home'}
           </h1>
           <p className="text-ink-muted mt-sg-1 m-0">
@@ -183,7 +183,7 @@ export default function DriverHomePage() {
       {!approved || rejected || outstanding > 0 ? (
         <section className="card sg-next">
           <div className="sg-next__text">
-            <h2 className="text-xl font-semibold m-0">
+            <h2 className="text-title font-semibold m-0">
               {rejected
                 ? 'An operator asked for changes'
                 : outstanding > 0
@@ -225,7 +225,7 @@ export default function DriverHomePage() {
       {/* ---------------- what we hold on you ---------------- */}
       <section className="card space-y-sg-3">
         <div className="flex items-center justify-between gap-sg-3 flex-wrap">
-          <h2 className="text-xl font-semibold m-0">Your account</h2>
+          <h2 className="text-title font-semibold m-0">Your account</h2>
           <Link href="/driver/documents" className="sg-link">
             Documents
           </Link>
@@ -285,7 +285,7 @@ export default function DriverHomePage() {
       {/* ---------------- vehicle ---------------- */}
       <section className="card space-y-sg-2">
         <div className="flex items-center justify-between gap-sg-3 flex-wrap">
-          <h2 className="text-xl font-semibold m-0">Vehicle</h2>
+          <h2 className="text-title font-semibold m-0">Vehicle</h2>
           {rating > 0 && (
             <span className="caption text-ink-muted sg-num">
               Rating {rating.toFixed(2)} · {profile?.total_trips ?? 0} trips
@@ -320,7 +320,7 @@ export default function DriverHomePage() {
       {/* ---------------- recent trips ---------------- */}
       {trips !== null && trips.length > 0 && (
         <section className="space-y-sg-3">
-          <h2 className="text-xl font-semibold">Recent trips</h2>
+          <h2 className="text-title font-semibold">Recent trips</h2>
           <ul className="card divide-y divide-line p-0">
             {trips.map((t, i) => (
               <li key={t.id ?? i} className="p-sg-4 grid gap-1">

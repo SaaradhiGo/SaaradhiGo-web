@@ -42,6 +42,12 @@ const ALLOWED = [
     reason: 'the shared Google Maps light style, identical in all three surfaces',
   },
   {
+    // The approved design's illustrations (2026-11-07): the hero map, the
+    // small route maps and the pickup and drop marks, in its fixed colours.
+    dir: path.join('src', 'components', 'art'),
+    reason: 'illustrations from the approved design, fixed colours like the logo',
+  },
+  {
     // The logo artwork as the designers traced it. These are mask sources:
     // the fill never renders, and the mark is coloured by the `logo` token.
     dir: path.join('public', 'brand'),

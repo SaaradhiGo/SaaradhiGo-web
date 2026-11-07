@@ -156,9 +156,9 @@ export default function SignInForm({ role }: { role: PublicRole }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="s-form">
       <div
-        className="flex rounded-xl border border-line p-1"
+        className="s-seg"
         role="tablist"
         aria-label="How to sign in"
       >
@@ -173,9 +173,6 @@ export default function SignInForm({ role }: { role: PublicRole }) {
                 setError(null);
                 setUnverified(false);
               }}
-              className={`flex-1 min-h-[40px] rounded-lg text-sm font-medium transition-colors duration-150 ${
-                mode === m ? 'bg-gold-500 text-on-gold' : 'text-ink-muted hover:text-ink'
-              }`}
             >
               {m === 'email' ? 'Email' : 'Mobile'}
             </button>
@@ -192,7 +189,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
       )}
 
       {mode === 'email' ? (
-        <form onSubmit={submitEmail} className="space-y-4" noValidate>
+        <form onSubmit={submitEmail} className="s-form" noValidate>
           <Field
             label="Email address"
             name="email"
@@ -222,7 +219,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
           </p>
         </form>
       ) : stage === 'phone' ? (
-        <form onSubmit={submitPhone} className="space-y-4" noValidate>
+        <form onSubmit={submitPhone} className="s-form" noValidate>
           {!smsToAnyone && (
             <Alert kind="info">
               {testPhones.length > 0 ? (
@@ -268,7 +265,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
           )}
         </form>
       ) : (
-        <form onSubmit={submitCode} className="space-y-4" noValidate>
+        <form onSubmit={submitCode} className="s-form" noValidate>
           <Field
             label={`Code sent to ${phone}`}
             name="otp"
@@ -284,7 +281,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
           </SubmitButton>
           <button
             type="button"
-            className="btn-ghost w-full"
+            className="s-btn s-btn--outline s-submit"
             onClick={() => {
               setStage('phone');
               setOtp('');

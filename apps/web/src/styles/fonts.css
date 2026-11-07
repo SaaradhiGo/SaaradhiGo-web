@@ -1,17 +1,24 @@
 /* Self-hosted webfonts (OFL; licences in public/fonts). Bundled in the repo so
    neither the build nor the visitor fetches from Google (owner, 2026-11-05). */
-/* Noto Sans is the interface family for the public site and the apps (owner,
-   2026-11-06): one design across Latin, Telugu and Devanagari, weight 400-700,
-   width fixed at 100. Manrope stays only because the console still uses it;
-   a face is fetched only when a page uses it, so the public site never loads
-   Manrope. */
+/* Inter 400 and 600 is the interface family for the public site and the apps
+   (approved design, 2026-11-07), with Noto Sans Telugu and Devanagari for
+   those scripts. Manrope stays only because the console still uses it; a
+   face is fetched only when a page uses it. */
 
 @font-face {
-  font-family: 'Noto Sans';
+  font-family: 'Inter';
   font-style: normal;
   font-display: swap;
-  font-weight: 400 700;
-  src: url(/fonts/noto-sans-wght.woff2) format('woff2-variations');
+  font-weight: 400;
+  src: url(/fonts/inter-regular.woff2) format('woff2');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+20B9,U+2122,U+2190-2193,U+2212,U+2215,U+2713,U+FEFF,U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 600;
+  src: url(/fonts/inter-semibold.woff2) format('woff2');
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+20B9,U+2122,U+2190-2193,U+2212,U+2215,U+2713,U+FEFF,U+FFFD;
 }
 @font-face {

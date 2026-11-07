@@ -30,7 +30,7 @@ export default function PublicLayout({
 }) {
   return (
     <LocaleProvider>
-    <div className="min-h-screen flex flex-col bg-bg-000">
+    <div className="site min-h-screen flex flex-col">
       {/* First stop for a keyboard user, so they are not forced through the
           whole nav on every page. */}
       <a href="#main" className="skip-link">
@@ -39,7 +39,7 @@ export default function PublicLayout({
 
       <NavBar />
 
-      <main id="main" className="flex-1 w-full">
+      <main id="main" className="w-full">
         {children}
       </main>
 

@@ -19,22 +19,13 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <AuthShell
-      title="Create a rider account"
-      intro="One account for booking rides, your receipts and support."
-      footer={
+      title="Create your account"
+      alt={
         <>
-          <p>
-            Already have an account?{' '}
-            <Suspense fallback={null}>
-              <KeepNextLink href="/sign-in">Sign in</KeepNextLink>
-            </Suspense>
-          </p>
-          <p>
-            Want to drive with us?{' '}
-            <Suspense fallback={null}>
-              <KeepNextLink href="/driver/sign-up">Apply to drive</KeepNextLink>
-            </Suspense>
-          </p>
+          Have one?{' '}
+          <Suspense fallback={null}>
+            <KeepNextLink href="/sign-in">Log in</KeepNextLink>
+          </Suspense>
         </>
       }
     >

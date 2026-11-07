@@ -35,8 +35,7 @@ export const metadata: Metadata = {
     url: '/',
     title: 'SaaradhiGo',
     description:
-      'Book a ride in Hyderabad, Vijayawada, Visakhapatnam and Warangal. '
-      + 'The fare is agreed before the trip starts.',
+      'Fair rides for riders and drivers. The fare is agreed before the trip starts.',
     locale: 'en_IN',
     // NO og:image. There was one, pointing at the homepage photograph, and
     // the photographs are gone. A link preview with a broken image is worse

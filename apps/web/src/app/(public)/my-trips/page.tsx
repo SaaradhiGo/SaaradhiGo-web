@@ -78,7 +78,7 @@ export default function MyTripsPage() {
   if (!signedIn) {
     return (
       <div className="max-w-md mx-auto">
-        <h1 className="text-3xl font-bold">Your trips</h1>
+        <h1 className="text-heading font-semibold">Your trips</h1>
         <div className="card mt-6 space-y-4">
           <Alert kind="info">Sign in to see your trips and receipts.</Alert>
           <Link href="/sign-in" className="btn-primary w-full">
@@ -91,7 +91,7 @@ export default function MyTripsPage() {
 
   return (
     <div className="sg-page max-w-2xl">
-      <h1 className="text-3xl font-bold">Your trips</h1>
+      <h1 className="text-heading font-semibold">Your trips</h1>
 
       {error && (
         <div className="mt-4">
@@ -128,11 +128,11 @@ export default function MyTripsPage() {
               <li key={t.id ?? i} className="card" data-testid="trip-row">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 space-y-1">
-                    <p className="flex items-center gap-2 font-medium min-w-0">
+                    <p className="flex items-center gap-2 font-normal min-w-0">
                       <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-pickup" />
                       <span className="truncate">{t.pickup_address || 'Pickup'}</span>
                     </p>
-                    <p className="flex items-center gap-2 font-medium min-w-0">
+                    <p className="flex items-center gap-2 font-normal min-w-0">
                       <span aria-hidden className="h-2 w-2 shrink-0 rounded-[2px] bg-gold-500" />
                       <span className="truncate">{t.destination_address || 'Destination'}</span>
                     </p>

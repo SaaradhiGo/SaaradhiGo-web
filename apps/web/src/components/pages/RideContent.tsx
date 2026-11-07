@@ -1,41 +1,60 @@
 'use client';
 
-import { ButtonLink } from '@/components/sg/Button';
-import { Masthead } from './PageShell';
-import { usePages } from '@/i18n/usePages';
+import Link from 'next/link';
+import { DropMark, PickupMark } from '@/components/art/MiniMaps';
+import { LockIcon } from '@/components/sg/SiteIcons';
+import { useSite } from '@/i18n/site';
 
 /**
- * /ride -- what happens when a rider books, in the order it happens: five
- * numbered cards in one row on desktop, then "Book a ride". Fits one screen
- * at 1366x768 (owner, 2026-11-06).
- *
- * Every step here is a step the product actually performs: the service-area
- * check before pricing, the per-class fares, the six-digit PIN the driver
- * must enter, the live position on the map, and cash settlement.
+ * /ride (approved design, 2026-11-07; Ride.html): the five steps of a ride
+ * and "Book a ride" on the left; the fare ticket and what "locked" means on
+ * the right. The ticket names no amount. Fits 1366x768 and 1440x900.
  */
 export function RideContent() {
-  const p = usePages().ride;
+  const r = useSite().ride;
 
   return (
-    <>
-      <Masthead title={p.title} lead={p.lead} />
-
-      <section className="hp hp-section">
-        <ol className="hp-cards hp-cards--5">
-          {p.sections.map((s, i) => (
-            <li className="hp-card" key={s.h}>
-              <span className="hp-card__n">{String(i + 1).padStart(2, '0')}</span>
-              <h2>{s.h}</h2>
-              <p>{s.p}</p>
+    <section className="s-wrap s-page s-two s-cb">
+      <div>
+        <h1 className="t-heading">{r.title}</h1>
+        <p className="s-lead">{r.lead}</p>
+        <ol className="s-steps">
+          {r.steps.map((s, i) => (
+            <li key={s.title}>
+              <span className="s-steps__n" aria-hidden="true">{i + 1}</span>
+              <span>
+                <b>{s.title}</b>
+                <span>{s.body}</span>
+              </span>
             </li>
           ))}
         </ol>
-        <div className="hp-actions">
-          <ButtonLink href="/book" variant="primary" size="lg">
-            {p.cta}
-          </ButtonLink>
+        <Link href="/book" className="s-btn s-btn--primary s-btn--lg s-cta-top">{r.cta}</Link>
+      </div>
+
+      <div className="s-stack">
+        <div className="s-ticket">
+          <div className="s-ticket__head">
+            <span className="t-label">{r.ticketLabel}</span>
+            <span className="s-chip">{r.ticketChip}</span>
+          </div>
+          <div className="s-ticket__main">
+            <span className="s-ticket__lock"><LockIcon /></span>
+            <span className="t-title">{r.ticketTitle}</span>
+          </div>
+          <hr />
+          <div className="s-ticket__stops">
+            <span><PickupMark />{r.ticketPickup}</span>
+            <span><DropMark />{r.ticketDest}</span>
+          </div>
         </div>
-      </section>
-    </>
+        <div className="s-note">
+          <b>{r.lockedTitle}</b>
+          <ul>
+            {r.locked.map((x) => <li key={x}>{x}</li>)}
+          </ul>
+        </div>
+      </div>
+    </section>
   );
 }

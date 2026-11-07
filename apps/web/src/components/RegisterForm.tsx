@@ -114,7 +114,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
   // Defaulting to a country before the answer arrives is the India-only
   // assumption in miniature.
   useEffect(() => {
-    if (markets && !country) setCountry(markets.default_country);
+    if (markets && !country) setCountry(regionDefault(markets));
   }, [markets, country]);
 
   const market = markets?.countries.find((m) => m.code === country);
@@ -292,14 +292,14 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
 
   if (awaitingInbox) {
     return (
-      <div className="space-y-4">
+      <div className="s-form">
         <Alert kind="success">
           Check your inbox at <strong>{email}</strong>. Open the link we sent
           to confirm your address, then you can sign in.
         </Alert>
         <Link
           href={`${role === 'driver' ? '/driver/sign-in' : '/sign-in'}?next=${encodeURIComponent(next)}`}
-          className="btn-secondary w-full"
+          className="s-btn s-btn--outline s-submit"
         >
           Go to sign in
         </Link>
@@ -308,11 +308,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
   }
 
   const tabs = (
-    <div
-      className="flex rounded-xl border border-line p-1"
-      role="tablist"
-      aria-label="How to sign up"
-    >
+    <div className="s-seg" role="tablist" aria-label="Sign up with">
       {(['email', 'mobile'] as const).map((t) => (
         <button
           key={t}
@@ -320,9 +316,6 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           role="tab"
           aria-selected={tab === t}
           onClick={() => switchTab(t)}
-          className={`flex-1 min-h-[44px] rounded-lg text-sm font-medium transition-colors duration-150 ${
-            tab === t ? 'bg-gold-500 text-on-gold' : 'text-ink-muted hover:text-ink'
-          }`}
         >
           {t === 'email' ? 'Email' : 'Mobile'}
         </button>
@@ -332,7 +325,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
 
   if (codeSent) {
     return (
-      <form onSubmit={tab === 'email' ? onConfirmEmailRouteCode : onConfirmCode} className="space-y-4" noValidate>
+      <form onSubmit={tab === 'email' ? onConfirmEmailRouteCode : onConfirmCode} className="s-form" noValidate>
         {formError && <Alert kind="error">{formError}</Alert>}
         <Field
           label={`Code sent to +${market?.calling_code ?? ''} ${national}`}
@@ -349,7 +342,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
         </SubmitButton>
         <button
           type="button"
-          className="btn-ghost w-full"
+          className="s-btn s-btn--outline s-submit"
           onClick={() => {
             setCodeSent(false);
             setOtp('');
@@ -367,45 +360,41 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
   return (
     <form
       onSubmit={tab === 'email' ? onCreateAccount : onSendCode}
-      className="auth-form"
+      className="s-form"
       noValidate
     >
       {tabs}
 
       {formError && <Alert kind="error">{formError}</Alert>}
 
-      {/* Two columns from 640px (owner, 2026-11-06): Full name | Email,
-          Country + Mobile number | (empty), Password | Confirm password. */}
-      <Field
-        label="Full name"
-        name="fullName"
-        className="auth-half"
-        autoComplete="name"
-        value={fullName}
-        onChange={(e) => setFullName(e.target.value)}
-        error={errors.fullName}
-        required
-      />
-
-      {tab === 'email' && (
+      {/* Two columns (approved design, 2026-11-07): Full name | Email,
+          Mobile number | (empty), Password | Confirm password. */}
+      <div className="s-grid">
         <Field
-          label="Email address"
-          className="auth-half"
-          name="email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          error={errors.email}
+          label="Full name"
+          name="fullName"
+          autoComplete="name"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          error={errors.fullName}
           required
         />
-      )}
 
-      {/* EVERY ROUTE ASKS FOR THE NUMBER, because the driver has to be able
-          to call at the pickup and `phone_number` is the account's identity.
-          On the email route it was a second screen; it is simply the next
-          field now. */}
-      <div className="auth-half auth-row">
+        {tab === 'email' && (
+          <Field
+            label="Email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            error={errors.email}
+            required
+          />
+        )}
+
+        {/* EVERY ROUTE ASKS FOR THE NUMBER, because the driver has to be able
+            to call at the pickup and the number is the account's identity. */}
         <PhoneField
           markets={markets}
           failed={marketsFailed}
@@ -415,42 +404,59 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           onNationalChange={setNational}
           error={errors.phone}
           label="Mobile number"
-          help={tab === 'email' || smsToAnyone ? 'We text you a code' : 'QA test numbers get a fixed code, no SMS'}
+          help={tab === 'email' || smsToAnyone ? 'We text a code to confirm it.' : 'QA test numbers get a fixed code, no SMS.'}
         />
+        <span className="s-only-desk" aria-hidden="true" />
+
+        {tab === 'email' ? (
+          <>
+            <Field
+              label="Password"
+              className="s-half"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              error={errors.password}
+              help="At least 10 characters."
+              required
+            />
+            <Field
+              label="Confirm password"
+              className="s-half"
+              name="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              error={errors.confirmPassword}
+              required
+            />
+          </>
+        ) : (
+          <Field
+            label="Email (optional)"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            error={errors.email}
+            help="For receipts."
+          />
+        )}
       </div>
 
       {tab === 'email' ? (
         <>
-          <Field
-            label="Password"
-            className="auth-half auth-row"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            error={errors.password}
-            help="At least 10 characters"
-            required
-          />
-          <Field
-            label="Confirm password"
-            className="auth-half"
-            name="confirmPassword"
-            type="password"
-            autoComplete="new-password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            error={errors.confirmPassword}
-            required
-          />
           {/* The number is proved by SMS before the account exists, so a number
               this environment cannot text cannot sign up here either. */}
-          <SubmitButton busy={busy} busyLabel="Sending a code…" disabled={!phoneUsable}>
+          <SubmitButton busy={busy} busyLabel="Sending a code…" disabled={!phoneUsable && national.trim() !== ''}>
             Create account
           </SubmitButton>
           {!phoneUsable && national.trim() !== '' && (
-            <p className="help">
+            <p className="s-help">
               {testPhones.length > 0
                 ? 'This environment texts approved QA test numbers only, and the number must be confirmed by text.'
                 : 'This environment cannot text anyone, and the number must be confirmed by text.'}
@@ -466,25 +472,14 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
                 : 'This environment does not text the public. Sign up with your email instead.'}
             </Alert>
           )}
-          <Field
-            label="Email address (optional)"
-            className="auth-half auth-row"
-            name="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            error={errors.email}
-            help="For receipts; optional"
-          />
           {/* Disabled rather than failing on press: a tester typing a real
               number into an environment that texts nobody used to get an
               error that read like a broken product. */}
-          <SubmitButton busy={busy} busyLabel="Sending…" disabled={!phoneUsable}>
+          <SubmitButton busy={busy} busyLabel="Sending…" disabled={!phoneUsable && national.trim() !== ''}>
             Send code
           </SubmitButton>
           {!phoneUsable && national.trim() !== '' && (
-            <p className="help">
+            <p className="s-help">
               {testPhones.length > 0
                 ? 'That number is not an approved QA test number on this environment. Sign up with your email instead.'
                 : 'This environment cannot text anyone. Sign up with your email instead.'}
@@ -493,17 +488,28 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
         </>
       )}
 
-      <p className="help">
-        By continuing you agree to our{' '}
-        <Link href="/terms" className="sg-link">
-          terms
-        </Link>{' '}
-        and{' '}
-        <Link href="/privacy" className="sg-link">
-          privacy policy
-        </Link>
-        .
+      <p className="s-auth__fine">
+        By creating an account you agree to the <Link href="/terms">Terms</Link> and{' '}
+        <Link href="/privacy">Privacy Policy</Link>.
       </p>
     </form>
   );
+}
+
+/**
+ * The visitor's own region when we serve it, else the deployment's default
+ * (owner, 2026-11-07: never a hard-coded +91). The browser's locale carries
+ * the region ("en-US", "te-IN"); a language with no region says nothing.
+ */
+function regionDefault(markets: { default_country: string; countries: { code: string }[] }) {
+  try {
+    const tags = [...(navigator.languages ?? []), navigator.language, Intl.DateTimeFormat().resolvedOptions().locale];
+    for (const tag of tags) {
+      const region = tag ? new Intl.Locale(tag).region : undefined;
+      if (region && markets.countries.some((m) => m.code === region)) return region;
+    }
+  } catch {
+    /* an old browser without Intl.Locale keeps the default */
+  }
+  return markets.default_country;
 }

@@ -121,17 +121,14 @@
   --radius-lg: 22px;
   --radius-xl: 32px;
   --radius-pill: 999px;
-  /* Noto Sans, one family across Latin, Telugu and Devanagari (fonts.css).
-     Each script's face covers only its own range, so a mixed line draws
-     every word in Noto; :lang() puts the active script first. Cinzel is for the
-     "Saaradhi Go" lettering beside the badge, never headings or body. */
-  --font-sans: "Noto Sans", "Noto Sans Telugu", "Noto Sans Devanagari", system-ui, sans-serif;
+  /* Inter for Latin, Noto Sans Telugu and Devanagari for those scripts
+     (approved design, 2026-11-07; fonts.css). Cinzel is for the "Saaradhi Go"
+     lettering beside the emblem, never headings or body. */
+  --font-sans: "Inter", "Noto Sans Telugu", "Noto Sans Devanagari", sans-serif;
   --font-display: var(--font-sans);
   --font-brand: "Cinzel", "Trajan Pro", Georgia, serif;
 }
-/* Noto per script; every size and weight lives in type.css (2026-11-06). */
-:lang(te) { --font-sans: "Noto Sans Telugu", "Noto Sans", "Noto Sans Devanagari", system-ui, sans-serif; }
-:lang(hi) { --font-sans: "Noto Sans Devanagari", "Noto Sans", "Noto Sans Telugu", system-ui, sans-serif; }
+/* Every size and weight lives in type.css and site.css (2026-11-07). */
 .sg-num, .fare, .fare-xl { font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) { .sg *, .sg *::before, .sg *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }
 
@@ -298,7 +295,7 @@
   --shadow-panel: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,215,0,0.12);
   --shadow-glow: 0 8px 28px rgba(255,215,0,0.30);
   --shadow-sheen: inset 0 1px 0 rgba(255,255,255,0.38), inset 0 -2px 0 rgba(0,0,0,0.16);
-  --font-sans: "Manrope", "Noto Sans", "Noto Sans Telugu", "Noto Sans Devanagari", system-ui, sans-serif;
+  --font-sans: "Manrope", "Noto Sans Telugu", "Noto Sans Devanagari", system-ui, sans-serif;
 }
 .ops[data-theme="light"], .login[data-theme="light"] {
   --noir: #000000;
@@ -339,3 +336,102 @@
   --shadow-sheen: inset 0 1px 0 rgba(255,255,255,0.38), inset 0 -2px 0 rgba(0,0,0,0.16);
 }
 .ops, .login { font-family: var(--font-sans); }
+
+/* THE APPROVED DESIGN OF 2026-11-07 (design/website-2026-11-07; site.css).
+   The reference pages' fixed colours, including the phone mock-ups, which
+   stay light in both themes because they picture the app's screens. */
+:root {
+  --d-white: #FFFFFF;
+  --d-ivory: #F3EEE6;
+  --d-ink: #1B1A17;
+  --d-line: #E7E1D7;
+  --d-ink-text-2: #D8D2C6;
+  --d-rule: #262626;
+  --d-black: #000000;
+  --d-green: #0D7762;
+  --d-amber: #F5A623;
+  --d-slate: #57524A;
+  --d-amber-hover: #E0951A;
+  --d-ring: #3A3A3A;
+  --d-ash: #A8A29A;
+  --d-map: #EEE8DD;
+  --d-gold-2: #F5C451;
+  --d-red: #B3261E;
+  --d-ring-2: #5A564E;
+  --d-ring-hover: #6A6458;
+  --d-dots: #B8AE9E;
+  --d-page: #FAF7F2;
+  --d-bar: #D9D1C3;
+  --d-green-bg: #DDF1E6;
+  --d-green-ink: #0B6B57;
+  --d-noir: #0B0B0B;
+  --d-map-2: #EFEAE1;
+  --d-violet-bg: #ECE6F8;
+  --d-steel-bg: #E4E8EE;
+}
+/* Its colour roles: Daylight is the reference; black and gold maps onto it. */
+:root {
+  --c-page: #FAF7F2;
+  --c-surface: #FFFFFF;
+  --c-muted: #F3EEE6;
+  --c-border: #E7E1D7;
+  --c-field-border: #8C8579;
+  --c-text: #1B1A17;
+  --c-text-2: #57524A;
+  --c-text-3: #4A453E;
+  --c-text-4: #3F3B35;
+  --c-accent: #8A5300;
+  --c-accent-hover: #5E3900;
+  --c-primary: #F5A623;
+  --c-primary-ink: #1B1A17;
+  --c-green: #0D7762;
+  --c-green-ink: #0B6B57;
+  --c-green-bg: #DDF1E6;
+  --c-gold-bg: #F6EBD3;
+  --c-red: #B3261E;
+  --c-red-bg: #FBE3E1;
+  --c-violet: #5B3FA8;
+  --c-violet-bg: #ECE6F8;
+  --c-bar: #D9D1C3;
+  --c-ink: #1B1A17;        /* the dark cards and buttons */
+  --c-ink-text: #F3EEE6;
+  --c-ink-text-2: #D8D2C6;
+  --c-noir: #0B0B0B;       /* header and footer */
+  --c-gold: #E4B24C;
+  --c-gold-2: #F5C451;
+  --c-map: #EEE8DD;
+  --c-photo: #E9DCC4;
+  --c-photo-border: #C9A86A;
+  --c-photo-text: #6B5320;
+  --c-shadow: rgba(27, 26, 23, 0.12);
+  --c-fade: 250, 247, 242;
+}
+[data-theme="dark"] {
+  --c-page: #0B0B0B;
+  --c-surface: #161513;
+  --c-muted: #211F1B;
+  --c-border: #34302A;
+  --c-field-border: #6E685E;
+  --c-text: #F3EEE6;
+  --c-text-2: #C9C2B6;
+  --c-text-3: #C9C2B6;
+  --c-text-4: #C9C2B6;
+  --c-accent: #F5C451;
+  --c-accent-hover: #FFD978;
+  --c-green: #4CC3A2;
+  --c-green-ink: #7FD9BF;
+  --c-green-bg: #12322A;
+  --c-gold-bg: #2A2214;
+  --c-red: #E5615A;
+  --c-red-bg: #3A1A18;
+  --c-violet: #C3B2F0;
+  --c-violet-bg: #2A2340;
+  --c-bar: #4A453E;
+  --c-ink: #1F1D1A;
+  --c-map: #1A1916;
+  --c-photo: #221D14;
+  --c-photo-border: #6B5320;
+  --c-photo-text: #E4B24C;
+  --c-shadow: rgba(0, 0, 0, 0.5);
+  --c-fade: 11, 11, 11;
+}
