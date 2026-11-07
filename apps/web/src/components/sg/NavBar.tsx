@@ -16,9 +16,9 @@ import { useT } from '@/i18n/LocaleProvider';
  * THE BAR FOLLOWS THE THEME (owner, 2026-11-06): ivory with the deep-gold
  * logo in Daylight, black and gold in dark.
  *
- * ONE LOGO AT THE TOP. The homepage hero carries the full logo, so there the
- * bar shows the badge and name only once the hero has scrolled away. Every
- * other page shows them always.
+ * THE LOGO IS ALWAYS THERE (owner, 2026-11-06): the badge and "Saaradhi Go"
+ * show at load on every page, the homepage included, and link home. The full
+ * logo lives on About and in the footer.
  *
  * EVERY LINK RESOLVES TO A PAGE OF ITS OWN. These were homepage anchors
  * while /ride, /safety, /about and /help did not exist; all five are real
@@ -53,19 +53,6 @@ export function NavBar({ quiet }: { quiet?: boolean }) {
     setOpen(false);
   }, [pathname]);
 
-  // On the homepage the logo waits until the hero's own logo has gone by.
-  const onHome = pathname === '/';
-  const [heroGone, setHeroGone] = useState(!onHome);
-  useEffect(() => {
-    if (!onHome) { setHeroGone(true); return; }
-    const hero = document.querySelector('.hp-hero__logo');
-    if (!hero || typeof IntersectionObserver === 'undefined') { setHeroGone(true); return; }
-    setHeroGone(false);
-    const io = new IntersectionObserver(([e]) => setHeroGone(!e.isIntersecting), { rootMargin: '-72px 0px 0px 0px' });
-    io.observe(hero);
-    return () => io.disconnect();
-  }, [onHome]);
-
   // An anchor on the homepage is not a page of its own, so it is never
   // `aria-current`. Without this every nav item lights up on `/`.
   const isCurrent = (href: string) => {
@@ -76,15 +63,7 @@ export function NavBar({ quiet }: { quiet?: boolean }) {
   return (
     <header className="hp-header">
       <nav className="hp hp-nav" aria-label="Main">
-        {/* Named for screen readers: the wordmark beside the emblem is hidden
-            on a phone, which left the link with no name (axe link-name). */}
-        <Link
-          href="/"
-          className="hp-nav__logo"
-          aria-label="SaaradhiGo home"
-          data-hidden={heroGone ? undefined : 'true'}
-          tabIndex={heroGone ? undefined : -1}
-        >
+        <Link href="/" className="hp-nav__logo" aria-label="SaaradhiGo home">
           <Logo variant="badge" />
           <span className="hp-nav__name">Saaradhi Go</span>
         </Link>

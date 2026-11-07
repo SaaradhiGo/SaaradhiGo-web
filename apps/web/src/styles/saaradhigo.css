@@ -305,7 +305,7 @@
 .sg-member__meta { display: flex; justify-content: space-between; font-family: var(--font-sans); color: var(--on-noir-muted); }
 
 /* Section scaffolding for marketing pages */
-.sg-section { padding: var(--space-8) var(--space-7); }
+.sg-section { padding: var(--space-7); }
 .sg-section + .sg-section { padding-top: 0; }
 .sg-h2 { font-family: var(--font-sans); margin: var(--space-4) 0 var(--space-4); }
 .sg-h2 em { font-style: italic; color: var(--gold-text); }
@@ -365,7 +365,7 @@
    workspace are full-bleed. Every other page takes its width and its gutters
    from this instead -- 64px at the sides, dropping to 16px on a phone, which
    is the design system's own spacing and not a second set of margins. */
-.sg-page { max-width: 1408px; margin: 0 auto; padding: var(--space-6) var(--space-7) var(--space-8); }
+.sg-page { max-width: 1408px; margin: 0 auto; padding: 40px var(--space-7) var(--space-7); }
 
 /* The hero: a full-bleed map with the headline and booking panel over it. */
 /* The design's hero is 880px tall because a full-bleed map fills it. This
@@ -482,8 +482,8 @@
   .sg-ws__panel > [role="alert"], .sg-ws__panel > .alert { margin: 0 var(--space-4) var(--space-2); }
 
   .sg-wrap, .sg-section { padding-left: var(--space-4); padding-right: var(--space-4); }
-  .sg-page { padding: var(--space-5) var(--space-4) var(--space-7); }
-  .sg-section { padding-top: var(--space-7); padding-bottom: var(--space-7); }
+  .sg-page { padding: var(--space-5) var(--space-4) var(--space-6); }
+  .sg-section { padding-top: var(--space-6); padding-bottom: var(--space-6); }
   .sg-head { flex-direction: column; align-items: flex-start; gap: var(--space-4); margin-bottom: var(--space-5); }
   .sg-h2 { font-family: var(--font-sans); }
   .sg-classes { grid-template-columns: 1fr; }

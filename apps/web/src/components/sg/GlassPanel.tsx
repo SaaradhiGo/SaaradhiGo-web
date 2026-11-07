@@ -18,7 +18,7 @@ export function GlassPanel({
   className = '',
   children,
 }: {
-  /** Rendered in Anek, as the panel's heading. Omit for an untitled panel. */
+  /** Rendered in the interface face, as the panel's heading. Omit for an untitled panel. */
   title?: ReactNode;
   /** A link or secondary control on the title row, e.g. "Edit trip". */
   action?: ReactNode;

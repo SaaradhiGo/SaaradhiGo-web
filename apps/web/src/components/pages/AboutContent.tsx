@@ -1,36 +1,41 @@
 'use client';
 
-import { ButtonLink } from '@/components/sg/Button';
-import { Blocks, Masthead } from './PageShell';
+import { Logo } from '@/components/sg/Logo';
 import { usePages } from '@/i18n/usePages';
 
 /**
- * /about -- why the service is built the way it is.
+ * /about -- the full logo (at most 220px tall), two short paragraphs and the
+ * three promises. Fits one screen at 1366x768 (owner, 2026-11-06).
  *
- * NO FABRICATED COMPANY FACTS. No founding date, no headcount, no funding,
- * no trip counts, no investor logos, no leadership photographs, no
- * testimonials. None of that is known to this codebase, and a public page is
- * not the place to estimate it. What the page has instead is the product
- * reasoning, which is true and is checkable against the product itself --
- * including a closing section that says plainly how early the company is.
+ * NO FABRICATED COMPANY FACTS. No founding date, headcount, funding, trip
+ * counts, investor logos or testimonials. The second paragraph says plainly
+ * how early the company is.
  */
 export function AboutContent() {
   const p = usePages().about;
+  const promises = p.sections.slice(0, 3);
+  const where = p.sections[3];
 
   return (
     <>
-      <Masthead title={p.title} lead={p.lead} />
+      <section className="hp hp-about">
+        <Logo variant="lockup" className="hp-about__logo" label="Saaradhi Go" />
+        <div>
+          <h1 className="hp-h1">{p.title}</h1>
+          <p className="hp-lead">{p.lead}</p>
+          {where && <p>{where.p}</p>}
+        </div>
+      </section>
 
-
-      <section className="hp hp-section--tight">
-        <Blocks blocks={p.sections} />
-        {p.cta && (
-          <div className="hp-actions">
-            <ButtonLink href="/book" variant="primary" size="lg">
-              {p.cta}
-            </ButtonLink>
-          </div>
-        )}
+      <section className="hp hp-section">
+        <ul className="hp-cards">
+          {promises.map((s) => (
+            <li className="hp-card" key={s.h}>
+              <h2>{s.h}</h2>
+              <p>{s.p}</p>
+            </li>
+          ))}
+        </ul>
       </section>
     </>
   );

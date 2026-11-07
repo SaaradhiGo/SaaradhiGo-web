@@ -1,33 +1,33 @@
 /* Self-hosted webfonts (OFL; licences in public/fonts). Bundled in the repo so
    neither the build nor the visitor fetches from Google (owner, 2026-11-05). */
-/* Anek is the interface family for the public site and the apps (owner,
-   2026-11-05): one design across Latin, Telugu and Devanagari. Weight 500-800,
+/* Noto Sans is the interface family for the public site and the apps (owner,
+   2026-11-06): one design across Latin, Telugu and Devanagari, weight 400-700,
    width fixed at 100. Manrope stays only because the console still uses it;
    a face is fetched only when a page uses it, so the public site never loads
-   Manrope. Cormorant Garamond and Noto Serif are gone. */
+   Manrope. */
 
 @font-face {
-  font-family: 'Anek Latin';
+  font-family: 'Noto Sans';
   font-style: normal;
   font-display: swap;
-  font-weight: 500 800;
-  src: url(/fonts/anek-latin-wght.woff2) format('woff2-variations');
-  unicode-range: U+0000-017F,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20B9,U+2122,U+2190-2193,U+2212,U+2215,U+FEFF,U+FFFD;
+  font-weight: 400 700;
+  src: url(/fonts/noto-sans-wght.woff2) format('woff2-variations');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+20B9,U+2122,U+2190-2193,U+2212,U+2215,U+2713,U+FEFF,U+FFFD;
 }
 @font-face {
-  font-family: 'Anek Telugu';
+  font-family: 'Noto Sans Telugu';
   font-style: normal;
   font-display: swap;
-  font-weight: 500 800;
-  src: url(/fonts/anek-telugu-wght.woff2) format('woff2-variations');
-  unicode-range: U+0951-0952,U+0964-0965,U+0C00-0C7F,U+200C-200D,U+25CC;
+  font-weight: 400 700;
+  src: url(/fonts/noto-sans-telugu-wght.woff2) format('woff2-variations');
+  unicode-range: U+0964-0965,U+0C00-0C7F,U+200C-200D,U+25CC;
 }
 @font-face {
-  font-family: 'Anek Devanagari';
+  font-family: 'Noto Sans Devanagari';
   font-style: normal;
   font-display: swap;
-  font-weight: 500 800;
-  src: url(/fonts/anek-devanagari-wght.woff2) format('woff2-variations');
+  font-weight: 400 700;
+  src: url(/fonts/noto-sans-devanagari-wght.woff2) format('woff2-variations');
   unicode-range: U+0900-097F,U+1CD0-1CF9,U+200C-200D,U+20A8,U+20B9,U+25CC,U+A830-A839,U+A8E0-A8FF;
 }
 @font-face {

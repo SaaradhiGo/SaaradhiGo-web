@@ -41,7 +41,7 @@
        as a type class (Manrope 11/16, 700, .12em tracking) and a form label
        cannot also be that.
 
-   TYPE        Anek (Latin, Telugu, Devanagari) for everything; Cinzel 600
+   TYPE        Noto Sans (Latin, Telugu, Devanagari) for everything; Cinzel 600
                only for "Saaradhi Go" beside the badge. The console keeps
                Manrope. Nothing else.
    CONTROLS    48px minimum touch target on mobile. Every control shows a
@@ -117,7 +117,12 @@ body {
 .btn-primary {
   @apply inline-flex items-center justify-center gap-2 min-h-[48px] bg-gold-500 text-on-gold font-bold
          rounded-sg-md px-5 py-2.5 transition-colors duration-press
-         hover:bg-gold-300 disabled:opacity-45 disabled:cursor-not-allowed;
+         hover:bg-gold-300 disabled:cursor-not-allowed;
+}
+/* Disabled, not faded: a faded gold button fell under 3:1 against the page
+   and its label went unreadable. A visible edge and muted, legible text. */
+.btn-primary:disabled {
+  @apply bg-bg-300 text-ink-muted border border-line-strong hover:bg-bg-300;
 }
 
 .btn-secondary {
@@ -150,11 +155,11 @@ body {
 }
 
 .help {
-  @apply mt-1.5 text-xs text-ink-muted;
+  @apply mt-1.5 text-sm text-ink-muted;
 }
 
 .field-error {
-  @apply mt-1.5 text-xs text-danger;
+  @apply mt-1.5 text-sm text-danger;
 }
 
 /* --- status blocks -------------------------------------------------------

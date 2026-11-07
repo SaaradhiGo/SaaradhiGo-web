@@ -118,3 +118,13 @@ jobs:
       # the output must contain no trace of it.
       - name: No preview code in the production bundle
         run: npm run check-no-preview
+
+      # The rendered layout gate (owner, 2026-11-06): header logo at load,
+      # content pages fit 1440x900 and 1366x768, "See fares" and "Create
+      # account" above the fold, no sideways scroll, no text under 13px, no
+      # weight over 700, no Anek, no padding over 48px. Chrome is on the runner.
+      - name: Layout gate
+        run: |
+          npx next start -p 3100 &
+          npx --yes wait-on@8.0.1 -t 60000 http://localhost:3100/
+          SITE=http://localhost:3100 npm run check-layout

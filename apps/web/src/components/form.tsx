@@ -15,11 +15,14 @@ export function Field({
   label,
   error,
   help,
+  className,
   ...props
 }: {
   label: string;
   error?: string | null;
   help?: string;
+  /** For the field's wrapper, e.g. a grid column; the input keeps `.input`. */
+  className?: string;
 } & React.InputHTMLAttributes<HTMLInputElement>) {
   const id = useId();
   const errorId = `${id}-error`;
@@ -29,7 +32,7 @@ export function Field({
     .join(' ');
 
   return (
-    <div>
+    <div className={className}>
       <label htmlFor={id} className="form-label">
         {label}
       </label>
@@ -123,15 +126,14 @@ export function AuthShell({
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
-  // `sg-page` carries the design system's gutters: the public layout imposes
-  // no container of its own, because the homepage hero and the booking
-  // workspace are full-bleed maps.
+  // A 640px card (owner, 2026-11-06): the whole sign-up form and its button
+  // fit 1366x768 without scrolling, two columns of fields from 640px up.
   return (
-    <div className="sg-page max-w-md">
-      <h1 className="display-lg">{title}</h1>
-      {intro && <p className="sg-lead mt-sg-2">{intro}</p>}
-      <div className="card mt-sg-5 space-y-sg-4">{children}</div>
-      {footer && <div className="mt-sg-5 space-y-sg-2 caption text-ink-muted">{footer}</div>}
+    <div className="hp auth-page">
+      <h1 className="auth-title">{title}</h1>
+      {intro && <p className="sg-lead">{intro}</p>}
+      <div className="auth-card">{children}</div>
+      {footer && <div className="auth-foot caption">{footer}</div>}
     </div>
   );
 }
