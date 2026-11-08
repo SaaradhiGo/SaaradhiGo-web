@@ -193,8 +193,10 @@ for (const [role, pages] of process.env.STATES_ONLY === '1' ? [] : [['rider', RI
       if (role === 'rider' && m.anyBadge) fail(`${at}: a rider page shows driver chrome`);
       if (w === 1440 && lang === 'en' && DATED.includes(p)) {
         const rows = p === '/driver/payouts' ? m.payoutRows : m.rows;
-        if (!rows.length) fail(`${at}: no rows to check for dates`);
-        for (const r of rows) {
+        // An empty period ("No trips in this period.", "No payouts yet") is a state, not a row.
+        const dated = rows.filter((r) => !/^\s*No (trips|payouts)\b/.test(r));
+        if (!dated.length && !QA) fail(`${at}: no rows to check for dates`);
+        for (const r of dated) {
           const hasDate = /(Today|Yesterday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)/.test(r);
           const hasTime = /\d{1,2}:\d{2}/.test(r);
           if (!hasDate || !hasTime) fail(`${at}: a row without a date and time: "${r.replace(/\s+/g, ' ').slice(0, 60)}"`);
@@ -288,10 +290,20 @@ async function stateContext(role, how, failing = null) {
   return [ctx, fail500];
 }
 
-/** Waits up to ten seconds from navigation for no skeleton and no placeholder; returns the page text. */
-async function settledText(page) {
-  await page.waitForFunction((re) => !document.querySelector('.askel') && !new RegExp(re).test(document.body.innerText),
-    PLACEHOLDER.source, { timeout: STATE_WAIT, polling: 250 }).catch(() => {});
+/**
+ * Waits up to ten seconds from navigation for the expected content with no
+ * skeleton and no placeholder (before hydration there is neither, so the
+ * content itself is the signal); returns the page text.
+ */
+async function settledText(page, want) {
+  // Polled from here: QA's CSP forbids the page-side eval waitForFunction uses.
+  const end = Date.now() + STATE_WAIT;
+  for (;;) {
+    const ok = await page.evaluate(([re, w]) => !document.querySelector('.askel') && !new RegExp(re).test(document.body.innerText)
+      && new RegExp(w).test(document.body.innerText), [PLACEHOLDER.source, want.source]).catch(() => false);
+    if (ok || Date.now() > end) break;
+    await page.waitForTimeout(250);
+  }
   return page.locator('body').innerText().catch(() => '');
 }
 
@@ -309,7 +321,7 @@ for (const role of ['driver', 'rider']) {
     const page = await ctx.newPage();
     const t0 = Date.now();
     await page.goto(SITE + p, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
-    const text = await settledText(page);
+    const text = await settledText(page, want);
     const ms = Date.now() - t0;
     const stuck = (await page.locator('.askel').count()) > 0 || PLACEHOLDER.test(text);
     const ok = !stuck && want.test(text) && new URL(page.url()).pathname === p;

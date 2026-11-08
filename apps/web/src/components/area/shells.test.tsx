@@ -3,7 +3,7 @@
  * badge); no rider page shows either (owner, 2026-11-08). The area layouts
  * are the only way a page reaches the screen, so the frames are checked.
  */
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
@@ -15,6 +15,14 @@ import { RiderShell } from './RiderShell';
 vi.mock('./useArea', () => ({
   useArea: () => ({ roles: [], both: false, signOut: vi.fn(), switchTo: vi.fn() }),
   areaPath: (p: string | null) => (p ?? '/').replace(/^\/rider\//, '/'),
+}));
+
+// The pages' data calls would still be in flight at teardown; answer them at once.
+vi.mock('@/lib/area/api', () => ({
+  areaToken: async () => null,
+  areaGet: async () => ({}),
+  areaPost: async () => ({}),
+  endAreaSession: async () => {},
 }));
 
 vi.mock('next/navigation', () => ({
@@ -29,17 +37,23 @@ const pages = (dir: string): string[] => readdirSync(dir).flatMap((f) => {
 const APP = path.resolve(__dirname, '../../app');
 
 describe('area frames', () => {
-  it('the driver frame has the sidebar and the DRIVER badge', () => {
-    const { container } = render(<LocaleProvider><DriverShell><p>x</p></DriverShell></LocaleProvider>);
+  // Each render's mount effects update state; flush them and unmount inside
+  // the test, or React's scheduler can run after the environment is gone.
+  it('the driver frame has the sidebar and the DRIVER badge', async () => {
+    const { container, unmount } = render(<LocaleProvider><DriverShell><p>x</p></DriverShell></LocaleProvider>);
+    await act(async () => {});
     expect(container.querySelector('aside.dr-side')).not.toBeNull();
     expect(container.querySelector('.dr-badge')?.textContent).toBe('DRIVER');
+    unmount();
   });
 
-  it('the rider frame has neither', () => {
-    const { container } = render(<LocaleProvider><RiderShell><p>x</p></RiderShell></LocaleProvider>);
+  it('the rider frame has neither', async () => {
+    const { container, unmount } = render(<LocaleProvider><RiderShell><p>x</p></RiderShell></LocaleProvider>);
+    await act(async () => {});
     expect(container.querySelector('.dr-side')).toBeNull();
     expect(container.querySelector('.dr-badge')).toBeNull();
     expect(container.textContent).not.toContain('DRIVER');
+    unmount();
   });
 
   it('every driver page sits under the driver layout, every rider page under the rider one', () => {
