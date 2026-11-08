@@ -23,7 +23,8 @@ const NAV = [
 export function DriverShell({ children }: { children: React.ReactNode }) {
   const tr = useTr();
   const path = usePathname() ?? '/driver';
-  const { both, switchTo, signOut } = useArea();
+  // Sign-out lives on the profile page, as in the design.
+  const { both, switchTo } = useArea();
 
   return (
     <div className="ar dr" data-area="driver">
@@ -55,7 +56,6 @@ export function DriverShell({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
           {both && <button type="button" onClick={() => switchTo('rider')}>{tr('Switch to rider')}</button>}
-          <button type="button" onClick={signOut}>{tr('Log out')}</button>
         </div>
       </aside>
       <div className="dr-body">{children}</div>
