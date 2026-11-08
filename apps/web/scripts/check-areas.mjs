@@ -194,7 +194,7 @@ for (const [role, pages] of process.env.STATES_ONLY === '1' ? [] : [['rider', RI
       if (w === 1440 && lang === 'en' && DATED.includes(p)) {
         const rows = p === '/driver/payouts' ? m.payoutRows : m.rows;
         // An empty period ("No trips in this period.", "No payouts yet") is a state, not a row.
-        const dated = rows.filter((r) => !/^\s*No (trips|payouts)/.test(r));
+        const dated = rows.filter((r) => !/^\s*No (trips|payouts)\b/.test(r));
         if (!dated.length && !QA) fail(`${at}: no rows to check for dates`);
         for (const r of dated) {
           const hasDate = /(Today|Yesterday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)/.test(r);
