@@ -8,6 +8,7 @@ import PhoneField, { usePhoneMarkets } from '@/components/PhoneField';
 import { useTr } from '@/i18n/website';
 import { nationalLooksValid, toE164 } from '@/lib/markets';
 import { safeReturnTo } from '@/lib/returnTo';
+import { areaToken } from '@/lib/area/api';
 import {
   PublicRole,
   isUnverified,
@@ -18,6 +19,8 @@ import {
   qaTestPhones,
   sendPublicOtp,
   signInWithEmail,
+  establishServerSession,
+  readRiderToken,
   verifyPublicOtp,
 } from '@/lib/publicAuth';
 
@@ -78,7 +81,16 @@ export default function SignInForm({ role }: { role: PublicRole }) {
   // feature exists.
   const canSendCode = phoneAllowedForOtp(phone);
 
-  function done() {
+  // Still signed in from before a deploy (the role cookie's key changes with
+  // each build): hand the token over again and carry on, no form needed.
+  useEffect(() => {
+    const token = readRiderToken();
+    if (!token) return;
+    areaToken().then((t) => (t ? establishServerSession(t) : null)).then((s) => { if (s) done(s.role); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function done(area: PublicRole | null) {
     // BACK TO WHATEVER THEY WERE DOING. A rider who pressed "See ride
     // options", was asked to sign in and then landed on the homepage with an
     // empty form has been made to do the work twice. `next` carries the
@@ -91,9 +103,11 @@ export default function SignInForm({ role }: { role: PublicRole }) {
     // shown "Apply to drive" and a rider's header, with nothing of their own
     // anywhere. `/driver/home` is their account: approval state, vehicles,
     // earnings and recent trips.
-    router.replace(
-      safeReturnTo(search.get('next'), role === 'driver' ? '/driver/home' : '/'),
-    );
+    // Since 2026-11-08 each role has its own area, chosen by the role the
+    // server reports, whichever entrance was used.
+    const home = (area ?? role) === 'driver' ? '/driver' : '/ride';
+    router.replace(safeReturnTo(search.get('next'), home));
+    router.refresh();
   }
 
   async function submitEmail(e: React.FormEvent) {
@@ -112,8 +126,8 @@ export default function SignInForm({ role }: { role: PublicRole }) {
 
     setBusy(true);
     try {
-      await signInWithEmail(email, password, role);
-      done();
+      const s = await signInWithEmail(email, password, role);
+      done(s.area);
     } catch (err) {
       if (isUnverified(err)) {
         setUnverified(true);
@@ -148,8 +162,8 @@ export default function SignInForm({ role }: { role: PublicRole }) {
     setError(null);
     setBusy(true);
     try {
-      await verifyPublicOtp(phone, otp, role);
-      done();
+      const s = await verifyPublicOtp(phone, otp, role);
+      done(s.area);
     } catch (err) {
       setError(messageFor(err, 'That code did not work.'));
     } finally {

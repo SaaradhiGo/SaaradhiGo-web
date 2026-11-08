@@ -3,20 +3,24 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { SearchIcon } from '@/components/sg/SiteIcons';
-import { useSite } from '@/i18n/site';
+import { SITE, useSite } from '@/i18n/site';
 
 /**
  * /help (approved design, 2026-11-07; Help.html): a search that filters the
  * questions as you type, four topics, the top questions in two columns, and
  * a way to reach a person. Answers are only what the product does today.
  */
-export function HelpContent() {
+export function HelpContent({ topic }: { topic?: 'driving' } = {}) {
   const h = useSite().help;
+  const en = SITE.en.help;
   const [q, setQ] = useState('');
   const needle = q.trim().toLowerCase();
+  // The driver area's Support opens on the Driving topic (owner, 2026-11-08):
+  // the questions whose English mentions driving or the driver.
+  const inTopic = h.faqs.filter((_, i) => !topic || /driv/i.test(`${en.faqs[i].q} ${en.faqs[i].a}`));
   const faqs = needle
-    ? h.faqs.filter((f) => `${f.q} ${f.a}`.toLowerCase().includes(needle))
-    : h.faqs;
+    ? inTopic.filter((f) => `${f.q} ${f.a}`.toLowerCase().includes(needle))
+    : inTopic;
 
   return (
     <section className="s-wrap s-page s-cb">

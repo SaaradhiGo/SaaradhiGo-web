@@ -215,11 +215,11 @@ export default function AccountPage() {
           {role === 'driver' ? 'Driving' : 'Riding'}
         </h2>
         {role === 'driver' ? (
-          <ButtonLink href="/driver/home" variant="secondary">
+          <ButtonLink href="/driver" variant="secondary">
             Driver home
           </ButtonLink>
         ) : (
-          <ButtonLink href="/my-trips" variant="secondary">
+          <ButtonLink href="/trips" variant="secondary">
             Your trips and receipts
           </ButtonLink>
         )}

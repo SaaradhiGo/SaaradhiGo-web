@@ -1722,7 +1722,7 @@ function BookPageInner() {
             >
               Done
             </Button>
-            <ButtonLink href="/my-trips" variant="secondary" block>
+            <ButtonLink href="/trips" variant="secondary" block>
               See your trips
             </ButtonLink>
           </GlassPanel>

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button, ButtonLink } from '@/components/sg/Button';
-import { clearRiderTokens } from '@/lib/publicAuth';
+import { clearRiderTokens, establishServerSession, readRiderToken, sessionRoles } from '@/lib/publicAuth';
 import { useSession } from '@/lib/useSession';
 import { useT } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
@@ -108,6 +108,15 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
     };
   }, [open]);
 
+  // A browser signed in before the server knew roles (2026-11-08) has a
+  // token but no role cookie: hand it over once, so the areas open.
+  useEffect(() => {
+    if (session.status !== 'in') return;
+    const token = readRiderToken();
+    if (!token) return;
+    sessionRoles().then((s) => { if (!s) establishServerSession(token); });
+  }, [session.status]);
+
   // Rendered as a spacer until the session is known, because localStorage is
   // not readable during server rendering and flashing "Sign in" at someone
   // who is already signed in is the same wrong message, just briefly.
@@ -142,12 +151,12 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
   return (
     <>
       {role === 'driver' && (
-        <ButtonLink href="/driver/home" variant="ghost" size="sm">
+        <ButtonLink href="/driver" variant="ghost" size="sm">
           Driver
         </ButtonLink>
       )}
       {role === 'rider' && (
-        <ButtonLink href="/my-trips" variant="ghost" size="sm">
+        <ButtonLink href="/trips" variant="ghost" size="sm">
           My trips
         </ButtonLink>
       )}
@@ -201,11 +210,11 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
                   Profile and details
                 </Link>
                 {role === 'driver' ? (
-                  <Link href="/driver/home" role="menuitem" onClick={() => setOpen(false)}>
+                  <Link href="/driver" role="menuitem" onClick={() => setOpen(false)}>
                     Driver home
                   </Link>
                 ) : (
-                  <Link href="/my-trips" role="menuitem" onClick={() => setOpen(false)}>
+                  <Link href="/trips" role="menuitem" onClick={() => setOpen(false)}>
                     My trips
                   </Link>
                 )}

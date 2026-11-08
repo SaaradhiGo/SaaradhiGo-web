@@ -170,6 +170,11 @@ export function writeRiderTokens(
 }
 
 export function clearRiderTokens() {
+  // The server's copy of the role goes too, or the middleware would keep
+  // routing this browser into an area it can no longer load data for.
+  if (typeof fetch === 'function' && typeof window !== 'undefined') {
+    fetch('/api/session', { method: 'DELETE', keepalive: true }).catch(() => {});
+  }
   try {
     window.localStorage.removeItem(RIDER_TOKEN_KEY);
     window.localStorage.removeItem(RIDER_REFRESH_KEY);
@@ -248,7 +253,41 @@ function storeSession(data: LoginResp) {
 }
 
 /**
- * Refuse a session whose role is not the one this entrance is for.
+ * Give the server the signed role cookie it routes by (owner, 2026-11-08).
+ * Resolves with the area to open; null where the server could not set it.
+ */
+export async function establishServerSession(token: string, role?: PublicRole) {
+  const res = await fetch('/api/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, role }),
+  }).catch(() => null);
+  if (!res?.ok) return null;
+  return (await res.json()) as { role: PublicRole; roles: PublicRole[] };
+}
+
+/** Switch area on an account that is both a rider and a driver. */
+export async function switchRole(role: PublicRole) {
+  const res = await fetch('/api/session', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role }),
+  }).catch(() => null);
+  return Boolean(res?.ok);
+}
+
+/** The roles the signed-in account holds, from the server's cookie. */
+export async function sessionRoles(): Promise<{ role: PublicRole; roles: PublicRole[] } | null> {
+  const res = await fetch('/api/session', { cache: 'no-store' }).catch(() => null);
+  if (!res?.ok) return null;
+  return res.json();
+}
+
+/**
+ * Refuse an operator account at the rider and driver entrances.
+ *
+ * Riders and drivers are no longer turned away at each other's door: either
+ * sign-in opens the account's own area (owner, 2026-11-08).
  *
  * A driver signing in through the rider entrance used to be accepted and
  * landed on the rider home, where every driver action is missing; a rider
@@ -261,7 +300,7 @@ function storeSession(data: LoginResp) {
  */
 function requireRole(data: LoginResp, expected: PublicRole) {
   const actual = data?.user?.role;
-  if (actual && actual !== expected) {
+  if (actual && actual !== 'rider' && actual !== 'driver' && actual !== expected) {
     clearRiderTokens();
     // Name the door they should have used, rather than the role they are.
     // "That is a staff account" told an operator what they already knew and
@@ -287,7 +326,9 @@ export async function signInWithEmail(
     password,
   });
   const session = storeSession(data);
-  return expectedRole ? requireRole(session, expectedRole) : session;
+  if (expectedRole) requireRole(session, expectedRole);
+  const area = await establishServerSession(session.token as string, expectedRole);
+  return { ...session, area: area?.role ?? null };
 }
 
 /**
@@ -337,7 +378,9 @@ export async function verifyPublicOtp(
     otp: otp.trim(),
   });
   const session = storeSession(data);
-  return expectedRole ? requireRole(session, expectedRole) : session;
+  if (expectedRole) requireRole(session, expectedRole);
+  const area = await establishServerSession(session.token as string, expectedRole);
+  return { ...session, area: area?.role ?? null };
 }
 
 // ---------------------------------------------------------------------------
