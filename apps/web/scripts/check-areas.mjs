@@ -21,6 +21,7 @@ import { PNG } from 'pngjs';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { webcrypto } from 'node:crypto';
+import { pathToFileURL } from 'node:url';
 import { SAMPLE, fixture } from './fixtures/areas.mjs';
 
 const SITE = process.env.SITE || 'http://localhost:3100';
@@ -45,7 +46,8 @@ const LANG_WIDTHS = [[360, 740], [1440, 900]];
 
 const RIDER = [
   ['/ride', 'rider-web-home'],
-  ['/ride/choose?from=17.4504,78.3810&to=17.2403,78.4294&tl=International%20Airport', 'rider-web-choose'],
+  [QA ? '/ride/choose?from=17.4504,78.3810&to=17.4344,78.3866&tl=Inorbit%20Mall%2C%20Madhapur'
+    : '/ride/choose?from=17.4504,78.3810&to=17.2403,78.4294&tl=International%20Airport', 'rider-web-choose'],
   ['/ride/trip/201', 'rider-web-trip'],
   ['/trips', 'rider-web-trips'],
   ['/trips/101', 'rider-web-receipt'],
@@ -98,7 +100,7 @@ async function context(browser, role, width, height, lang = 'en') {
   await ctx.addCookies([{ name: 'sg-language', value: lang, url: SITE }]);
   await ctx.addInitScript((l) => { try { localStorage.setItem('sg-theme', 'light'); localStorage.setItem('sg-language', l); } catch {} }, lang);
   if (QA) {
-    const { signIn } = await import(path.resolve(process.env.LOGIN_MJS || 'scripts/login.mjs'));
+    const { signIn } = await import(pathToFileURL(path.resolve(process.env.LOGIN_MJS || 'scripts/qa-login.mjs')).href);
     const r = await signIn(ctx, SITE, role === 'driver' ? 'DRIVER' : 'RIDER');
     if (r.status !== 200) fail(`QA sign-in as ${role} failed (${r.status})`);
     return ctx;
@@ -191,7 +193,13 @@ for (const [role, pages] of [['rider', RIDER], ['driver', DRIVER]]) {
           if (!hasDate || !hasTime) fail(`${at}: a row without a date and time: "${r.replace(/\s+/g, ' ').slice(0, 60)}"`);
         }
       }
-      if (QA) for (const s of SAMPLE) if (m.text.includes(s)) fail(`${at}: design sample "${s}" visible on QA`);
+      // A sample phrase inside a longer real name ("Rajiv Gandhi International
+      // Airport") is a real place, not the design's example.
+      const shows = (s) => m.text.split('\n').some((line) => {
+        const i = line.indexOf(s);
+        return i >= 0 && !/\p{L}\s*$/u.test(line.slice(0, i));
+      });
+      if (QA) for (const s of SAMPLE) if (shows(s)) fail(`${at}: design sample "${s}" visible on QA`);
       if (w === 1440 && SHOTS) {
         mkdirSync(SHOTS, { recursive: true });
         await page.screenshot({ path: path.join(SHOTS, `${name}${lang === 'en' ? '' : `-${lang}`}.png`) });
