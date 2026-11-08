@@ -23,10 +23,11 @@
 .a16 { font-size: var(--text-body); line-height: var(--leading-body); }
 .a14 { font-size: var(--text-small); line-height: var(--leading-small); }
 .ab { font-weight: 600; }
-.amut { color: var(--c-text-2); }
-.aacc { color: var(--c-accent); }
-.agrn { color: var(--c-green); }
-.ared { color: var(--c-red); }
+/* Doubled with .ar so they win over `.ar a { color: inherit }`. */
+.amut, .ar .amut { color: var(--c-text-2); }
+.aacc, .ar .aacc { color: var(--c-accent); }
+.agrn, .ar .agrn { color: var(--c-green); }
+.ared, .ar .ared { color: var(--c-red); }
 .albl {
   font-size: var(--text-small); line-height: var(--leading-small); font-weight: 600;
   letter-spacing: 0.04em; text-transform: uppercase; color: var(--c-text-2);
