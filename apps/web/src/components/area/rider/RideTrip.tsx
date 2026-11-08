@@ -64,7 +64,7 @@ export function RideTrip({ id }: { id: string }) {
     if (d.status) setState(d.status);
     if (d.otp !== null && d.otp !== undefined && `${d.otp}` !== '') setCode(`${d.otp}`);
     if (d.driver_name) {
-      tripDriver(id).then((x) => setRating(x.driver_rating != null ? `${x.driver_rating}` : null)).catch(() => {});
+      tripDriver(id).then((x) => setRating(x.driver_rating != null && Number(x.driver_rating) > 0 ? Number(x.driver_rating).toFixed(1) : null)).catch(() => {});
     }
   }, [id]);
 
