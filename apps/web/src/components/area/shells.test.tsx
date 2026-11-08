@@ -11,6 +11,12 @@ import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { DriverShell } from './DriverShell';
 import { RiderShell } from './RiderShell';
 
+// The frames' account hook signs out and fetches on mount; not under test here.
+vi.mock('./useArea', () => ({
+  useArea: () => ({ roles: [], both: false, signOut: vi.fn(), switchTo: vi.fn() }),
+  areaPath: (p: string | null) => (p ?? '/').replace(/^\/rider\//, '/'),
+}));
+
 vi.mock('next/navigation', () => ({
   usePathname: () => '/driver',
   useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }),
