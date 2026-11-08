@@ -232,6 +232,8 @@ S.update({
     "Showing {a} of {n}": ("{n}లో {a} చూపిస్తున్నాం", "{n} में से {a} दिखा रहे हैं", "Mostrando {a} de {n}"),
     "Show all": ("అన్నీ చూపించు", "सभी दिखाएँ", "Mostrar todo"),
     "Period": ("వ్యవధి", "अवधि", "Periodo"),
+    "Home": ("ఇల్లు", "घर", "Casa"),
+    "Work": ("ఆఫీసు", "ऑफ़िस", "Trabajo"),
 })
 
 if __name__ == '__main__':

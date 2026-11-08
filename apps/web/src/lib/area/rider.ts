@@ -8,7 +8,11 @@ import { rideBlurbKey, vehicleClassLabel } from '@/lib/vehicles';
  * The rider area's data: every value on its screens comes from these calls.
  * Nothing is filled in when the server does not answer.
  */
-export type SavedPlace = { id: number; address_text: string; latitude: string | number; longitude: string | number };
+export type SavedPlace = {
+  id: number; address_text: string; latitude: string | number; longitude: string | number;
+  /** What the rider calls it: home, work or other (null for older places). */
+  label?: 'home' | 'work' | 'other' | null;
+};
 
 export type Trip = {
   id: number;
@@ -58,8 +62,12 @@ export async function savedPlaces(): Promise<SavedPlace[]> {
   return list(await areaGet<Page<SavedPlace>>('/rider/locations/all/'));
 }
 
-export async function addPlace(p: { address_text: string; latitude: number; longitude: number }) {
-  return areaPost<SavedPlace>('/rider/locations/', p);
+/** Coordinates go as strings: the endpoint trims them as text and refuses numbers. */
+export async function addPlace(p: { address_text: string; latitude: number; longitude: number; label?: 'home' | 'work' | 'other' }) {
+  const r = await areaPost<{ location?: SavedPlace } & SavedPlace>('/rider/locations/', {
+    ...p, latitude: p.latitude.toFixed(7), longitude: p.longitude.toFixed(7),
+  });
+  return r.location ?? r;
 }
 
 export async function removePlace(id: number) {

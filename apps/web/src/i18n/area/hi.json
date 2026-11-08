@@ -214,5 +214,7 @@
   "No trips in this period.": "इस अवधि में कोई यात्रा नहीं।",
   "Showing {a} of {n}": "{n} में से {a} दिखा रहे हैं",
   "Show all": "सभी दिखाएँ",
-  "Period": "अवधि"
+  "Period": "अवधि",
+  "Home": "घर",
+  "Work": "ऑफ़िस"
 }
