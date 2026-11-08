@@ -44,6 +44,7 @@ export type Trip = {
   otp?: string | number | null;
   ratings?: { score?: number; rater_id?: number }[] | null;
   planned_route_polyline?: string | null;
+  fare_breakdown?: { total_fare?: string | null } | null;
 };
 
 export type Profile = {
@@ -121,9 +122,17 @@ export function lockedFare(t: Trip): string | null {
   return t.estimated_fare ?? null;
 }
 
-/** What the rider paid: the server's payable, else the final fare. */
+/**
+ * What the rider paid: the payable after a promo, else the final fare. A
+ * completed trip whose fare did not change keeps `final_fare` empty (the
+ * quoted fare is the charged fare, ruling D6), so its own fare total, then
+ * its locked fare, is what was paid. Nothing for a trip not completed.
+ */
 export function paidFare(t: Trip): string | null {
-  return t.rider_payable ?? t.final_fare ?? null;
+  if (t.rider_payable) return t.rider_payable;
+  if (t.final_fare) return t.final_fare;
+  if (t.status !== 'completed') return null;
+  return t.fare_breakdown?.total_fare ?? t.estimated_fare ?? null;
 }
 
 const CLASS_NAMES = { auto: 'Auto', mini: 'Mini', sedan: 'Sedan', suv: 'SUV' } as const;
