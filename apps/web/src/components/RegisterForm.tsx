@@ -89,7 +89,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
   const smsToAnyone = otpSendingEnabled();
   const testPhones = qaTestPhones();
 
-  const home = role === 'driver' ? '/driver/home' : '/';
+  const home = role === 'driver' ? '/driver' : '/ride';
   const next = safeReturnTo(search.get('next'), home);
 
   const [tab, setTab] = useState<Tab>('email');

@@ -8,6 +8,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import en from './website/en.json';
 import { SITE } from './site';
+import { AREA_KEYS } from './strings';
 import { WEBSITE, translate } from './website';
 
 /** Shown on the public pages, not in the translation files: stays English. */
@@ -58,7 +59,15 @@ function literals(): string[] {
 describe('website translations', () => {
   it('has the same English keys in every file', () => {
     for (const l of ['te', 'hi', 'es'] as const) {
-      expect(Object.keys(WEBSITE[l]).sort()).toEqual([...enKeys].sort());
+      expect(Object.keys(WEBSITE[l]).sort()).toEqual([...new Set([...enKeys, ...AREA_KEYS])].sort());
+    }
+  });
+
+  it('keeps the signed-in drafts complete and marked for review', () => {
+    for (const l of ['te', 'hi', 'es']) {
+      const file = JSON.parse(readFileSync(path.resolve(__dirname, `area/${l}.json`), 'utf8'));
+      expect(file._review).toMatch(/needs native review/);
+      expect(Object.keys(file).filter((k) => k !== '_review').sort()).toEqual([...AREA_KEYS].sort());
     }
   });
 

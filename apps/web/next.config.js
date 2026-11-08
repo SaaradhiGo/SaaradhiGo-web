@@ -49,6 +49,12 @@ const nextConfig = {
   },
 
   env: {
+    // The role cookie's signing key when the deployment sets no
+    // WEB_SESSION_SECRET: fresh per build, read only by server code
+    // (src/lib/session/cookie.ts, `server-only`).
+    SG_BUILD_SESSION_KEY: process.env.WEB_SESSION_SECRET
+      ? ''
+      : require('node:crypto').randomBytes(48).toString('base64url'),
     NEXT_PUBLIC_API_BASE_URL:
       process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1',
   },

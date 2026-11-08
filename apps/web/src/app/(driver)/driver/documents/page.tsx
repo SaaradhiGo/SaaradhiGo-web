@@ -467,7 +467,7 @@ export default function DriverDocumentsPage() {
       <p className="caption text-ink-subtle">
         Documents are stored privately and are visible only to the operator
         reviewing your account.{' '}
-        <ButtonLink href="/driver/home" variant="ghost" size="sm">
+        <ButtonLink href="/driver" variant="ghost" size="sm">
           Back to driver home
         </ButtonLink>
       </p>

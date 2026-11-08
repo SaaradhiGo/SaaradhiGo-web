@@ -12,6 +12,7 @@
 @import '../styles/type.css';
 /* The approved design of 2026-11-07: tokens and the public pages. */
 @import '../styles/site.css';
+@import '../styles/area.css';
 
 @tailwind base;
 @tailwind components;

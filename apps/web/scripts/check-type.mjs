@@ -17,7 +17,7 @@ const walk = (dir) => readdirSync(dir).flatMap((f) => {
 const consoleFile = (f) => /[\\/](console|\(console\))[\\/]|console\.css$|[\\/]login[\\/]/.test(f);
 
 const failures = [];
-const STYLES = ['src/styles/site.css', 'src/styles/type.css', 'src/styles/home.css', 'src/styles/saaradhigo.css', 'src/styles/tokens.css', 'src/app/globals.css'];
+const STYLES = ['src/styles/site.css', 'src/styles/area.css', 'src/styles/type.css', 'src/styles/home.css', 'src/styles/saaradhigo.css', 'src/styles/tokens.css', 'src/app/globals.css'];
 for (const f of STYLES) {
   readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
     const m = line.match(/font-size:\s*([^;}]+)/);

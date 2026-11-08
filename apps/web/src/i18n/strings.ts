@@ -6,6 +6,11 @@ import type { Language } from './locales';
 import te from './website/te.json';
 import hi from './website/hi.json';
 import es from './website/es.json';
+// Draft strings for the signed-in areas (2026-11-08), each file marked
+// "needs native review". The delivered website files win on any overlap.
+import areaTe from './area/te.json';
+import areaHi from './area/hi.json';
+import areaEs from './area/es.json';
 
 /**
  * The website's translations (design/i18n, 2026-11-07), keyed by the exact
@@ -35,11 +40,20 @@ const OVERRIDES: Record<Exclude<Language, 'en'>, Dict> = {
   },
 };
 
+/** A draft file without its review marker. */
+function drafts(file: Dict): Dict {
+  const { _review: _, ...strings } = file;
+  return strings;
+}
+
+/** The English of every draft string (the same keys in each draft file). */
+export const AREA_KEYS = Object.keys(drafts(areaTe));
+
 export const WEBSITE: Record<Language, Dict> = {
   en: {},
-  te: { ...te, ...OVERRIDES.te },
-  hi: { ...hi, ...OVERRIDES.hi },
-  es: { ...es, ...OVERRIDES.es },
+  te: { ...drafts(areaTe), ...te, ...OVERRIDES.te },
+  hi: { ...drafts(areaHi), ...hi, ...OVERRIDES.hi },
+  es: { ...drafts(areaEs), ...es, ...OVERRIDES.es },
 };
 
 /**

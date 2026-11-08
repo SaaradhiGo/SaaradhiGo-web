@@ -405,6 +405,19 @@
   --c-photo-text: #6B5320;
   --c-shadow: rgba(27, 26, 23, 0.12);
   --c-fade: 250, 247, 242;
+  /* The signed-in areas (design/signed-in-2026-11-08). */
+  --c-warn-bg: #FCEFD3;
+  --c-warn-border: #F0D9A8;
+  --c-warn-ink: #7A4A00;
+  --c-area: #F5F2EC;        /* the driver area behind its cards */
+  --c-side: #0B0B0B;        /* the driver sidebar, in both themes */
+  --c-side-card: #1B1A17;
+  --c-side-line: #2E2C28;
+  --c-side-text: #F3EEE6;
+  --c-side-text-2: #D8D2C6;
+  --c-side-text-3: #A8A29A;
+  --c-side-active: rgba(245, 166, 35, 0.14);
+  --c-dot: #8A857C;
 }
 [data-theme="dark"] {
   --c-page: #0B0B0B;
@@ -434,4 +447,8 @@
   --c-photo-text: #E4B24C;
   --c-shadow: rgba(0, 0, 0, 0.5);
   --c-fade: 11, 11, 11;
+  --c-warn-bg: #2A2214;
+  --c-warn-border: #6B5320;
+  --c-warn-ink: #F5C451;
+  --c-area: #0B0B0B;
 }
