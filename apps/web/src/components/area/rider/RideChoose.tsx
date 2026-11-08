@@ -74,6 +74,9 @@ export function RideChoose() {
 
   const chosen = options?.find((o) => o.type === picked) ?? null;
   const chosenFare = chosen?.quote ? money(chosen.quote.estimated_fare, chosen.quote.currency, locale) : null;
+  // How long the quote holds, as the server issued it; nothing when it says nothing.
+  const exp = chosen?.quote?.quote_expires_at ? Date.parse(chosen.quote.quote_expires_at) : NaN;
+  const holdMin = Number.isFinite(exp) && exp > Date.now() ? Math.max(1, Math.round((exp - Date.now()) / 60000)) : null;
 
   function book() {
     if (!from || !to || !chosen?.quote) return;
@@ -84,6 +87,13 @@ export function RideChoose() {
       if ((e.type === 'trip_created' || e.type === 'current_trip') && id) {
         s.close();
         router.replace(`/ride/trip/${id}`);
+      } else if (e.type === 'error' && e.code === 'QUOTE_EXPIRED' && e.fresh_quote) {
+        // Nothing was booked: show the new fare and let the rider book again.
+        s.close();
+        const fresh = e.fresh_quote as FareQuote;
+        setOptions((all) => all?.map((o) => (o.type === chosen.type ? { ...o, quote: fresh } : o)) ?? all);
+        setBusy(false);
+        setError(tr('The fare changed. Book again at the new fare.'));
       } else if (e.type === 'dispatch_failed' || e.type === 'error') {
         setBusy(false);
         setError((e.message as string) || tr('The server refused the request.'));
@@ -102,6 +112,8 @@ export function RideChoose() {
         duration_min: route ? Math.max(1, Math.round(route.durationSeconds / 60)) : 1,
         vehicle_type: chosen.type,
         payment_method: 'cash',
+        // Books at exactly the quoted fare while the quote holds.
+        ...(chosen.quote?.quote_id ? { quote_id: chosen.quote.quote_id } : {}),
       });
       if (sent) window.clearInterval(tick);
       else if (Date.now() - started > 15000) {
@@ -148,6 +160,7 @@ export function RideChoose() {
         </div>
         <div className="arow a14 agrn" style={{ gap: 8, padding: '10px 12px', borderRadius: 12, background: 'var(--c-green-bg)' }}>
           <ILock size={16} />{tr('The fare you book is the fare you pay.')}
+          {holdMin !== null && <> {tr('Held for {n} minutes.').replace('{n}', `${holdMin}`)}</>}
         </div>
         {error && <p className="a14 ared" role="alert">{error}</p>}
         <button type="button" className="abtn abtn--pri abtn--block" style={{ marginTop: 'auto' }}

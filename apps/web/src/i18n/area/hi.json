@@ -216,5 +216,7 @@
   "Show all": "सभी दिखाएँ",
   "Period": "अवधि",
   "Home": "घर",
+  "Held for {n} minutes.": "{n} मिनट के लिए तय।",
+  "The fare changed. Book again at the new fare.": "किराया बदल गया। नए किराए पर फिर से बुक करें।",
   "Work": "ऑफ़िस"
 }

@@ -71,7 +71,8 @@ export function fixture(method, path, body) {
         vehicle_types: ['auto', 'mini', 'sedan', 'suv'].map((type) => ({ type, description: type })) };
     case p === '/ride/estimate-fare/': {
       const fares = { auto: '78', mini: '118', sedan: '152', suv: '210' };
-      return { estimated_fare: fares[body?.vehicle_type] ?? '118', currency: 'INR' };
+      return { estimated_fare: fares[body?.vehicle_type] ?? '118', currency: 'INR',
+        quote_id: `test-${body?.vehicle_type}`, quote_expires_at: new Date(Date.now() + 300_000).toISOString() };
     }
     case p === '/ride/maps/directions':
       return { routes: [] };

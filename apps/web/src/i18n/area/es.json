@@ -216,5 +216,7 @@
   "Show all": "Mostrar todo",
   "Period": "Periodo",
   "Home": "Casa",
+  "Held for {n} minutes.": "Se mantiene {n} minutos.",
+  "The fare changed. Book again at the new fare.": "La tarifa cambió. Reserva de nuevo con la nueva tarifa.",
   "Work": "Trabajo"
 }

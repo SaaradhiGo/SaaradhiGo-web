@@ -233,6 +233,8 @@ S.update({
     "Show all": ("అన్నీ చూపించు", "सभी दिखाएँ", "Mostrar todo"),
     "Period": ("వ్యవధి", "अवधि", "Periodo"),
     "Home": ("ఇల్లు", "घर", "Casa"),
+    "Held for {n} minutes.": ("{n} నిమిషాలు నిలిపి ఉంచుతాం.", "{n} मिनट के लिए तय।", "Se mantiene {n} minutos."),
+    "The fare changed. Book again at the new fare.": ("ఛార్జీ మారింది. కొత్త ఛార్జీతో మళ్లీ బుక్ చేయండి.", "किराया बदल गया। नए किराए पर फिर से बुक करें।", "La tarifa cambió. Reserva de nuevo con la nueva tarifa."),
     "Work": ("ఆఫీసు", "ऑफ़िस", "Trabajo"),
 })
 
