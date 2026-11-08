@@ -82,12 +82,12 @@ export function DriverProfile() {
             </Link>
             {both && (
               <button type="button" className="arow" onClick={() => switchTo('rider')}
-                style={{ width: '100%', padding: '12px 0', borderTop: '1px solid var(--c-border)', border: 0, borderTopStyle: 'solid', background: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', textAlign: 'left' }}>
+                style={{ width: '100%', padding: '12px 0', border: 'none', borderTop: '1px solid var(--c-border)', background: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', textAlign: 'left' }}>
                 <span className="ab agrow">{tr('Switch to rider')}</span><IChevron />
               </button>
             )}
             <button type="button" className="arow" onClick={signOut}
-              style={{ width: '100%', padding: '12px 0', borderTop: '1px solid var(--c-border)', border: 0, borderTopStyle: 'solid', background: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', textAlign: 'left' }}>
+              style={{ width: '100%', padding: '12px 0', border: 'none', borderTop: '1px solid var(--c-border)', background: 'none', font: 'inherit', color: 'inherit', cursor: 'pointer', textAlign: 'left' }}>
               <span className="ab agrow">{tr('Sign out')}</span><IChevron />
             </button>
           </section>

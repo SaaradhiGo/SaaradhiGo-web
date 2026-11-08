@@ -53,6 +53,9 @@ export type FareQuote = {
   currency?: string | null;
   distance_unit?: string | null;
   fare_breakdown?: Record<string, unknown>;
+  /** The quote to book at: the fare holds until it expires (servers/ride/quotes.py). */
+  quote_id?: string | null;
+  quote_expires_at?: string | null;
   /** Minutes until the nearest driver of this class, or null when unknown. */
   pickup_eta_min?: number | null;
   drivers_nearby?: boolean;

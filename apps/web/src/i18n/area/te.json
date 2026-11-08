@@ -216,5 +216,7 @@
   "Show all": "అన్నీ చూపించు",
   "Period": "వ్యవధి",
   "Home": "ఇల్లు",
+  "Held for {n} minutes.": "{n} నిమిషాలు నిలిపి ఉంచుతాం.",
+  "The fare changed. Book again at the new fare.": "ఛార్జీ మారింది. కొత్త ఛార్జీతో మళ్లీ బుక్ చేయండి.",
   "Work": "ఆఫీసు"
 }

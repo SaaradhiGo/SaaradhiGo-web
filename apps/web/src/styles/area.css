@@ -133,7 +133,8 @@
   padding: 28px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;
 }
 .ar-map { flex: 1; position: relative; background: var(--c-map); min-width: 0; }
-.ar-map > * { position: absolute; inset: 0; }
+/* The map surface sets its own position, so it is sized explicitly. */
+.ar-map > * { position: absolute; inset: 0; width: 100%; height: 100%; }
 
 /* ---- Driver area: black sidebar, header, content. */
 .dr { display: flex; min-height: 100vh; background: var(--c-area); }
