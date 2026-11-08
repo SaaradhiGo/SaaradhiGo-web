@@ -130,7 +130,7 @@
 .ar-split { display: flex; height: calc(100vh - 72px); min-height: 640px; }
 .ar-panel {
   width: 460px; flex-shrink: 0; background: var(--c-surface); border-right: 1px solid var(--c-border);
-  padding: 28px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto;
+  padding: 28px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto;
 }
 .ar-map { flex: 1; position: relative; background: var(--c-map); min-width: 0; }
 .ar-map > * { position: absolute; inset: 0; }
@@ -177,6 +177,10 @@
 .dr-main { padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; }
 .dr-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .dr-grid2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; }
+.dr-grid2 > *, .dr-grid3 > * { min-width: 0; }
+.dr-grid2--earn { grid-template-columns: 1.2fr 1fr; }
+.dr-grid2--pay { grid-template-columns: 1fr 1.4fr; align-items: start; }
+.dr-grid2--receipt { grid-template-columns: 1.3fr 1fr; }
 .dr-stat { padding: 20px; }
 .dr-stat .a40 { margin-top: 8px; }
 .dr-stat .a14 { margin-top: 12px; color: var(--c-text-2); }
@@ -209,7 +213,7 @@
   .dr-me { display: none; }
   .dr-head { padding: 0 16px; height: auto; min-height: 72px; flex-wrap: wrap; padding-block: 12px; }
   .dr-main { padding: 20px 16px; }
-  .dr-grid3, .dr-grid2 { grid-template-columns: 1fr; }
+  .dr-grid3, .dr-grid2, .dr-grid2--earn, .dr-grid2--pay, .dr-grid2--receipt { grid-template-columns: 1fr; }
   .ar-split { flex-direction: column-reverse; height: auto; }
   .ar-panel { width: 100%; border-right: 0; padding: 20px 16px; }
   .ar-map { min-height: 320px; }
@@ -220,9 +224,22 @@
   .ar-top .abrand { display: none; }
   .ar-nav { margin-left: 0; }
   .ar-nav a { padding: 0 10px; }
-  .ar-tools .achip span { display: none; }
+  .ar-tools > a.achip { display: none; }
   .dr-chart__bar { width: 20px; }
   .atable th:nth-child(n+4), .atable td:nth-child(n+4) { display: none; }
   .atable th, .atable td { padding: 12px; }
   .anote { flex-wrap: wrap; }
+  /* Seven amounts do not fit a phone: the chart scrolls inside its card. */
+  .dr-chart { overflow-x: auto; padding-bottom: 4px; }
+  .dr-chart > div { min-width: 56px; }
+  .abtn { white-space: normal; height: auto; min-height: 48px; text-align: center; }
+  .dr-head .abtn { flex: 1 1 auto; }
+}
+@media (max-width: 400px) {
+  .ar-top { gap: 4px; padding: 0 8px; }
+  .ar-logo { width: 40px; height: 40px; }
+  .ar-nav { gap: 0; }
+  .ar-nav a { padding: 0 8px; }
+  .ar-tools { gap: 4px; }
+  .ar-tools .achip { display: none; }
 }

@@ -42,7 +42,7 @@ export function DriverPayouts() {
     <>
       <DriverTop title={tr('Payouts')} me={me} />
       <main className="dr-main">
-        <div className="dr-grid2" style={{ gridTemplateColumns: '1fr 1.4fr', alignItems: 'start' }}>
+        <div className="dr-grid2 dr-grid2--pay">
           <section className="acard acard--ink dr-stat">
             <div className="albl">{tr('Ready to withdraw')}</div>
             <div className="a40">{bal ? money(bal.available_balance, bal.currency, locale) ?? '—' : '…'}</div>

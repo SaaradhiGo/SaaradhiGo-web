@@ -72,7 +72,7 @@ export function RiderReceipt({ id }: { id: string }) {
   return (
     <div className="ar-page" style={{ maxWidth: 1000 }}>
       <Link href="/trips" className="arow a14 ab amut" style={{ gap: 6, textDecoration: 'none' }}><IBack size={16} />{tr('Your trips')}</Link>
-      <div className="dr-grid2" style={{ gridTemplateColumns: '1.3fr 1fr' }}>
+      <div className="dr-grid2 dr-grid2--receipt">
         <div className="acard" style={{ padding: 24 }}>
           <div className="arow" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap' }}>
             <div>

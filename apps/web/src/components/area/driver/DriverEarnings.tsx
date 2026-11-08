@@ -50,7 +50,7 @@ export function DriverEarnings() {
       <DriverTop title={tr('Earnings')} me={me} />
       <main className="dr-main">
         <PeriodChips value={p} onChange={setP} />
-        <div className="dr-grid2" style={{ gridTemplateColumns: '1.2fr 1fr' }}>
+        <div className="dr-grid2 dr-grid2--earn">
           <section className="acard" style={{ padding: 20 }} data-testid="earnings-lines">
             <h2 className="a20">{tr(head[p])}</h2>
             <div className="a14 amut">{tr('Every line comes from your trip ledger.')}</div>

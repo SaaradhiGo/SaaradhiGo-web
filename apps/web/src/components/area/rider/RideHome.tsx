@@ -55,6 +55,7 @@ export function RideHome() {
   const [recent, setRecent] = useState<Spot[]>([]);
   const [note, setNote] = useState<string | null>(null);
   const timer = useRef<number | null>(null);
+  const whereTo = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!navigator.geolocation) { setLocating(false); return; }
@@ -140,6 +141,7 @@ export function RideHome() {
             <input
               value={query}
               onChange={(e) => { setQuery(e.target.value); if (drop && e.target.value !== drop.label) setDrop(null); }}
+              ref={whereTo}
               placeholder={tr('Where to?')}
               aria-label={tr('Where to?')}
             />
@@ -188,8 +190,10 @@ export function RideHome() {
             </div>
           </div>
         )}
-        <button type="button" className="abtn abtn--pri abtn--block" style={{ marginTop: 'auto' }} disabled={!go}
-          onClick={() => go && router.push(go)}>
+        {/* Always the primary action, as designed: without a destination it
+            takes the rider to the field that needs one. */}
+        <button type="button" className="abtn abtn--pri abtn--block" style={{ marginTop: 'auto' }}
+          onClick={() => (go ? router.push(go) : whereTo.current?.focus())}>
           {tr('See fares')}
         </button>
       </aside>

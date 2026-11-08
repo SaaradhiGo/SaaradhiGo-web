@@ -61,6 +61,10 @@ jobs:
     defaults:
       run:
         working-directory: apps/web
+    # Signs the role cookie in this job's build and servers, so the areas gate
+    # can open the rider and driver pages. A test value, not a secret.
+    env:
+      WEB_SESSION_SECRET: ci-area-gate-session-key-not-a-secret-value
 
     steps:
       - uses: actions/checkout@v4
@@ -137,4 +141,19 @@ jobs:
         with:
           name: layout-diff
           path: apps/web/layout-diff/
+          if-no-files-found: ignore
+
+      # The signed-in areas (design/signed-in-2026-11-08, AUDIT 29): role
+      # frames, sideways scroll at 360-1440, type scale, a date and time on
+      # every trip and payout row, no design sample data in src/ or the
+      # bundles, and <=3% pixels off each screen (values masked; the API is
+      # answered from scripts/fixtures/areas.mjs). Uses the server above.
+      - name: Signed-in areas gate
+        run: SITE=http://localhost:3100 DIFFS=areas-diff npm run check-areas
+      - name: Upload area diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: areas-diff
+          path: apps/web/areas-diff/
           if-no-files-found: ignore

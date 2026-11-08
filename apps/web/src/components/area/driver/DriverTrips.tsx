@@ -19,7 +19,7 @@ function localDate(iso: string, timeZone: string): string {
   }
 }
 
-/** First part of an address, for "Central Mall → Home". */
+/** First part of an address, for "Pickup → Drop". */
 const short = (a: string | null | undefined) => (a ?? '').split(',')[0].trim();
 
 /**
