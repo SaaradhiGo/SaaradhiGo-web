@@ -38,6 +38,10 @@ const ALLOW = {
 const SIZES = new Set([14, 16, 20, 22, 28, 32, 40]);
 const PHONE_ONLY = new Set([22, 32]);
 const WIDTHS = [[360, 740], [390, 844], [768, 1024], [1024, 768], [1440, 900]];
+// English everywhere; the other languages at the phone and desktop extremes,
+// where longer strings break a layout first (no visual diff: the reference is English).
+const LANGS = (process.env.AREA_LANGS || 'en,te,hi,es').split(',');
+const LANG_WIDTHS = [[360, 740], [1440, 900]];
 
 const RIDER = [
   ['/ride', 'rider-web-home'],
@@ -86,12 +90,13 @@ async function signed(session) {
 }
 const fakeJwt = () => `${b64(enc.encode('{"alg":"none"}'))}.${b64(enc.encode(JSON.stringify({ exp: 4102444800, user_id: 7 })))}.x`;
 
-async function context(browser, role, width, height) {
+async function context(browser, role, width, height, lang = 'en') {
   const ctx = await browser.newContext({
     viewport: { width, height }, locale: 'en-IN', timezoneId: 'Asia/Kolkata',
     geolocation: { latitude: 17.4504, longitude: 78.381 }, permissions: ['geolocation'],
   });
-  await ctx.addInitScript(() => { try { localStorage.setItem('sg-theme', 'light'); } catch {} });
+  await ctx.addCookies([{ name: 'sg-language', value: lang, url: SITE }]);
+  await ctx.addInitScript((l) => { try { localStorage.setItem('sg-theme', 'light'); localStorage.setItem('sg-language', l); } catch {} }, lang);
   if (QA) {
     const { signIn } = await import(path.resolve(process.env.LOGIN_MJS || 'scripts/login.mjs'));
     const r = await signIn(ctx, SITE, role === 'driver' ? 'DRIVER' : 'RIDER');
@@ -164,20 +169,20 @@ const MASK = '.ar-map, .ar-logo, .dr-brand img, .a40, .a20, .a28 + p, .dr-chart,
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : { channel: 'chrome' });
 for (const [role, pages] of [['rider', RIDER], ['driver', DRIVER]]) {
   for (const [p, name] of pages) {
-    for (const [w, h] of WIDTHS) {
-      const ctx = await context(browser, role, w, h);
+    for (const [lang, w, h] of LANGS.flatMap((l) => (l === 'en' ? WIDTHS : LANG_WIDTHS).map(([w, h]) => [l, w, h]))) {
+      const ctx = await context(browser, role, w, h, lang);
       const page = await ctx.newPage();
       await page.goto(SITE + p, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => {});
       await page.waitForTimeout(800);
       await page.evaluate(() => document.fonts.ready);
-      const at = `${p} (${role}) at ${w}x${h}`;
+      const at = `${p} (${role}${lang === 'en' ? '' : `, ${lang}`}) at ${w}x${h}`;
       const m = await measure(page);
       if (new URL(page.url()).pathname !== p.split('?')[0]) fail(`${at}: landed on ${new URL(page.url()).pathname}`);
       if (m.sideways) fail(`${at}: scrolls sideways`);
       if (m.type.length) fail(`${at}: type off the scale: ${m.type.join('; ')}`);
       if (role === 'driver' && (!m.badge || (w >= 1024 && !m.side))) fail(`${at}: no driver sidebar or DRIVER badge`);
       if (role === 'rider' && m.anyBadge) fail(`${at}: a rider page shows driver chrome`);
-      if (w === 1440 && DATED.includes(p)) {
+      if (w === 1440 && lang === 'en' && DATED.includes(p)) {
         const rows = p === '/driver/payouts' ? m.payoutRows : m.rows;
         if (!rows.length) fail(`${at}: no rows to check for dates`);
         for (const r of rows) {
@@ -189,9 +194,9 @@ for (const [role, pages] of [['rider', RIDER], ['driver', DRIVER]]) {
       if (QA) for (const s of SAMPLE) if (m.text.includes(s)) fail(`${at}: design sample "${s}" visible on QA`);
       if (w === 1440 && SHOTS) {
         mkdirSync(SHOTS, { recursive: true });
-        await page.screenshot({ path: path.join(SHOTS, `${name}.png`) });
+        await page.screenshot({ path: path.join(SHOTS, `${name}${lang === 'en' ? '' : `-${lang}`}.png`) });
       }
-      if (w === 1440 && !QA) {
+      if (w === 1440 && lang === 'en' && !QA) {
         const ref = path.join(REF, `${name}.png`);
         const shot = await page.screenshot();
         const boxes = await page.evaluate((sel) => [...document.querySelectorAll(sel)].map((e) => {
