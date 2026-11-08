@@ -39,7 +39,7 @@ describe('area frames', () => {
   it('every driver page sits under the driver layout, every rider page under the rider one', () => {
     const driver = pages(path.join(APP, '(driver)', 'driver'));
     const rider = pages(path.join(APP, '(rider)', 'rider'));
-    expect(driver.length).toBeGreaterThanOrEqual(3);
+    expect(driver.length).toBeGreaterThanOrEqual(8);
     expect(rider.length).toBeGreaterThanOrEqual(6);
     expect(readFileSync(path.join(APP, '(driver)', 'driver', 'layout.tsx'), 'utf8')).toContain('<DriverShell>');
     expect(readFileSync(path.join(APP, '(rider)', 'rider', 'layout.tsx'), 'utf8')).toContain('<RiderShell>');
