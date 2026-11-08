@@ -178,7 +178,7 @@ export function RideHome() {
                 const [name, rest] = split(s.label);
                 return (
                   <button key={s.label} type="button" className="arow" onClick={() => choose(s)}
-                    style={{ width: '100%', padding: '12px 0', borderBottom: '1px solid var(--c-border)', background: 'transparent', border: 0, borderBottomStyle: 'solid', font: 'inherit', color: 'inherit', textAlign: 'left', cursor: 'pointer' }}>
+                    style={{ width: '100%', padding: '12px 0', background: 'transparent', border: 'none', borderBottom: '1px solid var(--c-border)', font: 'inherit', color: 'inherit', textAlign: 'left', cursor: 'pointer' }}>
                     <span className="aico"><IClock /></span>
                     <span className="agrow">
                       <span className="ab" style={{ display: 'block' }}>{name}</span>
