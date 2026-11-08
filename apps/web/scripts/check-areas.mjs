@@ -288,10 +288,20 @@ async function stateContext(role, how, failing = null) {
   return [ctx, fail500];
 }
 
-/** Waits up to ten seconds from navigation for no skeleton and no placeholder; returns the page text. */
-async function settledText(page) {
-  await page.waitForFunction((re) => !document.querySelector('.askel') && !new RegExp(re).test(document.body.innerText),
-    PLACEHOLDER.source, { timeout: STATE_WAIT, polling: 250 }).catch(() => {});
+/**
+ * Waits up to ten seconds from navigation for the expected content with no
+ * skeleton and no placeholder (before hydration there is neither, so the
+ * content itself is the signal); returns the page text.
+ */
+async function settledText(page, want) {
+  // Polled from here: QA's CSP forbids the page-side eval waitForFunction uses.
+  const end = Date.now() + STATE_WAIT;
+  for (;;) {
+    const ok = await page.evaluate(([re, w]) => !document.querySelector('.askel') && !new RegExp(re).test(document.body.innerText)
+      && new RegExp(w).test(document.body.innerText), [PLACEHOLDER.source, want.source]).catch(() => false);
+    if (ok || Date.now() > end) break;
+    await page.waitForTimeout(250);
+  }
   return page.locator('body').innerText().catch(() => '');
 }
 
@@ -309,7 +319,7 @@ for (const role of ['driver', 'rider']) {
     const page = await ctx.newPage();
     const t0 = Date.now();
     await page.goto(SITE + p, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
-    const text = await settledText(page);
+    const text = await settledText(page, want);
     const ms = Date.now() - t0;
     const stuck = (await page.locator('.askel').count()) > 0 || PLACEHOLDER.test(text);
     const ok = !stuck && want.test(text) && new URL(page.url()).pathname === p;
