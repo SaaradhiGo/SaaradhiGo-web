@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import { localized } from '@/i18n/server';
 import { PublicShell } from '@/components/sg/PublicShell';
 
 // The public site and the ops console share one Next app and nothing else.
@@ -13,13 +13,13 @@ import { PublicShell } from '@/components/sg/PublicShell';
 // system's 64px gutters and 96px section rhythm. An earlier version centred
 // everything in 1024px, which on a 1440px desktop left a third of the screen
 // empty and made a booking product feel like a blog.
-export const metadata: Metadata = {
+export const generateMetadata = localized({
   title: 'SaaradhiGo — book a ride',
   description:
     'SaaradhiGo is a ride-hailing service. See the fare before you book, '
     + 'pay the way that suits you, and get a receipt for every ride. Create '
     + 'a rider account, or apply to drive.',
-};
+});
 
 export default function PublicLayout({
   children,

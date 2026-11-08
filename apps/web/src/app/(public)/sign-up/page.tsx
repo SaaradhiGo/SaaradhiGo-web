@@ -1,14 +1,14 @@
 import { Suspense } from 'react';
-import type { Metadata } from 'next';
+import { localized } from '@/i18n/server';
 import { KeepNextLink } from '@/components/KeepNextLink';
 import { AuthShell } from '@/components/form';
 import RegisterForm from '@/components/RegisterForm';
 import { Tr } from '@/i18n/website';
 
-export const metadata: Metadata = {
+export const generateMetadata = localized({
   title: 'Sign up — SaaradhiGo',
   description: 'Create your SaaradhiGo rider account with an email address and a password.',
-};
+});
 
 // WRAPPED IN SUSPENSE BECAUSE THE FORM READS `next`.
 //

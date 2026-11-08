@@ -1,13 +1,13 @@
 import { Suspense } from 'react';
-import type { Metadata } from 'next';
+import { localized } from '@/i18n/server';
 import { KeepNextLink } from '@/components/KeepNextLink';
 import { AuthShell } from '@/components/form';
 import SignInForm from '@/components/SignInForm';
 
-export const metadata: Metadata = {
+export const generateMetadata = localized({
   title: 'Driver sign in — SaaradhiGo',
   description: 'Sign in to your SaaradhiGo driver account.',
-};
+});
 
 // WRAPPED IN SUSPENSE BECAUSE THE FORM READS `next`.
 //

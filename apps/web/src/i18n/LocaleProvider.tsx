@@ -24,6 +24,8 @@ import {
 import { MESSAGES, type Messages } from './messages';
 
 const LANGUAGE_KEY = 'sg-language';
+/** Same name as the storage key; the server reads it (src/i18n/server.ts). */
+const LANGUAGE_COOKIE = 'sg-language';
 const MARKET_KEY = 'sg-market';
 /** What builds before the language/market split wrote, e.g. "te-IN". */
 const LEGACY_LOCALE_KEY = 'sg-locale';
@@ -65,19 +67,31 @@ const LocaleContext = createContext<Ctx | null>(null);
  * independent, each with its own storage key and its own setter, so a
  * Spanish speaker in India reads Spanish copy with Indian formatting.
  *
- * THE SERVER RENDERS THE DEFAULT, THE CLIENT CORRECTS IT. Preferences live
- * in `localStorage`, which no server render can see, so the first paint is
- * the deployment default and an effect switches it. `ready` lets a control
- * that would otherwise flash the wrong value wait one tick; the page copy
- * does not bother, because showing English for one frame is better than
- * showing nothing.
+ * THE SERVER RENDERS THE LANGUAGE. A choice is kept in localStorage and in
+ * a year-long `sg-language` cookie; the server reads the cookie and passes
+ * it in as `initialLanguage`, so the first HTML is already in the visitor's
+ * language and nothing switches after load. Without the cookie the page is
+ * English (owner, 2026-11-07): the browser's languages no longer pick one,
+ * because the server cannot see them and the page would flash. A choice
+ * stored before the cookie existed is honoured once and copied into it.
  *
  * A MANUAL CHOICE IS NEVER SILENTLY RESET. Once someone picks a language it
  * is stored and wins over every other signal, including the browser's, on
  * every later visit.
  */
-export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
+function writeLanguageCookie(language: Language) {
+  document.cookie = `${LANGUAGE_COOKIE}=${language}; path=/; max-age=31536000; samesite=lax`;
+}
+
+export function LocaleProvider({
+  children,
+  initialLanguage = DEFAULT_LANGUAGE,
+}: {
+  children: React.ReactNode;
+  /** What the server rendered in, from the `sg-language` cookie. */
+  initialLanguage?: Language;
+}) {
+  const [language, setLanguageState] = useState<Language>(initialLanguage);
   const [market, setMarketState] = useState<Market>(DEPLOYMENT_MARKET);
   const [ready, setReady] = useState(false);
 
@@ -93,12 +107,14 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       // Private browsing refuses storage. The defaults below still apply.
     }
 
-    // A visitor who chose Telugu before the storage format changed keeps
-    // Telugu. Migrating beats resetting them to English for our convenience.
-    const language = resolveLanguage({
-      savedLanguage: savedLanguage ?? languageFromStored(legacy),
-      browserLanguages: typeof navigator === 'undefined' ? [] : navigator.languages ?? [],
-    });
+    // With the cookie, the server already rendered the right language. A
+    // visitor who chose Telugu before the cookie (or before the storage
+    // format changed) keeps Telugu, and gets the cookie for next time.
+    const hasCookie = document.cookie.split('; ').some((c) => c.startsWith(`${LANGUAGE_COOKIE}=`));
+    const language = hasCookie
+      ? initialLanguage
+      : resolveLanguage({ savedLanguage: savedLanguage ?? languageFromStored(legacy) });
+    if (!hasCookie && language !== DEFAULT_LANGUAGE) writeLanguageCookie(language);
     const market = resolveMarket({
       savedMarket: savedMarket ?? marketFromStored(legacy),
       deploymentMarket: DEPLOYMENT_MARKET,
@@ -107,7 +123,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     setLanguageState(language);
     setMarketState(market);
     setReady(true);
-  }, []);
+  }, [initialLanguage]);
 
   // `<html lang>` has to follow the choice, for screen readers and for
   // anything that hyphenates or speaks the page.
@@ -124,6 +140,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* preference is not remembered; the session still works */
     }
+    writeLanguageCookie(next);
   }, []);
 
   const setMarket = useCallback((next: Market) => {

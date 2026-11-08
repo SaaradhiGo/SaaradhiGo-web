@@ -1,13 +1,13 @@
 import { Suspense } from 'react';
-import type { Metadata } from 'next';
+import { localized } from '@/i18n/server';
 import Link from 'next/link';
 import { AuthShell } from '@/components/form';
 import RegisterForm from '@/components/RegisterForm';
 
-export const metadata: Metadata = {
+export const generateMetadata = localized({
   title: 'Drive with SaaradhiGo — apply',
   description: 'Create your SaaradhiGo driver account and start the onboarding checks.',
-};
+});
 
 // WRAPPED IN SUSPENSE BECAUSE THE FORM READS `next`.
 //

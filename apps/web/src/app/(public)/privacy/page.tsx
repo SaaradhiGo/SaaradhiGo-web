@@ -1,13 +1,13 @@
-import type { Metadata } from 'next';
+import { localized } from '@/i18n/server';
 import { SUPPORT_EMAIL } from '@/lib/support';
 
-export const metadata: Metadata = {
+export const generateMetadata = localized({
   title: 'Privacy policy — SaaradhiGo',
   description:
     'What personal data SaaradhiGo collects, why, how long it is kept, and '
     + 'the rights you have over it.',
   alternates: { canonical: '/privacy' },
-};
+});
 
 // DRAFT, AND SAID SO ON THE PAGE.
 //

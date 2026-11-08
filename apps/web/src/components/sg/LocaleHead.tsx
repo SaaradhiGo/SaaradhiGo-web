@@ -2,16 +2,14 @@
 
 import { useEffect } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
-import { OG_LOCALE, translate } from '@/i18n/website';
+import { OG_LOCALE, englishOf, translate } from '@/i18n/website';
 import type { Language } from '@/i18n/locales';
 
 /**
  * The page title, description and og:locale in the visitor's language.
  *
- * The language is a stored preference, not a URL, so the server always
- * renders the English title (and og:locale en_IN, with the other three as
- * alternates). This translates them in the browser, and again whenever
- * Next swaps the title on a route change.
+ * The server renders them in the `sg-language` cookie's language. This
+ * keeps them in step when the visitor picks another language on the page.
  */
 const FIELDS = [
   {
@@ -25,13 +23,14 @@ const FIELDS = [
 ];
 // The English each field last carried, and what we last wrote over it, so a
 // language switch translates from the English and not from the last language.
+// A field the server already translated is traced back to its English.
 const english = ['', ''];
 const written = ['', ''];
 
 function sync(language: Language) {
   FIELDS.forEach((f, i) => {
     const now = f.read();
-    if (now !== written[i]) english[i] = now;
+    if (now !== written[i]) english[i] = englishOf(now);
     written[i] = translate(language, english[i]);
     if (now !== written[i]) f.write(written[i]);
   });

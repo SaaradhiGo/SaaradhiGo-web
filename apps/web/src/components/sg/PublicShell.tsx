@@ -3,16 +3,18 @@ import { Footer } from '@/components/sg/Footer';
 import { LocaleHead } from '@/components/sg/LocaleHead';
 import { TranslationNotice } from '@/components/sg/TranslationNotice';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
+import { requestLanguage } from '@/i18n/server';
 import { Tr } from '@/i18n/website';
 
 /**
  * The public page frame: skip link, header, the translation notice, the
  * page, the footer. The `(public)` layout and the 404 page both use it, so a
- * missing page keeps the header and its logo (owner, 2026-11-07).
+ * missing page keeps the header and its logo (owner, 2026-11-07). It renders
+ * in the language of the visitor's `sg-language` cookie.
  */
-export function PublicShell({ children }: { children: React.ReactNode }) {
+export async function PublicShell({ children }: { children: React.ReactNode }) {
   return (
-    <LocaleProvider>
+    <LocaleProvider initialLanguage={await requestLanguage()}>
       <LocaleHead />
       <div className="site min-h-screen flex flex-col">
         {/* First stop for a keyboard user, so they are not forced through the
