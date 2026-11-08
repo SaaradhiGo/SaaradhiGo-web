@@ -193,8 +193,10 @@ for (const [role, pages] of process.env.STATES_ONLY === '1' ? [] : [['rider', RI
       if (role === 'rider' && m.anyBadge) fail(`${at}: a rider page shows driver chrome`);
       if (w === 1440 && lang === 'en' && DATED.includes(p)) {
         const rows = p === '/driver/payouts' ? m.payoutRows : m.rows;
-        if (!rows.length) fail(`${at}: no rows to check for dates`);
-        for (const r of rows) {
+        // An empty period ("No trips in this period.", "No payouts yet") is a state, not a row.
+        const dated = rows.filter((r) => !/^\s*No (trips|payouts)/.test(r));
+        if (!dated.length && !QA) fail(`${at}: no rows to check for dates`);
+        for (const r of dated) {
           const hasDate = /(Today|Yesterday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)/.test(r);
           const hasTime = /\d{1,2}:\d{2}/.test(r);
           if (!hasDate || !hasTime) fail(`${at}: a row without a date and time: "${r.replace(/\s+/g, ' ').slice(0, 60)}"`);

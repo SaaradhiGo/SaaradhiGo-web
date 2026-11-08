@@ -17,6 +17,14 @@ vi.mock('./useArea', () => ({
   areaPath: (p: string | null) => (p ?? '/').replace(/^\/rider\//, '/'),
 }));
 
+// The pages' data calls would still be in flight at teardown; answer them at once.
+vi.mock('@/lib/area/api', () => ({
+  areaToken: async () => null,
+  areaGet: async () => ({}),
+  areaPost: async () => ({}),
+  endAreaSession: async () => {},
+}));
+
 vi.mock('next/navigation', () => ({
   usePathname: () => '/driver',
   useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }),
