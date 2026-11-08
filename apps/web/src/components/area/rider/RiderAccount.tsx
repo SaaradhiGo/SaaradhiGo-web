@@ -135,7 +135,7 @@ export function RiderAccount() {
           </div>
           {places.length === 0 && <p className="a14 amut" style={{ marginTop: 12 }}>{tr('Pick a place on the Ride page and tap Add a place.')}</p>}
           {places.map((p) => (
-            <Row key={p.id} value={p.address_text}>
+            <Row key={p.id} label={p.label === 'home' ? tr('Home') : p.label === 'work' ? tr('Work') : undefined} value={p.address_text}>
               <button type="button" className="aacc ab a14" style={linkBtn}
                 onClick={() => removePlace(p.id).then(() => setPlaces((all) => all.filter((x) => x.id !== p.id))).catch(() => {})}>
                 {tr('Remove')}

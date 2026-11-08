@@ -6,9 +6,9 @@ import MapSurface from '@/components/MapSurface';
 import { useTr } from '@/i18n/website';
 import { type LatLng, type Place, placeToPoint, searchPlaces } from '@/lib/booking';
 import { addPlace, savedPlaces, trips, type SavedPlace, type Trip } from '@/lib/area/rider';
-import { IClock, IHome, IPlus, ITarget } from '../icons';
+import { IBriefcase, IClock, IHome, IPlus, ITarget } from '../icons';
 
-type Spot = { label: string; point: LatLng };
+type Spot = { label: string; point: LatLng; kind?: 'home' | 'work' | 'other' | null };
 
 /** Where a trip of the rider's last few went, newest first, without repeats. */
 function recentDrops(list: Trip[]): Spot[] {
@@ -29,7 +29,7 @@ function recentDrops(list: Trip[]): Spot[] {
 function placeSpot(p: SavedPlace): Spot | null {
   const lat = Number(p.latitude);
   const lng = Number(p.longitude);
-  return Number.isFinite(lat) && Number.isFinite(lng) ? { label: p.address_text, point: { lat, lng } } : null;
+  return Number.isFinite(lat) && Number.isFinite(lng) ? { label: p.address_text, point: { lat, lng }, kind: p.label } : null;
 }
 
 /** The two halves of an address for a row: the place, then the rest. */
@@ -55,6 +55,7 @@ export function RideHome() {
   const [recent, setRecent] = useState<Spot[]>([]);
   const [note, setNote] = useState<string | null>(null);
   const timer = useRef<number | null>(null);
+  const whereTo = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!navigator.geolocation) { setLocating(false); return; }
@@ -115,7 +116,10 @@ export function RideHome() {
     return `/ride/choose?${q}`;
   }, [here, drop]);
 
-  const chips = places.map(placeSpot).filter((s): s is Spot => s !== null);
+  // Home first, then Work, then the rest, as the rider app orders them.
+  const order = { home: 0, work: 1, other: 2 } as const;
+  const chips = places.map(placeSpot).filter((s): s is Spot => s !== null)
+    .sort((a, b) => order[a.kind ?? 'other'] - order[b.kind ?? 'other']);
 
   return (
     <div className="ar-split">
@@ -137,6 +141,7 @@ export function RideHome() {
             <input
               value={query}
               onChange={(e) => { setQuery(e.target.value); if (drop && e.target.value !== drop.label) setDrop(null); }}
+              ref={whereTo}
               placeholder={tr('Where to?')}
               aria-label={tr('Where to?')}
             />
@@ -156,7 +161,8 @@ export function RideHome() {
         <div className="arow" style={{ gap: 8, flexWrap: 'wrap' }}>
           {chips.map((s) => (
             <button key={s.label} type="button" className="achip" onClick={() => choose(s)}>
-              <IHome size={16} />{split(s.label)[0]}
+              {s.kind === 'work' ? <IBriefcase size={16} /> : <IHome size={16} />}
+              {s.kind === 'home' ? tr('Home') : s.kind === 'work' ? tr('Work') : split(s.label)[0]}
             </button>
           ))}
           <button type="button" className="achip" style={{ color: 'var(--c-text-2)' }} onClick={save}>
@@ -184,8 +190,10 @@ export function RideHome() {
             </div>
           </div>
         )}
-        <button type="button" className="abtn abtn--pri abtn--block" style={{ marginTop: 'auto' }} disabled={!go}
-          onClick={() => go && router.push(go)}>
+        {/* Always the primary action, as designed: without a destination it
+            takes the rider to the field that needs one. */}
+        <button type="button" className="abtn abtn--pri abtn--block" style={{ marginTop: 'auto' }}
+          onClick={() => (go ? router.push(go) : whereTo.current?.focus())}>
           {tr('See fares')}
         </button>
       </aside>

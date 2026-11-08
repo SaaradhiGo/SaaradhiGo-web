@@ -12,8 +12,6 @@ export const AREA_FLAGS = {
   autoShare: on(process.env.NEXT_PUBLIC_FLAG_AUTO_SHARE),
   /** Trip updates by SMS: only a global sms_enabled preference exists. */
   tripSms: on(process.env.NEXT_PUBLIC_FLAG_TRIP_SMS),
-  /** Home and Work labels on saved places: places have no label field. */
-  placeLabels: on(process.env.NEXT_PUBLIC_FLAG_PLACE_LABELS),
   /** Minutes until the driver arrives: no ETA field on the trip. */
   pickupEta: on(process.env.NEXT_PUBLIC_FLAG_PICKUP_ETA),
   /** Calling the driver: contacts stay masked (earlier ruling). */
