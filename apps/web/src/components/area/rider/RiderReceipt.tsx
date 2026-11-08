@@ -7,8 +7,10 @@ import { useTr } from '@/i18n/website';
 import { formatPlate } from '@/lib/booking';
 import { clock, dateLabel, money } from '@/lib/area/format';
 import { type Trip, className, lockedFare, paidFare, rateTrip, receiptPdf, trip as loadTrip } from '@/lib/area/rider';
+import { useLoad } from '@/lib/area/useLoad';
 import { readSessionUser } from '@/lib/publicAuth';
 import { IBack, IDownload, IHelp, IUser } from '../icons';
+import { LoadError, Skel } from '../states';
 
 const STAR = 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z';
 
@@ -20,22 +22,20 @@ const STAR = 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1
 export function RiderReceipt({ id }: { id: string }) {
   const tr = useTr();
   const { locale } = useLocale();
-  const [t, setT] = useState<Trip | null>(null);
-  const [failed, setFailed] = useState(false);
+  const load = useLoad(() => loadTrip(id), [id]);
+  const t: Trip | null = load.data;
   const [stars, setStars] = useState(0);
   const [note, setNote] = useState<string | null>(null);
 
   useEffect(() => {
-    loadTrip(id).then((d) => {
-      setT(d);
-      const me = readSessionUser()?.id;
-      const mine = d.ratings?.find((r) => me != null && `${r.rater_id}` === `${me}`);
-      if (mine?.score) setStars(mine.score);
-    }).catch(() => setFailed(true));
-  }, [id]);
+    if (!t) return;
+    const me = readSessionUser()?.id;
+    const mine = t.ratings?.find((r) => me != null && `${r.rater_id}` === `${me}`);
+    if (mine?.score) setStars(mine.score);
+  }, [t]);
 
-  if (failed) return <div className="ar-page"><p className="amut">{tr('We could not load this trip.')}</p></div>;
-  if (!t) return <div className="ar-page"><p className="amut">{tr('Loading…')}</p></div>;
+  if (load.state === 'error') return <div className="ar-page"><LoadError what="receipt" retry={load.retry} /></div>;
+  if (!t) return <div className="ar-page" style={{ maxWidth: 1200 }}><Skel h={28} w={260} /><Skel h={18} lines={6} gap={18} style={{ marginTop: 24 }} /></div>;
 
   const cur = t.currency;
   const locked = lockedFare(t);

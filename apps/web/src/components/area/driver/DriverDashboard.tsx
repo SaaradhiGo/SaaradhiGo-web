@@ -1,15 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import {
-  type Balance, type Day, type Onboarding, type PeriodTotals, type Vehicle,
-  balance as loadBalance, days as loadDays, nextExpiry, onboarding as loadDocs, period, vehicles as loadVehicles,
+  balance as loadBalance, daily, nextExpiry, onboarding as loadDocs, period, vehicles as loadVehicles,
 } from '@/lib/area/driver';
-import { money, rangeLabel } from '@/lib/area/format';
+import { money, rangeLabel, setMarketZone } from '@/lib/area/format';
+import { useLoad } from '@/lib/area/useLoad';
 import { IAlert } from '../icons';
+import { LoadError, Skel } from '../states';
 import { DocList, docRows } from './DriverDocuments';
 import { DriverTop, WeekChart, useDriver } from './parts';
 
@@ -22,26 +22,21 @@ export function DriverDashboard() {
   const tr = useTr();
   const { locale } = useLocale();
   const me = useDriver();
-  const [today, setToday] = useState<PeriodTotals | null>(null);
-  const [week, setWeek] = useState<PeriodTotals | null>(null);
-  const [bal, setBal] = useState<Balance | null>(null);
-  const [seven, setSeven] = useState<Day[] | null>(null);
-  const [docs, setDocs] = useState<Onboarding | null>(null);
-  const [car, setCar] = useState<Vehicle | null>(null);
+  // Each card on its own (8 Nov): one failing leaves the others showing.
+  const today = useLoad(() => period('today'));
+  const week = useLoad(() => period('week'));
+  const bal = useLoad(loadBalance);
+  const seven = useLoad(daily);
+  const docs = useLoad(loadDocs);
+  const car = useLoad(async () => (await loadVehicles())[0] ?? null);
 
-  useEffect(() => {
-    period('today').then(setToday).catch(() => {});
-    period('week').then(setWeek).catch(() => {});
-    loadBalance().then(setBal).catch(() => {});
-    loadDays(7).then(setSeven).catch(() => setSeven([]));
-    loadDocs().then(setDocs).catch(() => {});
-    loadVehicles().then((v) => setCar(v[0] ?? null)).catch(() => {});
-  }, []);
-
-  const cur = today?.currency ?? week?.currency ?? bal?.currency ?? null;
-  const soon = nextExpiry(me, car);
-  const rows = docRows(docs, me, car);
+  const t = today.data; const w = week.data; const b = bal.data;
+  setMarketZone(t?.timezone ?? seven.data?.timezone);
+  const cur = t?.currency ?? w?.currency ?? seven.data?.currency ?? b?.currency ?? null;
+  const soon = nextExpiry(me, car.data);
+  const rows = docRows(docs.data, me, car.data);
   const allOk = rows.length > 0 && rows.every((r) => r.status === 'approved');
+  const days = { ...seven, data: seven.data?.days ?? null };
 
   return (
     <>
@@ -64,17 +59,27 @@ export function DriverDashboard() {
         <div className="dr-grid3">
           <div className="acard acard--ink dr-stat">
             <div className="albl">{tr('Today you earned')}</div>
-            <div className="a40">{today ? money(today.net, today.currency, locale) : '…'}</div>
-            {today && <div className="a14">{tr('{n} trips · after commission').replace('{n}', `${today.trips}`)}</div>}
+            {today.state === 'error' ? <LoadError what="earnings" retry={today.retry} ink /> : t ? (
+              <>
+                <div className="a40">{money(t.net, t.currency, locale)}</div>
+                <div className="a14">{tr('{n} trips · after commission').replace('{n}', `${t.trips}`)}</div>
+              </>
+            ) : <Skel h={40} w={140} />}
           </div>
           <div className="acard dr-stat">
             <div className="albl">{tr('This week')}</div>
-            <div className="a40">{week ? money(week.net, week.currency, locale) : '…'}</div>
-            {week && <div className="a14">{rangeLabel(week.start, week.end, locale)} · {tr('{n} trips').replace('{n}', `${week.trips}`)}</div>}
+            {week.state === 'error' ? <LoadError what="earnings" retry={week.retry} /> : w ? (
+              <>
+                <div className="a40">{money(w.net, w.currency, locale)}</div>
+                <div className="a14">{rangeLabel(w.start, w.end, locale)} · {tr('{n} trips').replace('{n}', `${w.trips}`)}</div>
+              </>
+            ) : <Skel h={40} w={140} />}
           </div>
           <div className="acard dr-stat">
             <div className="albl">{tr('Ready to withdraw')}</div>
-            <div className="a40">{bal ? money(bal.available_balance, bal.currency, locale) ?? '—' : '…'}</div>
+            {bal.state === 'error' ? <LoadError what="balance" retry={bal.retry} /> : b ? (
+              <div className="a40">{money(b.available_balance ?? 0, b.currency ?? cur, locale)}</div>
+            ) : <Skel h={40} w={140} />}
             <div className="a14">{tr('Earned minus cash you collected')}</div>
           </div>
         </div>
@@ -84,14 +89,15 @@ export function DriverDashboard() {
               <h2 className="a20">{tr('Last 7 days')}</h2>
               <Link href="/driver/earnings" className="aacc ab a14">{tr('See earnings')}</Link>
             </div>
-            <WeekChart days={seven} currency={cur} />
+            <WeekChart load={days} currency={cur} />
           </section>
           <section className="acard" style={{ padding: 20 }}>
             <div className="arow" style={{ justifyContent: 'space-between' }}>
               <h2 className="a20">{tr('Documents')}</h2>
               {allOk && <span className="a14 amut">{tr('All approved')}</span>}
             </div>
-            <DocList rows={rows} />
+            {docs.state === 'error' ? <LoadError what="documents" retry={docs.retry} />
+              : docs.data ? <DocList rows={rows} /> : <Skel h={20} lines={4} gap={18} style={{ marginTop: 16 }} />}
           </section>
         </div>
       </main>

@@ -86,6 +86,12 @@
 }
 .anote__icon { color: var(--c-warn-ink); display: flex; }
 .aempty { padding: 24px 0; color: var(--c-text-2); }
+/* Loading and error states (8 Nov): a skeleton in the content's shape, then an error with Try again. */
+.askel { display: block; max-width: 100%; border-radius: 8px; background: var(--c-border); animation: askel 1.2s ease-in-out infinite; }
+.acard--ink .askel { background: rgba(255, 255, 255, 0.16); }
+@keyframes askel { 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .askel { animation: none; } }
+.aerr { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 0; font-weight: 600; }
 .abrand {
   font-family: 'Cinzel', serif; font-weight: 600; font-size: var(--text-title);
   line-height: var(--leading-title); letter-spacing: 0.05em; color: var(--c-gold);

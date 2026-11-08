@@ -77,7 +77,9 @@ type Page<T> = { results?: T[] } | T[];
 const list = <T,>(p: Page<T> | null | undefined): T[] => (Array.isArray(p) ? p : p?.results ?? []);
 
 export const period = (p: Period) => areaGet<PeriodTotals>(`/driver/earnings/period/?period=${p}`);
-export const days = async (n = 7) => (await areaGet<{ days: Day[] }>(`/driver/earnings/daily/?days=${n}`)).days;
+export type Days = { days: Day[]; currency?: string | null; timezone?: string | null };
+export const daily = (n = 7) => areaGet<Days>(`/driver/earnings/daily/?days=${n}`);
+export const days = async (n = 7) => (await daily(n)).days;
 export const balance = () => areaGet<Balance>('/driver/withdrawals/balance/');
 export const withdrawals = async () => list(await areaGet<Page<Withdrawal>>('/driver/withdrawals/history/'));
 /** The latest 50 settled trips, newest first (the endpoint's page limit). */

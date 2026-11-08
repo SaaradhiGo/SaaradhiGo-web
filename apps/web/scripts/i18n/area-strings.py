@@ -155,6 +155,23 @@ S = {
     "We could not save your profile.": ("మీ ప్రొఫైల్‌ను సేవ్ చేయలేకపోయాం.", "आपकी प्रोफ़ाइल सेव नहीं हुई।", "No pudimos guardar tu perfil."),
     "We could not prepare your data. Try again.": ("మీ డేటాను సిద్ధం చేయలేకపోయాం. మళ్లీ ప్రయత్నించండి.", "आपका डेटा तैयार नहीं हो सका। फिर से कोशिश करें।", "No pudimos preparar tus datos. Inténtalo de nuevo."),
     "We could not delete your account. Contact support.": ("మీ ఖాతాను తొలగించలేకపోయాం. సహాయాన్ని సంప్రదించండి.", "आपका खाता नहीं हटा। सहायता से संपर्क करें।", "No pudimos eliminar tu cuenta. Contacta con soporte."),
+    # Loading, empty and error states (8 Nov)
+    "Loading": ("లోడ్ అవుతోంది", "लोड हो रहा है", "Cargando"),
+    "Try again": ("మళ్లీ ప్రయత్నించండి", "फिर से कोशिश करें", "Reintentar"),
+    "We couldn't load your earnings.": ("మీ సంపాదన లోడ్ కాలేదు.", "आपकी कमाई लोड नहीं हो सकी।", "No pudimos cargar tus ganancias."),
+    "We couldn't load your trips.": ("మీ ట్రిప్‌లు లోడ్ కాలేదు.", "आपकी ट्रिप लोड नहीं हो सकीं।", "No pudimos cargar tus viajes."),
+    "We couldn't load your payouts.": ("మీ చెల్లింపులు లోడ్ కాలేదు.", "आपके भुगतान लोड नहीं हो सके।", "No pudimos cargar tus pagos."),
+    "We couldn't load your documents.": ("మీ పత్రాలు లోడ్ కాలేదు.", "आपके दस्तावेज़ लोड नहीं हो सके।", "No pudimos cargar tus documentos."),
+    "We couldn't load your profile.": ("మీ ప్రొఫైల్ లోడ్ కాలేదు.", "आपकी प्रोफ़ाइल लोड नहीं हो सकी।", "No pudimos cargar tu perfil."),
+    "We couldn't load your account.": ("మీ ఖాతా లోడ్ కాలేదు.", "आपका खाता लोड नहीं हो सका।", "No pudimos cargar tu cuenta."),
+    "We couldn't load your saved places.": ("మీ సేవ్ చేసిన స్థలాలు లోడ్ కాలేదు.", "आपकी सेव की गई जगहें लोड नहीं हो सकीं।", "No pudimos cargar tus lugares guardados."),
+    "We couldn't load this receipt.": ("ఈ రసీదు లోడ్ కాలేదు.", "यह रसीद लोड नहीं हो सकी।", "No pudimos cargar este recibo."),
+    "We couldn't load your balance.": ("మీ బ్యాలెన్స్ లోడ్ కాలేదు.", "आपका बैलेंस लोड नहीं हो सका।", "No pudimos cargar tu saldo."),
+    "No trips yet": ("ఇంకా ట్రిప్‌లు లేవు", "अभी कोई ट्रिप नहीं", "Aún no hay viajes"),
+    "Go online in the driver app to get your first ride request.": ("మీ మొదటి రైడ్ అభ్యర్థన కోసం డ్రైవర్ యాప్‌లో ఆన్‌లైన్‌కి వెళ్లండి.", "अपना पहला राइड अनुरोध पाने के लिए ड्राइवर ऐप में ऑनलाइन जाएँ।", "Conéctate en la app de conductor para recibir tu primera solicitud de viaje."),
+    "Book your first ride from the Ride page.": ("రైడ్ పేజీ నుండి మీ మొదటి రైడ్ బుక్ చేయండి.", "राइड पेज से अपनी पहली राइड बुक करें।", "Reserva tu primer viaje desde la página Viajar."),
+    "No documents are needed yet.": ("ఇంకా ఏ పత్రాలూ అవసరం లేదు.", "अभी कोई दस्तावेज़ ज़रूरी नहीं है।", "Todavía no se necesita ningún documento."),
+    "Your session ended. Log in again to continue.": ("మీ సెషన్ ముగిసింది. కొనసాగడానికి మళ్లీ లాగిన్ అవ్వండి.", "आपका सत्र समाप्त हो गया। जारी रखने के लिए फिर से लॉग इन करें।", "Tu sesión terminó. Inicia sesión de nuevo para continuar."),
 }
 
 S.update({

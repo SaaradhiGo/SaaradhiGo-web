@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { listWhen, money } from '@/lib/area/format';
-import { type Trip, className, paidFare, trips as loadTrips } from '@/lib/area/rider';
+import { className, paidFare, trips as loadTrips } from '@/lib/area/rider';
+import { useLoad } from '@/lib/area/useLoad';
 import { IHelp } from '../icons';
+import { LoadError, Skel } from '../states';
 
 type Filter = 'all' | 'completed' | 'cancelled';
 
@@ -19,15 +21,8 @@ export function RiderTrips() {
   const tr = useTr();
   const { locale } = useLocale();
   const [filter, setFilter] = useState<Filter>('all');
-  const [rows, setRows] = useState<Trip[] | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    setRows(null);
-    loadTrips(filter === 'all' ? undefined : filter)
-      .then((r) => { setRows(r); setFailed(false); })
-      .catch(() => { setRows([]); setFailed(true); });
-  }, [filter]);
+  const load = useLoad(() => loadTrips(filter === 'all' ? undefined : filter), [filter]);
+  const rows = load.data;
 
   const words = { today: tr('Today'), yesterday: tr('Yesterday') };
 
@@ -55,9 +50,13 @@ export function RiderTrips() {
             </tr>
           </thead>
           <tbody>
-            {rows === null && <tr><td colSpan={6} className="amut">{tr('Loading your trips…')}</td></tr>}
+            {load.state === 'error' && <tr><td colSpan={6}><LoadError what="trips" retry={load.retry} /></td></tr>}
+            {load.state === 'loading' && [0, 1, 2].map((i) => <tr key={i}><td colSpan={6}><Skel h={18} /></td></tr>)}
             {rows && rows.length === 0 && (
-              <tr><td colSpan={6} className="amut">{failed ? tr('We could not load your trips.') : tr('No trips yet.')}</td></tr>
+              <tr><td colSpan={6}>
+                <div className="ab">{tr('No trips yet')}</div>
+                <div className="a14 amut">{tr('Book your first ride from the Ride page.')}</div>
+              </td></tr>
             )}
             {rows?.map((t) => {
               const when = listWhen(t.completed_at ?? t.cancelled_at ?? t.requested_at, locale, t.timezone, words);

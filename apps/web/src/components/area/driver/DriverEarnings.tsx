@@ -1,14 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { AREA_FLAGS } from '@/lib/area/flags';
-import {
-  type Balance, type Day, type Period, type PeriodTotals,
-  balance as loadBalance, days as loadDays, earningsLines, period as loadPeriod,
-} from '@/lib/area/driver';
-import { money } from '@/lib/area/format';
+import { type Period, balance as loadBalance, daily, earningsLines, period as loadPeriod } from '@/lib/area/driver';
+import { money, setMarketZone } from '@/lib/area/format';
+import { useLoad } from '@/lib/area/useLoad';
+import { LoadError, Skel } from '../states';
 import { DriverTop, PeriodChips, WeekChart, useDriver } from './parts';
 
 function Line({ label, value, strong, tone }: { label: string; value: string | null; strong?: boolean; tone?: 'red' | 'green' }) {
@@ -31,15 +30,12 @@ export function DriverEarnings() {
   const { locale } = useLocale();
   const me = useDriver();
   const [p, setP] = useState<Period>('today');
-  const [t, setT] = useState<PeriodTotals | null>(null);
-  const [bal, setBal] = useState<Balance | null>(null);
-  const [seven, setSeven] = useState<Day[] | null>(null);
-
-  useEffect(() => { setT(null); loadPeriod(p).then(setT).catch(() => {}); }, [p]);
-  useEffect(() => {
-    loadBalance().then(setBal).catch(() => {});
-    loadDays(7).then(setSeven).catch(() => setSeven([]));
-  }, []);
+  // Each card on its own (8 Nov): one failing leaves the others showing.
+  const totals = useLoad(() => loadPeriod(p), [p]);
+  const balance = useLoad(loadBalance);
+  const seven = useLoad(daily);
+  const t = totals.data; const bal = balance.data;
+  setMarketZone(t?.timezone ?? seven.data?.timezone);
 
   const head: Record<Period, string> = { today: 'How today adds up', week: 'How this week adds up', month: 'How this month adds up' };
   const lines = t ? earningsLines(t) : null;
@@ -67,21 +63,26 @@ export function DriverEarnings() {
                   </p>
                 )}
               </div>
+            ) : totals.state === 'error' ? (
+              <LoadError what="earnings" retry={totals.retry} />
             ) : (
-              <p className="aempty">{tr('Loading…')}</p>
+              <Skel h={22} lines={5} gap={26} style={{ marginTop: 22 }} />
             )}
           </section>
           <div className="acol" style={{ gap: 16 }}>
             <section className="acard acard--ink dr-stat">
               <div className="albl">{tr('Ready to withdraw')}</div>
-              <div className="a40">{bal ? money(bal.available_balance, bal.currency, locale) ?? '—' : '…'}</div>
+              {balance.state === 'error' ? <LoadError what="balance" retry={balance.retry} ink /> : bal ? (
+                <div className="a40">{money(bal.available_balance ?? 0, bal.currency ?? t?.currency, locale)}</div>
+              ) : <Skel h={40} w={140} />}
               {AREA_FLAGS.withdraw ? null : (
                 <div className="a14" style={{ marginTop: 10 }}>{tr('Withdraw from the driver app.')}</div>
               )}
             </section>
             <section className="acard" style={{ padding: 20 }}>
               <h2 className="a20">{tr('Last 7 days')}</h2>
-              <WeekChart days={seven} currency={t?.currency ?? bal?.currency ?? null} />
+              <WeekChart load={{ ...seven, data: seven.data?.days ?? null }}
+                currency={seven.data?.currency ?? t?.currency ?? bal?.currency ?? null} />
             </section>
           </div>
         </div>
