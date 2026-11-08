@@ -9,7 +9,9 @@ import { monthYear } from '@/lib/area/format';
 import {
   type Profile, type SavedPlace, deleteAccount, exportData, maskPhone, profile as loadProfile, removePlace, savedPlaces, updateName,
 } from '@/lib/area/rider';
+import { useLoad } from '@/lib/area/useLoad';
 import { ICard, IChevron, IUser } from '../icons';
+import { LoadError, Skel } from '../states';
 import { useArea } from '../useArea';
 
 function Row({ label, value, children }: { label?: string; value: React.ReactNode; children?: React.ReactNode }) {
@@ -44,9 +46,15 @@ export function RiderAccount() {
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
+  // Each card on its own (8 Nov): profile and saved places load, fail and retry separately.
+  const profileLoad = useLoad(loadProfile);
+  const placesLoad = useLoad(savedPlaces);
   useEffect(() => {
-    loadProfile().then((p) => { setMe(p); setName(p.full_name ?? ''); setEmail(p.email ?? ''); }).catch(() => setMe({}));
-    savedPlaces().then(setPlaces).catch(() => setPlaces([]));
+    const p = profileLoad.data;
+    if (p) { setMe(p); setName(p.full_name ?? ''); setEmail(p.email ?? ''); }
+  }, [profileLoad.data]);
+  useEffect(() => { if (placesLoad.data) setPlaces(placesLoad.data); }, [placesLoad.data]);
+  useEffect(() => {
     setDark(document.documentElement.getAttribute('data-theme') === 'dark');
   }, []);
 
@@ -117,6 +125,10 @@ export function RiderAccount() {
               <label className="a14 amut" htmlFor="em">{tr('Email')}</label>
               <div className="afield"><input id="em" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
             </div>
+          ) : profileLoad.state === 'error' ? (
+            <LoadError what="account" retry={profileLoad.retry} />
+          ) : profileLoad.state === 'loading' ? (
+            <Skel h={20} lines={3} gap={26} style={{ marginTop: 16 }} />
           ) : (
             <>
               <Row label={tr('Name')} value={me?.full_name || '—'} />
@@ -133,7 +145,9 @@ export function RiderAccount() {
             <h2 className="a20">{tr('Saved places')}</h2>
             <div className="a14 amut">{tr('Used for one-tap booking')}</div>
           </div>
-          {places.length === 0 && <p className="a14 amut" style={{ marginTop: 12 }}>{tr('Pick a place on the Ride page and tap Add a place.')}</p>}
+          {placesLoad.state === 'error' && <LoadError what="places" retry={placesLoad.retry} />}
+          {placesLoad.state === 'loading' && <Skel h={20} lines={2} gap={26} style={{ marginTop: 16 }} />}
+          {placesLoad.state === 'ok' && places.length === 0 && <p className="a14 amut" style={{ marginTop: 12 }}>{tr('Pick a place on the Ride page and tap Add a place.')}</p>}
           {places.map((p) => (
             <Row key={p.id} label={p.label === 'home' ? tr('Home') : p.label === 'work' ? tr('Work') : undefined} value={p.address_text}>
               <button type="button" className="aacc ab a14" style={linkBtn}

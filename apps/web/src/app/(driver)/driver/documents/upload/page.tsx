@@ -334,7 +334,9 @@ export default function DriverDocumentsPage() {
       {/* --- the driver's own documents ----------------------------------- */}
       <section className="space-y-sg-3">
         <h2 className="text-title font-semibold">About you</h2>
-        {data === null ? (
+        {data === null && error ? (
+          <Button variant="secondary" onClick={() => void load()}>Try again</Button>
+        ) : data === null ? (
           <p className="text-ink-subtle">Loading…</p>
         ) : (
           <ul className="card sg-doc-list">

@@ -6,8 +6,11 @@ const NOW = new Date('2026-11-08T16:00:00Z'); // 21:30 in Hyderabad, Sun 8 Nov
 const IST = 'Asia/Kolkata';
 
 describe('money', () => {
-  it('formats in the trip currency, whole amounts without decimals', () => {
-    expect(money('118', 'INR', 'en-IN')).toBe('₹118');
+  it('formats in the trip currency with its decimals, zero included', () => {
+    expect(money('118', 'INR', 'en-IN')).toBe('₹118.00');
+    expect(money('0.00', 'INR', 'en-IN')).toBe('₹0.00');
+    expect(money(0, 'INR', 'en-IN')).toBe('₹0.00');
+    expect(money('631.55', 'INR', 'en-IN')).toBe('₹631.55');
     expect(money('1257.50', 'INR', 'en-IN')).toBe('₹1,257.50');
     expect(money('12.5', 'USD', 'en-US')).toBe('$12.50');
   });
@@ -34,6 +37,11 @@ describe('list dates', () => {
   });
   it('a missing date shows no row date at all', () => {
     expect(listWhen(null, 'en-IN', IST, words, NOW)).toBeNull();
+    expect(listWhen('not a date', 'en-IN', IST, words, NOW)).toBeNull();
+  });
+  it('a trip with no time zone uses the market zone, never the browser zone', () => {
+    expect(listWhen('2026-11-08T03:42:00Z', 'en-IN', null, words, NOW)).toEqual({ first: 'Today', second: 'Sun, 8 Nov · 9:12 am' });
+    expect(listWhen('2026-11-08T03:42:00Z', 'en-IN', 'Not/AZone', words, NOW)?.second).toBe('Sun, 8 Nov · 9:12 am');
   });
 });
 

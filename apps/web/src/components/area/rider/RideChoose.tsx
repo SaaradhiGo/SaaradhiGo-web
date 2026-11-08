@@ -12,7 +12,9 @@ import {
 } from '@/lib/booking';
 import { money } from '@/lib/area/format';
 import { className } from '@/lib/area/rider';
+import { LOAD_TIMEOUT_MS } from '@/lib/area/useLoad';
 import { IBack, ICar, ILock, IUser } from '../icons';
+import { Skel } from '../states';
 
 function point(v: string | null): LatLng | null {
   const [lat, lng] = (v ?? '').split(',').map(Number);
@@ -44,10 +46,17 @@ export function RideChoose() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const sock = useRef<RideSocket | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!from || !to) return;
     let live = true;
+    setOptions(null);
+    setError(null);
+    // Never "Getting fares…" for ever (8 Nov): ten seconds, then an error with Try again.
+    const timer = setTimeout(() => {
+      if (live) { live = false; setOptions([]); setError(tr('We could not load fares. Try again.')); }
+    }, LOAD_TIMEOUT_MS);
     (async () => {
       try {
         const [area, line] = await Promise.all([serviceabilityAt(from), routeBetween(from, to).catch(() => null)]);
@@ -61,6 +70,7 @@ export function RideChoose() {
           quote: await quoteFare({ pickup: from, destination: to, distanceKm: km, durationMin: min, vehicleType: v.type }).catch(() => null),
         })));
         if (!live) return;
+        clearTimeout(timer);
         setOptions(quotes);
         const first = quotes.find((o) => o.quote);
         setPicked((p) => p ?? first?.type ?? null);
@@ -68,9 +78,9 @@ export function RideChoose() {
         if (live) { setOptions([]); setError(tr('We could not load fares. Try again.')); }
       }
     })();
-    return () => { live = false; sock.current?.close(); };
+    return () => { live = false; clearTimeout(timer); sock.current?.close(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q.get('from'), q.get('to')]);
+  }, [q.get('from'), q.get('to'), attempt]);
 
   const chosen = options?.find((o) => o.type === picked) ?? null;
   const chosenFare = chosen?.quote ? money(chosen.quote.estimated_fare, chosen.quote.currency, locale) : null;
@@ -136,7 +146,10 @@ export function RideChoose() {
           <div className="arow" style={{ gap: 10 }}><span className="adot" style={{ background: 'var(--c-text)', borderRadius: 2 }} aria-hidden="true" /><span>{toLabel}</span></div>
         </div>
         <div className="acol" style={{ gap: 8 }} role="radiogroup" aria-label={tr('Choose a ride')}>
-          {options === null && <p className="amut">{tr('Getting fares…')}</p>}
+          {options === null && [0, 1, 2].map((i) => <Skel key={i} h={64} />)}
+          {options?.length === 0 && error && (
+            <button type="button" className="abtn abtn--ghost" onClick={() => setAttempt((n) => n + 1)}>{tr('Try again')}</button>
+          )}
           {options?.map((o) => {
             const fare = o.quote ? money(o.quote.estimated_fare, o.quote.currency, locale) : null;
             const on = o.type === picked;

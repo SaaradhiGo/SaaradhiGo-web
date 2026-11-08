@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
-import {
-  type EarningRow, type Period, type PeriodTotals, history as loadHistory, ledger as loadLedger, period as loadPeriod,
-} from '@/lib/area/driver';
-import { dateLabel, listWhen, money, rangeLabel } from '@/lib/area/format';
-import { type Trip, className } from '@/lib/area/rider';
+import { type Period, history as loadHistory, ledger as loadLedger, period as loadPeriod } from '@/lib/area/driver';
+import { dateLabel, listWhen, marketZone, money, rangeLabel, setMarketZone } from '@/lib/area/format';
+import { className } from '@/lib/area/rider';
+import { useLoad } from '@/lib/area/useLoad';
+import { LoadError, Skel } from '../states';
 import { DriverTop, PeriodChips, useDriver } from './parts';
 
 /** The local calendar date (YYYY-MM-DD) of an instant in a time zone. */
@@ -32,20 +32,19 @@ export function DriverTrips() {
   const { locale } = useLocale();
   const me = useDriver();
   const [p, setP] = useState<Period>('today');
-  const [t, setT] = useState<PeriodTotals | null>(null);
-  const [rows, setRows] = useState<EarningRow[] | null>(null);
-  const [trips, setTrips] = useState<Record<number, Trip>>({});
   const [all, setAll] = useState(false);
-
-  useEffect(() => { setT(null); loadPeriod(p).then(setT).catch(() => {}); }, [p]);
-  useEffect(() => {
-    loadLedger().then(setRows).catch(() => setRows([]));
-    loadHistory().then((h) => setTrips(Object.fromEntries(h.map((x) => [x.id, x])))).catch(() => {});
-  }, []);
+  const totals = useLoad(() => loadPeriod(p), [p]);
+  const ledger = useLoad(loadLedger);
+  // Places and class only; a row still shows without them.
+  const history = useLoad(async () => Object.fromEntries((await loadHistory()).map((x) => [x.id, x])));
+  const t = totals.data; const rows = ledger.data; const trips = history.data ?? {};
+  setMarketZone(t?.timezone);
+  const failed = totals.state === 'error' ? totals : ledger.state === 'error' ? ledger : null;
 
   const inPeriod = useMemo(() => {
     if (!rows || !t) return null;
-    return rows.filter((r) => r.created_at && localDate(r.created_at, t.timezone) >= t.start && localDate(r.created_at, t.timezone) <= t.end);
+    const zone = t.timezone || marketZone();
+    return rows.filter((r) => r.created_at && localDate(r.created_at, zone) >= t.start && localDate(r.created_at, zone) <= t.end);
   }, [rows, t]);
   const shown = inPeriod ? (all ? inPeriod : inPeriod.slice(0, 6)) : null;
   const words = { today: tr('Today'), yesterday: tr('Yesterday') };
@@ -73,8 +72,15 @@ export function DriverTrips() {
               </tr>
             </thead>
             <tbody>
-              {shown === null && <tr><td colSpan={7} className="amut">{tr('Loading…')}</td></tr>}
-              {shown?.length === 0 && <tr><td colSpan={7} className="amut">{tr('No trips in this period.')}</td></tr>}
+              {failed && <tr><td colSpan={7}><LoadError what="trips" retry={failed.retry} /></td></tr>}
+              {!failed && shown === null && [0, 1, 2].map((i) => <tr key={i}><td colSpan={7}><Skel h={18} /></td></tr>)}
+              {!failed && rows?.length === 0 && (
+                <tr><td colSpan={7}>
+                  <div className="ab">{tr('No trips yet')}</div>
+                  <div className="a14 amut">{tr('Go online in the driver app to get your first ride request.')}</div>
+                </td></tr>
+              )}
+              {!failed && !!rows?.length && shown?.length === 0 && <tr><td colSpan={7} className="amut">{tr('No trips in this period.')}</td></tr>}
               {shown?.map((r) => {
                 const trip = r.trip_id_val ? trips[r.trip_id_val] : undefined;
                 const when = listWhen(r.created_at, locale, trip?.timezone ?? t?.timezone, words);

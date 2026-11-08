@@ -2,13 +2,15 @@
  * Money and dates on the signed-in screens (owner, 2026-11-08).
  *
  * Money: the trip's own currency, in the reader's locale, through
- * Intl.NumberFormat; whole amounts without decimals ("₹118"), others with
- * the currency's own.
+ * Intl.NumberFormat, always with the currency's own decimals ("₹0.00",
+ * "₹631.55"; owner, 8 Nov).
  *
  * Dates: always in the trip's market time zone, in the reader's locale.
  * A list row has two lines: "Today" / "Yesterday" over the full date and time
  * ("Sun, 8 Nov · 9:12 am"), or the date over the time; anything older than
- * seven days carries the year when it is not this year.
+ * seven days carries the year when it is not this year. A trip without a
+ * time zone uses the market's (marketZone), and a date that cannot be read
+ * shows nothing rather than breaking the page.
  */
 export type When = { first: string; second: string };
 
@@ -18,13 +20,8 @@ export function money(amount: string | number | null | undefined, currency: stri
   if (amount === null || amount === undefined || amount === '' || !currency) return null;
   const n = Number(amount);
   if (!Number.isFinite(n)) return null;
-  const whole = Number.isInteger(n);
   try {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency,
-      ...(whole ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } : {}),
-    }).format(n);
+    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(n);
   } catch {
     return null;
   }
@@ -39,23 +36,41 @@ function daysBetween(a: string, b: string): number {
   return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / DAY);
 }
 
-function tz(timeZone?: string | null): string | undefined {
-  if (!timeZone) return undefined;
+/**
+ * The market's time zone, for a trip or row that carries none. Every live
+ * market is in India today, so it starts as India's; the driver pages set it
+ * from the earnings API's `timezone` once that answers.
+ */
+let market = 'Asia/Kolkata';
+export function setMarketZone(zone: string | null | undefined) {
+  if (zone && valid(zone)) market = zone;
+}
+export const marketZone = () => market;
+
+function valid(timeZone: string): boolean {
   try {
     new Intl.DateTimeFormat('en', { timeZone }).format(0);
-    return timeZone;
+    return true;
   } catch {
-    return undefined;
+    return false;
   }
 }
 
+function tz(timeZone?: string | null): string {
+  return timeZone && valid(timeZone) ? timeZone : market;
+}
+
+const readable = (iso: string | null | undefined): iso is string => !!iso && !Number.isNaN(Date.parse(iso));
+
 /** "9:12 am" in the reader's locale. */
 export function clock(iso: string, locale: string, timeZone?: string | null): string {
+  if (!readable(iso)) return '';
   return new Intl.DateTimeFormat(locale, { timeZone: tz(timeZone), hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
 }
 
 /** "Sun, 8 Nov", with the year when it is not the current one. */
 export function dateLabel(iso: string, locale: string, timeZone?: string | null, now = new Date(), withYear = false): string {
+  if (!readable(iso)) return '';
   const zone = tz(timeZone);
   const at = new Date(iso);
   const otherYear = ymd(at, zone).slice(0, 4) !== ymd(now, zone).slice(0, 4);
@@ -73,7 +88,7 @@ export function listWhen(
   words: { today: string; yesterday: string },
   now = new Date(),
 ): When | null {
-  if (!iso || Number.isNaN(Date.parse(iso))) return null;
+  if (!readable(iso)) return null;
   const zone = tz(timeZone);
   const ago = daysBetween(ymd(new Date(iso), zone), ymd(now, zone));
   const date = dateLabel(iso, locale, zone, now);

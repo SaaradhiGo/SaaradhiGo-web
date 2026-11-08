@@ -10,6 +10,12 @@
 //              the map, logo and value regions masked (diffs in DIFFS)
 //   sample     (separately) a design example name, plate or place in src/ or
 //              the browser bundles; with QA=1, visible on QA as the test accounts
+//   states     (8 Nov) a page still loading after 10 s, or showing "…"/"•••":
+//              a brand-new driver's six pages and a new rider's trips and
+//              account must show ₹0.00 or their empty message; an expired
+//              session must land on Log in with a message; with the earnings
+//              API failing, the error and Try again must show, and Try again
+//              must bring the numbers back
 //
 // CI: SITE=http://localhost:3100 WEB_SESSION_SECRET=... npm run check-areas
 //   (the API is answered from scripts/fixtures/areas.mjs)
@@ -23,6 +29,7 @@ import path from 'node:path';
 import { webcrypto } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { SAMPLE, fixture } from './fixtures/areas.mjs';
+import { emptyAccount } from './fixtures/empty-account.mjs';
 
 const SITE = process.env.SITE || 'http://localhost:3100';
 const QA = process.env.QA === '1';
@@ -169,7 +176,7 @@ function diff(shot, refFile, mask) {
 const MASK = '.ar-map, .ar-logo, .dr-brand img, .a40, .a20, .a28 + p, .dr-chart, .atable td, .apill, .afield, [data-line], .anote .ab';
 
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : { channel: 'chrome' });
-for (const [role, pages] of [['rider', RIDER], ['driver', DRIVER]]) {
+for (const [role, pages] of process.env.STATES_ONLY === '1' ? [] : [['rider', RIDER], ['driver', DRIVER]]) {
   for (const [p, name] of pages) {
     for (const [lang, w, h] of LANGS.flatMap((l) => (l === 'en' ? WIDTHS : LANG_WIDTHS).map(([w, h]) => [l, w, h]))) {
       const ctx = await context(browser, role, w, h, lang);
@@ -225,6 +232,122 @@ for (const [role, pages] of [['rider', RIDER], ['driver', DRIVER]]) {
     }
   }
 }
+
+// ---- States (8 Nov): every signed-in page ends loaded, empty or in error
+// within ten seconds; an expired session goes to Log in; a failing card says
+// so and Try again works. CI answers from fixtures; QA=1 uses the real new
+// accounts (NEWDRV/NEWRID) and a used-up session (STALE_*) from SEC_FILE.
+// A masked phone ("+91 ••••• ••801") is privacy, not a placeholder: bullets before digits pass.
+const PLACEHOLDER = /…|•••(?![•\s]*\d)/;
+const STATE_WAIT = 10_000;
+const SEC = QA && process.env.SEC_FILE
+  ? Object.fromEntries(readFileSync(process.env.SEC_FILE, 'utf8').split(/\r?\n/).filter((l) => /^[A-Z_]+=/.test(l)).map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]))
+  : {};
+
+async function stateContext(role, how, failing = null) {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'en-IN', timezoneId: 'Asia/Kolkata' });
+  await ctx.addInitScript(() => { try { localStorage.setItem('sg-theme', 'light'); } catch {} });
+  const fail500 = { on: !!failing };
+  if (QA) {
+    const { signIn } = await import(pathToFileURL(path.resolve(process.env.LOGIN_MJS || 'scripts/qa-login.mjs')).href);
+    const label = how === 'new' ? (role === 'driver' ? 'NEWDRV' : 'NEWRID') : role === 'driver' ? 'DRIVER' : 'RIDER';
+    const r = await signIn(ctx, SITE, label);
+    if (r.status !== 200) fail(`states: QA sign-in as ${label} failed (${r.status})`);
+    if (how === 'expired') {
+      // The browser's tokens ran out and the refresh token was already used.
+      await ctx.addInitScript(({ t, r }) => {
+        if (sessionStorage.getItem('stale')) return;
+        localStorage.setItem('saaradhi_rider_access_token', t);
+        localStorage.setItem('saaradhi_rider_refresh_token', r);
+        sessionStorage.setItem('stale', '1');
+      }, { t: SEC.STALE_TOK, r: SEC.STALE_REF });
+    }
+    if (failing) await ctx.route(failing, (route) => (fail500.on ? route.fulfill({ status: 500, json: { error: 'gate' } }) : route.continue()));
+    return [ctx, fail500];
+  }
+  const exp = Math.floor(Date.now() / 1000) + 3600;
+  const cookie = await signed({ uid: '7', roles: [role], role, exp });
+  // A cookie signed before the last deploy no longer verifies.
+  await ctx.addCookies([{ name: 'sg-session', value: how === 'stale-cookie' ? `${cookie.slice(0, -4)}AAAA` : cookie, url: SITE }]);
+  await ctx.addInitScript((t) => {
+    if (sessionStorage.getItem('seeded')) return;
+    localStorage.setItem('saaradhi_rider_access_token', t);
+    localStorage.setItem('saaradhi_rider_refresh_token', 'gate-refresh');
+    sessionStorage.setItem('seeded', '1');
+  }, fakeJwt());
+  await ctx.route(/\/api\/v1\//, async (route) => {
+    const req = route.request();
+    const url = req.url();
+    if (how === 'expired') return route.fulfill(url.includes('/auth/refresh/') ? { status: 400, json: {} } : { status: 401, json: {} });
+    if (failing && fail500.on && failing.test(url)) return route.fulfill({ status: 500, json: { error: 'gate' } });
+    let body = null;
+    try { body = req.postDataJSON(); } catch {}
+    const data = (how === 'new' ? emptyAccount(req.method(), url) : undefined) ?? fixture(req.method(), url, body);
+    return route.fulfill(data === null || data === undefined ? { status: 404, json: { error: 'no fixture' } } : { json: data });
+  });
+  return [ctx, fail500];
+}
+
+/** Waits up to ten seconds from navigation for no skeleton and no placeholder; returns the page text. */
+async function settledText(page) {
+  await page.waitForFunction((re) => !document.querySelector('.askel') && !new RegExp(re).test(document.body.innerText),
+    PLACEHOLDER.source, { timeout: STATE_WAIT, polling: 250 }).catch(() => {});
+  return page.locator('body').innerText().catch(() => '');
+}
+
+const EMPTY = {
+  driver: [
+    ['/driver', /₹0\.00/], ['/driver/earnings', /₹0\.00/], ['/driver/trips', /No trips yet/],
+    ['/driver/documents', /Documents/], ['/driver/payouts', /No payouts yet/], ['/driver/profile', /Vehicle/],
+  ],
+  rider: [['/trips', /No trips yet/], ['/account', /Saved places/]],
+};
+const stateResults = [];
+for (const role of ['driver', 'rider']) {
+  for (const [p, want] of EMPTY[role]) {
+    const [ctx] = await stateContext(role, 'new');
+    const page = await ctx.newPage();
+    const t0 = Date.now();
+    await page.goto(SITE + p, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+    const text = await settledText(page);
+    const ms = Date.now() - t0;
+    const stuck = (await page.locator('.askel').count()) > 0 || PLACEHOLDER.test(text);
+    const ok = !stuck && want.test(text) && new URL(page.url()).pathname === p;
+    stateResults.push(`new ${role} ${p}: ${ok ? 'ok' : 'FAIL'} in ${(ms / 1000).toFixed(1)} s`);
+    if (!ok) fail(`states: new ${role} ${p} ${stuck ? 'still loading or shows a placeholder after 10 s' : `does not show ${want}`} (landed on ${new URL(page.url()).pathname})`);
+    if (SHOTS) { mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, `new-${role}${p.replace(/\//g, '_')}.png`) }); }
+    await ctx.close();
+  }
+}
+
+for (const [role, p, how] of [['driver', '/driver', 'expired'], ['rider', '/trips', 'expired'], ...(QA ? [] : [['driver', '/driver/earnings', 'stale-cookie']])]) {
+  const [ctx] = await stateContext(role, how);
+  const page = await ctx.newPage();
+  await page.goto(SITE + p, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+  await page.waitForURL(/sign-in/, { timeout: STATE_WAIT }).catch(() => {});
+  const text = await page.locator('body').innerText().catch(() => '');
+  const at = new URL(page.url()).pathname;
+  const ok = /sign-in$/.test(at) && (how !== 'expired' || /Your session ended/.test(text));
+  stateResults.push(`${how} ${role} ${p}: ${ok ? `ok (${at})` : `FAIL (${at})`}`);
+  if (!ok) fail(`states: ${how} session on ${p} ended on ${at}${how === 'expired' ? ' without the session-ended message' : ''}, not on Log in`);
+  if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `${how}-${role}.png`) });
+  await ctx.close();
+}
+
+{
+  const [ctx, failing] = await stateContext('driver', 'test', /\/driver\/earnings\/period\//);
+  const page = await ctx.newPage();
+  await page.goto(SITE + '/driver/earnings', { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+  const shown = await page.getByText("We couldn't load your earnings.").first().waitFor({ timeout: STATE_WAIT }).then(() => true, () => false);
+  failing.on = false;
+  if (shown) await page.getByRole('button', { name: 'Try again' }).first().click().catch(() => {});
+  const back = shown && await page.locator('[data-line]').first().waitFor({ timeout: STATE_WAIT }).then(() => true, () => false);
+  stateResults.push(`earnings API failing: error ${shown ? 'shown' : 'NOT shown'}, Try again ${back ? 'works' : 'FAILED'}`);
+  if (!shown) fail('states: with the earnings API failing, /driver/earnings did not show the error');
+  else if (!back) fail('states: Try again on /driver/earnings did not bring the numbers back');
+  await ctx.close();
+}
+console.log('states:\n  ' + stateResults.join('\n  '));
 await browser.close();
 
 console.log('visual diff %:', JSON.stringify(results));

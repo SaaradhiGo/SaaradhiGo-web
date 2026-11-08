@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { LANGUAGES, LANGUAGE_INFO, type Language } from '@/i18n/locales';
 import { useTr } from '@/i18n/website';
 import { formatPlate } from '@/lib/booking';
 import { monthYear } from '@/lib/area/format';
-import { type Profile as Account, className, maskPhone, profile as loadAccount } from '@/lib/area/rider';
+import { className, maskPhone, profile as loadAccount } from '@/lib/area/rider';
+import { useLoad } from '@/lib/area/useLoad';
 import { IChevron, IDoc, IHelp, IUser } from '../icons';
+import { LoadError, Skel } from '../states';
 import { useArea } from '../useArea';
 import { DriverTop, useDriver } from './parts';
 
@@ -30,8 +31,8 @@ export function DriverProfile() {
   const { language, setLanguage, locale } = useLocale();
   const { signOut, both, switchTo } = useArea();
   const me = useDriver();
-  const [acct, setAcct] = useState<Account | null>(null);
-  useEffect(() => { loadAccount().then(setAcct).catch(() => setAcct({})); }, []);
+  const account = useLoad(loadAccount);
+  const acct = account.data;
 
   const v = me?.active_vehicle_details ?? null;
   const since = monthYear(acct?.created_at, locale);
@@ -46,10 +47,11 @@ export function DriverProfile() {
             <div className="arow" style={{ marginBottom: 12 }}>
               <span className="aico" style={{ width: 56, height: 56, borderRadius: 28, background: 'var(--c-gold-bg)', color: 'var(--c-accent)' }}><IUser /></span>
               <div>
-                <h2 className="a20">{acct?.full_name || '—'}</h2>
+                {account.state === 'loading' ? <Skel h={22} w={160} /> : <h2 className="a20">{acct?.full_name || '—'}</h2>}
                 {since && <div className="a14 amut">{tr('Saaradhi since {date}').replace('{date}', since)}</div>}
               </div>
             </div>
+            {account.state === 'error' && <LoadError what="profile" retry={account.retry} />}
             <Row label={tr('Mobile')} value={maskPhone(acct?.phone_number) ?? '—'}>
               {acct?.phone_number && <span className="apill apill--ok">{tr('Verified')}</span>}
             </Row>

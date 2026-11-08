@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTr } from '@/i18n/website';
 import {
   type Doc, type Onboarding, type Profile, type Vehicle, daysUntil, onboarding as loadDocs, vehicles as loadVehicles,
 } from '@/lib/area/driver';
+import { useLoad } from '@/lib/area/useLoad';
 import { IDoc, IHelp } from '../icons';
+import { LoadError, Skel } from '../states';
 import { DriverTop, useDriver } from './parts';
 
 export type DocRow = { key: string; label: string; status: string; reason: string | null; expiresIn: number | null };
@@ -55,7 +56,7 @@ function Pill({ row }: { row: DocRow }) {
 /** The documents as rows: icon, name, a note when action is needed, status. */
 export function DocList({ rows }: { rows: DocRow[] }) {
   const tr = useTr();
-  if (!rows.length) return <p className="aempty">{tr('Loading…')}</p>;
+  if (!rows.length) return <p className="aempty">{tr('No documents are needed yet.')}</p>;
   return (
     <div style={{ marginTop: 8 }}>
       {rows.map((r) => (
@@ -80,14 +81,9 @@ export function DocList({ rows }: { rows: DocRow[] }) {
 export function DriverDocuments() {
   const tr = useTr();
   const me = useDriver();
-  const [docs, setDocs] = useState<Onboarding | null>(null);
-  const [car, setCar] = useState<Vehicle | null>(null);
-  useEffect(() => {
-    loadDocs().then(setDocs).catch(() => setDocs({}));
-    loadVehicles().then((v) => setCar(v[0] ?? null)).catch(() => {});
-  }, []);
-
-  const rows = docRows(docs, me, car);
+  const docs = useLoad(loadDocs);
+  const car = useLoad(async () => (await loadVehicles())[0] ?? null);
+  const rows = docRows(docs.data, me, car.data);
   const approved = rows.filter((r) => r.status === 'approved').length;
   const urgent = rows.filter((r) => (r.expiresIn !== null && r.expiresIn <= 30) || r.status === 'rejected' || r.status === 'missing');
   const rest = rows.filter((r) => !urgent.includes(r));
@@ -104,6 +100,9 @@ export function DriverDocuments() {
             </div>
             <Link href="/driver/support" className="abtn abtn--ghost"><IHelp size={18} />{tr('Contact driver support')}</Link>
           </div>
+          {docs.state === 'error' && <LoadError what="documents" retry={docs.retry} />}
+          {docs.state === 'loading' && <Skel h={10} style={{ marginTop: 16 }} />}
+          {docs.state === 'ok' && rows.length === 0 && <p className="aempty">{tr('No documents are needed yet.')}</p>}
           {rows.length > 0 && (
             <div style={{ marginTop: 16, height: 10, borderRadius: 5, background: 'var(--c-muted)' }}>
               <div style={{ width: `${(approved / rows.length) * 100}%`, height: 10, borderRadius: 5, background: 'var(--c-green)' }} />

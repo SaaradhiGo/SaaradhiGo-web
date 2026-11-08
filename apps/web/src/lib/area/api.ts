@@ -1,7 +1,7 @@
 'use client';
 
-import { api } from '@/lib/api';
-import { RIDER_REFRESH_KEY, readRiderToken, writeRiderTokens } from '@/lib/publicAuth';
+import { ApiError, api } from '@/lib/api';
+import { RIDER_REFRESH_KEY, clearRiderTokens, readRiderToken, writeRiderTokens } from '@/lib/publicAuth';
 
 /**
  * Requests from the rider and driver areas, with the access token renewed
@@ -60,10 +60,64 @@ export async function areaToken(): Promise<string | null> {
   return token;
 }
 
+/**
+ * The token another tab saved after renewing, when it is newer than the one
+ * this request was refused with. Renewal rotates the refresh token, so the tab
+ * that loses the race gets 400 for its own renewal while a good token is
+ * already in storage.
+ */
+function newerToken(sent: string | null): string | null {
+  const now = readRiderToken();
+  if (!now || now === sent) return null;
+  const exp = expiry(now);
+  return exp && exp * 1000 > Date.now() ? now : null;
+}
+
+let ending = false;
+
+/**
+ * The session is over (8 Nov): the token was refused and could not be
+ * renewed. Sign out cleanly -- the server's role cookie first, so the sign-in
+ * page does not route straight back here -- and go to Log in with a message,
+ * instead of leaving every card waiting for an answer that will never come.
+ */
+export async function endAreaSession(): Promise<void> {
+  if (ending || typeof window === 'undefined') return;
+  ending = true;
+  await fetch('/api/session', { method: 'DELETE' }).catch(() => {});
+  clearRiderTokens();
+  const { pathname, search } = window.location;
+  const signIn = pathname.startsWith('/driver') ? '/driver/sign-in' : '/sign-in';
+  window.location.assign(`${signIn}?ended=1&next=${encodeURIComponent(pathname + search)}`);
+}
+
+/** Send once; on 401 renew (or take another tab's renewal) and send again; then end the session. */
+async function withSession<T>(go: (token: string | null) => Promise<T>): Promise<T> {
+  const sent = await areaToken();
+  try {
+    return await go(sent);
+  } catch (e) {
+    if (!(e instanceof ApiError) || e.status !== 401) throw e;
+    const again = sent ? ((await renew()) ?? newerToken(sent)) : null;
+    if (again && again !== sent) {
+      try {
+        return await go(again);
+      } catch (e2) {
+        if (e2 instanceof ApiError && e2.status === 401) void endAreaSession();
+        throw e2;
+      }
+    }
+    void endAreaSession();
+    throw e;
+  }
+}
+
+// `null`, never `undefined`, when there is no token: `undefined` means "the
+// console's session" to api.ts, which must never be sent from these areas.
 export async function areaGet<T>(path: string): Promise<T> {
-  return api.get<T>(path, (await areaToken()) ?? undefined);
+  return withSession((t) => api.get<T>(path, t));
 }
 
 export async function areaPost<T>(path: string, body: unknown): Promise<T> {
-  return api.post<T>(path, body, (await areaToken()) ?? undefined);
+  return withSession((t) => api.post<T>(path, body, t));
 }
