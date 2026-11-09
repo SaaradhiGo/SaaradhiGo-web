@@ -15,13 +15,7 @@ import { WEBSITE, translate } from './website';
 const MISSING = [
   // SiteCopy
   'Ride now', 'Schedule', 'Trip type', // the hidden Schedule switch
-  'Photo', // Drive: the photo placeholder's label
-  'A real SaaradhiGo driver beside their car, photographed with their consent.',
-  'SaaradhiGo logo: a charioteer driving a horse-drawn chariot, the road rising into a sail, a location pin, in a gold ring',
-  'No questions match that. Try another word, or contact support.', // Help search, no results
   'Mobile number · we text a code', 'Confirm', // unused phone variants
-  // literals
-  'Close menu', 'Dismiss', 'SaaradhiGo logo',
 ];
 
 /** Class names the rider app shows in Latin script in every language. */

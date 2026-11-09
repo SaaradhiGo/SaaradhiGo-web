@@ -37,6 +37,8 @@ const OVERRIDES: Record<Exclude<Language, 'en'>, Dict> = {
   },
   es: {
     'Auto, Mini, Sedan, SUV, each with its own price.': 'Auto, Mini, Sedan, SUV, cada uno con su precio.',
+    // The file's longer wording overflows Help's search box at 390px.
+    'Search: cancel, payment, lost item…': 'Buscar: cancelar, pago…',
   },
 };
 

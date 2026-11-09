@@ -116,6 +116,7 @@ export function AuthShell({
   alt,
   children,
   footer,
+  side = 'rider',
 }: {
   title: string;
   intro?: string;
@@ -123,6 +124,8 @@ export function AuthShell({
   alt?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  /** Whose panel sits beside the form: drivers get their own. */
+  side?: 'rider' | 'driver';
 }) {
   // Sign up and Log in (approved design, 2026-11-07; SignUp.html): the logo
   // and what an account gives you on black, the form card beside it. The
@@ -135,9 +138,9 @@ export function AuthShell({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/lockup-gold.svg" alt={tr('SaaradhiGo logo')} width={172} height={186} />
         <div>
-          <div className="t-heading">{a.asideTitle}</div>
+          <div className="t-heading">{side === 'driver' ? a.driverAsideTitle : a.asideTitle}</div>
           <ul>
-            {a.asideList.map((x) => (
+            {(side === 'driver' ? a.driverAsideList : a.asideList).map((x) => (
               <li key={x}><TickIcon />{x}</li>
             ))}
           </ul>
@@ -148,7 +151,7 @@ export function AuthShell({
           <h1 className="t-heading">{typeof title === 'string' ? tr(title) : title}</h1>
           {alt && <span>{alt}</span>}
         </div>
-        {intro && <p className="t-muted" style={{ margin: 0 }}>{intro}</p>}
+        {intro && <p className="t-muted" style={{ margin: 0 }}>{tr(intro)}</p>}
         {children}
         {footer && <div className="s-auth__fine">{footer}</div>}
       </div>

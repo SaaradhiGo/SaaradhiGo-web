@@ -136,6 +136,9 @@ export type SiteCopy = {
   auth: {
     asideTitle: string;
     asideList: string[];
+    /** The driver sign-in panel, in place of the rider's. */
+    driverAsideTitle: string;
+    driverAsideList: string[];
     signUpTitle: string;
     haveOne: string;
     logIn: string;
@@ -344,6 +347,8 @@ const en: SiteCopy = {
   auth: {
     asideTitle: 'One account for every ride.',
     asideList: ['Every fare before you choose', 'Your receipts and past trips', 'Support that knows your trip'],
+    driverAsideTitle: 'Drive with SaaradhiGo',
+    driverAsideList: ['Know your pay before you accept', 'Commission shown on every trip', 'Withdraw to your own account'],
     signUpTitle: 'Create your account',
     haveOne: 'Have one?',
     logIn: 'Log in',
