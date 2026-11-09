@@ -52,6 +52,7 @@ export default function MapSurface({
   driver = null,
   cityCentre = null,
   fitPadding = null,
+  onPick,
   children,
 }: {
   /** Force the placeholder off even when no provider is configured. */
@@ -77,10 +78,15 @@ export default function MapSurface({
   fitPadding?: { top: number; right: number; bottom: number; left: number } | null;
   /** Floating `MapLabel` pills and scrims, drawn over the surface. */
   children?: React.ReactNode;
+  /** A tap on the map moves a pin there (the saved-place sheet adjusts its spot this way). */
+  onPick?: (p: MapPoint) => void;
 }) {
   const host = useRef<HTMLDivElement | null>(null);
   const map = useRef<unknown>(null);
   const drawn = useRef<unknown[]>([]);
+  const pickRef = useRef(onPick);
+  pickRef.current = onPick;
+  const listening = useRef(false);
   const [live, setLive] = useState(false);
   // Bumped whenever the theme changes, to re-resolve the tokens and redraw.
   const [themeTick, setThemeTick] = useState(0);
@@ -173,6 +179,13 @@ export default function MapSurface({
       (map.current as any).setOptions({ styles });
     }
     const m = map.current as any;
+    if (pickRef.current && !listening.current) {
+      listening.current = true;
+      m.addListener('click', (e: any) => {
+        const at = e?.latLng;
+        if (at && pickRef.current) pickRef.current({ lat: at.lat(), lng: at.lng() });
+      });
+    }
 
     for (const o of drawn.current as any[]) o.setMap?.(null);
     drawn.current = [];

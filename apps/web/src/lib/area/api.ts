@@ -121,3 +121,11 @@ export async function areaGet<T>(path: string): Promise<T> {
 export async function areaPost<T>(path: string, body: unknown): Promise<T> {
   return withSession((t) => api.post<T>(path, body, t));
 }
+
+export async function areaPatch<T>(path: string, body: unknown): Promise<T> {
+  return withSession((t) => api.patch<T>(path, body, t));
+}
+
+export async function areaDelete<T>(path: string): Promise<T> {
+  return withSession((t) => api.delete<T>(path, t));
+}

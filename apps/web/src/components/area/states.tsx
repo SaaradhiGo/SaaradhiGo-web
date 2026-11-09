@@ -3,7 +3,7 @@
 import { useTr } from '@/i18n/website';
 
 /** What could not be loaded, for "We couldn't load your …". */
-export type What = 'earnings' | 'trips' | 'payouts' | 'documents' | 'profile' | 'account' | 'places' | 'receipt' | 'balance';
+export type What = 'earnings' | 'trips' | 'payouts' | 'documents' | 'profile' | 'account' | 'places' | 'receipt' | 'balance' | 'contacts';
 
 const WORDS: Record<What, string> = {
   earnings: "We couldn't load your earnings.",
@@ -15,6 +15,7 @@ const WORDS: Record<What, string> = {
   places: "We couldn't load your saved places.",
   receipt: "We couldn't load this receipt.",
   balance: "We couldn't load your balance.",
+  contacts: "We couldn't load your trusted contacts.",
 };
 
 /** Grey blocks in the shape of what is coming; at most ten seconds (useLoad). */

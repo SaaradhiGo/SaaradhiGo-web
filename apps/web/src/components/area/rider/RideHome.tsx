@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import MapSurface from '@/components/MapSurface';
 import { useTr } from '@/i18n/website';
 import { type LatLng, type Place, placeToPoint, searchPlaces } from '@/lib/booking';
-import { addPlace, savedPlaces, trips, type SavedPlace, type Trip } from '@/lib/area/rider';
+import { savedPlaces, trips, type PlaceLabel, type SavedPlace, type Trip } from '@/lib/area/rider';
+import { type PlaceDraft, PlaceSheet } from './PlaceSheet';
 import { IBriefcase, IClock, IHome, IPlus, ITarget } from '../icons';
 
-type Spot = { label: string; point: LatLng; kind?: 'home' | 'work' | 'other' | null };
+type Spot = { label: string; point: LatLng; kind?: 'home' | 'work' | 'other' | null; name?: string };
 
 /** Where a trip of the rider's last few went, newest first, without repeats. */
 function recentDrops(list: Trip[]): Spot[] {
@@ -29,7 +30,7 @@ function recentDrops(list: Trip[]): Spot[] {
 function placeSpot(p: SavedPlace): Spot | null {
   const lat = Number(p.latitude);
   const lng = Number(p.longitude);
-  return Number.isFinite(lat) && Number.isFinite(lng) ? { label: p.address_text, point: { lat, lng }, kind: p.label } : null;
+  return Number.isFinite(lat) && Number.isFinite(lng) ? { label: p.address_text, point: { lat, lng }, kind: p.label, name: p.name } : null;
 }
 
 /** The two halves of an address for a row: the place, then the rest. */
@@ -54,6 +55,7 @@ export function RideHome() {
   const [places, setPlaces] = useState<SavedPlace[]>([]);
   const [recent, setRecent] = useState<Spot[]>([]);
   const [note, setNote] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<PlaceDraft | null>(null);
   const timer = useRef<number | null>(null);
   const whereTo = useRef<HTMLInputElement | null>(null);
 
@@ -95,15 +97,16 @@ export function RideHome() {
     setFound([]);
   }
 
-  async function save() {
-    if (!drop) { setNote(tr('Pick a place first, then add it.')); return; }
-    try {
-      const p = await addPlace({ address_text: drop.label, latitude: drop.point.lat, longitude: drop.point.lng });
-      setPlaces((all) => [...all, p]);
-      setNote(null);
-    } catch {
-      setNote(tr('We could not save that place.'));
-    }
+  /** "Add a place" (or "Set home" / "Set work"): the sheet, prefilled with the chosen destination. */
+  function addPlace(label: PlaceLabel = 'home') {
+    setSheet({ label, address_text: drop?.label ?? '', point: drop?.point ?? null });
+  }
+
+  function saved(p: SavedPlace) {
+    setPlaces((all) => [...all.filter((x) => x.id !== p.id), p]);
+    setSheet(null);
+    const s = placeSpot(p);
+    if (s) choose(s);
   }
 
   const go = useMemo(() => {
@@ -159,13 +162,25 @@ export function RideHome() {
           )}
         </div>
         <div className="arow" style={{ gap: 8, flexWrap: 'wrap' }}>
-          {chips.map((s) => (
-            <button key={s.label} type="button" className="achip" onClick={() => choose(s)}>
-              {s.kind === 'work' ? <IBriefcase size={16} /> : <IHome size={16} />}
-              {s.kind === 'home' ? tr('Home') : s.kind === 'work' ? tr('Work') : split(s.label)[0]}
+          {(['home', 'work'] as const).map((kind) => {
+            const s = chips.find((c) => c.kind === kind);
+            const Icon = kind === 'work' ? IBriefcase : IHome;
+            return s ? (
+              <button key={kind} type="button" className="achip" onClick={() => choose(s)}>
+                <Icon size={16} />{tr(kind === 'home' ? 'Home' : 'Work')}
+              </button>
+            ) : (
+              <button key={kind} type="button" className="achip" style={{ color: 'var(--c-text-2)' }} onClick={() => addPlace(kind)}>
+                <Icon size={16} />{tr(kind === 'home' ? 'Set home' : 'Set work')}
+              </button>
+            );
+          })}
+          {chips.filter((c) => c.kind !== 'home' && c.kind !== 'work').map((s) => (
+            <button key={`${s.label}-${s.point.lat}`} type="button" className="achip" onClick={() => choose(s)}>
+              {s.name || split(s.label)[0]}
             </button>
           ))}
-          <button type="button" className="achip" style={{ color: 'var(--c-text-2)' }} onClick={save}>
+          <button type="button" className="achip" style={{ color: 'var(--c-text-2)' }} onClick={() => addPlace('other')}>
             <IPlus size={16} />{tr('Add a place')}
           </button>
         </div>
@@ -200,6 +215,7 @@ export function RideHome() {
       <div className="ar-map">
         <MapSurface pickup={here} destination={drop?.point ?? null} />
       </div>
+      {sheet && <PlaceSheet draft={sheet} near={here} onClose={() => setSheet(null)} onSaved={saved} />}
     </div>
   );
 }
