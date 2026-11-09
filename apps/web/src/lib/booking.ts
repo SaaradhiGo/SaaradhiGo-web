@@ -59,6 +59,8 @@ export type FareQuote = {
   /** Minutes until the nearest driver of this class, or null when unknown. */
   pickup_eta_min?: number | null;
   drivers_nearby?: boolean;
+  /** A cancellation fee from an earlier trip that this booking carries (MVAG 2025), shown before booking. */
+  cancellation_due?: { amount: string; currency: string; trip_ids: number[] } | null;
 };
 
 /** Seats per class, as the rider app shows them. */

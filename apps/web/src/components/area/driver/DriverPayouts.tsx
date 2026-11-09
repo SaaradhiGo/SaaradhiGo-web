@@ -6,6 +6,7 @@ import { balance as loadBalance, period as loadPeriod, withdrawals as loadWithdr
 import { listWhen, money, setMarketZone } from '@/lib/area/format';
 import { useLoad } from '@/lib/area/useLoad';
 import { LoadError, Skel } from '../states';
+import { NextPayout, WithdrawNow } from './WithdrawNow';
 import { DriverTop, useDriver } from './parts';
 
 const STATUS: Record<string, [string, string]> = {
@@ -17,8 +18,9 @@ const STATUS: Record<string, [string, string]> = {
 /**
  * /driver/payouts (driver-web-payouts.html): the wallet's ready-to-withdraw,
  * what today earned and the cash already in hand, and every payout with its
- * date, time and state. Withdrawing from the web is behind a flag (a money
- * flow, not built tonight); payout details live in the driver app.
+ * date, time and state. Drivers are paid on a cycle (the next payout is shown);
+ * Withdraw now appears only where instant cash-out is on (owner ruling, 9 Nov).
+ * Payout details live in the driver app.
  */
 export function DriverPayouts() {
   const tr = useTr();
@@ -51,7 +53,8 @@ export function DriverPayouts() {
                   .replace('{cash}', money(today.cash_collected, today.currency, locale) ?? '—')}
               </div>
             )}
-            <div className="a14" style={{ marginTop: 10 }}>{tr('Withdraw from the driver app.')}</div>
+            {bal ? <NextPayout bal={bal} /> : null}
+            {bal ? <WithdrawNow bal={bal} onDone={() => { balance.retry(); payouts.retry(); }} /> : null}
           </section>
           <section className="acard" style={{ padding: 20 }}>
             <h2 className="a20">{tr('Payout history')}</h2>

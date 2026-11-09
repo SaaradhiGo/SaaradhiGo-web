@@ -12,6 +12,7 @@ import {
 } from '@/lib/pricing';
 import { interpretWrite } from '@/lib/trips';
 import { PricingNav } from '@/components/console/pricing';
+import { RegulationPanel } from '@/components/console/pricing/RegulationPanel';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
 import {
@@ -138,6 +139,10 @@ function PricingInner() {
           </section>
         </div>
       ) : null}
+
+      <div className="mt-4">
+        <RegulationPanel may={may} />
+      </div>
 
       <div className="mt-4">
         <ListPage<Rule>

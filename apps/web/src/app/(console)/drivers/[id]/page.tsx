@@ -18,6 +18,7 @@ import { LedgerLink } from '@/components/console/finance';
 import {
   Column, DataTable, Drawer, Empty, ErrorState, Fact, Facts, PageHeader, Panel, Pill, Skeleton,
 } from '@/components/console/ui';
+import { DriverRecords } from '@/components/console/drivers/DriverRecords';
 
 /**
  * One driver: the evidence, the decision, and the record.
@@ -283,6 +284,7 @@ export default function DriverDetailPage() {
               })}
             </Panel>
           ))}
+          <DriverRecords driverId={data.id} may={mayReview} />
 </div>
     ) },
     { key: 'money', label: 'Money', content: (

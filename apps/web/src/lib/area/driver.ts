@@ -32,6 +32,10 @@ export type Balance = {
   currency?: string | null;
   withdrawals_available?: boolean;
   minimum_withdrawal?: string | null;
+  /** The next scheduled payout (owner ruling, 9 Nov), or null when payouts are on request. */
+  next_payout?: { date: string; at: string; estimated_amount: string; currency: string } | null;
+  /** Withdraw now: offered only where instant cash-out is on for the driver's city. */
+  instant?: { available: boolean; provider: string | null; saaradhigo_fee: string } | null;
 };
 
 export type Withdrawal = {
