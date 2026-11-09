@@ -83,8 +83,8 @@ export function SharedTrip({ token }: { token: string }) {
   const car = data?.vehicle ? [data.vehicle.color, data.vehicle.brand, data.vehicle.model].filter(Boolean).join(' ') : '';
 
   return (
-    <main className="ar" style={{ minHeight: '100vh', background: 'var(--c-page)' }}>
-      <div className="ar-split">
+    <main className="ar" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--c-page)' }}>
+      <div className="ar-split" style={{ flex: 1 }}>
         <aside className="ar-panel">
           <div className="arow" style={{ gap: 8 }}>
             <span className="aico" style={{ background: 'var(--c-gold-bg)', color: 'var(--c-accent)' }}><IShield size={18} /></span>
@@ -138,11 +138,15 @@ export function SharedTrip({ token }: { token: string }) {
             </>
           )}
         </aside>
-        <div className="ar-map">
-          <MapSurface driver={data?.live ? data.position ?? null : null} cityCentre={data?.live ? data.position ?? null : null}>
-            {data?.live && data.eta_min ? <span className="amaplabel">{tr('{n} min').replace('{n}', String(data.eta_min))}</span> : null}
-          </MapSurface>
-        </div>
+        {/* Only a live trip has a map: an ended one has nothing to show, and the
+            map's own fallback ("booking works normally") is not about this page. */}
+        {data?.live && (
+          <div className="ar-map">
+            <MapSurface driver={data.position ?? null} cityCentre={data.position ?? null}>
+              {data.eta_min ? <span className="amaplabel">{tr('{n} min').replace('{n}', String(data.eta_min))}</span> : null}
+            </MapSurface>
+          </div>
+        )}
       </div>
     </main>
   );

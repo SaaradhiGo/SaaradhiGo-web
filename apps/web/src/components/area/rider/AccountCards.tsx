@@ -54,8 +54,9 @@ export function SavedPlacesCard() {
           <div className="a14 amut">{tr('Used for one-tap booking')}</div>
         </div>
         {load.state === 'ok' && (
-          <button type="button" className="aacc ab a14" style={linkBtn} onClick={() => setSheet({ place: null })}>
-            <IPlus size={16} /> {tr('Add')}
+          <button type="button" className="aacc ab a14 arow" style={{ ...linkBtn, gap: 4, whiteSpace: 'nowrap' }}
+            onClick={() => setSheet({ place: null })}>
+            <IPlus size={16} />{tr('Add')}
           </button>
         )}
       </div>
