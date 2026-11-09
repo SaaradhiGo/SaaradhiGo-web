@@ -37,6 +37,8 @@ type Props = {
   position?: { lat: number; lng: number } | null;
   /** Where to look up the market when [country] is not known yet. */
   pickup?: { lat: number; lng: number } | null;
+  /** Share the trip's live link instead of a text summary (rider area, 9 Nov). */
+  onShare?: () => Promise<void> | void;
 };
 
 type Sos =
@@ -121,6 +123,10 @@ export function TripSafety(props: Props) {
   }
 
   async function share() {
+    if (props.onShare) {
+      await props.onShare();
+      return;
+    }
     const text = shareTripText(props);
     setShareNote(null);
     try {

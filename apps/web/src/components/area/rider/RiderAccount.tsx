@@ -7,11 +7,12 @@ import { useTr } from '@/i18n/website';
 import { AREA_FLAGS } from '@/lib/area/flags';
 import { monthYear } from '@/lib/area/format';
 import {
-  type Profile, type SavedPlace, deleteAccount, exportData, maskPhone, profile as loadProfile, removePlace, savedPlaces, updateName,
+  type Profile, deleteAccount, exportData, maskPhone, profile as loadProfile, updateName,
 } from '@/lib/area/rider';
 import { useLoad } from '@/lib/area/useLoad';
 import { ICard, IChevron, IUser } from '../icons';
 import { LoadError, Skel } from '../states';
+import { SafetyCard, SavedPlacesCard } from './AccountCards';
 import { useArea } from '../useArea';
 
 function Row({ label, value, children }: { label?: string; value: React.ReactNode; children?: React.ReactNode }) {
@@ -30,15 +31,15 @@ const linkBtn = { background: 'none', border: 0, padding: 0, cursor: 'pointer', 
 
 /**
  * /account (rider-web-account.html): profile, saved places, payment,
- * preferences, and privacy. Safety (trusted contacts, auto-share) and trip
- * SMS have no backend yet and stay behind their flags (lib/area/flags.ts).
+ * preferences, safety and privacy. Saved places and Safety (trusted contacts,
+ * auto-share) are their own cards (AccountCards.tsx, 9 Nov); trip SMS has no
+ * backend yet and stays behind its flag (lib/area/flags.ts).
  */
 export function RiderAccount() {
   const tr = useTr();
   const { language, setLanguage, locale } = useLocale();
   const { signOut } = useArea();
   const [me, setMe] = useState<Profile | null>(null);
-  const [places, setPlaces] = useState<SavedPlace[]>([]);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -48,12 +49,10 @@ export function RiderAccount() {
 
   // Each card on its own (8 Nov): profile and saved places load, fail and retry separately.
   const profileLoad = useLoad(loadProfile);
-  const placesLoad = useLoad(savedPlaces);
   useEffect(() => {
     const p = profileLoad.data;
     if (p) { setMe(p); setName(p.full_name ?? ''); setEmail(p.email ?? ''); }
   }, [profileLoad.data]);
-  useEffect(() => { if (placesLoad.data) setPlaces(placesLoad.data); }, [placesLoad.data]);
   useEffect(() => {
     setDark(document.documentElement.getAttribute('data-theme') === 'dark');
   }, []);
@@ -140,23 +139,7 @@ export function RiderAccount() {
           )}
         </section>
 
-        <section className="acard" style={{ padding: 20 }}>
-          <div>
-            <h2 className="a20">{tr('Saved places')}</h2>
-            <div className="a14 amut">{tr('Used for one-tap booking')}</div>
-          </div>
-          {placesLoad.state === 'error' && <LoadError what="places" retry={placesLoad.retry} />}
-          {placesLoad.state === 'loading' && <Skel h={20} lines={2} gap={26} style={{ marginTop: 16 }} />}
-          {placesLoad.state === 'ok' && places.length === 0 && <p className="a14 amut" style={{ marginTop: 12 }}>{tr('Pick a place on the Ride page and tap Add a place.')}</p>}
-          {places.map((p) => (
-            <Row key={p.id} label={p.label === 'home' ? tr('Home') : p.label === 'work' ? tr('Work') : undefined} value={p.address_text}>
-              <button type="button" className="aacc ab a14" style={linkBtn}
-                onClick={() => removePlace(p.id).then(() => setPlaces((all) => all.filter((x) => x.id !== p.id))).catch(() => {})}>
-                {tr('Remove')}
-              </button>
-            </Row>
-          ))}
-        </section>
+        <SavedPlacesCard />
 
         <section className="acard" style={{ padding: 20 }}>
           <h2 className="a20">{tr('Payment')}</h2>
@@ -171,11 +154,7 @@ export function RiderAccount() {
           <p className="a14 amut" style={{ marginTop: 12 }}>{tr('Other ways to pay will appear here when they are available in your city.')}</p>
         </section>
 
-        {(AREA_FLAGS.trustedContacts || AREA_FLAGS.autoShare) && (
-          <section className="acard" style={{ padding: 20 }}>
-            <h2 className="a20">{tr('Safety')}</h2>
-          </section>
-        )}
+        {AREA_FLAGS.trustedContacts && <SafetyCard />}
 
         <section className="acard" style={{ padding: 20 }}>
           <h2 className="a20">{tr('Preferences')}</h2>

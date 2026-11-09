@@ -8,10 +8,13 @@ import { TripSafety } from '@/components/booking/TripSafety';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { RIDER_CANCEL_REASONS, RideSocket, type SocketEvent, cancelTrip, formatPlate } from '@/lib/booking';
-import { shareTripText } from '@/lib/tripSafety';
 import { money } from '@/lib/area/format';
-import { type Trip, className, lockedFare, trip as loadTrip, tripDriver } from '@/lib/area/rider';
-import { ILock, IShare, IShield, IUser } from '../icons';
+import { AREA_FLAGS } from '@/lib/area/flags';
+import {
+  type Call, type Eta, type Share, type Trip, className, endCall, lockedFare, startCall, startShare, stopShare,
+  trip as loadTrip, tripDriver, tripEta, tripShare,
+} from '@/lib/area/rider';
+import { ILock, IPhone, IShare, IShield, IUser } from '../icons';
 
 const OVER = ['completed', 'cancelled'];
 
@@ -55,6 +58,9 @@ export function RideTrip({ id }: { id: string }) {
   const [cancelling, setCancelling] = useState(false);
   const [reason, setReason] = useState<string>(RIDER_CANCEL_REASONS[0].value);
   const [note, setNote] = useState<string | null>(null);
+  const [eta, setEta] = useState<Eta | null>(null);
+  const [shareState, setShareState] = useState<Share | null>(null);
+  const [call, setCall] = useState<Call | null>(null);
   const sock = useRef<RideSocket | null>(null);
 
   const refresh = useCallback(async () => {
@@ -69,6 +75,11 @@ export function RideTrip({ id }: { id: string }) {
   }, [id]);
 
   useEffect(() => {
+    if (AREA_FLAGS.pickupEta) tripEta(id).then(setEta).catch(() => setEta(null));
+    if (AREA_FLAGS.shareLink) tripShare(id).then(setShareState).catch(() => {});
+  }, [id]);
+
+  useEffect(() => {
     refresh();
     const s = new RideSocket(`/ws/ride/trip/${id}/`, (e: SocketEvent) => {
       if (e.type === 'connection_established' && e.otp != null && `${e.otp}` !== '') setCode(`${e.otp}`);
@@ -76,6 +87,8 @@ export function RideTrip({ id }: { id: string }) {
         const lat = Number(e.lat); const lng = Number(e.lng);
         if (Number.isFinite(lat) && Number.isFinite(lng)) setDriverAt({ lat, lng });
       }
+      // The arrival estimate, every 15 s while the trip is active; null hides the line.
+      if (e.type === 'trip_eta_update' && AREA_FLAGS.pickupEta) setEta((e.eta as Eta | null) ?? null);
       if (e.type === 'trip_update' || e.type === 'trip_status_update' || e.type === 'connection_established') {
         const st = (e.status ?? e.trip_status ?? (e.trip as Record<string, unknown> | undefined)?.status) as string | undefined;
         if (st) setState(st);
@@ -90,6 +103,13 @@ export function RideTrip({ id }: { id: string }) {
   }, [id, refresh]);
 
   const words = statusWords(state);
+  // Never 0 and never a guess: no estimate, no line.
+  const etaMin = eta?.phase === 'to_pickup' ? eta.pickup_eta_min : eta?.phase === 'to_drop' ? eta.drop_eta_min : null;
+  const arrive = eta?.phase === 'to_drop' && eta.arrive_at
+    ? new Date(eta.arrive_at).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' }) : null;
+  const etaLine = OVER.includes(state) || !etaMin ? null
+    : eta?.phase === 'to_pickup' ? tr('Arriving in {n} min').replace('{n}', String(etaMin))
+      : arrive ? tr('Arrive about {time}').replace('{time}', arrive) : null;
   const over = OVER.includes(state);
   const v = t?.vehicle_info ?? null;
   const plate = v?.vehicle_number ? formatPlate(v.vehicle_number) : null;
@@ -99,14 +119,44 @@ export function RideTrip({ id }: { id: string }) {
   const pickup = t && Number.isFinite(Number(t.pickup_lat)) ? { lat: Number(t.pickup_lat), lng: Number(t.pickup_long) } : null;
   const drop = t && Number.isFinite(Number(t.destination_lat)) ? { lat: Number(t.destination_lat), lng: Number(t.destination_long) } : null;
 
+  /** Share the trip's live link (the system share sheet, else copy). */
   async function share() {
-    const text = shareTripText({
-      tripId: id, driverName: t?.driver_name, plate, pickupLabel: t?.pickup_address, destinationLabel: t?.destination_address,
-    });
     try {
-      if (navigator.share) await navigator.share({ text });
-      else { await navigator.clipboard.writeText(text); setNote(tr('Trip details copied. Paste them to share.')); }
-    } catch { /* the rider closed the share sheet */ }
+      const sh = shareState?.active ? shareState : await startShare(id);
+      setShareState(sh);
+      if (!sh.url) return;
+      try {
+        if (navigator.share) { await navigator.share({ title: tr('Follow my ride'), url: sh.url }); return; }
+      } catch (err) {
+        if ((err as { name?: string })?.name === 'AbortError') return;
+      }
+      try {
+        await navigator.clipboard.writeText(sh.url);
+        setNote(tr('Trip link copied. Paste it to share.'));
+      } catch {
+        setNote(sh.url);
+      }
+    } catch {
+      setNote(tr('We could not share this trip. Try again.'));
+    }
+  }
+
+  async function unshare() {
+    try { setShareState(await stopShare(id)); setNote(tr('Sharing stopped. The link no longer works.')); }
+    catch { setNote(tr('We could not stop sharing. Try again.')); }
+  }
+
+  async function callDriver() {
+    try {
+      setCall(await startCall(id));
+    } catch {
+      setNote(tr('Calling is not available right now.'));
+    }
+  }
+
+  function hangUp() {
+    if (call) endCall(call.session_id).catch(() => {});
+    setCall(null);
   }
 
   async function cancel() {
@@ -125,6 +175,7 @@ export function RideTrip({ id }: { id: string }) {
         <div>
           <span className={`apill ${state === 'cancelled' ? 'apill--neu' : 'apill--ok'}`}>{tr(words.pill)}</span>
           <h1 className="a28" style={{ marginTop: 12 }}>{tr(words.head)}</h1>
+          {etaLine && <p className="a16 ab" aria-live="polite" style={{ marginTop: 4 }}>{etaLine}</p>}
           {t?.pickup_address && !over && <p className="amut">{tr('Pickup')}: {t.pickup_address}</p>}
         </div>
 
@@ -158,7 +209,10 @@ export function RideTrip({ id }: { id: string }) {
                 </button>
               </div>
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${AREA_FLAGS.callDriver ? 3 : 2}, 1fr)`, gap: 8 }}>
+              {AREA_FLAGS.callDriver && (
+                <button type="button" className="abtn abtn--ghost a14" onClick={callDriver}><IPhone size={18} />{tr('Call')}</button>
+              )}
               <button type="button" className="abtn abtn--ghost a14" onClick={share}><IShare size={18} />{tr('Share')}</button>
               <button type="button" className="abtn abtn--ghost a14" style={{ color: 'var(--c-red)' }} onClick={() => setSafety(!safety)}>
                 <IShield size={18} />{tr('Safety')}
@@ -166,10 +220,29 @@ export function RideTrip({ id }: { id: string }) {
             </div>
           </div>
         )}
+        {shareState?.active && !over && (
+          <div className="arow" style={{ justifyContent: 'space-between', gap: 8 }}>
+            <span className="a14 amut">{tr('Sharing this trip')}</span>
+            <button type="button" className="a14 ab aacc" style={{ background: 'none', border: 0, cursor: 'pointer', font: 'inherit' }}
+              onClick={unshare}>{tr('Stop sharing')}</button>
+          </div>
+        )}
+        {call && (
+          <div className="acard acol" style={{ padding: 16, gap: 10 }} role="dialog" aria-label={tr('Call your driver')}>
+            <div className="ab">{tr('Call your driver')}</div>
+            <div className="a14 amut">{tr('Dial this number. Your numbers stay private on both sides.')}</div>
+            {call.number && <div className="a28" style={{ userSelect: 'all' }}>{call.number}</div>}
+            <div className="arow" style={{ gap: 8 }}>
+              {call.number && <a className="abtn abtn--pri agrow" href={`tel:${call.number}`}><IPhone size={18} />{tr('Call')}</a>}
+              <button type="button" className="abtn abtn--ghost" onClick={hangUp}>{tr('Done')}</button>
+            </div>
+          </div>
+        )}
         {safety && (
           <div className="site">
             <TripSafety tripId={id} driverName={t?.driver_name} plate={plate} pickupLabel={t?.pickup_address}
-              destinationLabel={t?.destination_address} position={driverAt} pickup={pickup} />
+              destinationLabel={t?.destination_address} position={driverAt} pickup={pickup}
+              onShare={AREA_FLAGS.shareLink ? share : undefined} />
           </div>
         )}
 
@@ -216,7 +289,9 @@ export function RideTrip({ id }: { id: string }) {
         )}
       </aside>
       <div className="ar-map">
-        <MapSurface pickup={pickup} destination={drop} driver={driverAt} routePolyline={t?.planned_route_polyline ?? null} />
+        <MapSurface pickup={pickup} destination={drop} driver={driverAt} routePolyline={t?.planned_route_polyline ?? null}>
+          {etaLine && etaMin ? <span className="amaplabel">{tr('{n} min').replace('{n}', String(etaMin))}</span> : null}
+        </MapSurface>
       </div>
     </div>
   );

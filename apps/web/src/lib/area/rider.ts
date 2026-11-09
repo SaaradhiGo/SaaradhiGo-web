@@ -1,6 +1,6 @@
 'use client';
 
-import { areaGet, areaPost, areaToken } from './api';
+import { areaDelete, areaGet, areaPatch, areaPost, areaToken } from './api';
 import { api } from '@/lib/api';
 import { rideBlurbKey, vehicleClassLabel } from '@/lib/vehicles';
 
@@ -12,7 +12,15 @@ export type SavedPlace = {
   id: number; address_text: string; latitude: string | number; longitude: string | number;
   /** What the rider calls it: home, work or other (null for older places). */
   label?: 'home' | 'work' | 'other' | null;
+  /** The rider's own name for an "other" place. */
+  name?: string;
+  in_service_area?: boolean;
+  /** "Outside our service area for now", when it is. */
+  notice?: string | null;
 };
+
+export type PlaceLabel = 'home' | 'work' | 'other';
+export type PlaceInput = { label: PlaceLabel; name?: string; address_text: string; latitude: number; longitude: number };
 
 export type Trip = {
   id: number;
@@ -59,8 +67,28 @@ export type Profile = {
 type Page<T> = { results?: T[] } | T[];
 const list = <T,>(p: Page<T> | null | undefined): T[] => (Array.isArray(p) ? p : p?.results ?? []);
 
+/** Saved places, Home and Work first (GET /rider/places/, 9 Nov). */
 export async function savedPlaces(): Promise<SavedPlace[]> {
-  return list(await areaGet<Page<SavedPlace>>('/rider/locations/all/'));
+  const r = await areaGet<{ places?: SavedPlace[] }>('/rider/places/');
+  return r.places ?? [];
+}
+
+const coords = (p: Partial<PlaceInput>) => ({
+  ...p,
+  ...(p.latitude !== undefined ? { latitude: p.latitude.toFixed(7) } : {}),
+  ...(p.longitude !== undefined ? { longitude: p.longitude.toFixed(7) } : {}),
+});
+
+export async function createPlace(p: PlaceInput): Promise<SavedPlace> {
+  return (await areaPost<{ place: SavedPlace }>('/rider/places/', coords(p))).place;
+}
+
+export async function updatePlace(id: number, p: Partial<PlaceInput>): Promise<SavedPlace> {
+  return (await areaPatch<{ place: SavedPlace }>(`/rider/places/${id}/`, coords(p))).place;
+}
+
+export async function deletePlace(id: number) {
+  return areaDelete(`/rider/places/${id}/`);
 }
 
 /** Coordinates go as strings: the endpoint trims them as text and refuses numbers. */
@@ -160,4 +188,65 @@ export function maskPhone(phone: string | null | undefined): string | null {
   const rest = digits.slice(1 + code.length);
   const hidden = rest.slice(0, -3).replace(/\d/g, '•');
   return `+${code} ${hidden.slice(0, 5)} ${hidden.slice(5)}${rest.slice(-3)}`.replace(/\s+/g, ' ').trim();
+}
+
+/** The arrival estimate (GET /ride/trip/<id>/eta/); null when there is no honest one. */
+export type Eta = {
+  phase: 'to_pickup' | 'at_pickup' | 'to_drop' | null;
+  pickup_eta_min: number | null;
+  pickup_distance_km: string | null;
+  drop_eta_min: number | null;
+  arrive_at: string | null;
+  estimated: boolean;
+};
+
+export async function tripEta(id: string | number): Promise<Eta | null> {
+  return (await areaGet<{ eta: Eta | null }>(`/ride/trip/${id}/eta/`)).eta ?? null;
+}
+
+export type Contact = { id: number; name: string; phone: string; opted_out?: boolean };
+
+export async function trustedContacts(): Promise<{ contacts: Contact[]; max: number; note: string }> {
+  return areaGet('/sharing/contacts/');
+}
+
+export async function addContact(c: { name: string; phone: string }): Promise<Contact> {
+  return (await areaPost<{ contact: Contact }>('/sharing/contacts/', c)).contact;
+}
+
+export async function removeContact(id: number) {
+  return areaDelete(`/sharing/contacts/${id}/`);
+}
+
+export async function sharingSettings(): Promise<{ auto_share: boolean; contacts: number }> {
+  return areaGet('/sharing/settings/');
+}
+
+export async function setAutoShare(on: boolean): Promise<{ auto_share: boolean }> {
+  return areaPatch('/sharing/settings/', { auto_share: on });
+}
+
+export type Share = { active: boolean; url: string | null; expires_at?: string | null };
+
+export async function tripShare(id: string | number): Promise<Share> {
+  return areaGet(`/sharing/trips/${id}/share/`);
+}
+
+export async function startShare(id: string | number): Promise<Share> {
+  return areaPost(`/sharing/trips/${id}/share/`, {});
+}
+
+export async function stopShare(id: string | number): Promise<Share> {
+  return areaDelete(`/sharing/trips/${id}/share/`);
+}
+
+/** A masked call: a temporary number to dial, never the driver's own. */
+export type Call = { session_id: number; kind: 'number' | 'session'; number: string | null; expires_at: string };
+
+export async function startCall(tripId: string | number): Promise<Call> {
+  return (await areaPost<{ call: Call }>(`/calls/trips/${tripId}/start/`, {})).call;
+}
+
+export async function endCall(sessionId: number) {
+  return areaPost(`/calls/sessions/${sessionId}/end/`, {});
 }
