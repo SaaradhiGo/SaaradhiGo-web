@@ -149,8 +149,7 @@ async function sessionSurvives() {
   // The deployed build, from the static chunk URLs the home page loads.
   const build = async () => {
     const html = await fetch(SITE + '/', { signal: AbortSignal.timeout(30000) }).then((r) => r.text()).catch(() => '');
-    const chunks = [...new Set(html.match(/\/_next\/static\/[^"'\s?]+/g) || [])].sort().join('
-');
+    const chunks = [...new Set(html.match(/\/_next\/static\/[^"'\s?]+/g) || [])].sort().join('\n');
     return createHash('sha256').update(chunks).digest('hex').slice(0, 12);
   };
   const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : { channel: 'chrome' });
@@ -181,12 +180,9 @@ async function sessionSurvives() {
     const label = role === 'driver' ? 'DRIVER' : 'RIDER';
     const t = await page.evaluate(() => [localStorage.getItem('saaradhi_rider_access_token'), localStorage.getItem('saaradhi_rider_refresh_token')]).catch(() => []);
     if (t[0] && t[1]) {
-      const sec = readFileSync(process.env.SEC_FILE, 'utf8').split(/?
-/).filter(Boolean)
+      const sec = readFileSync(process.env.SEC_FILE, 'utf8').split(/\r?\n/).filter(Boolean)
         .filter((l) => !l.startsWith(`${label}_TOK=`) && !l.startsWith(`${label}_REF=`));
-      writeFileSync(process.env.SEC_FILE, [...sec, `${label}_TOK=${t[0]}`, `${label}_REF=${t[1]}`].join('
-') + '
-', { mode: 0o600 });
+      writeFileSync(process.env.SEC_FILE, [...sec, `${label}_TOK=${t[0]}`, `${label}_REF=${t[1]}`].join('\n') + '\n', { mode: 0o600 });
     }
   }
   await browser.close();
