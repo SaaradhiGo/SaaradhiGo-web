@@ -27,7 +27,7 @@ export function Footer() {
       <div className="s-wrap s-footer__top">
         <div className="s-footer__brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="s-footer__mark" src="/brand/emblem-gold.svg" alt="SaaradhiGo logo" width={52} height={46} />
+          <img className="s-footer__mark" src="/brand/emblem-gold.svg" alt={tr('SaaradhiGo logo')} width={52} height={46} />
           <span className="s-footer__line">
             <span className="s-only-desk">{s.footer.line}</span>
             <span className="s-only-phone">{s.footer.lineShort}</span>

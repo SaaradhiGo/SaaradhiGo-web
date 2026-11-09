@@ -255,6 +255,29 @@ S.update({
     "Work": ("ఆఫీసు", "ऑफ़िस", "Trabajo"),
 })
 
+S.update({
+    # Driver sign-in panel and footer
+    "Drive with SaaradhiGo": ("SaaradhiGoతో డ్రైవ్ చేయండి", "SaaradhiGo के साथ गाड़ी चलाएँ", "Conduce con SaaradhiGo"),
+    "Know your pay before you accept": ("అంగీకరించే ముందే మీ సంపాదన తెలుసుకోండి", "स्वीकार करने से पहले अपनी कमाई जानें", "Conoce tu pago antes de aceptar"),
+    "Commission shown on every trip": ("ప్రతి ప్రయాణంలో కమీషన్ చూపిస్తాం", "हर यात्रा पर कमीशन दिखता है", "Comisión visible en cada viaje"),
+    "Withdraw to your own account": ("మీ సొంత ఖాతాకు తీసుకోండి", "अपने खाते में निकालें", "Retira a tu propia cuenta"),
+    "Use the email address and password on your driver account.": ("మీ డ్రైవర్ ఖాతా ఈమెయిల్ చిరునామా, పాస్‌వర్డ్ ఉపయోగించండి.", "अपने ड्राइवर खाते का ईमेल पता और पासवर्ड इस्तेमाल करें।", "Usa el correo y la contraseña de tu cuenta de conductor."),
+    "Not signed up yet?": ("ఇంకా నమోదు చేసుకోలేదా?", "अभी तक साइन अप नहीं किया?", "¿Aún no te has registrado?"),
+    "Apply to drive": ("డ్రైవర్‌గా దరఖాస్తు చేయండి", "ड्राइवर बनने के लिए आवेदन करें", "Solicita conducir"),
+    "Looking for a ride?": ("రైడ్ కోసం చూస్తున్నారా?", "राइड चाहिए?", "¿Buscas un viaje?"),
+    "Rider sign in": ("రైడర్ లాగిన్", "राइडर लॉग इन", "Acceso de pasajero"),
+    "Driver sign in — SaaradhiGo": ("డ్రైవర్ లాగిన్ — SaaradhiGo", "ड्राइवर लॉग इन — SaaradhiGo", "Acceso de conductor — SaaradhiGo"),
+    "Sign in to your SaaradhiGo driver account.": ("మీ SaaradhiGo డ్రైవర్ ఖాతాలోకి లాగిన్ అవ్వండి.", "अपने SaaradhiGo ड्राइवर खाते में लॉग इन करें।", "Accede a tu cuenta de conductor de SaaradhiGo."),
+    # Public pages: strings the delivered website files do not cover
+    "Photo": ("ఫోటో", "फ़ोटो", "Foto"),
+    "A real SaaradhiGo driver beside their car, photographed with their consent.": ("తమ కారు పక్కన ఉన్న నిజమైన SaaradhiGo డ్రైవర్, వారి అనుమతితో తీసిన ఫోటో.", "अपनी कार के पास एक असली SaaradhiGo ड्राइवर, उनकी सहमति से ली गई फ़ोटो।", "Un conductor real de SaaradhiGo junto a su coche, fotografiado con su consentimiento."),
+    "SaaradhiGo logo: a charioteer driving a horse-drawn chariot, the road rising into a sail, a location pin, in a gold ring": ("SaaradhiGo లోగో: గుర్రపు రథాన్ని నడుపుతున్న సారథి, తెరచాపగా పైకి లేచే రహదారి, లొకేషన్ పిన్, బంగారు వలయంలో", "SaaradhiGo लोगो: घोड़ों वाला रथ चलाता सारथी, पाल बनकर उठती सड़क, एक लोकेशन पिन, सुनहरे घेरे में", "Logotipo de SaaradhiGo: un auriga conduce un carro tirado por caballos, la carretera se eleva en una vela, un pin de ubicación, en un anillo dorado"),
+    "No questions match that. Try another word, or contact support.": ("దీనికి సరిపోయే ప్రశ్నలు లేవు. మరో పదం ప్రయత్నించండి, లేదా సహాయాన్ని సంప్రదించండి.", "इससे मेल खाता कोई सवाल नहीं। कोई और शब्द आज़माएँ, या सहायता से संपर्क करें।", "Ninguna pregunta coincide. Prueba otra palabra o contacta con soporte."),
+    "Close menu": ("మెనూ మూసివేయండి", "मेनू बंद करें", "Cerrar menú"),
+    "Dismiss": ("మూసివేయండి", "हटाएँ", "Descartar"),
+    "SaaradhiGo logo": ("SaaradhiGo లోగో", "SaaradhiGo लोगो", "Logotipo de SaaradhiGo"),
+})
+
 if __name__ == '__main__':
     for i, lang in enumerate(['te', 'hi', 'es']):
         out = {'_review': 'needs native review (draft, 2026-11-08)'}

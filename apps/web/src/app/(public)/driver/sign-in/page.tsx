@@ -3,6 +3,7 @@ import { localized } from '@/i18n/server';
 import { KeepNextLink } from '@/components/KeepNextLink';
 import { AuthShell } from '@/components/form';
 import SignInForm from '@/components/SignInForm';
+import { Tr } from '@/i18n/website';
 
 export const generateMetadata = localized({
   title: 'Driver sign in — SaaradhiGo',
@@ -20,19 +21,20 @@ export default function Page() {
   return (
     <AuthShell
       title="Driver sign in"
+      side="driver"
       intro="Use the email address and password on your driver account."
       footer={
         <>
           <p>
-            Not signed up yet?{' '}
+            <Tr>Not signed up yet?</Tr>{' '}
             <Suspense fallback={null}>
-              <KeepNextLink href="/driver/sign-up">Apply to drive</KeepNextLink>
+              <KeepNextLink href="/driver/sign-up"><Tr>Apply to drive</Tr></KeepNextLink>
             </Suspense>
           </p>
           <p>
-            Looking for a ride?{' '}
+            <Tr>Looking for a ride?</Tr>{' '}
             <Suspense fallback={null}>
-              <KeepNextLink href="/sign-in">Rider sign in</KeepNextLink>
+              <KeepNextLink href="/sign-in"><Tr>Rider sign in</Tr></KeepNextLink>
             </Suspense>
           </p>
         </>

@@ -21,12 +21,21 @@
 //   (the API is answered from scripts/fixtures/areas.mjs)
 // QA: QA=1 SITE=https://www.qa.saaradhigo.com SEC_FILE=... node scripts/check-areas.mjs
 //   (signs in with the private token file; skips the visual diff)
+//
+// Session survives a deploy: opt-in, never in CI, because a deploy has to
+// happen between two runs. Only this check runs in either step:
+//   1. SESSION_SURVIVES=save SESSION_FILE=<private path> [QA=1 SEC_FILE=...] SITE=... node scripts/check-areas.mjs
+//   2. deploy the web service
+//   3. SESSION_SURVIVES=1 SESSION_FILE=<same path> [same env] node scripts/check-areas.mjs
+//   Fails if the saved session lands on Log in or says it ended, or if the
+//   build did not change (SESSION_SAME_BUILD=1 allows a dry run). SESSION_ROLE
+//   is driver (default) or rider. The file holds tokens: keep it private.
 import { chromium } from 'playwright-core';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { webcrypto } from 'node:crypto';
+import { createHash, webcrypto } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { SAMPLE, fixture } from './fixtures/areas.mjs';
 import { emptyAccount } from './fixtures/empty-account.mjs';
@@ -115,14 +124,74 @@ async function context(browser, role, width, height, lang = 'en') {
   const exp = Math.floor(Date.now() / 1000) + 3600;
   await ctx.addCookies([{ name: 'sg-session', value: await signed({ uid: '7', roles: [role], role, exp }), url: SITE }]);
   await ctx.addInitScript((t) => { try { localStorage.setItem('saaradhi_rider_access_token', t); } catch {} }, fakeJwt());
-  await ctx.route(/\/api\/v1\//, async (route) => {
+  await fixtures(ctx);
+  return ctx;
+}
+
+function fixtures(ctx) {
+  return ctx.route(/\/api\/v1\//, async (route) => {
     const req = route.request();
     let body = null;
     try { body = req.postDataJSON(); } catch {}
     const data = fixture(req.method(), req.url(), body);
     await route.fulfill(data === null ? { status: 404, json: { error: 'no fixture' } } : { json: data });
   });
-  return ctx;
+}
+
+// ---- Session survives a deploy (opt-in, see the top of this file).
+if (process.env.SESSION_SURVIVES) await sessionSurvives();
+
+async function sessionSurvives() {
+  const file = process.env.SESSION_FILE;
+  if (!file) { console.log('FAIL SESSION_FILE is required'); process.exit(1); }
+  const role = process.env.SESSION_ROLE === 'rider' ? 'rider' : 'driver';
+  const home = role === 'driver' ? '/driver' : '/trips';
+  // The deployed build, from the static chunk URLs the home page loads.
+  const build = async () => {
+    const html = await fetch(SITE + '/', { signal: AbortSignal.timeout(30000) }).then((r) => r.text()).catch(() => '');
+    const chunks = [...new Set(html.match(/\/_next\/static\/[^"'\s?]+/g) || [])].sort().join('\n');
+    return createHash('sha256').update(chunks).digest('hex').slice(0, 12);
+  };
+  const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : { channel: 'chrome' });
+  const landed = async (page) => {
+    await page.goto(SITE + home, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+    await page.waitForTimeout(10_000);
+    const text = await page.locator('body').innerText().catch(() => '');
+    const at = new URL(page.url()).pathname;
+    return { at, ok: at === home && !/Your session ended/.test(text) };
+  };
+  if (process.env.SESSION_SURVIVES === 'save') {
+    const ctx = await context(browser, role, 1440, 900);
+    const r = await landed(await ctx.newPage());
+    const b = await build();
+    writeFileSync(file, JSON.stringify({ role, build: b, saved: new Date().toISOString(), state: await ctx.storageState() }), { mode: 0o600 });
+    await browser.close();
+    console.log(r.ok ? `session saved (${role}, build ${b}); deploy, then run with SESSION_SURVIVES=1` : `FAIL the ${role} session did not open ${home} (landed on ${r.at})`);
+    process.exit(r.ok ? 0 : 1);
+  }
+  const saved = JSON.parse(readFileSync(file, 'utf8'));
+  const b = await build();
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'en-IN', timezoneId: 'Asia/Kolkata', storageState: saved.state });
+  if (!QA) await fixtures(ctx);
+  const page = await ctx.newPage();
+  const r = await landed(page);
+  // The browser may have renewed the QA tokens; keep the token file current.
+  if (QA && process.env.SEC_FILE) {
+    const label = role === 'driver' ? 'DRIVER' : 'RIDER';
+    const t = await page.evaluate(() => [localStorage.getItem('saaradhi_rider_access_token'), localStorage.getItem('saaradhi_rider_refresh_token')]).catch(() => []);
+    if (t[0] && t[1]) {
+      const sec = readFileSync(process.env.SEC_FILE, 'utf8').split(/\r?\n/).filter(Boolean)
+        .filter((l) => !l.startsWith(`${label}_TOK=`) && !l.startsWith(`${label}_REF=`));
+      writeFileSync(process.env.SEC_FILE, [...sec, `${label}_TOK=${t[0]}`, `${label}_REF=${t[1]}`].join('\n') + '\n', { mode: 0o600 });
+    }
+  }
+  await browser.close();
+  const fails = [];
+  if (b === saved.build && process.env.SESSION_SAME_BUILD !== '1') fails.push(`no deploy since the session was saved (build ${b} at ${saved.saved})`);
+  if (!r.ok) fails.push(`a ${saved.role} session saved at ${saved.saved} (build ${saved.build}) landed on ${r.at} after the deploy (build ${b})`);
+  for (const f of fails) console.log(`FAIL session survives deploy: ${f}`);
+  console.log(fails.length ? 'session survives deploy: fail' : `session survives deploy: pass (build ${saved.build} -> ${b})`);
+  process.exit(fails.length ? 1 : 0);
 }
 
 const measure = (page) => page.evaluate(({ sizes, phone }) => {
