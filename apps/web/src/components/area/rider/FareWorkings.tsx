@@ -41,7 +41,7 @@ export function FareWorkings({ quote }: { quote: FareQuote }) {
         </dl>
       </details>
       {due ? (
-        <p className="a14" role="note" style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--c-amber-bg, var(--c-muted))' }}>
+        <p className="a14" role="note" style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--c-warn-bg)' }}>
           {tr('A cancellation fee of {amount} from an earlier trip is added to this ride.')
             .replace('{amount}', money(due.amount, due.currency, locale) ?? '')}
         </p>
