@@ -25,11 +25,11 @@ const PROBLEM: Record<string, string> = { missing: 'Not recorded', expired: 'Exp
 const FIELDS: FieldSpec[] = [
   { key: 'health_insurance_policy_number', label: 'Health insurance: policy number', kind: 'text' },
   { key: 'health_insurance_insurer', label: 'Health insurance: insurer', kind: 'text' },
-  { key: 'health_insurance_sum_insured_minor', label: 'Health insurance: sum insured (minor units)', kind: 'number' },
+  { key: 'health_insurance_sum_insured', label: 'Health insurance: sum insured (whole rupees)', kind: 'number' },
   { key: 'health_insurance_expiry', label: 'Health insurance: expiry', kind: 'date' },
   { key: 'term_insurance_policy_number', label: 'Term insurance: policy number', kind: 'text' },
   { key: 'term_insurance_insurer', label: 'Term insurance: insurer', kind: 'text' },
-  { key: 'term_insurance_sum_insured_minor', label: 'Term insurance: sum insured (minor units)', kind: 'number' },
+  { key: 'term_insurance_sum_insured', label: 'Term insurance: sum insured (whole rupees)', kind: 'number' },
   { key: 'term_insurance_expiry', label: 'Term insurance: expiry', kind: 'date' },
   { key: 'induction_training_hours', label: 'Induction training: hours completed', kind: 'number' },
   { key: 'induction_training_date', label: 'Induction training: date', kind: 'date' },

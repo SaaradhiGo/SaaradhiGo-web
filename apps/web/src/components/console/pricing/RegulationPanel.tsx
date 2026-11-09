@@ -17,8 +17,8 @@ export type RegulationRow = {
   country: string; state_code: string; configured: boolean;
   base_fare_source: string | null; max_dynamic_multiplier: string | null; min_dynamic_multiplier: string | null;
   cancel_penalty_percent: string | null; cancel_penalty_cap_minor: number | null; cancel_free_seconds: number | null;
-  driver_records_gate: boolean | null; health_insurance_min_minor: number | null;
-  term_insurance_min_minor: number | null; induction_min_hours: string | null;
+  driver_records_gate: boolean | null; health_insurance_min_sum: number | null;
+  term_insurance_min_sum: number | null; induction_min_hours: string | null;
   note: string; version: number; updated_by: string;
 };
 type ZoneBand = {
@@ -41,8 +41,8 @@ const FIELDS: FieldSpec[] = [
   { key: 'cancel_free_seconds', label: 'Free window after the driver accepts (seconds)', kind: 'number' },
   { key: 'driver_records_gate', label: 'Driver insurance and training gate is on', kind: 'bool',
     help: 'When on, a driver without current health and term insurance and the induction hours cannot go online.' },
-  { key: 'health_insurance_min_minor', label: 'Health insurance, smallest sum insured (minor units)', kind: 'number' },
-  { key: 'term_insurance_min_minor', label: 'Term insurance, smallest sum insured (minor units)', kind: 'number' },
+  { key: 'health_insurance_min_sum', label: 'Health insurance, smallest sum insured (whole rupees)', kind: 'number' },
+  { key: 'term_insurance_min_sum', label: 'Term insurance, smallest sum insured (whole rupees)', kind: 'number' },
   { key: 'induction_min_hours', label: 'Induction training (hours)', kind: 'number' },
   { key: 'note', label: 'Note (e.g. the state notification number)', kind: 'text' },
 ];
