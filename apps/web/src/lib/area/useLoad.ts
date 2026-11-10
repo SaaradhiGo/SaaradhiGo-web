@@ -1,12 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { reportLoadError } from '@/lib/report';
 
 /**
  * One card's data (8 Nov): every signed-in view ends in loading, loaded,
  * empty or error -- never waits forever. A request that has not answered in
  * ten seconds is an error with Try again, and each card loads on its own, so
- * one failure leaves the rest of the page showing.
+ * one failure leaves the rest of the page showing. Every failure is reported
+ * with its endpoint and status (lib/report.ts).
  */
 export const LOAD_TIMEOUT_MS = 10_000;
 
@@ -25,8 +27,12 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = []): Load<T> 
       clearTimeout(timer);
       setS(next);
     };
-    const timer = setTimeout(() => settle({ state: 'error', data: null }), LOAD_TIMEOUT_MS);
-    fn().then((data) => settle({ state: 'ok', data }), () => settle({ state: 'error', data: null }));
+    const fail = (e: unknown) => {
+      if (live) reportLoadError(e);
+      settle({ state: 'error', data: null });
+    };
+    const timer = setTimeout(() => fail('timeout'), LOAD_TIMEOUT_MS);
+    fn().then((data) => settle({ state: 'ok', data }), fail);
     return () => { live = false; clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attempt, ...deps]);

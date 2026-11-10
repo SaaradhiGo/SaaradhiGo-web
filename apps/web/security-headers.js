@@ -50,7 +50,9 @@ function contentSecurityPolicy(env = process.env) {
       'https://*.googleusercontent.com',
       // KYC documents are shown from short-lived signed URLs on Cloudflare R2 (QA storage since 2026-11-03).
       'https://*.r2.cloudflarestorage.com'],
-    'connect-src': ["'self'", api, ws, ...google, 'https://*.google.com'].filter(Boolean),
+    // The Sentry ingest host, when a DSN is set: load failures are reported there (lib/report.ts).
+    'connect-src': ["'self'", api, ws, ...google, 'https://*.google.com',
+      originOf((env.NEXT_PUBLIC_SENTRY_DSN || '').replace(/\/\/[^@/]+@/, '//'))].filter(Boolean),
     'worker-src': ["'self'", 'blob:'],
     'object-src': ["'none'"],
     'base-uri': ["'self'"],

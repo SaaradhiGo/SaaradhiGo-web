@@ -47,7 +47,7 @@ export function SavedPlacesCard() {
   const title = (p: SavedPlace) => (p.label === 'home' ? tr('Home') : p.label === 'work' ? tr('Work') : p.name || p.address_text.split(',')[0]);
 
   return (
-    <section className="acard" style={{ padding: 20 }}>
+    <section id="places" className="acard" style={{ padding: 20 }}>
       <div className="arow" style={{ justifyContent: 'space-between' }}>
         <div>
           <h2 className="a20">{tr('Saved places')}</h2>
@@ -141,7 +141,7 @@ export function SafetyCard() {
   }
 
   return (
-    <section className="acard" style={{ padding: 20 }}>
+    <section id="safety" className="acard" style={{ padding: 20 }}>
       <h2 className="a20">{tr('Safety')}</h2>
       <div className="arow" style={{ ...rowStyle, marginTop: 8 }}>
         <div>

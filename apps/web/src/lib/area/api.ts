@@ -2,6 +2,7 @@
 
 import { ApiError, api } from '@/lib/api';
 import { RIDER_REFRESH_KEY, clearRiderTokens, readRiderToken, writeRiderTokens } from '@/lib/publicAuth';
+import { tagEndpoint } from '@/lib/report';
 
 /**
  * Requests from the rider and driver areas, with the access token renewed
@@ -115,17 +116,17 @@ async function withSession<T>(go: (token: string | null) => Promise<T>): Promise
 // `null`, never `undefined`, when there is no token: `undefined` means "the
 // console's session" to api.ts, which must never be sent from these areas.
 export async function areaGet<T>(path: string): Promise<T> {
-  return withSession((t) => api.get<T>(path, t));
+  return withSession((t) => api.get<T>(path, t)).catch((e) => { throw tagEndpoint(e, path); });
 }
 
 export async function areaPost<T>(path: string, body: unknown): Promise<T> {
-  return withSession((t) => api.post<T>(path, body, t));
+  return withSession((t) => api.post<T>(path, body, t)).catch((e) => { throw tagEndpoint(e, path); });
 }
 
 export async function areaPatch<T>(path: string, body: unknown): Promise<T> {
-  return withSession((t) => api.patch<T>(path, body, t));
+  return withSession((t) => api.patch<T>(path, body, t)).catch((e) => { throw tagEndpoint(e, path); });
 }
 
 export async function areaDelete<T>(path: string): Promise<T> {
-  return withSession((t) => api.delete<T>(path, t));
+  return withSession((t) => api.delete<T>(path, t)).catch((e) => { throw tagEndpoint(e, path); });
 }

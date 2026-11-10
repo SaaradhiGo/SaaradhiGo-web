@@ -2,6 +2,7 @@
 
 import { areaDelete, areaGet, areaPatch, areaPost, areaToken } from './api';
 import { api } from '@/lib/api';
+import { normalisePhone, verifyPhoneForSignup } from '@/lib/publicAuth';
 import { rideBlurbKey, vehicleClassLabel } from '@/lib/vehicles';
 
 /**
@@ -62,6 +63,8 @@ export type Profile = {
   email?: string | null;
   created_at?: string | null;
   roles?: string[];
+  role?: string | null;
+  avatar?: string | null;
 };
 
 type Page<T> = { results?: T[] } | T[];
@@ -130,6 +133,12 @@ export async function rateTrip(id: string | number, score: number) {
 export async function profile(): Promise<Profile> {
   const p = await areaGet<Profile & { user?: Profile }>('/auth/profile/');
   return p.user ?? p;
+}
+
+/** The sign-in number changes only with the code texted to the new one (10 Nov). */
+export async function changePhone(phone: string, otp: string): Promise<Profile> {
+  const { phone_proof } = await verifyPhoneForSignup(phone, otp);
+  return areaPost<Profile>('/auth/phone/change/', { phone_number: normalisePhone(phone), phone_proof });
 }
 
 export async function updateName(patch: { full_name?: string; email?: string }) {

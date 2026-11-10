@@ -156,7 +156,7 @@ export function RiderAccount() {
 
         {AREA_FLAGS.trustedContacts && <SafetyCard />}
 
-        <section className="acard" style={{ padding: 20 }}>
+        <section id="language" className="acard" style={{ padding: 20 }}>
           <h2 className="a20">{tr('Preferences')}</h2>
           <Row label={tr('Language')} value={LANGUAGE_INFO[language].label}>
             <select aria-label={tr('Language')} className="achip" value={language}
@@ -181,7 +181,7 @@ export function RiderAccount() {
               <button type="button" className="aacc ab a14" style={linkBtn} onClick={download}>{tr('Request')}</button>
             </Row>
             <Row value={tr('Sign out')}>
-              <button type="button" style={linkBtn} aria-label={tr('Sign out')} onClick={signOut}><IChevron /></button>
+              <button type="button" style={linkBtn} aria-label={tr('Sign out')} onClick={() => signOut()}><IChevron /></button>
             </Row>
             <Row value={<span className="ared">{tr('Delete account')}</span>}>
               {confirming ? (

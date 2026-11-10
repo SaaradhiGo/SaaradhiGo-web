@@ -53,6 +53,8 @@ export function fixture(method, path, body) {
   switch (true) {
     case p === '/auth/profile/':
       return { id: 7, full_name: 'Asha Rao', phone_number: '+919876500210', email: 'asha@example.com', created_at: at(7, 9, 0), roles: ['rider'] };
+    case p === '/rider/places/':
+      return { places: [] };
     case p === '/rider/locations/all/':
       return [
         { id: 1, address_text: '12 Lake View Road', latitude: '17.4849', longitude: '78.4138', label: 'home' },
@@ -82,7 +84,10 @@ export function fixture(method, path, body) {
     case p === '/driver/vehicles/':
       return [{ id: 7, insurance_expiry: ymdAgo(-9), permit_expiry: ymdAgo(-300) }];
     case p === '/driver/driver/onboarding/':
-      return { driver_documents: [
+      // As the API answers it: the car on file, the catalogue, approval (10 Nov).
+      return { approved: true, doc_status: 'approved', vehicle_types: [{ type: 'mini' }, { type: 'sedan' }],
+        vehicle: { id: 7, vehicle_number: 'TS09AB1234', brand: 'Maruti', model: 'Swift', color: 'white', is_active: true },
+        driver_documents: [
         { key: 'license_front', label: 'Driving licence', status: 'approved', required: true, present: true },
         { key: 'id_check', label: 'ID check', status: 'approved', required: true, present: true },
       ], vehicle_documents: [
