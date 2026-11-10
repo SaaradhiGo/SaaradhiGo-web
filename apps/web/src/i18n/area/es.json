@@ -351,5 +351,6 @@
   "The fee is taken once a day, after the day ends.": "La tarifa se cobra una vez al día, al terminar el día.",
   "Free to cancel until {time}.": "Cancelación gratis hasta las {time}.",
   "Free to cancel.": "Cancelación gratis.",
-  "Cancelling now costs {fee}. It is added to your next ride. No fee if you cancel because you feel unsafe.": "Cancelar ahora cuesta {fee}. Se añade a tu próximo viaje. Sin tarifa si cancelas porque te sientes inseguro."
+  "Cancelling now costs {fee}. It is added to your next ride. No fee if you cancel because you feel unsafe.": "Cancelar ahora cuesta {fee}. Se añade a tu próximo viaje. Sin tarifa si cancelas porque te sientes inseguro.",
+  "Withdrawn {amount} · provider fee {fee} · received {received}": "Retirado {amount} · tarifa del proveedor {fee} · recibido {received}"
 }

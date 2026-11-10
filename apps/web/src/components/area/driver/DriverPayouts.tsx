@@ -70,7 +70,22 @@ export function DriverPayouts() {
                     <div className="ab" style={{ width: 180 }}>
                       {when?.first}<div className="a14 amut" style={{ fontWeight: 400 }}>{when?.second}</div>
                     </div>
-                    <span className="ab agrow">{money(w.amount, w.currency ?? bal?.currency, locale)}</span>
+                    <span className="ab agrow">
+                      {money(w.amount, w.currency ?? bal?.currency, locale)}
+                      {w.origin === 'instant' ? (() => {
+                        // Withdraw now (10 Nov): the provider fee on the statement line.
+                        const cur = w.currency ?? bal?.currency;
+                        const fee = (w.fee_minor ?? 0) / 100;
+                        return (
+                          <div className="a14 amut" style={{ fontWeight: 400 }} data-testid="instant-fee-line">
+                            {tr('Withdrawn {amount} · provider fee {fee} · received {received}')
+                              .replace('{amount}', money(w.amount, cur, locale) ?? '')
+                              .replace('{fee}', money(fee, cur, locale) ?? '')
+                              .replace('{received}', money(Math.max(0, Number(w.amount ?? 0) - fee), cur, locale) ?? '')}
+                          </div>
+                        );
+                      })() : null}
+                    </span>
                     <span className={`apill ${cls}`}>{tr(label)}</span>
                   </div>
                 );

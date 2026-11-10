@@ -45,6 +45,9 @@ export type Withdrawal = {
   status?: string | null;
   requested_at?: string | null;
   processed_at?: string | null;
+  /** Withdraw now (10 Nov): `instant`, with the provider fee it cost (minor units). */
+  origin?: string | null;
+  fee_minor?: number | null;
 };
 
 /** One settled trip from the ledger (GET /driver/earnings/). */
