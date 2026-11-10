@@ -19,6 +19,18 @@ export function emptyAccount(method, url) {
         days: [6, 5, 4, 3, 2, 1, 0].map((n) => ({ date: day(n), trips: 0, gross: '0.00', commission: '0.00', net: '0.00' })),
         currency: 'INR', timezone: 'Asia/Kolkata',
       };
+    case p === '/driver/earnings/history/':
+      return {
+        period: q.get('period') ?? 'month', start: day(6), end: day(0), timezone: 'Asia/Kolkata', currency: 'INR', today: day(0),
+        joined: day(0), has_prev: false, has_next: false, prev: day(7), next: day(1),
+        summary: { trips: 0, days_driven: 0, fares: '0.00', avg_fare: '0.00', commission: '0.00', daily_fee: '0.00', platform_fee: '0.00',
+          tips: '0.00', tip_riders: 0, earned: '0.00', paid_to_bank: '0.00', payouts: 0, cash_collected: '0.00', unresolved_trips: 0,
+          fee_note: '', tips_enabled: false },
+        chart: { unit: 'day', bars: [6, 5, 4, 3, 2, 1, 0].map((n) => ({ key: day(n), earned: '0.00', trips: 0 })) },
+      };
+    case p === '/driver/earnings/months/':
+      return { currency: 'INR', joined: day(0).slice(0, 7), months: [{ month: day(0).slice(0, 7), so_far: true, trips: 0, fares: '0.00',
+        platform_fee: '0.00', tips: '0.00', earned: '0.00', paid_to_bank: '0.00', payouts: 0, cash_collected: '0.00' }] };
     case p === '/driver/earnings/summary/':
       return { today_net: '0.00', today_earned: '0.00', today_trips: 0, total_net: '0.00', currency: 'INR', commission_percent: '0.00' };
     case p === '/driver/withdrawals/balance/':

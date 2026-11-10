@@ -15,6 +15,7 @@ import { DriverTrips } from './DriverTrips';
 vi.mock('next/navigation', () => ({
   usePathname: () => '/driver',
   useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 const ZERO = (period: string) => ({
@@ -25,7 +26,18 @@ const DAYS = ['2026-11-03', '2026-11-04', '2026-11-05', '2026-11-06', '2026-11-0
   .map((date) => ({ date, trips: 0, gross: '0.00', commission: '0.00', net: '0.00' }));
 
 // What QA's API answers for a driver with no trips, ledger rows or payouts.
+const HISTORY = {
+  period: 'month', start: '2026-11-01', end: '2026-11-30', timezone: 'Asia/Kolkata', currency: 'INR', today: '2026-11-10',
+  joined: '2026-11-10', has_prev: false, has_next: false, prev: '2026-10-01', next: '2026-12-01',
+  summary: { trips: 0, days_driven: 0, fares: '0.00', avg_fare: '0.00', commission: '0.00', daily_fee: '0.00', platform_fee: '0.00',
+    tips: '0.00', tip_riders: 0, earned: '0.00', paid_to_bank: '0.00', payouts: 0, cash_collected: '0.00', unresolved_trips: 0,
+    fee_note: '', tips_enabled: false },
+  chart: { unit: 'day', bars: [{ key: '2026-11-01', earned: '0.00', trips: 0 }] },
+};
+
 function newDriver(path: string): unknown {
+  if (path.startsWith('/driver/earnings/history/')) return HISTORY;
+  if (path.startsWith('/driver/earnings/months/')) return { currency: 'INR', joined: '2026-11', months: [] };
   if (path.startsWith('/driver/earnings/period/')) return ZERO(new URLSearchParams(path.split('?')[1]).get('period') ?? 'week');
   if (path.startsWith('/driver/earnings/daily/')) return { days: DAYS, currency: 'INR', timezone: 'Asia/Kolkata' };
   if (path.startsWith('/driver/withdrawals/balance/')) return { available_balance: 0.0, currency: 'INR', withdrawals_available: false };
@@ -58,8 +70,9 @@ describe('a brand-new driver sees zeros, not dots', () => {
     await settle();
     const text = container.textContent ?? '';
     expect(text).not.toMatch(PLACEHOLDER);
-    expect(text.match(/₹0\.00/g)?.length).toBeGreaterThanOrEqual(3 + 7);
-    expect(container.querySelectorAll('.dr-chart > div')).toHaveLength(7);
+    expect(text.match(/₹0\.00/g)?.length).toBeGreaterThanOrEqual(3);
+    // No trips yet: "Your first ride" in place of the 7-day chart (10 Nov v2).
+    expect(container.querySelector('[data-testid="first-ride"]')).not.toBeNull();
     expect(container.querySelector('.askel')).toBeNull();
   });
 
@@ -67,7 +80,7 @@ describe('a brand-new driver sees zeros, not dots', () => {
     const { container } = page(<DriverEarnings />);
     await settle();
     expect(container.textContent).not.toMatch(PLACEHOLDER);
-    const lines = [...container.querySelectorAll('[data-line]')].map((e) => e.textContent);
+    const lines = [...container.querySelectorAll('[data-stat]')].map((e) => e.textContent);
     expect(lines).toHaveLength(5);
     lines.forEach((l) => expect(l).toMatch(/₹0\.00/));
     expect(container.querySelector('.askel')).toBeNull();
@@ -94,18 +107,18 @@ describe('a failing API shows the error, and Try again works', () => {
   it('earnings fail: the error and Try again; the other cards still show', async () => {
     let fail = true;
     api.get.mockImplementation(async (p: string) => {
-      if (fail && p.startsWith('/driver/earnings/period/')) throw new Error('HTTP 500');
+      if (fail && p.startsWith('/driver/earnings/history/')) throw new Error('HTTP 500');
       return newDriver(p);
     });
     const { container, getAllByText } = page(<DriverEarnings />);
     await settle();
     expect(container.textContent).toContain("We couldn't load your earnings.");
-    expect(container.textContent).toContain('₹0.00'); // ready to withdraw and the chart still load
+    expect(container.textContent).toContain('All months'); // the months table still loads
     fail = false;
     await act(async () => { fireEvent.click(getAllByText('Try again')[0]); });
     await settle();
     expect(container.textContent).not.toContain("We couldn't load your earnings.");
-    expect(container.querySelectorAll('[data-line]')).toHaveLength(5);
+    expect(container.querySelectorAll('[data-stat]')).toHaveLength(5);
   });
 
   it('a request that never answers is an error after ten seconds, not endless loading', async () => {

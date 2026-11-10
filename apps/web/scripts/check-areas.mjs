@@ -53,14 +53,15 @@ const MAX_DIFF = 0.03;
 // Screens where a part of the design is hidden on purpose, so everything below
 // it moves up. Each allowance names what is missing and why (AUDIT 29).
 const ALLOW = {
-  'driver-web-earnings': [0.07, 'Withdraw button and bank line (no web money flow tonight) and Tips (none exist, D5) are hidden; header profile button (10 Nov)'],
   'driver-web-payouts': [0.05, 'Withdraw button and the Paid to bank card are hidden (no web money flow tonight)'],
   // 10 Nov: the owner's header profile button (name and arrow) on every page, and Upload or
   // Replace on every document row, are not in the 8 Nov design.
   'driver-web-trips': [0.04, 'the header profile button (10 Nov) is not in the design'],
-  'driver-web-profile': [0.25, 'rebuilt for real drivers (10 Nov): personal, contacts, identity, vehicle and payouts sections replace the design\'s three cards'],
   'driver-web-documents': [0.05, 'Upload or Replace on each document row and the header profile button (10 Nov) are not in the design'],
 };
+// Redesigned on 10 Nov (design/driver-v2-2026-11-10): compared with those screenshots by
+// check-driver-v2.mjs, in the design's own state, not here.
+const V2 = new Set(['driver-web-dashboard', 'driver-web-earnings', 'driver-web-profile', 'driver-v2-setup']);
 const SIZES = new Set([14, 16, 20, 22, 28, 32, 40]);
 const PHONE_ONLY = new Set([22, 32]);
 const WIDTHS = [[360, 740], [390, 844], [768, 1024], [1024, 768], [1440, 900]];
@@ -85,6 +86,7 @@ const DRIVER = [
   ['/driver/documents', 'driver-web-documents'],
   ['/driver/payouts', 'driver-web-payouts'],
   ['/driver/profile', 'driver-web-profile'],
+  ['/driver/setup/identity', 'driver-v2-setup'],
 ];
 const DATED = ['/trips', '/driver/trips', '/driver/payouts'];
 
@@ -291,7 +293,7 @@ for (const [role, pages] of process.env.STATES_ONLY === '1' ? [] : [['rider', RI
         mkdirSync(SHOTS, { recursive: true });
         await page.screenshot({ path: path.join(SHOTS, `${name}${lang === 'en' ? '' : `-${lang}`}.png`) });
       }
-      if (w === 1440 && lang === 'en' && !QA) {
+      if (w === 1440 && lang === 'en' && !QA && !V2.has(name)) {
         const ref = path.join(REF, `${name}.png`);
         const shot = await page.screenshot();
         const boxes = await page.evaluate((sel) => [...document.querySelectorAll(sel)].map((e) => {
@@ -318,7 +320,8 @@ for (const [role, pages] of process.env.STATES_ONLY === '1' ? [] : [['rider', RI
 // so and Try again works. CI answers from fixtures; QA=1 uses the real new
 // accounts (NEWDRV/NEWRID) and a used-up session (STALE_*) from SEC_FILE.
 // A masked phone ("+91 ••••• ••801") is privacy, not a placeholder: bullets before digits pass.
-const PLACEHOLDER = /…|•••(?![•\s]*\d)/;
+// A list cut short ("insurance, permit…", 10 Nov v2) is copy, not a placeholder: only a lone "…" fails.
+const PLACEHOLDER = /(^|\s)…(\s|$)|•••(?![•\s]*\d)/m;
 const STATE_WAIT = 10_000;
 const SEC = QA && process.env.SEC_FILE
   ? Object.fromEntries(readFileSync(process.env.SEC_FILE, 'utf8').split(/\r?\n/).filter((l) => /^[A-Z_]+=/.test(l)).map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]))
@@ -428,13 +431,13 @@ for (const [role, p, how] of [['driver', '/driver', 'expired'], ['rider', '/trip
 }
 
 {
-  const [ctx, failing] = await stateContext('driver', 'test', /\/driver\/earnings\/period\//);
+  const [ctx, failing] = await stateContext('driver', 'test', /\/driver\/earnings\/history\//);
   const page = await ctx.newPage();
   await page.goto(SITE + '/driver/earnings', { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
   const shown = await page.getByText("We couldn't load your earnings.").first().waitFor({ timeout: STATE_WAIT }).then(() => true, () => false);
   failing.on = false;
   if (shown) await page.getByRole('button', { name: 'Try again' }).first().click().catch(() => {});
-  const back = shown && await page.locator('[data-line]').first().waitFor({ timeout: STATE_WAIT }).then(() => true, () => false);
+  const back = shown && await page.locator('[data-stat]').first().waitFor({ timeout: STATE_WAIT }).then(() => true, () => false);
   stateResults.push(`earnings API failing: error ${shown ? 'shown' : 'NOT shown'}, Try again ${back ? 'works' : 'FAILED'}`);
   if (!shown) fail('states: with the earnings API failing, /driver/earnings did not show the error');
   else if (!back) fail('states: Try again on /driver/earnings did not bring the numbers back');
@@ -476,29 +479,36 @@ for (const [role, how, pages] of [
   }
 }
 
-// ---- Driver requirements per market (10 Nov): India and the USA ask for different things, and
-// each sees only its own languages. The Ready page shows progress and what keeps the driver offline.
+// ---- Driver requirements per market (10 Nov; guided setup v2): India and the USA ask for
+// different things, each sees only its own languages, and /driver/ready opens the setup with
+// its progress and what keeps the driver offline.
 for (const [how, see, never, langs] of [
-  ['incomplete', [/Last 4 digits of your Aadhaar/, /PAN/, /IFSC/, /Police verification certificate/], [/Set up payouts/, /Issuing state/], ['en', 'te', 'hi']],
-  ['us', [/Set up payouts/, /Issuing state/, /Background check/], [/Aadhaar/, /\bPAN\b/, /IFSC/], ['en', 'es']],
+  ['incomplete', [/Aadhaar, last 4 digits/, /PAN/, /IFSC/, /Police verification certificate/], [/Set up payouts/, /Issuing state/], ['en', 'te', 'hi']],
+  ['us', [/Set up payouts/, /Issuing state/, /Background check/], [/Aadhaar/, /PAN/, /IFSC/], ['en', 'es']],
 ]) {
   const [ctx] = await stateContext('driver', how);
   const page = await ctx.newPage();
-  await page.goto(SITE + '/driver/profile', { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
-  const text = await settledText(page, see[0]);
+  let text = '';
+  for (const step of ['identity', 'payouts']) {
+    await page.goto(SITE + `/driver/setup/${step}`, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+    text += await settledText(page, /Save and continue|Finish/);
+  }
   const missing = see.filter((re) => !re.test(text));
   const leaked = never.filter((re) => re.test(text));
+  await page.goto(SITE + '/driver/profile', { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+  await settledText(page, /Language and preferences/);
+  await page.locator('[data-testid="card-preferences"] button', { hasText: 'Edit' }).click().catch(() => {});
   const offered = await page.locator('select[aria-label="Language"] option').evaluateAll((os) => os.map((o) => o.value)).catch(() => []);
   const ok = !missing.length && !leaked.length && JSON.stringify(offered) === JSON.stringify(langs);
   stateResults.push(`requirements ${how}: ${ok ? 'ok' : 'FAIL'} (languages ${offered.join(',')})`);
-  if (missing.length) fail(`requirements: ${how} driver profile does not show ${missing.join(', ')}`);
-  if (leaked.length) fail(`requirements: ${how} driver profile shows ${leaked.join(', ')}`);
+  if (missing.length) fail(`requirements: ${how} driver setup does not show ${missing.join(', ')}`);
+  if (leaked.length) fail(`requirements: ${how} driver setup shows ${leaked.join(', ')}`);
   if (JSON.stringify(offered) !== JSON.stringify(langs)) fail(`requirements: ${how} driver is offered ${offered.join(',')}, not ${langs.join(',')}`);
   await page.goto(SITE + '/driver/ready', { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
-  const ready = await settledText(page, /of \d+ done/);
-  const readyOk = /\d+ of \d+ done/.test(ready) && /You can go online once these are done/.test(ready);
+  const ready = await settledText(page, /of \d+ steps/);
+  const readyOk = /\d+ of \d+ steps/.test(ready) && /You can go online once every step is approved/.test(ready) && /\/driver\/setup/.test(page.url());
   stateResults.push(`ready ${how}: ${readyOk ? 'ok' : 'FAIL'}`);
-  if (!readyOk) fail(`requirements: /driver/ready for the ${how} driver does not show progress and what blocks going online`);
+  if (!readyOk) fail(`requirements: /driver/ready for the ${how} driver does not open the setup with its progress`);
   await page.goto(SITE + '/driver/documents', { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
   const docs = await settledText(page, /Add your vehicle first/);
   if (!/Add your vehicle first/.test(docs)) fail(`requirements: /driver/documents for the ${how} driver does not say "Add your vehicle first"`);

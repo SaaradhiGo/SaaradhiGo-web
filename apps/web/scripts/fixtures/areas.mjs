@@ -48,6 +48,24 @@ const SETTLED = [
   [0, 13, 5, '226', '34', 'Home', 'Airport'], [0, 11, 20, '88', '13', 'Old Town', 'Lake View'],
 ];
 
+/** /driver/earnings/history/ (10 Nov v2): a month of days with trips, ledger-shaped. */
+function HISTORY(path) {
+  const period = (path.match(/period=(\w+)/) ?? [])[1] ?? 'month';
+  const today = ymdAgo(0);
+  const month = today.slice(0, 8);
+  const last = new Date(Date.UTC(Number(today.slice(0, 4)), Number(today.slice(5, 7)), 0)).getUTCDate();
+  const heights = [70, 115, 109, 56, 0, 87, 117, 100, 120, 114, 48, 0, 117, 41, 100, 73, 110, 69, 0, 64, 100, 109, 110, 100, 90, 0, 121, 59, 0, 69, 121];
+  const bars = Array.from({ length: last }, (_, i) => ({ key: `${month}${String(i + 1).padStart(2, '0')}`, earned: (heights[i] * 12.5).toFixed(2), trips: Math.round(heights[i] / 10) }));
+  return {
+    period, start: `${month}01`, end: `${month}${last}`, timezone: 'Asia/Kolkata', currency: 'INR', today, joined: ymdAgo(40),
+    has_prev: true, has_next: false, prev: ymdAgo(35), next: today,
+    summary: { trips: 298, days_driven: 26, fares: '33995.50', avg_fare: '114.08', commission: '0.00', daily_fee: '2975.00',
+      platform_fee: '2975.00', tips: '0.00', tip_riders: 0, earned: '31020.50', paid_to_bank: '18612.00', payouts: 6,
+      cash_collected: '12408.50', unresolved_trips: 0, fee_note: 'Capped at ₹149.00 a day', tips_enabled: false },
+    chart: { unit: period === 'year' || period === 'taxyear' ? 'month' : period === 'day' ? 'hour' : 'day', bars },
+  };
+}
+
 export function fixture(method, path, body) {
   const p = path.replace(/^.*\/api\/v1/, '').split('?')[0];
   const [mon, sun] = monday();
@@ -112,6 +130,13 @@ export function fixture(method, path, body) {
     case p === '/driver/withdrawals/history/':
       return [[3, '512', 20, 30], [5, '448', 21, 10], [7, '605', 19, 45], [9, '390', 20, 15], [11, '455', 21, 0]]
         .map(([d, amount, hh, mm], i) => ({ id: i + 1, amount, currency: 'INR', status: 'completed', processed_at: at(d, hh, mm) }));
+    case p === '/driver/earnings/history/':
+      return HISTORY(path);
+    case p === '/driver/earnings/months/':
+      return { currency: 'INR', joined: ymdAgo(40).slice(0, 7), months: [
+        { month: ymdAgo(0).slice(0, 7), so_far: true, trips: 84, fares: '9412.00', platform_fee: '1043.00', tips: '0.00', earned: '8369.00', paid_to_bank: '2410.00', payouts: 2, cash_collected: '5100.00' },
+        { month: ymdAgo(35).slice(0, 7), so_far: false, trips: 298, fares: '33995.50', platform_fee: '2975.00', tips: '0.00', earned: '31020.50', paid_to_bank: '18612.00', payouts: 6, cash_collected: '12408.50' },
+      ] };
     case p === '/driver/earnings/':
       return { count: SETTLED.length, results: SETTLED.map(([d, hh, mm, fare, com], i) => ({
         id: i + 1, trip_id_val: 300 + i, amount: fare, commission: com, net_amount: String(Number(fare) - Number(com)), created_at: at(d, hh, mm), method: 'cash' })) };

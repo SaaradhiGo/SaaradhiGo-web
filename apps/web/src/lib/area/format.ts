@@ -21,7 +21,7 @@ export function money(amount: string | number | null | undefined, currency: stri
   const n = Number(amount);
   if (!Number.isFinite(n)) return null;
   try {
-    return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(n);
+    return new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
   } catch {
     return null;
   }
@@ -126,4 +126,35 @@ export function rangeLabel(start: string, end: string, locale: string): string {
 export function monthYear(iso: string | null | undefined, locale: string): string | null {
   if (!iso || Number.isNaN(Date.parse(iso))) return null;
   return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(new Date(iso));
+}
+
+/**
+ * Numeric dates by market (10 Nov v2): India dd/mm/yyyy, USA mm/dd/yyyy, whatever the browser's
+ * own locale. Stored and sent as ISO (YYYY-MM-DD).
+ */
+export type DateOrder = 'dmy' | 'mdy';
+export const dateOrder = (country: string | null | undefined): DateOrder => (country === 'US' ? 'mdy' : 'dmy');
+export const datePlaceholder = (order: DateOrder) => (order === 'mdy' ? 'mm/dd/yyyy' : 'dd/mm/yyyy');
+
+export function numericDate(iso: string | null | undefined, order: DateOrder): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? '');
+  if (!m) return '';
+  return order === 'mdy' ? `${m[2]}/${m[3]}/${m[1]}` : `${m[3]}/${m[2]}/${m[1]}`;
+}
+
+/** What the driver typed, as ISO; null when it is not a real date. */
+export function parseNumericDate(text: string, order: DateOrder): string | null {
+  const m = /^\s*(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})\s*$/.exec(text);
+  if (!m) return null;
+  const [a, b, y] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const [d, mo] = order === 'mdy' ? [b, a] : [a, b];
+  const at = new Date(Date.UTC(y, mo - 1, d));
+  if (at.getUTCFullYear() !== y || at.getUTCMonth() !== mo - 1 || at.getUTCDate() !== d) return null;
+  return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+/** "10 Nov" from an ISO instant, for "Uploaded 10 Nov". */
+export function dayMonth(iso: string | null | undefined, locale: string): string {
+  if (!iso || Number.isNaN(Date.parse(iso))) return '';
+  return new Intl.DateTimeFormat(locale, { timeZone: marketZone(), day: 'numeric', month: 'short' }).format(new Date(iso));
 }

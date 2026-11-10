@@ -157,3 +157,15 @@ jobs:
           name: areas-diff
           path: apps/web/areas-diff/
           if-no-files-found: ignore
+
+      # Driver area v2 (10 Nov): axe contrast in both themes, one primary button, the focus ring,
+      # date order by market, file statuses and the four design screenshots.
+      - name: Driver v2 gate
+        run: SITE=http://localhost:3100 V2_DIFFS=v2-diff npm run check-driver-v2
+      - name: Upload v2 diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v2-diff
+          path: apps/web/v2-diff/
+          if-no-files-found: ignore
