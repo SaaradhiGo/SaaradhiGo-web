@@ -111,6 +111,7 @@ describe('driver profile page', () => {
     const { DriverProfile } = await import('./driver/DriverProfile');
     wrap(<DriverProfile />);
     fireEvent.click(await screen.findByRole('button', { name: 'Add vehicle' }));
+    expect(screen.queryByTestId('vehicle-in-review')).toBeNull();          // nothing submitted yet
     fireEvent.change(screen.getByLabelText('Make'), { target: { value: 'Maruti' } });
     fireEvent.change(screen.getByLabelText('Model'), { target: { value: 'Dzire' } });
     fireEvent.change(screen.getByLabelText('Colour'), { target: { value: 'White' } });

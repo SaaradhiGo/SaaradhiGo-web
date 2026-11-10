@@ -175,7 +175,7 @@ function VehicleCard() {
     <section className="acard" style={{ padding: 20 }}>
       <div className="arow" style={{ justifyContent: 'space-between' }}>
         <h2 className="a20">{tr('Vehicle')}</h2>
-        {inReview(o) && <span className="apill apill--warn" data-testid="vehicle-in-review">{tr('In review')}</span>}
+        {v && inReview(o) && <span className="apill apill--warn" data-testid="vehicle-in-review">{tr('In review')}</span>}
         {o && !form && (
           <button type="button" className="abtn abtn--ghost a14" style={{ height: 36, padding: '0 14px' }} onClick={open}>
             {tr(v ? 'Edit' : 'Add vehicle')}
