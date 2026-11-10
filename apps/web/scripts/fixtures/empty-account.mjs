@@ -1,3 +1,5 @@
+import { catalogueFixture, requirements } from './requirements.mjs';
+
 // What the API answers for an account with no rows yet (measured on QA,
 // 2026-11-08, for a brand-new driver and rider): zeros, seven empty days and
 // empty lists -- never 404, 500 or null. Paths it does not know fall through.
@@ -40,7 +42,12 @@ export function emptyAccount(method, url) {
         vehicle_documents: [],
       };
     case p === '/auth/profile/':
-      return { id: 60, full_name: 'New Account', phone_number: '+919000110801', email: null, created_at: new Date().toISOString(), roles: ['driver'] };
+      return { id: 60, full_name: 'New Account', phone_number: '+919000110801', email: null, created_at: new Date().toISOString(), roles: ['driver'],
+        market_languages: ['en', 'te', 'hi'], market_country: 'IN' };
+    case p === '/driver/requirements/':
+      return requirements('IN', false);
+    case p === '/driver/vehicle-catalogue/':
+      return catalogueFixture('IN');
     default:
       return undefined;
   }
@@ -51,7 +58,8 @@ export function emptyAccount(method, url) {
 export function incompleteAccount(method, url) {
   const p = url.replace(/^.*\/api\/v1/, '').split('?')[0];
   if (p === '/auth/profile/') {
-    return { id: 32, full_name: 'Srinu', phone_number: '+919000110168', email: null, created_at: '2026-10-25T21:57:58Z', roles: ['driver'] };
+    return { id: 32, full_name: 'Srinu', phone_number: '+919000110168', email: null, created_at: '2026-10-25T21:57:58Z', roles: ['driver'],
+      market_languages: ['en', 'te', 'hi'], market_country: 'IN' };
   }
   if (p === '/driver/driver/onboarding/') {
     return {
@@ -63,4 +71,19 @@ export function incompleteAccount(method, url) {
     };
   }
   return emptyAccount(method, url);
+}
+
+// A new driver in the USA (10 Nov): English and Spanish, background check, Stripe payouts, no
+// Aadhaar, PAN or IFSC.
+export function usAccount(method, url) {
+  const p = url.replace(/^.*\/api\/v1/, '').split('?')[0];
+  if (p === '/auth/profile/') {
+    return { id: 70, full_name: 'Maria Lopez', phone_number: '+15125550170', email: null, created_at: '2026-11-01T15:00:00Z', roles: ['driver'],
+      market_languages: ['en', 'es'], market_country: 'US' };
+  }
+  if (p === '/driver/requirements/') return requirements('US', false);
+  if (p === '/driver/vehicle-catalogue/') return catalogueFixture('US');
+  if (p === '/driver/withdrawals/balance/') return { available_balance: 0.0, currency: 'USD', withdrawals_available: false, minimum_withdrawal: null };
+  const out = emptyAccount(method, url);
+  return out && typeof out === 'object' && 'currency' in out ? { ...out, currency: 'USD', timezone: 'America/Chicago' } : out;
 }

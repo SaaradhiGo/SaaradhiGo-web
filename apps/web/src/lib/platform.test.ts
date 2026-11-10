@@ -17,14 +17,14 @@ describe('tabs follow the capabilities (the link rule)', () => {
   it('shows a Super Admin everything and a role with nothing no tab', () => {
     const all = access(['platform.read', 'platform.settings', 'platform.integrations.read', 'audit.read']);
     expect(visibleTabs(all).map((t) => t.key)).toEqual(
-      ['markets', 'flags', 'versions', 'notices', 'settings', 'integrations', 'audit']);
+      ['markets', 'driverRequirements', 'flags', 'versions', 'notices', 'settings', 'integrations', 'audit']);
     expect(visibleTabs(access(['trip.read']))).toEqual([]);
     expect(visibleTabs(null)).toEqual([]);
   });
 
   it('gives City Ops the read tabs and the audit log, not settings or integrations', () => {
     const ops = access(['platform.read', 'platform.city_pause', 'audit.read']);
-    expect(visibleTabs(ops).map((t) => t.key)).toEqual(['markets', 'flags', 'versions', 'notices', 'audit']);
+    expect(visibleTabs(ops).map((t) => t.key)).toEqual(['markets', 'driverRequirements', 'flags', 'versions', 'notices', 'audit']);
   });
 });
 

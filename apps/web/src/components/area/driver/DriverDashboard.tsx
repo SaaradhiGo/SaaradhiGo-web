@@ -11,6 +11,7 @@ import { useLoad } from '@/lib/area/useLoad';
 import { IAlert } from '../icons';
 import { LoadError, Skel } from '../states';
 import { DocList, docRows } from './DriverDocuments';
+import { ReadyCard } from './DriverReady';
 import { DriverTop, WeekChart, useDriver } from './parts';
 
 /**
@@ -42,6 +43,7 @@ export function DriverDashboard() {
     <>
       <DriverTop title={tr('Dashboard')} me={me} />
       <main className="dr-main">
+        <ReadyCard />
         {soon && (
           <div className="anote">
             <span className="anote__icon"><IAlert /></span>

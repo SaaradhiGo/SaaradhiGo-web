@@ -7,6 +7,7 @@ import { listWhen, money, setMarketZone } from '@/lib/area/format';
 import { useLoad } from '@/lib/area/useLoad';
 import { LoadError, Skel } from '../states';
 import { NextPayout, WithdrawNow } from './WithdrawNow';
+import { PayoutMethodCard } from './profile/PayoutMethodCard';
 import { DriverTop, useDriver } from './parts';
 
 const STATUS: Record<string, [string, string]> = {
@@ -96,6 +97,7 @@ export function DriverPayouts() {
             </p>
           </section>
         </div>
+        <PayoutMethodCard />
       </main>
     </>
   );

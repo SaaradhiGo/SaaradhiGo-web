@@ -12,6 +12,7 @@ import {
 } from '@/lib/drivers';
 import { cityTime, words } from '@/lib/trips';
 import { DocumentReviewDrawer, DriverActionDrawer, type ReviewTarget } from '@/components/console/DriverActionDrawer';
+import { RequirementsPanel, type Requirements } from '@/components/console/drivers/RequirementsPanel';
 import { RecordPanel, type RecordTab } from '@/components/console/kit/RecordPanel';
 import { Revealable } from '@/components/console/Revealable';
 import { LedgerLink } from '@/components/console/finance';
@@ -67,6 +68,7 @@ type DriverDetail = {
   documents_expired?: boolean;
   joined_at?: string | null;
   documents?: Doc[];
+  requirements?: Requirements;
   approval_blockers?: Array<{ code: string; message: string }>;
   ratings_summary?: { average: string; count: number; distribution: Record<string, number> };
   counts?: { sos_total: number; sos_open: number; tickets_total: number; tickets_open: number };
@@ -242,6 +244,7 @@ export default function DriverDetailPage() {
     ) },
     { key: 'documents', label: 'Documents', content: (
 <div className="grid gap-4">
+          {data.requirements ? <RequirementsPanel driverId={data.id} req={data.requirements} may={mayReview} onDone={(t) => done(t)} /> : null}
           {docGroups.map(([title, docs]) => (
             <Panel key={title} title={title}>
               {docs.length === 0 ? (

@@ -65,6 +65,9 @@ export type Profile = {
   roles?: string[];
   role?: string | null;
   avatar?: string | null;
+  /** The languages offered in the account's market (10 Nov). */
+  market_languages?: string[];
+  market_country?: string | null;
 };
 
 type Page<T> = { results?: T[] } | T[];

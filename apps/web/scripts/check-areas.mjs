@@ -42,7 +42,7 @@ import path from 'node:path';
 import { createHash, webcrypto } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { SAMPLE, fixture } from './fixtures/areas.mjs';
-import { emptyAccount, incompleteAccount } from './fixtures/empty-account.mjs';
+import { emptyAccount, incompleteAccount, usAccount } from './fixtures/empty-account.mjs';
 
 const SITE = process.env.SITE || 'http://localhost:3100';
 const QA = process.env.QA === '1';
@@ -58,7 +58,7 @@ const ALLOW = {
   // 10 Nov: the owner's header profile button (name and arrow) on every page, and Upload or
   // Replace on every document row, are not in the 8 Nov design.
   'driver-web-trips': [0.04, 'the header profile button (10 Nov) is not in the design'],
-  'driver-web-profile': [0.04, 'the header profile button, the name as title and the Edit and Change links (10 Nov) are not in the design'],
+  'driver-web-profile': [0.25, 'rebuilt for real drivers (10 Nov): personal, contacts, identity, vehicle and payouts sections replace the design\'s three cards'],
   'driver-web-documents': [0.05, 'Upload or Replace on each document row and the header profile button (10 Nov) are not in the design'],
 };
 const SIZES = new Set([14, 16, 20, 22, 28, 32, 40]);
@@ -330,7 +330,7 @@ async function stateContext(role, how, failing = null) {
   const fail500 = { on: !!failing };
   if (QA) {
     const { signIn } = await import(pathToFileURL(path.resolve(process.env.LOGIN_MJS || 'scripts/qa-login.mjs')).href);
-    const label = how === 'incomplete' ? 'INCDRV'
+    const label = how === 'us' ? 'USDRV' : how === 'incomplete' ? 'INCDRV'
       : how === 'new' ? (role === 'driver' ? 'NEWDRV' : 'NEWRID') : role === 'driver' ? 'DRIVER' : 'RIDER';
     const r = await signIn(ctx, SITE, label);
     if (r.status !== 200) fail(`states: QA sign-in as ${label} failed (${r.status})`);
@@ -363,7 +363,8 @@ async function stateContext(role, how, failing = null) {
     if (failing && fail500.on && failing.test(url)) return route.fulfill({ status: 500, json: { error: 'gate' } });
     let body = null;
     try { body = req.postDataJSON(); } catch {}
-    const data = (how === 'new' ? emptyAccount(req.method(), url) : how === 'incomplete' ? incompleteAccount(req.method(), url) : undefined)
+    const data = (how === 'new' ? emptyAccount(req.method(), url) : how === 'incomplete' ? incompleteAccount(req.method(), url)
+      : how === 'us' ? usAccount(req.method(), url) : undefined)
       ?? fixture(req.method(), url, body);
     return route.fulfill(data === null || data === undefined ? { status: 404, json: { error: 'no fixture' } } : { json: data });
   });
@@ -473,6 +474,35 @@ for (const [role, how, pages] of [
     if (SHOTS) { mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, `${how}-${role}${p.replace(/[/?&=]/g, '_')}.png`) }); }
     await ctx.close();
   }
+}
+
+// ---- Driver requirements per market (10 Nov): India and the USA ask for different things, and
+// each sees only its own languages. The Ready page shows progress and what keeps the driver offline.
+for (const [how, see, never, langs] of [
+  ['incomplete', [/Last 4 digits of your Aadhaar/, /PAN/, /IFSC/, /Police verification certificate/], [/Set up payouts/, /Issuing state/], ['en', 'te', 'hi']],
+  ['us', [/Set up payouts/, /Issuing state/, /Background check/], [/Aadhaar/, /\bPAN\b/, /IFSC/], ['en', 'es']],
+]) {
+  const [ctx] = await stateContext('driver', how);
+  const page = await ctx.newPage();
+  await page.goto(SITE + '/driver/profile', { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+  const text = await settledText(page, see[0]);
+  const missing = see.filter((re) => !re.test(text));
+  const leaked = never.filter((re) => re.test(text));
+  const offered = await page.locator('select[aria-label="Language"] option').evaluateAll((os) => os.map((o) => o.value)).catch(() => []);
+  const ok = !missing.length && !leaked.length && JSON.stringify(offered) === JSON.stringify(langs);
+  stateResults.push(`requirements ${how}: ${ok ? 'ok' : 'FAIL'} (languages ${offered.join(',')})`);
+  if (missing.length) fail(`requirements: ${how} driver profile does not show ${missing.join(', ')}`);
+  if (leaked.length) fail(`requirements: ${how} driver profile shows ${leaked.join(', ')}`);
+  if (JSON.stringify(offered) !== JSON.stringify(langs)) fail(`requirements: ${how} driver is offered ${offered.join(',')}, not ${langs.join(',')}`);
+  await page.goto(SITE + '/driver/ready', { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+  const ready = await settledText(page, /of \d+ done/);
+  const readyOk = /\d+ of \d+ done/.test(ready) && /You can go online once these are done/.test(ready);
+  stateResults.push(`ready ${how}: ${readyOk ? 'ok' : 'FAIL'}`);
+  if (!readyOk) fail(`requirements: /driver/ready for the ${how} driver does not show progress and what blocks going online`);
+  await page.goto(SITE + '/driver/documents', { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+  const docs = await settledText(page, /Add your vehicle first/);
+  if (!/Add your vehicle first/.test(docs)) fail(`requirements: /driver/documents for the ${how} driver does not say "Add your vehicle first"`);
+  await ctx.close();
 }
 
 // Sign out from the menu: one click, no confirmation, the area's sign-in page with the notice.

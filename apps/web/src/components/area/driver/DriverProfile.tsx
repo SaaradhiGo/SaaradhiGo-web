@@ -1,19 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { LANGUAGES, LANGUAGE_INFO, type Language } from '@/i18n/locales';
 import { useTr } from '@/i18n/website';
-import { formatPlate } from '@/lib/booking';
-import { type VehicleForm, inReview, onboarding as loadOnboarding, saveVehicle } from '@/lib/area/driver';
 import { monthYear } from '@/lib/area/format';
-import { changePhone, className, maskPhone, updateName } from '@/lib/area/rider';
-import { useLoad } from '@/lib/area/useLoad';
+import { changePhone, maskPhone, updateName } from '@/lib/area/rider';
 import { messageFor, sendPublicOtp } from '@/lib/publicAuth';
 import { IChevron, IDoc, IHelp } from '../icons';
 import { Avatar, firstName, useAccount } from '../ProfileMenu';
 import { LoadError, Skel } from '../states';
+import { IdentitySection } from './profile/IdentitySection';
+import { PayoutsSection } from './profile/PayoutsSection';
+import { ContactsSection, PersonalSection } from './profile/PersonalSection';
+import { ReqContext, useRequirementsLoad } from './profile/shared';
+import { VehicleSection } from './profile/VehicleSection';
 import { useArea } from '../useArea';
 import { DriverTop, useDriver } from './parts';
 
@@ -36,7 +38,6 @@ function AccountCard() {
   const { locale } = useLocale();
   const [acct, setAcct] = useAccount();
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phoneStep, setPhoneStep] = useState<'off' | 'number' | 'code'>('off');
   const [phone, setPhone] = useState('');
@@ -49,7 +50,7 @@ function AccountCard() {
     e.preventDefault();
     setBusy(true); setNote(null);
     try {
-      const next = await updateName({ full_name: name.trim(), email: email.trim() });
+      const next = await updateName({ email: email.trim() });
       setAcct({ ...acct, ...next });
       setEditing(false);
       setNote({ ok: true, text: tr('Saved.') });
@@ -87,8 +88,6 @@ function AccountCard() {
       </div>
       {editing ? (
         <form onSubmit={saveProfile} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <label className="a14 amut" htmlFor="dp-name">{tr('Full name')}</label>
-          <div className="afield"><input id="dp-name" value={name} onChange={(e) => setName(e.target.value)} required /></div>
           <label className="a14 amut" htmlFor="dp-email">{tr('Email')}</label>
           <div className="afield"><input id="dp-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
           <div className="arow" style={{ gap: 8 }}>
@@ -98,12 +97,11 @@ function AccountCard() {
         </form>
       ) : (
         <>
-          <Row label={tr('Full name')} value={acct?.full_name || '—'}>
-            <button type="button" style={linkBtn} onClick={() => { setName(acct?.full_name ?? ''); setEmail(acct?.email ?? ''); setEditing(true); }}>
+          <Row label={tr('Email')} value={acct?.email || '—'}>
+            <button type="button" style={linkBtn} onClick={() => { setEmail(acct?.email ?? ''); setEditing(true); }}>
               {tr('Edit')}
             </button>
           </Row>
-          <Row label={tr('Email')} value={acct?.email || '—'} />
         </>
       )}
       <Row label={tr('Mobile')} value={maskPhone(acct?.phone_number) ?? '—'}>
@@ -135,90 +133,6 @@ function AccountCard() {
   );
 }
 
-/** "Add vehicle" with none, "Edit" with one; saving sends it to review (10 Nov). */
-function VehicleCard() {
-  const tr = useTr();
-  const info = useLoad(loadOnboarding);
-  const o = info.data;
-  const v = o?.vehicle ?? null;
-  const [form, setForm] = useState<VehicleForm | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const types = o?.vehicle_types ?? [];
-  const me = useDriver();
-  const typeOf = me?.active_vehicle_details?.vehicle_type?.type ?? null;
-
-  function open() {
-    setErr(null);
-    setForm({
-      vehicle_type: typeOf ?? types[0]?.type ?? '', brand: v?.brand ?? '', model: v?.model ?? '',
-      color: v?.color ?? '', vehicle_number: v?.vehicle_number ?? '',
-    });
-  }
-
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form) return;
-    setBusy(true); setErr(null);
-    try {
-      await saveVehicle(v?.id ?? null, { ...form, vehicle_number: form.vehicle_number.trim().toUpperCase() });
-      setForm(null);
-      info.retry();
-    } catch (e2) {
-      setErr(messageFor(e2, tr('We could not save the vehicle. Try again.')));
-    } finally { setBusy(false); }
-  }
-
-  const set = (k: keyof VehicleForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form!, [k]: e.target.value });
-
-  return (
-    <section className="acard" style={{ padding: 20 }}>
-      <div className="arow" style={{ justifyContent: 'space-between' }}>
-        <h2 className="a20">{tr('Vehicle')}</h2>
-        {v && inReview(o) && <span className="apill apill--warn" data-testid="vehicle-in-review">{tr('In review')}</span>}
-        {o && !form && (
-          <button type="button" className="abtn abtn--ghost a14" style={{ height: 36, padding: '0 14px' }} onClick={open}>
-            {tr(v ? 'Edit' : 'Add vehicle')}
-          </button>
-        )}
-      </div>
-      {info.state === 'error' && <LoadError what="profile" retry={info.retry} />}
-      {info.state === 'loading' && <Skel h={60} style={{ marginTop: 12 }} />}
-      {form ? (
-        <form onSubmit={save} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
-          <label className="a14 amut" htmlFor="dv-type">{tr('Vehicle type')}</label>
-          <select id="dv-type" className="achip" value={form.vehicle_type} onChange={set('vehicle_type')} required>
-            {types.map((t) => <option key={t.type} value={t.type}>{className(t.type) ?? t.type}</option>)}
-          </select>
-          <label className="a14 amut" htmlFor="dv-brand">{tr('Make')}</label>
-          <div className="afield"><input id="dv-brand" value={form.brand} onChange={set('brand')} required /></div>
-          <label className="a14 amut" htmlFor="dv-model">{tr('Model')}</label>
-          <div className="afield"><input id="dv-model" value={form.model} onChange={set('model')} required /></div>
-          <label className="a14 amut" htmlFor="dv-color">{tr('Colour')}</label>
-          <div className="afield"><input id="dv-color" value={form.color} onChange={set('color')} required /></div>
-          <label className="a14 amut" htmlFor="dv-plate">{tr('Number plate')}</label>
-          <div className="afield"><input id="dv-plate" value={form.vehicle_number} onChange={set('vehicle_number')} required /></div>
-          <p className="a14 amut">{tr('Saving sends your vehicle for review. You can go online again once it is approved.')}</p>
-          {err && <p className="a14 ared" role="alert">{err}</p>}
-          <div className="arow" style={{ gap: 8 }}>
-            <button type="submit" className="abtn abtn--dark" disabled={busy}>{tr('Save')}</button>
-            <button type="button" className="abtn abtn--ghost" onClick={() => setForm(null)}>{tr('Cancel')}</button>
-          </div>
-        </form>
-      ) : o && (
-        v ? (
-          <>
-            <Row label={tr('Type')} value={className(typeOf) ?? '—'} />
-            <Row label={tr('Model')} value={[[v.brand, v.model].filter(Boolean).join(' '), v.color].filter(Boolean).join(', ') || '—'} />
-            <Row label={tr('Number plate')} value={v.vehicle_number ? formatPlate(v.vehicle_number) : '—'} />
-            <p className="a14 amut" style={{ marginTop: 8 }}>{tr('Changing the vehicle sends it for review again.')}</p>
-          </>
-        ) : <p className="aempty">{tr('No vehicle yet. Add the one you drive to get approved.')}</p>
-      )}
-    </section>
-  );
-}
-
 /**
  * /driver/profile (driver-web-profile.html): who the driver is, with their name as the title
  * (10 Nov), editable name, email and number, language, the vehicle, and support.
@@ -231,27 +145,37 @@ export function DriverProfile() {
   const [acct] = useAccount();
   const since = monthYear(acct?.created_at, locale);
   const rating = me?.ratings != null && Number(me.ratings) > 0 ? Number(me.ratings).toFixed(1) : null;
+  const req = useRequirementsLoad();
+  // Only the market's languages (10 Nov): India en/te/hi, USA en/es.
+  const offered = LANGUAGES.filter((l) => (acct?.market_languages ?? LANGUAGES).includes(l));
 
   return (
     <>
       <DriverTop title={firstName(acct) || tr('Your profile')} sub={since ? tr('Saaradhi since {date}').replace('{date}', since) : null} me={me} />
       <main className="dr-main">
-        <div className="dr-grid3" style={{ alignItems: 'start' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <AccountCard />
-            <section id="language" className="acard" style={{ padding: 20 }}>
-              <Row label={tr('Rating')} value={
-                rating ? tr('{r} from {n} trips').replace('{r}', rating).replace('{n}', `${me?.total_trips ?? 0}`)
-                  : tr('{n} trips').replace('{n}', `${me?.total_trips ?? 0}`)
-              } />
-              <Row label={tr('Language')} value={LANGUAGE_INFO[language].label}>
-                <select aria-label={tr('Language')} className="achip" value={language} onChange={(e) => setLanguage(e.target.value as Language)}>
-                  {LANGUAGES.map((l) => <option key={l} value={l}>{LANGUAGE_INFO[l].label}</option>)}
-                </select>
-              </Row>
-            </section>
-          </div>
-          <VehicleCard />
+        <ReqContext.Provider value={req}>
+          {req.state === 'error' && <LoadError what="profile" retry={req.retry} />}
+          <div className="dr-grid2" style={{ alignItems: 'start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+              <PersonalSection />
+              <ContactsSection />
+              <IdentitySection />
+              <VehicleSection />
+              <Suspense fallback={null}><PayoutsSection /></Suspense>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+              <AccountCard />
+              <section id="language" className="acard" style={{ padding: 20 }}>
+                <Row label={tr('Rating')} value={
+                  rating ? tr('{r} from {n} trips').replace('{r}', rating).replace('{n}', `${me?.total_trips ?? 0}`)
+                    : tr('{n} trips').replace('{n}', `${me?.total_trips ?? 0}`)
+                } />
+                <Row label={tr('Language')} value={LANGUAGE_INFO[language].label}>
+                  <select aria-label={tr('Language')} className="achip" value={language} onChange={(e) => setLanguage(e.target.value as Language)}>
+                    {offered.map((l) => <option key={l} value={l}>{LANGUAGE_INFO[l].label}</option>)}
+                  </select>
+                </Row>
+              </section>
           <section className="acard" style={{ padding: 20 }}>
             <h2 className="a20">{tr('Support')}</h2>
             <Link href="/driver/support" className="arow" style={{ padding: '12px 0', borderTop: '1px solid var(--c-border)', textDecoration: 'none', marginTop: 8 }}>
@@ -273,7 +197,9 @@ export function DriverProfile() {
               <span className="ab agrow">{tr('Sign out')}</span><IChevron />
             </button>
           </section>
-        </div>
+            </div>
+          </div>
+        </ReqContext.Provider>
       </main>
     </>
   );
