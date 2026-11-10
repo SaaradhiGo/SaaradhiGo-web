@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useTr } from '@/i18n/website';
 import { messageFor } from '@/lib/publicAuth';
 import { DOCUMENT_ACCEPT, uploadDriverDocument, uploadVehicleDocument } from '@/lib/uploads';
+import { requirements as loadRequirements, uploadFile } from '@/lib/area/requirements';
+import { StatusPill } from './profile/shared';
 import {
   type Doc, type Onboarding, type Profile, type Vehicle, daysUntil, onboarding as loadDocs, vehicles as loadVehicles,
 } from '@/lib/area/driver';
@@ -15,7 +17,7 @@ import { DriverTop, useDriver } from './parts';
 
 export type DocRow = {
   key: string; label: string; status: string; reason: string | null; expiresIn: number | null;
-  present?: boolean; kind?: string | null; target?: 'driver' | 'vehicle'; recordable?: boolean;
+  present?: boolean; kind?: string | null; target?: 'driver' | 'vehicle'; recordable?: boolean; expires?: string | null;
 };
 
 /** The expiry date the server keeps for a document, if any. */
@@ -39,6 +41,7 @@ export function docRows(o: Onboarding | null, me: Profile | null, car: Vehicle |
     status: d.status ?? (d.present ? 'in_review' : 'missing'),
     reason: d.reason ?? null,
     expiresIn: daysUntil(expiryFor(d.key, me, car)),
+    expires: expiryFor(d.key, me, car) ?? null,
     present: d.present, kind: d.upload_kind ?? null, target: d.target, recordable: d.recordable !== false,
   }));
 }
@@ -48,7 +51,8 @@ function Pill({ row }: { row: DocRow }) {
   if (row.expiresIn !== null && row.expiresIn <= 30) {
     return (
       <span className="apill apill--warn">
-        {row.expiresIn < 0 ? tr('Expired') : tr('Expires in {n} days').replace('{n}', `${row.expiresIn}`)}
+        {row.expiresIn < 0 ? tr('Expired') : row.expires ? tr('Expiring {date}').replace('{date}', row.expires)
+          : tr('Expires in {n} days').replace('{n}', `${row.expiresIn}`)}
       </span>
     );
   }
@@ -64,7 +68,9 @@ function Pill({ row }: { row: DocRow }) {
  * Upload or replace one document from the web (10 Nov), through the same upload the phone uses;
  * it goes to the reviewer queue and the list is read again.
  */
-export function UploadButton({ row, vehicleId, onDone, dark }: { row: DocRow; vehicleId: number | null; onDone: () => void; dark?: boolean }) {
+export function UploadButton({ row, vehicleId, onDone, dark, upload }: {
+  row: DocRow; vehicleId: number | null; onDone: () => void; dark?: boolean; upload?: (f: File) => Promise<unknown>;
+}) {
   const tr = useTr();
   const input = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
@@ -75,7 +81,8 @@ export function UploadButton({ row, vehicleId, onDone, dark }: { row: DocRow; ve
   async function pick(file: File) {
     setBusy(true); setErr(null);
     try {
-      if (row.target === 'vehicle' && vehicleId) await uploadVehicleDocument(vehicleId, row.kind!, file);
+      if (upload) await upload(file);
+      else if (row.target === 'vehicle' && vehicleId) await uploadVehicleDocument(vehicleId, row.kind!, file);
       else await uploadDriverDocument(row.kind!, file);
       onDone();
     } catch (e) {
@@ -172,7 +179,60 @@ export function DriverDocuments() {
           </section>
         ))}
         {rest.length > 0 && <section className="acard" style={{ padding: '8px 20px' }}><DocList rows={rest} action={(r) => <UploadButton row={r} vehicleId={vehicleId} onDone={again} />} /></section>}
+        <MarketDocuments hasVehicle={!!vehicleId} onDone={again} />
       </main>
+    </>
+  );
+}
+
+/** Identity documents beyond the licence, and, until a vehicle exists, its documents (10 Nov). */
+const IDENTITY_FILES: Record<string, string> = {
+  address_proof: 'address_proof_doc', aadhaar: 'aadhaar_doc', pan: 'pan_doc', police_verification: 'police_verification_doc',
+};
+const VEHICLE_DOC_KEYS = ['rc', 'registration', 'insurance', 'permit', 'fitness', 'puc', 'inspection'];
+
+function MarketDocuments({ hasVehicle, onDone }: { hasVehicle: boolean; onDone: () => void }) {
+  const tr = useTr();
+  const req = useLoad(loadRequirements);
+  const items = req.data?.checklist.items ?? [];
+  const identity = items.filter((i) => i.key in IDENTITY_FILES);
+  const vehicleDocs = hasVehicle ? [] : items.filter((i) => VEHICLE_DOC_KEYS.includes(i.key));
+  const again = () => { req.retry(); onDone(); };
+  if (!identity.length && !vehicleDocs.length) return null;
+  return (
+    <>
+      {identity.length > 0 && (
+        <section className="acard" style={{ padding: '8px 20px' }} data-testid="identity-documents">
+          {identity.map((i) => (
+            <div key={i.key} className="arow" style={{ padding: '12px 0', borderTop: '1px solid var(--c-border)', gap: 12, flexWrap: 'wrap' }}>
+              <span className="aico"><IDoc /></span>
+              <div className="agrow">
+                <div className="ab">{tr(i.label)}</div>
+                {i.status === 'rejected' && i.reason && <div className="a14 ared">{i.reason}</div>}
+              </div>
+              <StatusPill it={i} />
+              <UploadButton row={{ key: i.key, label: i.label, status: i.status, reason: i.reason, expiresIn: null,
+                present: i.status !== 'missing', kind: IDENTITY_FILES[i.key], target: 'driver', recordable: true }}
+                vehicleId={null} onDone={again} upload={(f) => uploadFile('identity', IDENTITY_FILES[i.key], f)} />
+            </div>
+          ))}
+        </section>
+      )}
+      {vehicleDocs.length > 0 && (
+        <section className="acard" style={{ padding: '8px 20px' }} data-testid="vehicle-documents-waiting">
+          <div className="arow" style={{ padding: '12px 0', gap: 12, flexWrap: 'wrap' }}>
+            <h2 className="a20 agrow">{tr('Vehicle documents')}</h2>
+            <Link href="/driver/profile#vehicle" className="abtn abtn--dark">{tr('Add vehicle')}</Link>
+          </div>
+          {vehicleDocs.map((i) => (
+            <div key={i.key} className="arow" style={{ padding: '12px 0', borderTop: '1px solid var(--c-border)', gap: 12 }}>
+              <span className="aico"><IDoc /></span>
+              <div className="agrow"><div className="ab">{tr(i.label)}</div><div className="a14 amut">{tr('Add your vehicle first')}</div></div>
+              <span className="apill apill--neu">{tr('Missing')}</span>
+            </div>
+          ))}
+        </section>
+      )}
     </>
   );
 }

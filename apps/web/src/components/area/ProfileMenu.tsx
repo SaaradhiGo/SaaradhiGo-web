@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useLocale } from '@/i18n/LocaleProvider';
+import type { Language } from '@/i18n/locales';
 import { useTr } from '@/i18n/website';
 import { type Profile, maskPhone, profile as loadProfile } from '@/lib/area/rider';
 import { ILogout } from './icons';
@@ -54,6 +56,13 @@ export function ProfileMenu({ links, onSignOut, extra }: { links: MenuLink[]; on
   const [me] = useAccount();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement | null>(null);
+  const { language, setLanguage } = useLocale();
+
+  // Only the market's languages (10 Nov): a language this market does not offer falls back to English.
+  useEffect(() => {
+    const offered = me?.market_languages;
+    if (offered?.length && !offered.includes(language)) setLanguage('en' as Language);
+  }, [me, language, setLanguage]);
 
   useEffect(() => {
     if (!open) return;

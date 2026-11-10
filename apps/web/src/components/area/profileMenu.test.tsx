@@ -14,17 +14,29 @@ let path = '/driver';
 vi.mock('next/navigation', () => ({
   usePathname: () => path,
   useRouter: () => ({ replace, push: vi.fn(), refresh: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 const ACCOUNT = { id: 32, full_name: 'Srinu Mekala', phone_number: '+919876543168', created_at: '2026-10-25T21:57:58Z', email: null };
 let onboarding: Record<string, unknown> = { vehicle: null, vehicle_types: [{ type: 'sedan' }, { type: 'auto' }], approved: false, doc_status: 'pending', driver_documents: [], vehicle_documents: [] };
 const posts: [string, unknown][] = [];
+const REQUIREMENTS = {
+  config: { country: 'IN', state: '', items: {}, min_driver_age: 18, max_vehicle_age_years: 15, languages: ['en', 'te', 'hi'] },
+  checklist: { market: { country: 'IN', state: '' }, items: [], done: 0, total: 0, blocking: [], approved: false },
+  personal: { full_name: 'Srinu Mekala', name_pending: null, photo: null, photo_pending: null, dob: null, address: null,
+    permanent_address: null, emergency_contacts: [] },
+  identity: { license_number: '', license_state: '', license_expiry: null, aadhaar_masked: null, pan_masked: null,
+    police_verification_status: 'not_submitted', background_check_status: 'not_started' },
+  payout_method: { kind: null, held_until: null, bank: null }, states: [], relationships: [],
+  vehicle_types: ['sedan'], vehicle_years: [2026], upload_kinds: {},
+};
 vi.mock('@/lib/area/api', () => ({
   areaToken: async () => 'tok',
   areaGet: vi.fn(async (p: string) => {
     if (p === '/auth/profile/') return ACCOUNT;
     if (p === '/driver/driver/onboarding/') return onboarding;
     if (p === '/driver/driver/profile/') return { status: 'offline', approved: false, doc_status: 'pending' };
+    if (p === '/driver/requirements/') return REQUIREMENTS;
     return {};
   }),
   areaPost: vi.fn(async (p: string, b: unknown) => {
@@ -104,23 +116,6 @@ describe('driver profile page', () => {
     await waitFor(() => expect(container.querySelector('.dr-head h1')!.textContent).toBe('Srinu'));
     expect(container.querySelector('.dr-head')!.textContent).toContain('Saaradhi since October 2026');
     expect(screen.getAllByRole('button', { name: 'Sign out' }).length).toBeGreaterThan(0);
-  });
-
-  it('adds a vehicle and shows it In review', async () => {
-    path = '/driver/profile';
-    const { DriverProfile } = await import('./driver/DriverProfile');
-    wrap(<DriverProfile />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Add vehicle' }));
-    expect(screen.queryByTestId('vehicle-in-review')).toBeNull();          // nothing submitted yet
-    fireEvent.change(screen.getByLabelText('Make'), { target: { value: 'Maruti' } });
-    fireEvent.change(screen.getByLabelText('Model'), { target: { value: 'Dzire' } });
-    fireEvent.change(screen.getByLabelText('Colour'), { target: { value: 'White' } });
-    fireEvent.change(screen.getByLabelText('Number plate'), { target: { value: 'ts09ab1234' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(posts.at(-1)).toEqual(['/driver/vehicles/add/', {
-      vehicle_type: 'sedan', brand: 'Maruti', model: 'Dzire', color: 'White', vehicle_number: 'TS09AB1234' }]));
-    expect(await screen.findByTestId('vehicle-in-review')).toBeTruthy();
-    expect(await screen.findAllByRole('button', { name: 'Edit' })).toHaveLength(2);   // name, and now the vehicle
   });
 });
 

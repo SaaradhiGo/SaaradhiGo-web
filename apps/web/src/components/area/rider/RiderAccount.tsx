@@ -161,7 +161,8 @@ export function RiderAccount() {
           <Row label={tr('Language')} value={LANGUAGE_INFO[language].label}>
             <select aria-label={tr('Language')} className="achip" value={language}
               onChange={(e) => setLanguage(e.target.value as Language)}>
-              {LANGUAGES.map((l) => <option key={l} value={l}>{LANGUAGE_INFO[l].label}</option>)}
+              {LANGUAGES.filter((l) => (me?.market_languages ?? LANGUAGES).includes(l))
+                .map((l) => <option key={l} value={l}>{LANGUAGE_INFO[l].label}</option>)}
             </select>
           </Row>
           <Row label={tr('Theme')} value={tr(dark ? 'Dark' : 'Light')}>

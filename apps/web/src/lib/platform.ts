@@ -22,10 +22,11 @@ export const canReadIntegrations = (a: AdminAccess | null) => can(a, 'platform.i
 export const canReadAudit = (a: AdminAccess | null) => can(a, 'audit.read');
 export const canCheck = (a: AdminAccess | null) => can(a, 'approval.check');
 
-export type PlatformTab = 'markets' | 'flags' | 'versions' | 'notices' | 'settings' | 'integrations' | 'audit' | 'staff' | 'dataRequests';
+export type PlatformTab = 'markets' | 'driverRequirements' | 'flags' | 'versions' | 'notices' | 'settings' | 'integrations' | 'audit' | 'staff' | 'dataRequests';
 
 export const TABS: { key: PlatformTab; href: string; label: string; open: (a: AdminAccess | null) => boolean }[] = [
   { key: 'markets', href: '/settings', label: 'Markets', open: canReadPlatform },
+  { key: 'driverRequirements', href: '/settings/driver-requirements', label: 'Driver requirements', open: canReadPlatform },
   { key: 'flags', href: '/settings/flags', label: 'Feature flags', open: canReadPlatform },
   { key: 'versions', href: '/settings/app-versions', label: 'App versions', open: canReadPlatform },
   { key: 'notices', href: '/settings/notices', label: 'Notices', open: canReadPlatform },

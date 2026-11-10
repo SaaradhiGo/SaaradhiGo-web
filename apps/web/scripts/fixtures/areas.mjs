@@ -1,3 +1,4 @@
+import { catalogueFixture, requirements } from './requirements.mjs';
 // API answers for the signed-in areas gate (check-areas.mjs). TEST DATA ONLY:
 // shaped exactly like the backend's responses, filled with the design's
 // example values so the pages can be compared with its screenshots. Nothing
@@ -52,7 +53,12 @@ export function fixture(method, path, body) {
   const [mon, sun] = monday();
   switch (true) {
     case p === '/auth/profile/':
-      return { id: 7, full_name: 'Asha Rao', phone_number: '+919876500210', email: 'asha@example.com', created_at: at(7, 9, 0), roles: ['rider'] };
+      return { id: 7, full_name: 'Asha Rao', phone_number: '+919876500210', email: 'asha@example.com', created_at: at(7, 9, 0), roles: ['rider'],
+        market_languages: ['en', 'te', 'hi'], market_country: 'IN' };
+    case p === '/driver/requirements/':
+      return requirements('IN', true);
+    case p === '/driver/vehicle-catalogue/':
+      return catalogueFixture('IN');
     case p === '/rider/places/':
       return { places: [] };
     case p === '/rider/locations/all/':
