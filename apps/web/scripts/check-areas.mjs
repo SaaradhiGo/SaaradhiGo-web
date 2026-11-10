@@ -57,6 +57,8 @@ const ALLOW = {
   'driver-web-payouts': [0.05, 'Withdraw button and the Paid to bank card are hidden (no web money flow tonight)'],
   // 10 Nov: the owner's header profile button (name and arrow) on every page, and Upload or
   // Replace on every document row, are not in the 8 Nov design.
+  'driver-web-trips': [0.04, 'the header profile button (10 Nov) is not in the design'],
+  'driver-web-profile': [0.04, 'the header profile button, the name as title and the Edit and Change links (10 Nov) are not in the design'],
   'driver-web-documents': [0.05, 'Upload or Replace on each document row and the header profile button (10 Nov) are not in the design'],
 };
 const SIZES = new Set([14, 16, 20, 22, 28, 32, 40]);
