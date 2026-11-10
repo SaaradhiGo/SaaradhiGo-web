@@ -366,6 +366,12 @@ export const RIDER_CANCEL_REASONS = [
   { value: 'other', label: 'Something else' },
 ] as const;
 
+/** What cancelling now costs (9 Nov): free (and until when), or the fee due on the next ride. */
+export type CancelPreview = { free: boolean; free_until: string | null; fee: string | null; currency: string };
+export async function cancelPreview(tripId: number | string) {
+  return api.get<CancelPreview>(`/ride/trip/${tripId}/cancel-preview/`, readRiderToken());
+}
+
 export async function cancelTrip(tripId: number | string, reason: string) {
   return api.post(`/ride/trip/${tripId}/cancel/`, { reason }, readRiderToken());
 }

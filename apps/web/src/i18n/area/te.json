@@ -336,5 +336,20 @@
   "Lower demand": "తక్కువ డిమాండ్",
   "included": "కలిపి",
   "Total": "మొత్తం",
-  "A cancellation fee of {amount} from an earlier trip is added to this ride.": "గత ప్రయాణం రద్దు ఫీజు {amount} ఈ ప్రయాణానికి కలుపబడింది."
+  "A cancellation fee of {amount} from an earlier trip is added to this ride.": "గత ప్రయాణం రద్దు ఫీజు {amount} ఈ ప్రయాణానికి కలుపబడింది.",
+  "Platform fee": "ప్లాట్‌ఫామ్ ఫీజు",
+  "No platform fee yet.": "ఇంకా ప్లాట్‌ఫామ్ ఫీజు లేదు.",
+  "so far": "ఇప్పటివరకు",
+  "How our fee works": "మా ఫీజు ఎలా పనిచేస్తుంది",
+  "{fee} for each trip.": "ప్రతి ప్రయాణానికి {fee}.",
+  "{fee} for a day with at least one trip.": "కనీసం ఒక ప్రయాణం ఉన్న రోజుకు {fee}.",
+  "Trips after the first {n} in a day are free.": "రోజులో మొదటి {n} తర్వాత ప్రయాణాలు ఉచితం.",
+  "Never more than {cap} in a day.": "రోజుకు {cap} కంటే ఎక్కువ ఎప్పుడూ కాదు.",
+  "No fee on a day when your fares are under {floor}.": "మీ ఛార్జీలు {floor} కంటే తక్కువ ఉన్న రోజున ఫీజు లేదు.",
+  "No fee in your first {n} days.": "మీ మొదటి {n} రోజుల్లో ఫీజు లేదు.",
+  "You always keep at least 80% of every fare.": "ప్రతి ఛార్జీలో కనీసం 80% ఎప్పుడూ మీదే.",
+  "The fee is taken once a day, after the day ends.": "ఫీజు రోజు ముగిసిన తర్వాత, రోజుకు ఒకసారి తీసుకుంటారు.",
+  "Free to cancel until {time}.": "{time} వరకు ఉచితంగా రద్దు చేయవచ్చు.",
+  "Free to cancel.": "ఉచితంగా రద్దు చేయవచ్చు.",
+  "Cancelling now costs {fee}. It is added to your next ride. No fee if you cancel because you feel unsafe.": "ఇప్పుడు రద్దు చేస్తే {fee} అవుతుంది. ఇది మీ తదుపరి ప్రయాణానికి కలుపబడుతుంది. మీకు సురక్షితంగా అనిపించక రద్దు చేస్తే ఫీజు లేదు."
 }

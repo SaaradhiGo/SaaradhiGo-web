@@ -79,7 +79,7 @@ export function RideHome() {
     if (q.length < 3 || (drop && drop.label === query)) { setFound([]); return; }
     timer.current = window.setTimeout(() => {
       searchPlaces(q, here, 'drop').then(setFound).catch(() => setFound([]));
-    }, 250);
+    }, 300); // 300 ms after the last keystroke (maps cost, 9 Nov)
   }, [query, here, drop]);
 
   async function pick(p: Place) {

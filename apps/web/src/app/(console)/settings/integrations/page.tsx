@@ -5,10 +5,11 @@ import { api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
-  MODE_WORDS, canReadIntegrations, modeTone, type IntegrationRow, type IntegrationsPayload,
+  MODE_WORDS, canReadIntegrations, canWritePlatform, modeTone, type IntegrationRow, type IntegrationsPayload,
 } from '@/lib/platform';
 import { messageOf } from '@/components/console/notifications';
 import { MapsCallsPanel, PlatformNav, PlatformNoAccess } from '@/components/console/platform';
+import { MapsCostPanel } from '@/components/console/maps/MapsCostPanel';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { StatusChip } from '@/components/console/kit/StatusChip';
 import { chipToneOf } from '@/components/console/listKit';
@@ -114,6 +115,7 @@ export default function IntegrationsPage() {
         empty="No provider matches."
       />
       <MapsCallsPanel calls={data?.maps_calls} />
+      <MapsCostPanel mayEdit={canWritePlatform(access)} />
     </>
   );
 }

@@ -7,7 +7,7 @@ import MapSurface from '@/components/MapSurface';
 import { TripSafety } from '@/components/booking/TripSafety';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
-import { RIDER_CANCEL_REASONS, RideSocket, type SocketEvent, cancelTrip, formatPlate } from '@/lib/booking';
+import { type CancelPreview, RIDER_CANCEL_REASONS, RideSocket, type SocketEvent, cancelPreview, cancelTrip, formatPlate } from '@/lib/booking';
 import { money } from '@/lib/area/format';
 import { AREA_FLAGS } from '@/lib/area/flags';
 import {
@@ -56,6 +56,13 @@ export function RideTrip({ id }: { id: string }) {
   const [driverAt, setDriverAt] = useState<{ lat: number; lng: number } | null>(null);
   const [safety, setSafety] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [costs, setCosts] = useState<CancelPreview | null>(null);
+  useEffect(() => {
+    if (!cancelling) return;
+    let live = true;
+    cancelPreview(id).then((p) => { if (live) setCosts(p); }).catch(() => { if (live) setCosts(null); });
+    return () => { live = false; };
+  }, [cancelling, id]);
   const [reason, setReason] = useState<string>(RIDER_CANCEL_REASONS[0].value);
   const [note, setNote] = useState<string | null>(null);
   const [eta, setEta] = useState<Eta | null>(null);
@@ -277,6 +284,18 @@ export function RideTrip({ id }: { id: string }) {
         )}
         {cancelling && (
           <div className="acard acol" style={{ padding: 16, gap: 10, marginTop: 'auto' }}>
+            {costs && (costs.free ? (
+              <p className="a14 agrn" style={{ margin: 0 }}>
+                {costs.free_until
+                  ? tr('Free to cancel until {time}.').replace('{time}', new Date(costs.free_until).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' }))
+                  : tr('Free to cancel.')}
+              </p>
+            ) : (
+              <p className="a14" style={{ margin: 0 }}>
+                {tr('Cancelling now costs {fee}. It is added to your next ride. No fee if you cancel because you feel unsafe.')
+                  .replace('{fee}', money(costs.fee, costs.currency, locale) ?? '')}
+              </p>
+            ))}
             <label className="ab" htmlFor="why">{tr('Why are you cancelling?')}</label>
             <select id="why" className="afield" value={reason} onChange={(e) => setReason(e.target.value)}>
               {RIDER_CANCEL_REASONS.map((r) => <option key={r.value} value={r.value}>{tr(r.label)}</option>)}

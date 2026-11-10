@@ -214,6 +214,8 @@ async function call<T>(
     method,
     headers: {
       'Content-Type': 'application/json',
+      // Maps cost (9 Nov): the backend counts each Google call against the surface that asked.
+      'X-SG-Surface': 'rider_web',
       ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
