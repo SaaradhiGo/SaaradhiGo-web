@@ -40,7 +40,7 @@ export function RequirementsPanel({ driverId, req, may, onDone }: { driverId: nu
   }
 
   const decisionRow = (key: 'legal_name' | 'payout_method', text: string) => (
-    <div className="grid gap-2" style={{ borderTop: '1px solid var(--ops-border, #e5e5e5)', paddingTop: 8 }}>
+    <div className="grid gap-2" style={{ borderTop: '1px solid var(--ops-hairline)', paddingTop: 8 }}>
       <div>{text}</div>
       {may ? (
         <div className="flex gap-2 flex-wrap items-center">
