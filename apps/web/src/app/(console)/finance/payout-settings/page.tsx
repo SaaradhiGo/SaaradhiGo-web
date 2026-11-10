@@ -12,6 +12,8 @@ import {
 import { interpretWrite, newIdempotencyKey } from '@/lib/trips';
 import { PageLink } from '@/components/console/PageLink';
 import { FinanceNav } from '@/components/console/finance';
+import { PayoutScopes, cycleWords, instantWords, type CycleFields, type Scope } from '@/components/console/finance/PayoutScopes';
+import { FieldsDrawer, toText, type FieldSpec } from '@/components/console/kit/FieldsDrawer';
 import {
   DataTable, Drawer, Empty, ErrorState, Pill, Skeleton,
 } from '@/components/console/ui';
@@ -43,6 +45,7 @@ type Country = {
   country: string; name: string; currency: string; configured: boolean; message: string | null;
   config: Version | null; history: Version[]; pending_changes: PendingChange[]; recent_runs: Run[];
   editable: boolean; change_blocked: boolean; change_blocked_reason: string | null;
+  scopes?: Scope[];
   payout_approval_blocked: boolean; payout_approval_blocked_reason: string | null;
 };
 type Payload = { countries: Country[]; editable: boolean; fee_warning: string };
@@ -58,6 +61,8 @@ function SettingsInner() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<Country | null>(null);
   const [notice, setNotice] = useState<{ text: string; kind: 'pending' | 'done' } | null>(null);
+  const [cycleOf, setCycleOf] = useState<Country | null>(null);
+  const [cycleKey] = useState(newIdempotencyKey);
 
   const load = useCallback(async () => {
     setError(null);
@@ -100,7 +105,9 @@ function SettingsInner() {
                     ['Transfer fee', <>{Number(c.config.fee_percent)}%</>],
                     ['Minimum withdrawal', formatMinor(c.config.minimum_withdrawal_minor, c.currency)],
                     ['A payout is stuck after', c.config.stuck_payout_hours ? `${c.config.stuck_payout_hours} hours` : 'Not checked'],
-                    ['Payout schedule', scheduleLabel(c.config)],
+                    ['Payout schedule', cycleWords(c.config as CycleFields) || scheduleLabel(c.config)],
+                    ['Withdraw now', instantWords(c.config as CycleFields, c.currency)],
+                    ['SaaradhiGo fee on payouts', <>{Number(c.config.fee_percent)}%</>],
                     ['A reward under review is held for', <>{c.config.reward_hold_days ?? FRAUD_MONEY_DEFAULTS.reward_hold_days} days, then released if the flag is not decided</>],
                     ['A recovery takes at most', <>{c.config.recovery_max_percent ?? FRAUD_MONEY_DEFAULTS.recovery_max_percent}% of any one payout</>],
                     ['A payout hold lasts at most', <>{c.config.payout_hold_max_days ?? FRAUD_MONEY_DEFAULTS.payout_hold_max_days} days unless renewed</>],
@@ -126,13 +133,20 @@ function SettingsInner() {
                         the console until the owner configures an approval policy.
                       </div>
                     ) : (
-                      <div className="mt-3">
+                      <div className="mt-3 flex gap-2">
                         <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setEditing(c)}>
                           Edit as a request…
+                        </button>
+                        <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setCycleOf(c)}>
+                          Cycle and Withdraw now…
                         </button>
                       </div>
                     )
                   ) : null}
+
+                  <PayoutScopes country={c.country} currency={c.currency} scopes={c.scopes ?? []}
+                    may={may && c.editable && !c.change_blocked}
+                    onDone={(text, kind) => { setNotice({ text, kind }); void load(); }} />
 
                   {c.recent_runs.length > 0 && (
                     <div className="mt-4">
@@ -184,6 +198,15 @@ function SettingsInner() {
         </div>
       )}
 
+      {cycleOf && cycleOf.config ? (
+        <FieldsDrawer title={`Cycle and Withdraw now · ${cycleOf.name}`} fields={COUNTRY_CYCLE_FIELDS}
+          initial={Object.fromEntries(COUNTRY_CYCLE_FIELDS.map((f) => [f.key, toText((cycleOf.config as Record<string, unknown>)[f.key])]))}
+          note="The country's own cycle and instant fee rule. States and cities can override each value below."
+          send={(changes, reason) => api.post(`/payments/admin/payout-config/${cycleOf.country}/`,
+            { ...changes, reason, idempotency_key: `${cycleKey}-${cycleOf.country}` })}
+          onClose={() => setCycleOf(null)}
+          onDone={(text, kind) => { setCycleOf(null); setNotice({ text, kind }); void load(); }} />
+      ) : null}
       {editing && editing.config ? (
         <EditDrawer country={editing} warning={data?.fee_warning ?? ''}
           onClose={() => setEditing(null)}
@@ -192,6 +215,23 @@ function SettingsInner() {
     </>
   );
 }
+
+const COUNTRY_CYCLE_FIELDS: FieldSpec[] = [
+  { key: 'payout_schedule', label: 'Payout schedule', kind: 'select', options: [
+    { value: 'every_n_days', label: 'Every N days' }, { value: 'weekly', label: 'Weekly' },
+    { value: 'on_request', label: 'On request (the driver asks)' }] },
+  { key: 'payout_interval_days', label: 'Every how many days (1 to 14)', kind: 'number' },
+  { key: 'payout_anchor_date', label: 'Counting from', kind: 'date' },
+  { key: 'payout_weekday', label: 'Weekday (weekly)', kind: 'select',
+    options: WEEKDAYS.map((d, i) => ({ value: String(i), label: d })) },
+  { key: 'payout_time_local', label: 'Payout time (local)', kind: 'time' },
+  { key: 'instant_cashout_enabled', label: 'Withdraw now is on', kind: 'bool' },
+  { key: 'instant_fee_provider', label: 'Provider (shown as "charged by …")', kind: 'text' },
+  { key: 'instant_fee_percent', label: 'Provider fee (% of the amount)', kind: 'number' },
+  { key: 'instant_cashout_fee_flat_minor', label: 'Provider fee, fixed part (minor units)', kind: 'number' },
+  { key: 'instant_fee_min_minor', label: 'Provider fee, at least (minor units)', kind: 'number' },
+  { key: 'instant_fee_max_minor', label: 'Provider fee, at most (minor units)', kind: 'number' },
+];
 
 function EditDrawer({ country, warning, onClose, onDone }: {
   country: Country; warning: string; onClose: () => void;

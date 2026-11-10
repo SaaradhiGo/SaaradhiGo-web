@@ -15,6 +15,7 @@ import { className } from '@/lib/area/rider';
 import { LOAD_TIMEOUT_MS } from '@/lib/area/useLoad';
 import { IBack, ICar, ILock, IUser } from '../icons';
 import { Skel } from '../states';
+import { FareWorkings } from './FareWorkings';
 
 function point(v: string | null): LatLng | null {
   const [lat, lng] = (v ?? '').split(',').map(Number);
@@ -175,6 +176,7 @@ export function RideChoose() {
           <ILock size={16} />{tr('The fare you book is the fare you pay.')}
           {holdMin !== null && <> {tr('Held for {n} minutes.').replace('{n}', `${holdMin}`)}</>}
         </div>
+        {chosen?.quote ? <FareWorkings quote={chosen.quote} /> : null}
         {error && <p className="a14 ared" role="alert">{error}</p>}
         <button type="button" className="abtn abtn--pri abtn--block" style={{ marginTop: 'auto' }}
           disabled={!chosenFare || busy} onClick={book}>
