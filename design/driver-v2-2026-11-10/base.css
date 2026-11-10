@@ -1,0 +1,19 @@
+*{box-sizing:border-box}
+body{margin:0;font-family:'Inter','Noto Sans Telugu','Noto Sans Devanagari',sans-serif;font-size:16px;line-height:24px;color:#1B1A17;background:#FAF7F2}
+h1,h2,h3,p{margin:0}
+.t40{font-size:40px;line-height:48px;font-weight:600}.t28{font-size:28px;line-height:36px;font-weight:600}.t20{font-size:20px;line-height:28px;font-weight:600}.t16{font-size:16px;line-height:24px}.t14{font-size:14px;line-height:20px}
+.b{font-weight:600}.mut{color:#57524A}.acc{color:#8A5300}.grn{color:#0D7762}
+.lbl{font-size:14px;line-height:20px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#57524A}
+.card{background:#fff;border:1px solid #E7E1D7;border-radius:16px}
+.btn{white-space:nowrap;height:48px;padding:0 20px;border-radius:12px;border:0;font:inherit;font-size:16px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.pri{background:#F5A623;color:#1B1A17}.btn.dark{background:#1B1A17;color:#fff}.btn.ghost{background:#fff;border:1px solid #E7E1D7;color:#1B1A17}
+.field{height:52px;border-radius:12px;background:#F3EEE6;display:flex;align-items:center;gap:12px;padding:0 16px;color:#57524A}
+.chip{height:36px;padding:0 14px;border-radius:999px;border:1px solid #E7E1D7;background:#fff;display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.pill{white-space:nowrap;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;font-size:14px;font-weight:600}
+.ok{background:#DDF1E6;color:#0B6B57}.warn{background:#FCEFD3;color:#7A4A00}.err{background:#FBE3E1;color:#B3261E}.neu{background:#F3EEE6;color:#57524A}
+.bar{display:inline-block;height:10px;border-radius:5px;background:#D9D1C3}
+.row{display:flex;align-items:center;gap:12px}
+.ico{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo{width:56px;height:49px;overflow:hidden;display:block}.logo img{width:56px;display:block}
+.brand{white-space:nowrap;font-family:'Cinzel',serif;font-weight:600;font-size:20px;letter-spacing:.05em;color:#E4B24C}
+.map{position:relative;overflow:hidden;background:#EEE8DD}.map svg{position:absolute;inset:0;width:100%;height:100%}

@@ -115,7 +115,8 @@ describe('driver profile page', () => {
     const { container } = wrap(<DriverProfile />);
     await waitFor(() => expect(container.querySelector('.dr-head h1')!.textContent).toBe('Srinu'));
     expect(container.querySelector('.dr-head')!.textContent).toContain('Saaradhi since October 2026');
-    expect(screen.getAllByRole('button', { name: 'Sign out' }).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByTestId('profile-button'));
+    expect(screen.getByTestId('menu-sign-out')).toBeTruthy();
   });
 });
 

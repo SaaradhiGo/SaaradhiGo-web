@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
@@ -31,13 +33,19 @@ export function DriverTrips() {
   const tr = useTr();
   const { locale } = useLocale();
   const me = useDriver();
+  // One day, from a bar of the earnings chart (10 Nov v2): /driver/trips?date=YYYY-MM-DD.
+  const day = useSearchParams()?.get('date') ?? null;
   const [p, setP] = useState<Period>('today');
   const [all, setAll] = useState(false);
   const totals = useLoad(() => loadPeriod(p), [p]);
-  const ledger = useLoad(loadLedger);
+  const ledger = useLoad(() => loadLedger(day), [day]);
   // Places and class only; a row still shows without them.
-  const history = useLoad(async () => Object.fromEntries((await loadHistory()).map((x) => [x.id, x])));
-  const t = totals.data; const rows = ledger.data; const trips = history.data ?? {};
+  const history = useLoad(async () => Object.fromEntries((await loadHistory(day ?? undefined, day ?? undefined)).map((x) => [x.id, x])), [day]);
+  const period = totals.data; const rows = ledger.data; const trips = history.data ?? {};
+  const t = useMemo(() => (period && day && rows ? {
+    ...period, start: day, end: day, trips: rows.length,
+    net: String(rows.reduce((sum, r) => sum + Number(r.net_amount ?? 0), 0)),
+  } : period), [period, day, rows]);
   setMarketZone(t?.timezone);
   const failed = totals.state === 'error' ? totals : ledger.state === 'error' ? ledger : null;
 
@@ -55,10 +63,11 @@ export function DriverTrips() {
       <DriverTop title={tr('Trips')} me={me} />
       <main className="dr-main">
         <div className="arow" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
-          <PeriodChips value={p} onChange={(v) => { setP(v); setAll(false); }} />
+          {day ? <Link href="/driver/trips" className="achip">{tr('All trips')}</Link>
+            : <PeriodChips value={p} onChange={(v) => { setP(v); setAll(false); }} />}
           {t && (
             <span className="a14 amut">
-              {(p === 'today' ? dateLabel(`${t.start}T12:00:00Z`, locale, 'UTC') : rangeLabel(t.start, t.end, locale))}
+              {(p === 'today' || day ? dateLabel(`${t.start}T12:00:00Z`, locale, 'UTC') : rangeLabel(t.start, t.end, locale))}
               {' · '}{tr('{n} trips').replace('{n}', `${t.trips}`)}{' · '}{tr('you earned {amount}').replace('{amount}', money(t.net, cur, locale) ?? '—')}
             </span>
           )}

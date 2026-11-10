@@ -222,7 +222,7 @@ function MarketDocuments({ hasVehicle, onDone }: { hasVehicle: boolean; onDone: 
         <section className="acard" style={{ padding: '8px 20px' }} data-testid="vehicle-documents-waiting">
           <div className="arow" style={{ padding: '12px 0', gap: 12, flexWrap: 'wrap' }}>
             <h2 className="a20 agrow">{tr('Vehicle documents')}</h2>
-            <Link href="/driver/profile#vehicle" className="abtn abtn--dark">{tr('Add vehicle')}</Link>
+            <Link href="/driver/setup/vehicle" className="abtn abtn--dark">{tr('Add vehicle')}</Link>
           </div>
           {vehicleDocs.map((i) => (
             <div key={i.key} className="arow" style={{ padding: '12px 0', borderTop: '1px solid var(--c-border)', gap: 12 }}>

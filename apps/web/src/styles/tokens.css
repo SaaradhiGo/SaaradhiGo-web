@@ -418,6 +418,9 @@
   --c-side-text-3: #A8A29A;
   --c-side-active: rgba(245, 166, 35, 0.14);
   --c-dot: #8A857C;
+  /* Focus (10 Nov v2): a 2px ring around the whole field plus a soft 4px glow. */
+  --c-focus: #8A5300;
+  --c-focus-glow: rgba(245, 166, 35, 0.25);
 }
 [data-theme="dark"] {
   --c-page: #0B0B0B;
@@ -451,4 +454,5 @@
   --c-warn-border: #6B5320;
   --c-warn-ink: #F5C451;
   --c-area: #0B0B0B;
+  --c-focus: #F5C451;
 }

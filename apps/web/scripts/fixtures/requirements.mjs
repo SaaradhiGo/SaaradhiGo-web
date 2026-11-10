@@ -22,11 +22,51 @@ const LABELS = {
   insurance: 'Vehicle insurance', permit: 'Commercial permit', fitness: 'Fitness certificate',
   puc: 'Pollution Under Control (PUC)', inspection: 'Vehicle inspection', payout_method: 'Payout method',
 };
+const STEP_ITEMS = [
+  ['personal', ['profile_photo', 'legal_name', 'date_of_birth', 'address', 'permanent_address', 'address_proof']],
+  ['contact', ['emergency_contact']],
+  ['identity', ['driving_licence', 'aadhaar', 'pan', 'police_verification', 'background_check']],
+  ['vehicle', ['vehicle']],
+  ['vehicle_docs', ['vehicle_photos', 'rc', 'registration', 'insurance', 'permit', 'fitness', 'puc', 'inspection']],
+  ['payouts', ['payout_method']],
+];
+const FILE_SLOTS = {
+  profile_photo: [['profile_photo', 'Profile photo']], address_proof: [['address_proof', 'Address proof']],
+  aadhaar: [['aadhaar', 'Aadhaar card']], pan: [['pan', 'PAN card']],
+  police_verification: [['police_verification', 'Police verification certificate']],
+  driving_licence: [['license_front', 'Licence, front'], ['license_back', 'Licence, back']],
+  vehicle_photos: [['vehicle_photo_front', 'Front'], ['vehicle_photo_back', 'Back'], ['vehicle_photo_left', 'Left side'],
+    ['vehicle_photo_right', 'Right side'], ['vehicle_photo_interior', 'Inside']],
+};
+const VEHICLE_DOCS = ['rc', 'registration', 'insurance', 'permit', 'fitness', 'puc', 'inspection'];
+const filesOf = (key, status) => (VEHICLE_DOCS.includes(key) ? [[key, LABELS[key]]] : FILE_SLOTS[key] ?? [])
+  .map(([k, label]) => ({ key: k, label, status, reason: null, uploaded_at: status === 'missing' ? null : '2026-11-10T04:30:00Z',
+    vehicle: key.startsWith('vehicle') || VEHICLE_DOCS.includes(key) }));
+const RANK = ['action', 'todo', 'in_review', 'done'];
+const stepState = (s) => (s === 'rejected' ? 'action' : s === 'missing' ? 'todo' : s === 'in_review' ? 'in_review' : 'done');
+/** The six steps (10 Nov v2), each the worst of its required items. */
+export function withSteps(r) {
+  const items = r.checklist.items.map((i) => ({ ...i, step: STEP_ITEMS.find(([, ks]) => ks.includes(i.key))[0],
+    files: i.files ?? filesOf(i.key, i.status === 'done' ? 'approved' : i.status) }));
+  const steps = STEP_ITEMS.map(([key, ks]) => [key, items.filter((i) => ks.includes(i.key))]).filter(([, its]) => its.length)
+    .map(([key, its], n) => {
+      const req = its.filter((i) => i.need === 'required');
+      const got = new Set((req.length ? req : its).map((i) => stepState(i.status)));
+      return { key, number: n + 1, items: its.map((i) => i.key), status: RANK.find((x) => got.has(x)) ?? 'done' };
+    });
+  const next = steps.find((s) => ['action', 'todo'].includes(s.status)) ?? steps.find((s) => s.status === 'in_review');
+  return { ...r, checklist: { ...r.checklist, items, steps, steps_done: steps.filter((s) => s.status === 'done').length,
+    next_step: next?.key ?? null, minutes_left: items.filter((i) => ['missing', 'rejected'].includes(i.status)).length } };
+}
 const OPTIONAL = new Set(['permanent_address']);
 const NOT_BLOCKING = new Set(['permanent_address', 'pan', 'payout_method']);
 
 /** The market's requirements for a driver; `approved` is a complete driver, else nothing is in yet. */
 export function requirements(country, approved) {
+  return withSteps(base(country, approved));
+}
+
+function base(country, approved) {
   const keys = country === 'US' ? US_ITEMS : IN_ITEMS;
   const items = Object.entries(keys).map(([key, section]) => ({
     key, section, label: LABELS[key], help: '', need: OPTIONAL.has(key) ? 'optional' : 'required',

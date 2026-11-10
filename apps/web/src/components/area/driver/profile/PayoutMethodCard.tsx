@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useTr } from '@/i18n/website';
-import { requirements as loadRequirements } from '@/lib/area/requirements';
+import { requirements as loadRequirements, setupHref } from '@/lib/area/requirements';
 import { useLoad } from '@/lib/area/useLoad';
 
 /** Payouts page (10 Nov): the payout method on file, masked, and where to change it. */
@@ -21,7 +21,7 @@ export function PayoutMethodCard() {
         <div className="ab">{text}</div>
         {pm.held_until && <div className="a14 ared">{tr('Payouts paused until {time} after a change.').replace('{time}', new Date(pm.held_until).toLocaleString())}</div>}
       </div>
-      <Link href="/driver/profile#payouts" className="abtn abtn--ghost">{tr(pm.kind ? 'Change' : 'Add')}</Link>
+      <Link href={setupHref('payouts', 'profile')} className="abtn abtn--ghost">{tr(pm.kind ? 'Change' : 'Add')}</Link>
     </section>
   );
 }

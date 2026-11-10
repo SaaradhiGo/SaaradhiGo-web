@@ -12,19 +12,29 @@ import { areaGet, areaPatch, areaPost } from './api';
  */
 export type ItemStatus = 'missing' | 'in_review' | 'approved' | 'rejected' | 'expiring' | 'done';
 export type Need = 'required' | 'optional' | 'off';
+export type FileTile = {
+  key: string; label: string; status: ItemStatus; reason: string | null; uploaded_at: string | null; vehicle: boolean;
+};
+export type StepKey = 'personal' | 'contact' | 'identity' | 'vehicle' | 'vehicle_docs' | 'payouts';
+export type StepStatus = 'done' | 'in_review' | 'todo' | 'action';
+export type Step = { key: StepKey; number: number; items: string[]; status: StepStatus };
 export type ChecklistItem = {
   key: string; section: 'personal' | 'identity' | 'vehicle' | 'payouts'; label: string; help: string;
   need: Need; blocks_online: boolean; status: ItemStatus; reason: string | null; expires: string | null;
+  step?: StepKey; files?: FileTile[];
 };
 export type Checklist = {
   market: { country: string; state: string }; items: ChecklistItem[]; done: number; total: number;
   blocking: string[]; approved: boolean;
+  /** Guided setup (10 Nov v2): the server's six steps, worst-of status, and what is next. */
+  steps?: Step[]; steps_done?: number; next_step?: StepKey | null; minutes_left?: number;
 };
 export type Address = { line1: string; line2: string; city: string; state_code: string; postal_code: string };
 export type Contact = { position: number; name: string; relationship: string; phone_number: string };
 export type Personal = {
   full_name: string; name_pending: string | null; photo: string | null; photo_pending: string | null;
   dob: string | null; address: Address | null; permanent_address: Address | null; emergency_contacts: Contact[];
+  home_city?: string | null;
 };
 export type Identity = {
   license_number: string; license_state: string; license_expiry: string | null; aadhaar_masked: string | null;
@@ -73,16 +83,46 @@ export const STATUS_TONE: Record<ItemStatus, string> = {
   missing: 'apill--neu', in_review: 'apill--warn', approved: 'apill--ok', rejected: 'apill--err',
   expiring: 'apill--warn', done: 'apill--ok',
 };
-/** Where each item is fixed. */
-export const FIX_AT: Record<string, string> = {
-  profile_photo: '/driver/profile#personal', legal_name: '/driver/profile#personal',
-  date_of_birth: '/driver/profile#personal', address: '/driver/profile#personal',
-  permanent_address: '/driver/profile#personal', address_proof: '/driver/documents',
-  emergency_contact: '/driver/profile#contacts', driving_licence: '/driver/profile#identity',
-  aadhaar: '/driver/profile#identity', pan: '/driver/profile#identity',
-  police_verification: '/driver/profile#identity', background_check: '/driver/support',
-  vehicle: '/driver/profile#vehicle', vehicle_photos: '/driver/profile#vehicle',
-  rc: '/driver/documents', registration: '/driver/documents', insurance: '/driver/documents',
-  permit: '/driver/documents', fitness: '/driver/documents', puc: '/driver/documents',
-  inspection: '/driver/documents', payout_method: '/driver/profile#payouts',
+/** The setup steps' names and what each asks for (titles are the design's). */
+export const STEP_INFO: Record<StepKey, { title: string; sub: string; lead: string }> = {
+  personal: { title: 'Personal details', sub: 'Photo, name, date of birth, address', lead: 'Your name and date of birth exactly as on your licence.' },
+  contact: { title: 'Emergency contact', sub: 'Someone we can call in an SOS', lead: 'Support and our safety team call them only if you need help on a trip.' },
+  identity: { title: 'Licence and identity', sub: '', lead: 'Use the details exactly as they appear on your documents.' },
+  vehicle: { title: 'Your vehicle', sub: 'Type, make, model, year, plate', lead: 'Choose your vehicle from the list. Not there? Choose Other and our team checks it.' },
+  vehicle_docs: { title: 'Vehicle photos and papers', sub: '', lead: 'Clear photos, all four corners visible, under 5 MB each.' },
+  payouts: { title: 'Bank and payouts', sub: 'Where we send your earnings', lead: 'Where we send your earnings.' },
 };
+const SHORT: Record<string, string> = {
+  driving_licence: 'Licence', aadhaar: 'Aadhaar', pan: 'PAN', police_verification: 'police check',
+  background_check: 'background check', vehicle_photos: '5 photos', rc: 'RC', registration: 'registration',
+  insurance: 'insurance', permit: 'permit', fitness: 'fitness', puc: 'PUC', inspection: 'inspection',
+};
+/** "Licence, Aadhaar, PAN, police check" / "5 photos, RC, insurance, permit…": the step's own items. */
+export function stepSub(step: Step, tr: (s: string) => string): string {
+  const fixed = STEP_INFO[step.key].sub;
+  if (fixed) return tr(fixed);
+  const names = step.items.map((k) => SHORT[k]).filter(Boolean).map((n) => tr(n));
+  const shown = names.slice(0, 4).join(', ') + (names.length > 4 ? '…' : '');
+  return shown.charAt(0).toUpperCase() + shown.slice(1);
+}
+export const STEP_SLUG: Record<StepKey, string> = {
+  personal: 'personal', contact: 'contact', identity: 'identity', vehicle: 'vehicle', vehicle_docs: 'photos-and-papers', payouts: 'payouts',
+};
+export const stepFromSlug = (slug: string) => (Object.keys(STEP_SLUG) as StepKey[]).find((k) => STEP_SLUG[k] === slug) ?? null;
+export const setupHref = (step: StepKey | null | undefined, from?: 'profile') =>
+  `/driver/setup/${STEP_SLUG[step ?? 'personal']}${from ? `?from=${from}` : ''}`;
+const STEP_OF: Record<string, StepKey> = {
+  profile_photo: 'personal', legal_name: 'personal', date_of_birth: 'personal', address: 'personal',
+  permanent_address: 'personal', address_proof: 'personal', emergency_contact: 'contact', driving_licence: 'identity',
+  aadhaar: 'identity', pan: 'identity', police_verification: 'identity', background_check: 'identity', vehicle: 'vehicle',
+  vehicle_photos: 'vehicle_docs', rc: 'vehicle_docs', registration: 'vehicle_docs', insurance: 'vehicle_docs',
+  permit: 'vehicle_docs', fitness: 'vehicle_docs', puc: 'vehicle_docs', inspection: 'vehicle_docs', payout_method: 'payouts',
+};
+/** Where an item is fixed: its setup step. */
+export const fixAt = (key: string) => setupHref(STEP_OF[key]);
+/** The worst of some statuses, as the server ranks them. */
+export function worst(states: ItemStatus[]): ItemStatus {
+  for (const s of ['rejected', 'missing', 'in_review', 'expiring'] as ItemStatus[]) if (states.includes(s)) return s;
+  return states.length ? 'approved' : 'missing';
+}
+

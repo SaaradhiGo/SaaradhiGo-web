@@ -103,7 +103,8 @@ export const days = async (n = 7) => (await daily(n)).days;
 export const balance = () => areaGet<Balance>('/driver/withdrawals/balance/');
 export const withdrawals = async () => list(await areaGet<Page<Withdrawal>>('/driver/withdrawals/history/'));
 /** The latest 50 settled trips, newest first (the endpoint's page limit). */
-export const ledger = async () => list(await areaGet<Page<EarningRow>>('/driver/earnings/?page_size=50'));
+export const ledger = async (date?: string | null) =>
+  list(await areaGet<Page<EarningRow>>(`/driver/earnings/?page_size=50${date ? `&date=${date}` : ''}`));
 export const profile = () => areaGet<Profile>('/driver/driver/profile/');
 export const onboarding = () => areaGet<Onboarding>('/driver/driver/onboarding/');
 export const vehicles = async () => list(await areaGet<Page<Vehicle>>('/driver/vehicles/'));
