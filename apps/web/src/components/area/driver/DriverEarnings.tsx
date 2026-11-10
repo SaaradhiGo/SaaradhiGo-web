@@ -5,6 +5,7 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { AREA_FLAGS } from '@/lib/area/flags';
 import { type Period, balance as loadBalance, daily, earningsLines, period as loadPeriod } from '@/lib/area/driver';
+import { PlatformFeeCard } from './PlatformFeeCard';
 import { money, setMarketZone } from '@/lib/area/format';
 import { useLoad } from '@/lib/area/useLoad';
 import { LoadError, Skel } from '../states';
@@ -84,6 +85,7 @@ export function DriverEarnings() {
               <WeekChart load={{ ...seven, data: seven.data?.days ?? null }}
                 currency={seven.data?.currency ?? t?.currency ?? bal?.currency ?? null} />
             </section>
+            <PlatformFeeCard days={seven.data?.days ?? null} currency={seven.data?.currency ?? t?.currency ?? null} />
           </div>
         </div>
       </main>

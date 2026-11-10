@@ -10,6 +10,7 @@ import { usePathname } from 'next/navigation';
 const TABS = [
   { href: '/pricing', label: 'Commission' },
   { href: '/pricing/fare-cards', label: 'Fare cards' },
+  { href: '/pricing/fee-plans', label: 'Driver fee plans' },
   { href: '/pricing/vehicle-classes', label: 'Vehicle classes' },
 ] as const;
 

@@ -37,6 +37,7 @@ export default function ReportsPage() {
     <>
       <PageHead title="Reports"
         summary="Trips, revenue, supply, riders, safety and fraud, by city and day. Read-only; money is shown per currency and never added across currencies." />
+      <p className="help mb-3">Open books: <Link href="/reports/cost-per-trip">Cost per trip</Link>, income and costs per completed trip by market and month.</p>
       {data === null && !error ? (
         <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
           <span className="sr-only">Loading the report catalogue</span>

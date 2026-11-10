@@ -49,7 +49,7 @@ export function PlaceSheet({ place, draft, near, onClose, onSaved }: {
     if (q.length < 3 || q === address) { setFound([]); return; }
     timer.current = window.setTimeout(() => {
       searchPlaces(q, near ?? point, 'drop').then(setFound).catch(() => setFound([]));
-    }, 250);
+    }, 300); // 300 ms after the last keystroke (maps cost, 9 Nov)
   }, [query, address, near, point]);
 
   async function pick(p: Place) {

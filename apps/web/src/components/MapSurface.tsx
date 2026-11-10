@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { api } from '@/lib/api';
 import { decodePolyline, loadGoogleMaps, mapsConfigured } from '@/lib/googleMaps';
 import { DESTINATION_SQUARE, mapStyles, readMapPalette } from '@/lib/mapStyle';
 
@@ -93,16 +94,29 @@ export default function MapSurface({
 
   // Load the library once, and only if the owner has configured a browser
   // key. Without one this resolves false and the placeholder stays.
+  //
+  // Maps cost (9 Nov): only once the surface is on screen. A map scrolled past, or a page left
+  // before the map area shows, never loads the billed script.
+  const [onScreen, setOnScreen] = useState(false);
+  useEffect(() => {
+    const el = host.current;
+    if (!el || typeof IntersectionObserver === 'undefined') { setOnScreen(true); return; }
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) { setOnScreen(true); io.disconnect(); }
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   useEffect(() => {
     let cancelled = false;
-    if (!mapsConfigured()) return;
+    if (!mapsConfigured() || !onScreen) return;
     loadGoogleMaps().then((ok) => {
       if (!cancelled) setLive(ok);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [onScreen]);
 
   // A KEY THAT LOADS AND THEN IS REFUSED IS STILL A MISSING MAP.
   //
@@ -160,6 +174,8 @@ export default function MapSurface({
 
     const centre = pickup ?? destination ?? cityCentre ?? null;
     if (!map.current) {
+      // A billed map load: counted by the Maps meter (9 Nov). Never awaited, never fatal.
+      void api.post('/ride/maps/meter/', { sku: 'dynamic_maps', surface: 'rider_web' }, null).catch(() => null);
       map.current = new g.maps.Map(host.current, {
         // Centre on a REAL point only. With nothing resolved yet there is
         // nothing truthful to centre on, so the placeholder is still showing.

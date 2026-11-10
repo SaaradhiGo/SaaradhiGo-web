@@ -336,5 +336,20 @@
   "Lower demand": "कम माँग",
   "included": "शामिल",
   "Total": "कुल",
-  "A cancellation fee of {amount} from an earlier trip is added to this ride.": "पिछली यात्रा का {amount} का रद्दीकरण शुल्क इस यात्रा में जोड़ा गया है।"
+  "A cancellation fee of {amount} from an earlier trip is added to this ride.": "पिछली यात्रा का {amount} का रद्दीकरण शुल्क इस यात्रा में जोड़ा गया है।",
+  "Platform fee": "प्लेटफ़ॉर्म शुल्क",
+  "No platform fee yet.": "अभी कोई प्लेटफ़ॉर्म शुल्क नहीं।",
+  "so far": "अब तक",
+  "How our fee works": "हमारा शुल्क कैसे काम करता है",
+  "{fee} for each trip.": "हर यात्रा के लिए {fee}।",
+  "{fee} for a day with at least one trip.": "कम से कम एक यात्रा वाले दिन के लिए {fee}।",
+  "Trips after the first {n} in a day are free.": "दिन की पहली {n} यात्राओं के बाद की यात्राएँ मुफ़्त हैं।",
+  "Never more than {cap} in a day.": "एक दिन में कभी भी {cap} से ज़्यादा नहीं।",
+  "No fee on a day when your fares are under {floor}.": "जिस दिन आपका किराया {floor} से कम हो, उस दिन कोई शुल्क नहीं।",
+  "No fee in your first {n} days.": "आपके पहले {n} दिनों में कोई शुल्क नहीं।",
+  "You always keep at least 80% of every fare.": "हर किराए का कम से कम 80% हमेशा आपका।",
+  "The fee is taken once a day, after the day ends.": "शुल्क दिन खत्म होने के बाद, दिन में एक बार लिया जाता है।",
+  "Free to cancel until {time}.": "{time} तक मुफ़्त में रद्द करें।",
+  "Free to cancel.": "मुफ़्त में रद्द करें।",
+  "Cancelling now costs {fee}. It is added to your next ride. No fee if you cancel because you feel unsafe.": "अभी रद्द करने पर {fee} लगेगा। यह आपकी अगली यात्रा में जुड़ जाएगा। असुरक्षित महसूस होने पर रद्द करें तो कोई शुल्क नहीं।"
 }

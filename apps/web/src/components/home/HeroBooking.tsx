@@ -129,7 +129,7 @@ export function HeroBooking() {
           const status = (err as { status?: number } | null)?.status;
           setSearchNote(status === 429 ? t.validation.searchThrottled : null);
         });
-    }, 250);
+    }, 300); // 300 ms after the last keystroke (maps cost, 9 Nov)
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };

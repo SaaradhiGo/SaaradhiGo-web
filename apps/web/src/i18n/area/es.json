@@ -336,5 +336,20 @@
   "Lower demand": "Menor demanda",
   "included": "incluido",
   "Total": "Total",
-  "A cancellation fee of {amount} from an earlier trip is added to this ride.": "Se añade a este viaje una tarifa de cancelación de {amount} de un viaje anterior."
+  "A cancellation fee of {amount} from an earlier trip is added to this ride.": "Se añade a este viaje una tarifa de cancelación de {amount} de un viaje anterior.",
+  "Platform fee": "Tarifa de la plataforma",
+  "No platform fee yet.": "Aún no hay tarifa de la plataforma.",
+  "so far": "hasta ahora",
+  "How our fee works": "Cómo funciona nuestra tarifa",
+  "{fee} for each trip.": "{fee} por cada viaje.",
+  "{fee} for a day with at least one trip.": "{fee} por un día con al menos un viaje.",
+  "Trips after the first {n} in a day are free.": "Los viajes después de los primeros {n} del día son gratis.",
+  "Never more than {cap} in a day.": "Nunca más de {cap} al día.",
+  "No fee on a day when your fares are under {floor}.": "Sin tarifa el día que tus viajes sumen menos de {floor}.",
+  "No fee in your first {n} days.": "Sin tarifa en tus primeros {n} días.",
+  "You always keep at least 80% of every fare.": "Siempre te quedas con al menos el 80% de cada tarifa.",
+  "The fee is taken once a day, after the day ends.": "La tarifa se cobra una vez al día, al terminar el día.",
+  "Free to cancel until {time}.": "Cancelación gratis hasta las {time}.",
+  "Free to cancel.": "Cancelación gratis.",
+  "Cancelling now costs {fee}. It is added to your next ride. No fee if you cancel because you feel unsafe.": "Cancelar ahora cuesta {fee}. Se añade a tu próximo viaje. Sin tarifa si cancelas porque te sientes inseguro."
 }
