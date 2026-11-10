@@ -8,6 +8,8 @@ import { chartDay, money } from '@/lib/area/format';
 import type { Load } from '@/lib/area/useLoad';
 import { DriverHead } from '../DriverShell';
 import { IPower } from '../icons';
+import { ProfileMenu } from '../ProfileMenu';
+import { useArea } from '../useArea';
 import { LoadError, Skel } from '../states';
 
 /** The driver's profile, loaded once per page; `{}` when it could not be read (the header just omits the pill). */
@@ -17,21 +19,30 @@ export function useDriver() {
   return me;
 }
 
+export const DRIVER_MENU = [
+  { href: '/driver/profile', label: 'Your profile' },
+  { href: '/driver/documents', label: 'Documents' },
+  { href: '/driver/support', label: 'Support' },
+  { href: '/driver/profile#language', label: 'Language' },
+];
+
 /**
- * Every driver page's header: the title, whether dispatch shows the driver
- * online, and where driving happens. The web takes no ride requests.
+ * Every driver page's header: the title, then (10 Nov) the Offline/Online pill, where driving
+ * happens (the web takes no ride requests) and the profile button at the far right.
  */
-export function DriverTop({ title, me }: { title: string; me: Profile | null }) {
+export function DriverTop({ title, sub, me }: { title: string; sub?: string | null; me: Profile | null }) {
   const tr = useTr();
+  const { signOut } = useArea();
   const on = isOnline(me);
   return (
-    <DriverHead title={title}>
+    <DriverHead title={title} sub={sub}>
       {me && (
         <span className={`apill ${on ? 'apill--ok' : 'apill--neu'}`} style={{ height: 36, padding: '0 14px' }}>
           <span className={`adot${on ? ' adot--on' : ''}`} aria-hidden="true" />{tr(on ? 'Online' : 'Offline')}
         </span>
       )}
       <span className="abtn abtn--dark" role="note"><IPower size={18} />{tr('Go online in the driver app')}</span>
+      <ProfileMenu links={DRIVER_MENU} onSignOut={() => signOut()} />
     </DriverHead>
   );
 }

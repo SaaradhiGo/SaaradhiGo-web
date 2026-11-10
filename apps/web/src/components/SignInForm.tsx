@@ -195,6 +195,9 @@ export default function SignInForm({ role }: { role: PublicRole }) {
           ))}
       </div>
 
+      {search.get('signed_out') === '1' && !error && (
+        <Alert kind="success">{tr("You've signed out")}</Alert>
+      )}
       {search.get('ended') === '1' && !error && (
         <Alert kind="info">{tr('Your session ended. Log in again to continue.')}</Alert>
       )}

@@ -1,7 +1,10 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useTr } from '@/i18n/website';
+import { messageFor } from '@/lib/publicAuth';
+import { DOCUMENT_ACCEPT, uploadDriverDocument, uploadVehicleDocument } from '@/lib/uploads';
 import {
   type Doc, type Onboarding, type Profile, type Vehicle, daysUntil, onboarding as loadDocs, vehicles as loadVehicles,
 } from '@/lib/area/driver';
@@ -10,7 +13,10 @@ import { IDoc, IHelp } from '../icons';
 import { LoadError, Skel } from '../states';
 import { DriverTop, useDriver } from './parts';
 
-export type DocRow = { key: string; label: string; status: string; reason: string | null; expiresIn: number | null };
+export type DocRow = {
+  key: string; label: string; status: string; reason: string | null; expiresIn: number | null;
+  present?: boolean; kind?: string | null; target?: 'driver' | 'vehicle'; recordable?: boolean;
+};
 
 /** The expiry date the server keeps for a document, if any. */
 function expiryFor(key: string, me: Profile | null, car: Vehicle | null): string | null | undefined {
@@ -33,6 +39,7 @@ export function docRows(o: Onboarding | null, me: Profile | null, car: Vehicle |
     status: d.status ?? (d.present ? 'in_review' : 'missing'),
     reason: d.reason ?? null,
     expiresIn: daysUntil(expiryFor(d.key, me, car)),
+    present: d.present, kind: d.upload_kind ?? null, target: d.target, recordable: d.recordable !== false,
   }));
 }
 
@@ -53,8 +60,46 @@ function Pill({ row }: { row: DocRow }) {
   return <span className={`apill ${cls}`}>{tr(label)}</span>;
 }
 
-/** The documents as rows: icon, name, a note when action is needed, status. */
-export function DocList({ rows }: { rows: DocRow[] }) {
+/**
+ * Upload or replace one document from the web (10 Nov), through the same upload the phone uses;
+ * it goes to the reviewer queue and the list is read again.
+ */
+export function UploadButton({ row, vehicleId, onDone, dark }: { row: DocRow; vehicleId: number | null; onDone: () => void; dark?: boolean }) {
+  const tr = useTr();
+  const input = useRef<HTMLInputElement | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  if (!row.kind || row.recordable === false) return null;
+  const needsCar = row.target === 'vehicle' && !vehicleId;
+
+  async function pick(file: File) {
+    setBusy(true); setErr(null);
+    try {
+      if (row.target === 'vehicle' && vehicleId) await uploadVehicleDocument(vehicleId, row.kind!, file);
+      else await uploadDriverDocument(row.kind!, file);
+      onDone();
+    } catch (e) {
+      setErr(messageFor(e, tr('We could not upload that. Try again.')));
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+      <input ref={input} type="file" accept={DOCUMENT_ACCEPT} className="sr-only" aria-label={tr(row.label)}
+        onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void pick(f); }} />
+      {needsCar ? <Link href="/driver/profile" className="a14">{tr('Add your vehicle first')}</Link> : (
+        <button type="button" className={`abtn ${dark ? 'abtn--dark' : 'abtn--ghost a14'}`} style={dark ? undefined : { height: 36, padding: '0 14px' }}
+          disabled={busy} data-testid={`upload-${row.key}`} onClick={() => input.current?.click()}>
+          {busy ? tr('Uploading…') : tr(row.present ? 'Replace' : 'Upload')}
+        </button>
+      )}
+      {err && <span className="a14 ared" role="alert">{err}</span>}
+    </span>
+  );
+}
+
+/** The documents as rows: icon, name, a note when action is needed, status, and Upload or Replace. */
+export function DocList({ rows, action }: { rows: DocRow[]; action?: (r: DocRow) => React.ReactNode }) {
   const tr = useTr();
   if (!rows.length) return <p className="aempty">{tr('No documents are needed yet.')}</p>;
   return (
@@ -68,6 +113,7 @@ export function DocList({ rows }: { rows: DocRow[] }) {
             {r.status === 'rejected' && r.reason && <div className="a14 ared">{r.reason}</div>}
           </div>
           <Pill row={r} />
+          {action?.(r)}
         </div>
       ))}
     </div>
@@ -87,6 +133,8 @@ export function DriverDocuments() {
   const approved = rows.filter((r) => r.status === 'approved').length;
   const urgent = rows.filter((r) => (r.expiresIn !== null && r.expiresIn <= 30) || r.status === 'rejected' || r.status === 'missing');
   const rest = rows.filter((r) => !urgent.includes(r));
+  const vehicleId = docs.data?.vehicle?.id ?? car.data?.id ?? null;
+  const again = () => { docs.retry(); car.retry(); };
 
   return (
     <>
@@ -120,10 +168,10 @@ export function DriverDocuments() {
                     : tr('Upload the renewed document. Our team reviews it, usually the same day. Until it expires you can keep driving.')}
               </div>
             </div>
-            <Link href="/driver/documents/upload" className="abtn abtn--dark">{tr(r.status === 'missing' ? 'Upload' : 'Upload renewal')}</Link>
+            <UploadButton row={r} vehicleId={vehicleId} onDone={again} dark />
           </section>
         ))}
-        {rest.length > 0 && <section className="acard" style={{ padding: '8px 20px' }}><DocList rows={rest} /></section>}
+        {rest.length > 0 && <section className="acard" style={{ padding: '8px 20px' }}><DocList rows={rest} action={(r) => <UploadButton row={r} vehicleId={vehicleId} onDone={again} />} /></section>}
       </main>
     </>
   );

@@ -15,7 +15,11 @@
 //              account must show ₹0.00 or their empty message; an expired
 //              session must land on Log in with a message; with the earnings
 //              API failing, the error and Try again must show, and Try again
-//              must bring the numbers back
+//              must bring the numbers back. (10 Nov) Every driver page, signed
+//              in as an incomplete driver (no vehicle, no city, not approved;
+//              INCDRV on QA) and as the test driver, never says "We couldn't
+//              load"; the profile button shows the signed-in first name on every
+//              driver and rider page; Sign out from its menu lands on sign-in
 //
 // CI: SITE=http://localhost:3100 WEB_SESSION_SECRET=... npm run check-areas
 //   (the API is answered from scripts/fixtures/areas.mjs)
@@ -38,7 +42,7 @@ import path from 'node:path';
 import { createHash, webcrypto } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { SAMPLE, fixture } from './fixtures/areas.mjs';
-import { emptyAccount } from './fixtures/empty-account.mjs';
+import { emptyAccount, incompleteAccount } from './fixtures/empty-account.mjs';
 
 const SITE = process.env.SITE || 'http://localhost:3100';
 const QA = process.env.QA === '1';
@@ -49,8 +53,11 @@ const MAX_DIFF = 0.03;
 // Screens where a part of the design is hidden on purpose, so everything below
 // it moves up. Each allowance names what is missing and why (AUDIT 29).
 const ALLOW = {
-  'driver-web-earnings': [0.06, 'Withdraw button and bank line (no web money flow tonight) and Tips (none exist, D5) are hidden'],
+  'driver-web-earnings': [0.07, 'Withdraw button and bank line (no web money flow tonight) and Tips (none exist, D5) are hidden; header profile button (10 Nov)'],
   'driver-web-payouts': [0.05, 'Withdraw button and the Paid to bank card are hidden (no web money flow tonight)'],
+  // 10 Nov: the owner's header profile button (name and arrow) on every page, and Upload or
+  // Replace on every document row, are not in the 8 Nov design.
+  'driver-web-documents': [0.05, 'Upload or Replace on each document row and the header profile button (10 Nov) are not in the design'],
 };
 const SIZES = new Set([14, 16, 20, 22, 28, 32, 40]);
 const PHONE_ONLY = new Set([22, 32]);
@@ -321,7 +328,8 @@ async function stateContext(role, how, failing = null) {
   const fail500 = { on: !!failing };
   if (QA) {
     const { signIn } = await import(pathToFileURL(path.resolve(process.env.LOGIN_MJS || 'scripts/qa-login.mjs')).href);
-    const label = how === 'new' ? (role === 'driver' ? 'NEWDRV' : 'NEWRID') : role === 'driver' ? 'DRIVER' : 'RIDER';
+    const label = how === 'incomplete' ? 'INCDRV'
+      : how === 'new' ? (role === 'driver' ? 'NEWDRV' : 'NEWRID') : role === 'driver' ? 'DRIVER' : 'RIDER';
     const r = await signIn(ctx, SITE, label);
     if (r.status !== 200) fail(`states: QA sign-in as ${label} failed (${r.status})`);
     if (how === 'expired') {
@@ -353,7 +361,8 @@ async function stateContext(role, how, failing = null) {
     if (failing && fail500.on && failing.test(url)) return route.fulfill({ status: 500, json: { error: 'gate' } });
     let body = null;
     try { body = req.postDataJSON(); } catch {}
-    const data = (how === 'new' ? emptyAccount(req.method(), url) : undefined) ?? fixture(req.method(), url, body);
+    const data = (how === 'new' ? emptyAccount(req.method(), url) : how === 'incomplete' ? incompleteAccount(req.method(), url) : undefined)
+      ?? fixture(req.method(), url, body);
     return route.fulfill(data === null || data === undefined ? { status: 404, json: { error: 'no fixture' } } : { json: data });
   });
   return [ctx, fail500];
@@ -426,6 +435,57 @@ for (const [role, p, how] of [['driver', '/driver', 'expired'], ['rider', '/trip
   stateResults.push(`earnings API failing: error ${shown ? 'shown' : 'NOT shown'}, Try again ${back ? 'works' : 'FAILED'}`);
   if (!shown) fail('states: with the earnings API failing, /driver/earnings did not show the error');
   else if (!back) fail('states: Try again on /driver/earnings did not bring the numbers back');
+  await ctx.close();
+}
+
+// ---- Incomplete drivers (10 Nov): Srinu's account answered 403 on every driver call, so every
+// card said "We couldn't load". Each driver page, as an incomplete driver and as the test
+// driver, and each rider page as the test rider: nothing fails to load, and the profile button
+// carries the first name of the account its menu names.
+const COULD_NOT = /We couldn['’]t load|We could not load/;
+async function profileName(page) {
+  const btn = page.getByTestId('profile-button');
+  if (!(await btn.waitFor({ timeout: STATE_WAIT }).then(() => true, () => false))) return [null, null];
+  // The first name appears once the account has loaded; until then the button is the avatar alone.
+  const shown = await btn.locator('.apm-name').innerText({ timeout: STATE_WAIT }).then((t) => t.trim(), () => '');
+  await btn.click();
+  const full = (await page.locator('.apm-who .ab').innerText().catch(() => '')).trim();
+  await btn.click();
+  return [shown, full];
+}
+for (const [role, how, pages] of [
+  ['driver', 'incomplete', DRIVER], ['driver', 'test', DRIVER], ['rider', 'test', RIDER.filter(([p]) => !/\/(trip|trips)\/\d/.test(p))],
+]) {
+  for (const [p] of pages) {
+    const [ctx] = await stateContext(role, how);
+    const page = await ctx.newPage();
+    await page.goto(SITE + p, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+    const [shown, full] = await profileName(page);
+    await page.waitForTimeout(1500);
+    const text = await settledText(page, /./);
+    const bad = text.match(COULD_NOT);
+    const named = !!shown && !!full && full !== 'Your account' && full.split(/\s+/)[0] === shown;
+    stateResults.push(`${how} ${role} ${p}: ${bad ? 'FAIL (could not load)' : 'loaded'}, profile button ${named ? `"${shown}"` : 'FAIL'}`);
+    if (bad) fail(`states: ${how} ${role} ${p} says "${text.slice(bad.index, bad.index + 60).split('\n')[0]}"`);
+    if (!named) fail(`states: ${how} ${role} ${p}: the profile button shows "${shown ?? ''}", not the first name of "${full ?? ''}"`);
+    if (SHOTS) { mkdirSync(SHOTS, { recursive: true }); await page.screenshot({ path: path.join(SHOTS, `${how}-${role}${p.replace(/[/?&=]/g, '_')}.png`) }); }
+    await ctx.close();
+  }
+}
+
+// Sign out from the menu: one click, no confirmation, the area's sign-in page with the notice.
+// On QA this uses the incomplete driver and the new rider, never the shared test pair.
+for (const [role, how, p, to] of [['driver', 'incomplete', '/driver/profile', '/driver/sign-in'], ['rider', QA ? 'new' : 'test', '/account', '/sign-in']]) {
+  const [ctx] = await stateContext(role, how);
+  const page = await ctx.newPage();
+  await page.goto(SITE + p, { waitUntil: 'domcontentloaded', timeout: 45000 }).catch(() => {});
+  await page.getByTestId('profile-button').click({ timeout: STATE_WAIT }).catch(() => {});
+  await page.getByTestId('menu-sign-out').click({ timeout: STATE_WAIT }).catch(() => {});
+  await page.waitForURL((u) => u.pathname === to, { timeout: STATE_WAIT }).catch(() => {});
+  const ok = new URL(page.url()).pathname === to
+    && await page.getByText("You've signed out").first().waitFor({ timeout: STATE_WAIT }).then(() => true, () => false);
+  stateResults.push(`sign out from the ${role} menu: ${ok ? `ok (${to})` : `FAIL (${new URL(page.url()).pathname})`}`);
+  if (!ok) fail(`states: Sign out from the ${role} menu on ${p} ended on ${new URL(page.url()).pathname}, not ${to} with "You've signed out"`);
   await ctx.close();
 }
 console.log('states:\n  ' + stateResults.join('\n  '));

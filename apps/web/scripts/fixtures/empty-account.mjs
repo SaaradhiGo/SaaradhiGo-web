@@ -26,6 +26,8 @@ export function emptyAccount(method, url) {
     case p === '/ride/driver-history/':
     case p === '/ride/ride-history/':
       return { count: 0, next: null, previous: null, results: [] };
+    case p === '/rider/places/':
+      return { places: [] };
     case p === '/driver/vehicles/':
     case p === '/rider/locations/all/':
       return [];
@@ -42,4 +44,23 @@ export function emptyAccount(method, url) {
     default:
       return undefined;
   }
+}
+
+// A driver who has not finished setting up (owner, 10 Nov; Srinu's QA account): no vehicle,
+// no home city, not approved. Everything else answers as for a new account.
+export function incompleteAccount(method, url) {
+  const p = url.replace(/^.*\/api\/v1/, '').split('?')[0];
+  if (p === '/auth/profile/') {
+    return { id: 32, full_name: 'Srinu', phone_number: '+919000110168', email: null, created_at: '2026-10-25T21:57:58Z', roles: ['driver'] };
+  }
+  if (p === '/driver/driver/onboarding/') {
+    return {
+      country: 'IN', approved: false, doc_status: 'pending', vehicle: null, vehicle_documents: [],
+      vehicle_types: [{ type: 'sedan', description: '' }, { type: 'auto', description: '' }],
+      driver_documents: [
+        { key: 'license_front', label: 'Driving licence (front)', required: true, present: false, status: 'missing', recordable: true, upload_kind: 'license_doc', target: 'driver' },
+      ],
+    };
+  }
+  return emptyAccount(method, url);
 }

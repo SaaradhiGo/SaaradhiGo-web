@@ -1,6 +1,6 @@
 'use client';
 
-import { areaGet } from './api';
+import { areaGet, areaPatch, areaPost } from './api';
 import type { Trip } from './rider';
 
 /**
@@ -76,9 +76,22 @@ export type Profile = {
   } | null;
 };
 
-export type Doc = { key: string; label: string; status?: string | null; reason?: string | null; required: boolean; present: boolean };
-export type Onboarding = { driver_documents?: Doc[]; vehicle_documents?: Doc[]; license_expiry?: string | null };
-export type Vehicle = { id: number; insurance_expiry?: string | null; permit_expiry?: string | null; fitness_expiry?: string | null; puc_expiry?: string | null };
+export type Doc = {
+  key: string; label: string; status?: string | null; reason?: string | null; required: boolean; present: boolean;
+  recordable?: boolean; upload_kind?: string | null; target?: 'driver' | 'vehicle';
+};
+export type Onboarding = {
+  driver_documents?: Doc[]; vehicle_documents?: Doc[]; license_expiry?: string | null;
+  approved?: boolean; doc_status?: string | null; vehicle_types?: { type: string; description?: string }[];
+  vehicle?: { id: number; vehicle_number?: string | null; brand?: string | null; model?: string | null; color?: string | null } | null;
+};
+export type Vehicle = {
+  id: number; insurance_expiry?: string | null; permit_expiry?: string | null; fitness_expiry?: string | null; puc_expiry?: string | null;
+  vehicle_number?: string | null; brand?: string | null; model?: string | null; color?: string | null;
+  vehicle_type?: { type?: string | null } | string | null;
+};
+/** What riders see of the car; saving any of it sends the driver to review (10 Nov). */
+export type VehicleForm = { vehicle_type: string; brand: string; model: string; color: string; vehicle_number: string };
 
 type Page<T> = { results?: T[] } | T[];
 const list = <T,>(p: Page<T> | null | undefined): T[] => (Array.isArray(p) ? p : p?.results ?? []);
@@ -94,6 +107,11 @@ export const ledger = async () => list(await areaGet<Page<EarningRow>>('/driver/
 export const profile = () => areaGet<Profile>('/driver/driver/profile/');
 export const onboarding = () => areaGet<Onboarding>('/driver/driver/onboarding/');
 export const vehicles = async () => list(await areaGet<Page<Vehicle>>('/driver/vehicles/'));
+export const saveVehicle = (id: number | null, v: VehicleForm) => (id
+  ? areaPatch<Vehicle>(`/driver/vehicles/${id}/`, v)
+  : areaPost<Vehicle>('/driver/vehicles/add/', v));
+/** "In review" until an operator approves (the KYC queue); the driver stays offline meanwhile. */
+export const inReview = (o: { approved?: boolean; doc_status?: string | null } | null) => !!o && !o.approved && o.doc_status === 'pending';
 export const history = async (start?: string, end?: string) => {
   const q = new URLSearchParams({ page_size: '50', ...(start ? { start_date: start } : {}), ...(end ? { end_date: end } : {}) });
   return list(await areaGet<Page<Trip>>(`/ride/driver-history/?${q}`));

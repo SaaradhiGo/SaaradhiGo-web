@@ -3,13 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTr } from '@/i18n/website';
-import { IBank, ICard, IDashboard, IDoc, IHelp, IList, IUser } from './icons';
-import { useArea } from './useArea';
+import { IBank, ICard, IDashboard, IDoc, IHelp, IList } from './icons';
 
 /**
  * The driver's signed-in frame (driver-web-*.html): a black sidebar with the
- * emblem, wordmark and DRIVER badge, six sections, and the profile card at
- * the bottom. Driving itself happens in the driver app.
+ * emblem, wordmark and DRIVER badge, and six sections; the profile lives in the
+ * header's menu (10 Nov). Driving itself happens in the driver app.
  */
 const NAV = [
   { href: '/driver', label: 'Dashboard', Icon: IDashboard },
@@ -23,8 +22,6 @@ const NAV = [
 export function DriverShell({ children }: { children: React.ReactNode }) {
   const tr = useTr();
   const path = usePathname() ?? '/driver';
-  // Sign-out lives on the profile page, as in the design.
-  const { both, switchTo } = useArea();
 
   return (
     <div className="ar dr" data-area="driver">
@@ -47,27 +44,20 @@ export function DriverShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="dr-me">
-          <Link href="/driver/profile">
-            <span className="dr-me__face"><IUser /></span>
-            <span>
-              <span className="ab" style={{ display: 'block' }}>{tr('Your profile')}</span>
-              <span className="a14" style={{ display: 'block' }}>{tr('Account and vehicle')}</span>
-            </span>
-          </Link>
-          {both && <button type="button" onClick={() => switchTo('rider')}>{tr('Switch to rider')}</button>}
-        </div>
       </aside>
       <div className="dr-body">{children}</div>
     </div>
   );
 }
 
-/** The page header: title, then the right-hand controls. */
-export function DriverHead({ title, children }: { title: string; children?: React.ReactNode }) {
+/** The page header: title (and a line under it), then the right-hand controls. */
+export function DriverHead({ title, sub, children }: { title: string; sub?: string | null; children?: React.ReactNode }) {
   return (
     <header className="dr-head">
-      <h1 className="a28" style={{ flex: 1 }}>{title}</h1>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <h1 className="a28">{title}</h1>
+        {sub && <div className="a14 amut">{sub}</div>}
+      </div>
       {children}
     </header>
   );

@@ -4,14 +4,24 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTr } from '@/i18n/website';
-import { IHelp, ILogout, IMoon, ISun, ISwitch, IUser } from './icons';
+import { AREA_FLAGS } from '@/lib/area/flags';
+import { IHelp, IMoon, ISun, ISwitch } from './icons';
+import { ProfileMenu } from './ProfileMenu';
 import { areaPath, useArea } from './useArea';
 
 /**
  * The rider's signed-in frame (rider-web-*.html): white top bar with the
  * emblem and wordmark, Ride / Trips / Account, then Help, the theme and the
- * account menu. Light and map-first; no driver chrome anywhere.
+ * profile button with the rider's first name (10 Nov). Light and map-first.
  */
+const MENU = [
+  { href: '/account', label: 'Your profile' },
+  { href: '/trips', label: 'Trips' },
+  { href: '/account#places', label: 'Saved places' },
+  { href: AREA_FLAGS.trustedContacts ? '/account#safety' : '/safety', label: 'Safety' },
+  { href: '/account#language', label: 'Language' },
+];
+
 const NAV = [
   { href: '/ride', label: 'Ride', match: (p: string) => p === '/ride' || p.startsWith('/ride/') },
   { href: '/trips', label: 'Trips', match: (p: string) => p === '/trips' || p.startsWith('/trips/') },
@@ -22,7 +32,6 @@ export function RiderShell({ children }: { children: React.ReactNode }) {
   const tr = useTr();
   const path = areaPath(usePathname());
   const { both, signOut, switchTo } = useArea();
-  const [open, setOpen] = useState(false);
   const [dark, setDark] = useState(false);
   useEffect(() => setDark(document.documentElement.getAttribute('data-theme') === 'dark'), []);
 
@@ -57,21 +66,11 @@ export function RiderShell({ children }: { children: React.ReactNode }) {
             onClick={flip} aria-label={tr(dark ? 'Switch to light theme' : 'Switch to dark theme')}>
             {dark ? <ISun size={18} /> : <IMoon size={18} />}
           </button>
-          <button type="button" className="ar-avatar" aria-label={tr('Account')} aria-expanded={open}
-            onClick={() => setOpen(!open)}>
-            <IUser />
-          </button>
-          {open && (
-            <div className="acard ar-menu" role="menu">
-              <Link href="/account" role="menuitem" onClick={() => setOpen(false)}><IUser size={18} />{tr('Account')}</Link>
-              {both && (
-                <button type="button" role="menuitem" onClick={() => switchTo('driver')}>
-                  <ISwitch size={18} />{tr('Switch to driver')}
-                </button>
-              )}
-              <button type="button" role="menuitem" onClick={signOut}><ILogout size={18} />{tr('Log out')}</button>
-            </div>
-          )}
+          <ProfileMenu links={MENU} onSignOut={() => signOut()} extra={both && (
+            <button type="button" role="menuitem" onClick={() => switchTo('driver')}>
+              <ISwitch size={18} />{tr('Switch to driver')}
+            </button>
+          )} />
         </div>
       </header>
       <main id="main" className="ar-main">{children}</main>
