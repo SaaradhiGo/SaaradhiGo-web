@@ -17,6 +17,8 @@ import { money } from '@/lib/area/format';
 export type InstantQuote = {
   amount: string; provider_fee: string; provider_fee_label: string; saaradhigo_fee: string;
   you_receive: string; currency: string; destination: string | null; arrival: string; valid: boolean;
+  /** The daily limit (10 Nov): the reason, shown here before the driver taps. */
+  limit_reached?: boolean; limit_message?: string;
 };
 
 export function NextPayout({ bal }: { bal: Balance }) {
@@ -88,6 +90,7 @@ export function WithdrawNow({ bal, onDone }: { bal: Balance; onDone: () => void 
               <div className="arow"><dt className="agrow">{tr('Arrives')}</dt><dd>{tr(quote.arrival)}</dd></div>
             </dl>
           ) : null}
+          {quote?.limit_reached && quote.limit_message ? <p className="a14 ared" role="alert">{quote.limit_message}</p> : null}
           {error && <p className="a14 ared" role="alert">{error}</p>}
           <div className="arow" style={{ gap: 8 }}>
             <button type="button" className="abtn abtn--ghost" onClick={() => setOpen(false)} disabled={busy}>{tr('Back')}</button>

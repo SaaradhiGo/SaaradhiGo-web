@@ -351,5 +351,6 @@
   "The fee is taken once a day, after the day ends.": "शुल्क दिन खत्म होने के बाद, दिन में एक बार लिया जाता है।",
   "Free to cancel until {time}.": "{time} तक मुफ़्त में रद्द करें।",
   "Free to cancel.": "मुफ़्त में रद्द करें।",
-  "Cancelling now costs {fee}. It is added to your next ride. No fee if you cancel because you feel unsafe.": "अभी रद्द करने पर {fee} लगेगा। यह आपकी अगली यात्रा में जुड़ जाएगा। असुरक्षित महसूस होने पर रद्द करें तो कोई शुल्क नहीं।"
+  "Cancelling now costs {fee}. It is added to your next ride. No fee if you cancel because you feel unsafe.": "अभी रद्द करने पर {fee} लगेगा। यह आपकी अगली यात्रा में जुड़ जाएगा। असुरक्षित महसूस होने पर रद्द करें तो कोई शुल्क नहीं।",
+  "Withdrawn {amount} · provider fee {fee} · received {received}": "{amount} निकाले · प्रदाता शुल्क {fee} · मिले {received}"
 }

@@ -18,6 +18,7 @@ export type CycleFields = {
   instant_cashout_enabled?: boolean | null; instant_fee_provider?: string | null; instant_fee_percent?: string | null;
   instant_cashout_fee_flat_minor?: number | null; instant_fee_min_minor?: number | null; instant_fee_max_minor?: number | null;
   instant_fee_tiers?: Array<[number | null, number]> | null;
+  instant_max_per_day?: number | null; instant_max_amount_per_day_minor?: number | null;
 };
 export type Scope = {
   scope: string; kind: 'state' | 'city'; name: string; parent: string | null;
@@ -44,7 +45,15 @@ export function instantWords(c: CycleFields, currency: string): string {
   if (c.instant_fee_percent) parts.push(`${Number(c.instant_fee_percent)}%`);
   if (c.instant_cashout_fee_flat_minor) parts.push(`+ ${formatMinor(c.instant_cashout_fee_flat_minor, currency)}`);
   const by = c.instant_fee_provider ? ` (charged by ${c.instant_fee_provider})` : '';
-  return `On · provider fee ${parts.join(' ') || 'not entered'}${by} · SaaradhiGo fee 0`;
+  return `On · provider fee ${parts.join(' ') || 'not entered'}${by} · SaaradhiGo fee 0 · ${limitWords(c, currency)}`;
+}
+
+/** The daily Withdraw now limit (10 Nov), over the driver's local day. */
+export function limitWords(c: CycleFields, currency: string): string {
+  const parts: string[] = [];
+  if (c.instant_max_per_day != null) parts.push(`${c.instant_max_per_day} a day`);
+  if (c.instant_max_amount_per_day_minor != null) parts.push(`${formatMinor(c.instant_max_amount_per_day_minor, currency)} a day`);
+  return parts.length ? `at most ${parts.join(' and ')}` : 'no daily limit';
 }
 
 const FIELDS: FieldSpec[] = [
@@ -63,6 +72,8 @@ const FIELDS: FieldSpec[] = [
   { key: 'instant_cashout_fee_flat_minor', label: 'Provider fee, fixed part (minor units)', kind: 'number' },
   { key: 'instant_fee_min_minor', label: 'Provider fee, at least (minor units)', kind: 'number' },
   { key: 'instant_fee_max_minor', label: 'Provider fee, at most (minor units)', kind: 'number' },
+  { key: 'instant_max_per_day', label: 'Withdraw now, at most this many a day', kind: 'number' },
+  { key: 'instant_max_amount_per_day_minor', label: 'Withdraw now, at most this total a day (minor units)', kind: 'number' },
 ];
 
 export function PayoutScopes({ country, currency, scopes, may, onDone }: {

@@ -351,5 +351,6 @@
   "The fee is taken once a day, after the day ends.": "ఫీజు రోజు ముగిసిన తర్వాత, రోజుకు ఒకసారి తీసుకుంటారు.",
   "Free to cancel until {time}.": "{time} వరకు ఉచితంగా రద్దు చేయవచ్చు.",
   "Free to cancel.": "ఉచితంగా రద్దు చేయవచ్చు.",
-  "Cancelling now costs {fee}. It is added to your next ride. No fee if you cancel because you feel unsafe.": "ఇప్పుడు రద్దు చేస్తే {fee} అవుతుంది. ఇది మీ తదుపరి ప్రయాణానికి కలుపబడుతుంది. మీకు సురక్షితంగా అనిపించక రద్దు చేస్తే ఫీజు లేదు."
+  "Cancelling now costs {fee}. It is added to your next ride. No fee if you cancel because you feel unsafe.": "ఇప్పుడు రద్దు చేస్తే {fee} అవుతుంది. ఇది మీ తదుపరి ప్రయాణానికి కలుపబడుతుంది. మీకు సురక్షితంగా అనిపించక రద్దు చేస్తే ఫీజు లేదు.",
+  "Withdrawn {amount} · provider fee {fee} · received {received}": "{amount} ఉపసంహరించారు · ప్రొవైడర్ ఫీజు {fee} · అందింది {received}"
 }

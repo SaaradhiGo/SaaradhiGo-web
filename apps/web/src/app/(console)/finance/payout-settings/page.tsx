@@ -12,7 +12,7 @@ import {
 import { interpretWrite, newIdempotencyKey } from '@/lib/trips';
 import { PageLink } from '@/components/console/PageLink';
 import { FinanceNav } from '@/components/console/finance';
-import { PayoutScopes, cycleWords, instantWords, type CycleFields, type Scope } from '@/components/console/finance/PayoutScopes';
+import { PayoutScopes, cycleWords, instantWords, limitWords, type CycleFields, type Scope } from '@/components/console/finance/PayoutScopes';
 import { FieldsDrawer, toText, type FieldSpec } from '@/components/console/kit/FieldsDrawer';
 import {
   DataTable, Drawer, Empty, ErrorState, Pill, Skeleton,
@@ -107,6 +107,7 @@ function SettingsInner() {
                     ['A payout is stuck after', c.config.stuck_payout_hours ? `${c.config.stuck_payout_hours} hours` : 'Not checked'],
                     ['Payout schedule', cycleWords(c.config as CycleFields) || scheduleLabel(c.config)],
                     ['Withdraw now', instantWords(c.config as CycleFields, c.currency)],
+                    ['Withdraw now daily limit', `${limitWords(c.config as CycleFields, c.currency)} (the driver's local day; scheduled payouts are never limited)`],
                     ['SaaradhiGo fee on payouts', <>{Number(c.config.fee_percent)}%</>],
                     ['A reward under review is held for', <>{c.config.reward_hold_days ?? FRAUD_MONEY_DEFAULTS.reward_hold_days} days, then released if the flag is not decided</>],
                     ['A recovery takes at most', <>{c.config.recovery_max_percent ?? FRAUD_MONEY_DEFAULTS.recovery_max_percent}% of any one payout</>],
@@ -181,6 +182,7 @@ function SettingsInner() {
                         { key: 'min', label: 'Minimum', num: true, render: (h) => formatMinor(h.minimum_withdrawal_minor, c.currency) },
                         { key: 'stuck', label: 'Stuck after', num: true, render: (h) => (h.stuck_payout_hours ? `${h.stuck_payout_hours} h` : '—') },
                         { key: 'sched', label: 'Schedule', render: (h) => scheduleLabel(h) },
+                        { key: 'limit', label: 'Daily limit', hideBelow: 1100, render: (h) => limitWords(h as CycleFields, c.currency) },
                         { key: 'from', label: 'From', render: (h) => stamp(h.valid_from) },
                         { key: 'by', label: 'Set by', hideBelow: 1100, render: (h) => h.created_by.label || '—' },
                         { key: 'why', label: 'Reason', hideBelow: 1280, render: (h) => h.reason || '—' },
@@ -231,6 +233,8 @@ const COUNTRY_CYCLE_FIELDS: FieldSpec[] = [
   { key: 'instant_cashout_fee_flat_minor', label: 'Provider fee, fixed part (minor units)', kind: 'number' },
   { key: 'instant_fee_min_minor', label: 'Provider fee, at least (minor units)', kind: 'number' },
   { key: 'instant_fee_max_minor', label: 'Provider fee, at most (minor units)', kind: 'number' },
+  { key: 'instant_max_per_day', label: 'Withdraw now, at most this many a day', kind: 'number' },
+  { key: 'instant_max_amount_per_day_minor', label: 'Withdraw now, at most this total a day (minor units, 5000000 = ₹50,000)', kind: 'number' },
 ];
 
 function EditDrawer({ country, warning, onClose, onDone }: {
