@@ -637,5 +637,6 @@
   "Licence, front": "లైసెన్స్, ముందు",
   "Licence, back": "లైసెన్స్, వెనుక",
   "Aadhaar card": "ఆధార్ కార్డ్",
-  "{n} payout": "{n} చెల్లింపు"
+  "{n} payout": "{n} చెల్లింపు",
+  "That took too long. Check your connection and try again.": "చాలా సమయం పట్టింది. మీ కనెక్షన్ చూసి మళ్లీ ప్రయత్నించండి."
 }

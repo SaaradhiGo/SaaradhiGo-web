@@ -637,5 +637,6 @@
   "Licence, front": "Licencia, frente",
   "Licence, back": "Licencia, reverso",
   "Aadhaar card": "Tarjeta Aadhaar",
-  "{n} payout": "{n} pago"
+  "{n} payout": "{n} pago",
+  "That took too long. Check your connection and try again.": "Tardó demasiado. Revisa tu conexión e inténtalo de nuevo."
 }
