@@ -6,7 +6,7 @@ import { useTr } from '@/i18n/website';
 import { ApiError } from '@/lib/api';
 import { areaGet, areaPost } from '@/lib/area/api';
 import type { Balance } from '@/lib/area/driver';
-import { money } from '@/lib/area/format';
+import { deduction, money } from '@/lib/area/format';
 
 /**
  * Withdraw now (owner ruling, 9 Nov): only where instant cash-out is on for the driver's city.
@@ -83,7 +83,7 @@ export function WithdrawNow({ bal, onDone }: { bal: Balance; onDone: () => void 
           {quote ? (
             <dl className="acol a14" style={{ gap: 4, margin: 0 }}>
               <div className="arow"><dt className="agrow">{tr('Amount')}</dt><dd>{m(quote.amount)}</dd></div>
-              <div className="arow"><dt className="agrow">{quote.provider_fee_label}</dt><dd>−{m(quote.provider_fee)}</dd></div>
+              <div className="arow"><dt className="agrow">{quote.provider_fee_label}</dt><dd>{deduction(quote.provider_fee, quote.currency ?? bal.currency, locale).text}</dd></div>
               <div className="arow"><dt className="agrow">{tr('SaaradhiGo fee')}</dt><dd>{m(quote.saaradhigo_fee)}</dd></div>
               <div className="arow ab"><dt className="agrow">{tr('You receive')}</dt><dd>{m(quote.you_receive)}</dd></div>
               {quote.destination && <div className="arow"><dt className="agrow">{tr('To')}</dt><dd>{quote.destination}</dd></div>}

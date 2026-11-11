@@ -638,5 +638,17 @@
   "Licence, back": "लाइसेंस, पीछे",
   "Aadhaar card": "आधार कार्ड",
   "{n} payout": "{n} भुगतान",
-  "That took too long. Check your connection and try again.": "बहुत समय लगा। अपना कनेक्शन जाँचें और फिर कोशिश करें।"
+  "That took too long. Check your connection and try again.": "बहुत समय लगा। अपना कनेक्शन जाँचें और फिर कोशिश करें।",
+  "Search by place or trip number": "जगह या ट्रिप नंबर से खोजें",
+  "Search by payout number or amount": "पेआउट नंबर या रकम से खोजें",
+  "Page {p} of {n}": "{n} में से पेज {p}",
+  "Newer": "नए",
+  "Older": "पुराने",
+  "No trips in {period} yet": "{period} में अभी कोई ट्रिप नहीं",
+  "No trips match “{q}” in {period}.": "{period} में “{q}” से मेल खाती कोई ट्रिप नहीं।",
+  "No payouts in {period} yet": "{period} में अभी कोई पेआउट नहीं",
+  "No payouts match “{q}” in {period}.": "{period} में “{q}” से मेल खाता कोई पेआउट नहीं।",
+  "Choose the dates to see their trips.": "ट्रिप देखने के लिए तारीखें चुनें।",
+  "Choose the dates to see their payouts.": "पेआउट देखने के लिए तारीखें चुनें।",
+  "the last 7 days": "पिछले 7 दिनों"
 }

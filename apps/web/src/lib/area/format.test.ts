@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chartDay, listWhen, money, rangeLabel } from './format';
+import { addition, chartDay, deduction, listWhen, money, rangeLabel } from './format';
 
 const words = { today: 'Today', yesterday: 'Yesterday' };
 const NOW = new Date('2026-11-08T16:00:00Z'); // 21:30 in Hyderabad, Sun 8 Nov
@@ -52,5 +52,22 @@ describe('chart and week labels', () => {
   it('the week range', () => {
     expect(rangeLabel('2026-11-02', '2026-11-08', 'en-IN')).toBe('Mon 2 – Sun 8 Nov');
     expect(rangeLabel('2026-10-26', '2026-11-01', 'en-IN')).toBe('Mon 26 Oct – Sun 1 Nov');
+  });
+});
+
+describe('zero amounts (11 Nov)', () => {
+  it('a negative zero is a plain ₹0.00', () => {
+    expect(money('-0.00', 'INR', 'en-IN')).toBe('₹0.00');
+    expect(money(-0, 'INR', 'en-IN')).toBe('₹0.00');
+    expect(money('abc', 'INR', 'en-IN')).toBeNull();
+  });
+  it('a fee shows the minus and red only above zero', () => {
+    expect(deduction('0.00', 'INR', 'en-IN')).toEqual({ text: '₹0.00', red: false });
+    expect(deduction(null, 'INR', 'en-IN')).toEqual({ text: '₹0.00', red: false });
+    expect(deduction('45.5', 'INR', 'en-IN')).toEqual({ text: '− ₹45.50', red: true });
+  });
+  it('a tip shows the plus only above zero', () => {
+    expect(addition('0.00', 'INR', 'en-IN')).toBe('₹0.00');
+    expect(addition('20', 'INR', 'en-IN')).toBe('+ ₹20.00');
   });
 });

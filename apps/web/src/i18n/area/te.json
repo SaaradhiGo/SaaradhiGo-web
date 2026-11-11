@@ -638,5 +638,17 @@
   "Licence, back": "లైసెన్స్, వెనుక",
   "Aadhaar card": "ఆధార్ కార్డ్",
   "{n} payout": "{n} చెల్లింపు",
-  "That took too long. Check your connection and try again.": "చాలా సమయం పట్టింది. మీ కనెక్షన్ చూసి మళ్లీ ప్రయత్నించండి."
+  "That took too long. Check your connection and try again.": "చాలా సమయం పట్టింది. మీ కనెక్షన్ చూసి మళ్లీ ప్రయత్నించండి.",
+  "Search by place or trip number": "స్థలం లేదా ట్రిప్ నంబర్‌తో వెతకండి",
+  "Search by payout number or amount": "పేఅవుట్ నంబర్ లేదా మొత్తంతో వెతకండి",
+  "Page {p} of {n}": "{n}లో పేజీ {p}",
+  "Newer": "కొత్తవి",
+  "Older": "పాతవి",
+  "No trips in {period} yet": "{period}లో ఇంకా ట్రిప్‌లు లేవు",
+  "No trips match “{q}” in {period}.": "{period}లో “{q}”కు సరిపోయే ట్రిప్‌లు లేవు.",
+  "No payouts in {period} yet": "{period}లో ఇంకా పేఅవుట్‌లు లేవు",
+  "No payouts match “{q}” in {period}.": "{period}లో “{q}”కు సరిపోయే పేఅవుట్‌లు లేవు.",
+  "Choose the dates to see their trips.": "ట్రిప్‌లు చూడడానికి తేదీలు ఎంచుకోండి.",
+  "Choose the dates to see their payouts.": "పేఅవుట్‌లు చూడడానికి తేదీలు ఎంచుకోండి.",
+  "the last 7 days": "గత 7 రోజులు"
 }

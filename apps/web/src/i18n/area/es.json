@@ -638,5 +638,17 @@
   "Licence, back": "Licencia, reverso",
   "Aadhaar card": "Tarjeta Aadhaar",
   "{n} payout": "{n} pago",
-  "That took too long. Check your connection and try again.": "Tardó demasiado. Revisa tu conexión e inténtalo de nuevo."
+  "That took too long. Check your connection and try again.": "Tardó demasiado. Revisa tu conexión e inténtalo de nuevo.",
+  "Search by place or trip number": "Buscar por lugar o número de viaje",
+  "Search by payout number or amount": "Buscar por número de pago o importe",
+  "Page {p} of {n}": "Página {p} de {n}",
+  "Newer": "Más recientes",
+  "Older": "Anteriores",
+  "No trips in {period} yet": "Aún no hay viajes en {period}",
+  "No trips match “{q}” in {period}.": "Ningún viaje coincide con “{q}” en {period}.",
+  "No payouts in {period} yet": "Aún no hay pagos en {period}",
+  "No payouts match “{q}” in {period}.": "Ningún pago coincide con “{q}” en {period}.",
+  "Choose the dates to see their trips.": "Elige las fechas para ver sus viajes.",
+  "Choose the dates to see their payouts.": "Elige las fechas para ver sus pagos.",
+  "the last 7 days": "los últimos 7 días"
 }

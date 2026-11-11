@@ -60,6 +60,10 @@ export type EarningRow = {
   created_at?: string | null;
   method?: string | null;
   cash_in_hand?: string | null;
+  /** The trip's places and ride class (11 Nov). */
+  pickup_address?: string | null;
+  destination_address?: string | null;
+  ride_class?: string | null;
 };
 
 export type Profile = {
@@ -105,6 +109,23 @@ export const withdrawals = async () => list(await areaGet<Page<Withdrawal>>('/dr
 /** The latest 50 settled trips, newest first (the endpoint's page limit). */
 export const ledger = async (date?: string | null) =>
   list(await areaGet<Page<EarningRow>>(`/driver/earnings/?page_size=50${date ? `&date=${date}` : ''}`));
+/** One page of a list, with the count of everything that matched. */
+export type Paged<T> = { count: number; results: T[] };
+export const PAGE_SIZE = 20;
+/** Every settled trip (11 Nov) or every payout between two local days, searched by `q`, a page at a time. */
+function pagedQuery(start: string, end: string, q: string, page: number) {
+  const p = new URLSearchParams({ start, end, page: String(page), page_size: String(PAGE_SIZE) });
+  if (q) p.set('q', q);
+  return p;
+}
+const paged = <T,>(p: Page<T> & { count?: number }): Paged<T> => {
+  const results = list(p);
+  return { count: Array.isArray(p) ? results.length : p?.count ?? results.length, results };
+};
+export const ledgerPage = async (start: string, end: string, q: string, page: number) =>
+  paged(await areaGet<Page<EarningRow> & { count?: number }>(`/driver/earnings/?${pagedQuery(start, end, q, page)}`));
+export const payoutPage = async (start: string, end: string, q: string, page: number) =>
+  paged(await areaGet<Page<Withdrawal> & { count?: number }>(`/driver/withdrawals/history/?${pagedQuery(start, end, q, page)}`));
 export const profile = () => areaGet<Profile>('/driver/driver/profile/');
 export const onboarding = () => areaGet<Onboarding>('/driver/driver/onboarding/');
 export const vehicles = async () => list(await areaGet<Page<Vehicle>>('/driver/vehicles/'));
