@@ -108,7 +108,8 @@ export function DriverDashboard() {
   setMarketZone(t?.timezone ?? seven.data?.timezone);
   const cur = t?.currency ?? w?.currency ?? seven.data?.currency ?? b?.currency ?? null;
   const soon = nextExpiry(me, car.data);
-  const firstRide = me !== null && !(Number(me?.total_trips ?? 0) > 0);
+  // Only a profile that loaded says "no trips yet" (11 Nov); a failed one is not a first ride.
+  const firstRide = me?.total_trips != null && !(Number(me.total_trips) > 0);
   const days = { ...seven, data: seven.data?.days ?? null };
 
   return (

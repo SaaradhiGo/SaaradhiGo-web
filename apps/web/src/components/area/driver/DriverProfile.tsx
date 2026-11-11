@@ -107,7 +107,8 @@ export function DriverProfile() {
   const since = monthYear(acct?.created_at, locale);
   const order = dateOrder(data?.config.country ?? acct?.market_country);
   const rating = me?.ratings != null && Number(me.ratings) > 0 ? Number(me.ratings).toFixed(1) : null;
-  const trips = Number(me?.total_trips ?? 0);
+  // No count before its data (11 Nov): a placeholder while the profile loads, never "0 trips".
+  const trips = me?.total_trips != null ? Number(me.total_trips) : null;
   const approved = readyToDrive(data);
   const held = !!data?.checklist.approved && !approved;
   const p = data?.personal;
@@ -134,7 +135,9 @@ export function DriverProfile() {
             {acct === null ? <Skel h={28} w={220} /> : <h2 className="a28">{acct.full_name || '—'}</h2>}
             <div className="arow a14 amut pf-meta">
               <span>{maskPhone(acct?.phone_number) ?? ''}</span><span aria-hidden="true">·</span>
-              <span>{rating ? tr('{r} rating from {n} trips').replace('{r}', rating).replace('{n}', String(trips)) : tr('{n} trips').replace('{n}', String(trips))}</span>
+              {trips === null ? (me === null ? <Skel h={16} w={150} /> : null) : (
+                <span data-testid="profile-trips">{rating ? tr('{r} rating from {n} trips').replace('{r}', rating).replace('{n}', String(trips)) : tr('{n} trips').replace('{n}', String(trips))}</span>
+              )}
               {p?.home_city && <><span aria-hidden="true">·</span><span>{p.home_city}</span></>}
             </div>
           </div>

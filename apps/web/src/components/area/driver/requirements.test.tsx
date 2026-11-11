@@ -244,6 +244,22 @@ describe('a vehicle that did not load (11 Nov)', () => {
   });
 });
 
+describe('no value before its data (11 Nov)', () => {
+  it('Profile shows a placeholder, never "0 trips", while the profile loads', async () => {
+    const api = await import('@/lib/area/api');
+    const get = api.areaGet as unknown as ReturnType<typeof vi.fn>;
+    const real = get.getMockImplementation()!;
+    get.mockImplementation(async (p: string) => (p === '/driver/driver/profile/' ? new Promise(() => {}) : real(p)));
+    try {
+      const { DriverProfile } = await import('./DriverProfile');
+      const { container } = wrap(<DriverProfile />);
+      await screen.findByTestId('card-vehicle');
+      expect(container.textContent).not.toMatch(/0 trips/);
+      expect(screen.queryByTestId('profile-trips')).toBeNull();
+    } finally { get.mockImplementation(real); }
+  });
+});
+
 describe('documents', () => {
   it('before a vehicle exists, its documents say Add your vehicle first', async () => {
     const { DriverDocuments } = await import('./DriverDocuments');

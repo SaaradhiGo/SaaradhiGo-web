@@ -46,7 +46,7 @@ function newDriver(path: string): unknown {
   if (path.startsWith('/ride/driver-history/')) return { count: 0, results: [] };
   if (path.startsWith('/driver/driver/onboarding/')) return { driver_documents: [], vehicle_documents: [] };
   if (path.startsWith('/driver/vehicles/')) return [];
-  if (path.startsWith('/driver/driver/profile/')) return { status: 'off' };
+  if (path.startsWith('/driver/driver/profile/')) return { status: 'off', total_trips: 0, ratings: null };
   return {};
 }
 
