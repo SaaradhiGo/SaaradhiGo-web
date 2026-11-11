@@ -1,6 +1,6 @@
 # SaaradhiGo Ops Console
 
-Internal operations console for SaaradhiGo / VahanGo. A Next.js 14 (App Router) app written in TypeScript + Tailwind, run by ops + support staff against the shared backend.
+Internal operations console for SaaradhiGo. A Next.js 14 (App Router) app written in TypeScript + Tailwind, run by ops + support staff against the shared backend.
 
 > Phase-0 MVP. Surface kept intentionally small: dashboard, trips, drivers, support tickets, pricing zones. Approve-driver and view rate cards work end-to-end; driver detail / SOS / withdrawal-management screens are TODO.
 
@@ -13,7 +13,7 @@ npm install
 npm run dev                      # http://localhost:3000
 ```
 
-Sign in with an admin-role phone number; OTP flow is identical to the mobile clients.
+Sign in with a staff email address and password at `/login`. Phone-and-code sign-in is not offered to staff.
 
 ## Stack
 
@@ -27,8 +27,8 @@ Sign in with an admin-role phone number; OTP flow is identical to the mobile cli
 
 | Path | What it does |
 |---|---|
-| `/login` | OTP login (uses `/auth/otp/` + `/auth/login/`). |
-| `/dashboard` | Daily KPI tiles via `/ride/admin/dashboard/`. |
+| `/login` | Staff sign-in: email + password via `/auth/admin/login/`, then an authenticator code where the environment requires one. |
+| `/dashboard` | The Command Centre: figures, queues, alerts and quick links for the selected region. |
 | `/trips` | Trips list with status filter via `/ride/admin/trips/`. |
 | `/drivers` | Drivers list with KYC approve action. |
 | `/support` | Support tickets list via `/support/admin/tickets/`. |
@@ -38,7 +38,7 @@ Sign in with an admin-role phone number; OTP flow is identical to the mobile cli
 
 Access + refresh tokens live in `localStorage` (keys: `saaradhi_admin_access_token`, `saaradhi_admin_refresh_token`). The `Authorization: Bearer …` header is attached on every call by `src/lib/api.ts`.
 
-Token rotation isn't wired yet — the access token currently lives for 15 minutes server-side, so an ops user will need to sign in again after that window. The refresh flow is a Phase-1 follow-up.
+The console stays signed in until the operator signs out: the 15-minute access token is renewed silently with the rotating refresh token (14 days of inactivity ends it), and "Sign out" revokes the refresh token on the server.
 
 ## Backend integration
 

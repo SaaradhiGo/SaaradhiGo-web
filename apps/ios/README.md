@@ -19,8 +19,10 @@ This directory will contain:
 
 Targets the same SaaradhiGo backend as the other clients:
 
-- REST: `https://dev.api.saaradhigo.in/api/v1`
-- WebSocket: `wss://dev.api.saaradhigo.in/ws`
+- REST (QA): `https://backend-qa-811d.up.railway.app/api/v1`
+- WebSocket (QA): `wss://backend-qa-811d.up.railway.app/ws`
+- REST (production target): `https://api.saaradhigo.com/api/v1` *(DNS not yet configured)*
+- WebSocket (production target): `wss://api.saaradhigo.com/ws` *(DNS not yet configured)*
 
 ## Getting started
 

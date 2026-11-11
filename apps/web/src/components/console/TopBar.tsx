@@ -1,0 +1,91 @@
+'use client';
+
+import Link from 'next/link';
+import type { OperatorUser } from '@/lib/api';
+import { AdminAccess } from '@/lib/adminScope';
+import { canOpen } from '@/lib/consoleLinks';
+import type { Theme } from '@/lib/consolePrefs';
+import { PlacePicker } from '@/components/console/shell/PlacePicker';
+import { Freshness } from '@/components/console/shell/Freshness';
+import { GlobalSearch } from '@/components/console/GlobalSearch';
+import { SuperAdminChip } from '@/components/console/command-centre/SuperAdminBanner';
+import { EnvBadge } from '@/components/console/EnvBadge';
+import { ProfileMenu } from '@/components/console/ProfileMenu';
+import { Bell, Inbox } from '@/components/console/icons';
+import { inboxBadge, inboxLabel } from '@/lib/supportDesk';
+
+/**
+ * The strip above every page: where am I looking, find me something, which
+ * environment is this, is anything on fire, and who am I.
+ *
+ * In that order, left to right, because that is the order the questions
+ * come in. The region is first and leftmost: nothing on the page means
+ * anything until it is answered.
+ */
+export function TopBar({
+  access,
+  operator,
+  sosOpen,
+  inboxUnread,
+  theme,
+  onTheme,
+  onSignOut,
+}: {
+  access: AdminAccess | null;
+  operator: OperatorUser | null;
+  sosOpen: number | undefined;
+  /** Unread console notifications for this operator; undefined = unknown. */
+  inboxUnread?: number;
+  theme: Theme;
+  onTheme: (t: Theme) => void;
+  onSignOut: () => void;
+}) {
+  const safety = canOpen(access, 'safety');
+  const open = typeof sosOpen === 'number' ? sosOpen : null;
+  const inbox = canOpen(access, 'supportInbox');
+  const badge = inboxBadge(inboxUnread);
+  return (
+    <header className="ops__top">
+      <div className="ops__top-left">
+        <PlacePicker access={access} />
+      </div>
+      <GlobalSearch access={access} />
+      <div className="ops__top-right">
+        <SuperAdminChip access={access} />
+        <Freshness />
+        <EnvBadge />
+        {inbox && (
+          <Link
+            href="/support/inbox"
+            className={`ops__bell ${badge ? 'ops__bell--note' : ''}`}
+            aria-label={inboxLabel(inboxUnread)}
+            title={inboxLabel(inboxUnread)}
+          >
+            <Inbox />
+            {badge ? <span className="ops__bell-count ops__bell-count--note" aria-hidden="true">{badge}</span> : null}
+          </Link>
+        )}
+        {safety && (
+          <Link
+            href="/safety-ops"
+            className={`ops__bell ${open ? 'ops__bell--live' : ''}`}
+            aria-label={open === null
+              ? 'SOS alerts'
+              : `SOS alerts, ${open} open`}
+            title={open === null ? 'SOS alerts' : `${open} SOS alert${open === 1 ? '' : 's'} open`}
+          >
+            <Bell />
+            {open ? <span className="ops__bell-count" aria-hidden="true">{open}</span> : null}
+          </Link>
+        )}
+        <ProfileMenu
+          operator={operator}
+          access={access}
+          theme={theme}
+          onTheme={onTheme}
+          onSignOut={onSignOut}
+        />
+      </div>
+    </header>
+  );
+}

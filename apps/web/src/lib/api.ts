@@ -7,6 +7,9 @@
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
+/** Fired on `window` after every successful console GET (the shell's freshness line). */
+export const CONSOLE_DATA_LOADED = 'sg:console-data-loaded';
+
 export const TOKEN_KEY = 'saaradhi_admin_access_token';
 export const REFRESH_KEY = 'saaradhi_admin_refresh_token';
 
@@ -15,31 +18,297 @@ export function readToken(): string | null {
   return window.localStorage.getItem(TOKEN_KEY);
 }
 
+/**
+ * The console stays signed in until the operator signs out (owner, 2026-11-03).
+ *
+ * Before, only the 15-minute access token was kept and the console never
+ * renewed it (AUDIT 27.78, M4), so an operator was sent back to the password
+ * and authenticator code every quarter of an hour. Now the refresh token is
+ * kept too and the access token is renewed silently (`renewConsoleSession`).
+ *
+ * What still bounds the session:
+ *   * every renewal ROTATES the refresh token and blacklists the old one, so a
+ *     copied token is single-use;
+ *   * "Sign out" revokes the refresh token on the server before clearing this
+ *     browser (`signOutConsole`), so it is dead after sign-out, not 14 days later;
+ *   * a deactivated account gets no new tokens (`/auth/refresh/`, AUDIT 27.78 Low 3);
+ *   * a password or authenticator change revokes every refresh token the
+ *     account holds (`session_revocation.revoke_all_refresh_tokens`);
+ *   * 14 days without opening the console ends the session (REFRESH_TOKEN_LIFETIME).
+ */
 export function writeTokens({ access, refresh }: { access: string; refresh?: string }) {
   window.localStorage.setItem(TOKEN_KEY, access);
   if (refresh) window.localStorage.setItem(REFRESH_KEY, refresh);
 }
 
+/** Seconds since the epoch at which a JWT expires, or null if it cannot be read. */
+function tokenExpiry(token: string): number | null {
+  try {
+    const part = token.split('.')[1];
+    if (!part) return null;
+    const json = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')));
+    return typeof json.exp === 'number' ? json.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Renew this long before the access token runs out, so a request never races it. */
+const RENEW_BEFORE_S = 60;
+
+let renewing: Promise<boolean> | null = null;
+
+/**
+ * Swap the stored refresh token for a new access + refresh pair.
+ *
+ * Single-flight: the Command Centre fires several requests at once, and two
+ * renewals with the same refresh token would have the second refused (the
+ * first blacklisted it) and sign the operator out. They all wait on one.
+ *
+ * Sent WITHOUT the Authorization header: the access token is expired by now,
+ * and the server's JWT authentication would refuse the request before the
+ * refresh view ever saw it.
+ *
+ * Returns true when renewed. A refusal (expired, revoked, deactivated) clears
+ * the session; a network failure leaves it alone, so being offline for a
+ * moment never signs anyone out.
+ */
+export function renewConsoleSession(): Promise<boolean> {
+  if (typeof window === 'undefined') return Promise.resolve(false);
+  if (renewing) return renewing;
+  const refresh = window.localStorage.getItem(REFRESH_KEY);
+  if (!refresh) return Promise.resolve(false);
+  renewing = (async () => {
+    try {
+      const resp = await fetch(`${BASE}/auth/refresh/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refresh }),
+      });
+      let json: any = null;
+      try { json = await resp.json(); } catch { /* empty */ }
+      const data = json?.data ?? json;
+      if (resp.ok && data?.token) {
+        writeTokens({ access: data.token, refresh: data.refresh_token });
+        return true;
+      }
+      if (resp.status === 400 || resp.status === 401) clearTokens();
+      return false;
+    } catch {
+      return false;
+    } finally {
+      renewing = null;
+    }
+  })();
+  return renewing;
+}
+
+/** Renew first if the stored access token is about to expire (or has). */
+async function freshConsoleToken(): Promise<string | null> {
+  const token = readToken();
+  if (!token || typeof window === 'undefined') return token;
+  if (!window.localStorage.getItem(REFRESH_KEY)) return token;
+  const exp = tokenExpiry(token);
+  if (exp !== null && exp - Date.now() / 1000 <= RENEW_BEFORE_S) {
+    await renewConsoleSession();
+    return readToken();
+  }
+  return token;
+}
+
 export function clearTokens() {
   window.localStorage.removeItem(TOKEN_KEY);
   window.localStorage.removeItem(REFRESH_KEY);
+  // The operator's own record goes with the session it belonged to. Leaving
+  // it behind would have the console greeting the previous operator by name
+  // on the sign-in screen.
+  window.localStorage.removeItem('saaradhi_admin_user');
+}
+
+/**
+ * Sign the console out: revoke the stored refresh token on the server, then
+ * clear this browser (AUDIT 27.78, M4).
+ *
+ * The refresh token is POSTed to `/auth/logout/`,
+ * which blacklists it, BEFORE storage is cleared -- clearing first would lose
+ * the only copy and leave it valid. Best effort and bounded: a sign-out must
+ * never hang on the network, and the local session is cleared either way.
+ */
+export async function signOutConsole(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  // `/auth/logout/` needs a live access token. After a night away the stored
+  // one has expired, so renew first; the token revoked is then the new one.
+  const access = await freshConsoleToken();
+  const refresh = window.localStorage.getItem(REFRESH_KEY);
+  if (access && refresh) {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), 4000) : null;
+    try {
+      await fetch(`${BASE}/auth/logout/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${access}` },
+        body: JSON.stringify({ refresh_token: refresh }),
+        signal: controller?.signal,
+      });
+    } catch {
+      /* offline or refused: the token still goes from this browser */
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+  clearTokens();
 }
 
 export class ApiError extends Error {
-  constructor(public status: number, public code: string, message: string) {
+  /**
+   * Whether `message` was written by the server FOR A PERSON.
+   *
+   * It matters because `messageFor` decides from it whether the text may be
+   * shown to a rider. A 502 from a gateway has no error body, so the message
+   * became "HTTP 502" -- which is true, useless to a passenger, and was
+   * appearing on the booking panel. The status is still on the error for the
+   * log; it is simply no longer mistaken for copy.
+   */
+  constructor(
+    public status: number,
+    public code: string,
+    message: string,
+    public fromServer: boolean = false,
+    /**
+     * Which input the server blamed, when it named one.
+     *
+     * Without this a field error could only be shown as a banner at the top
+     * of the form. "Enter a valid email address." then appeared on whatever
+     * step the person happened to be on -- on the driver sign-up it landed
+     * on the contact-number step, pointing at a field that was fine, while
+     * the email box it was about was on a screen they had already left.
+     */
+    public field: string | null = null,
+  ) {
     super(message);
   }
 }
 
-async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const token = readToken();
-  const resp = await fetch(`${BASE}${path}`, {
+/**
+ * `authToken` exists because this client serves TWO principals.
+ *
+ * The ops console stores its session under `saaradhi_admin_access_token`;
+ * a rider on the public site stores one under `saaradhi_rider_access_token`.
+ * `readToken()` only ever knew about the first, so every authenticated call
+ * the public site made went out with NO Authorization header and came back
+ * 401 -- which looked like a broken endpoint rather than a missing token.
+ *
+ * Callers on the public side pass their own token explicitly. Nothing here
+ * guesses which principal is active, because guessing is how a rider session
+ * would end up being sent to an operator endpoint.
+ */
+async function call<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  authToken?: string | null,
+): Promise<T> {
+  const consoleSession = authToken === undefined;
+  let token = consoleSession ? await freshConsoleToken() : authToken;
+  const send = (bearer: string | null) => fetch(`${BASE}${path}`, {
     method,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // Maps cost (9 Nov): the backend counts each Google call against the surface that asked.
+      'X-SG-Surface': 'rider_web',
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
+  });
+  let resp = await send(token);
+  // The token was refused (expired while the laptop slept, say): renew once
+  // and send the same request again before treating the session as ended.
+  if (resp.status === 401 && consoleSession && token && await renewConsoleSession()) {
+    token = readToken();
+    resp = await send(token);
+  }
+  let json: any = null;
+  try {
+    json = await resp.json();
+  } catch {
+    /* empty response is fine */
+  }
+  if (!resp.ok) {
+    const err = json?.error ?? {};
+    const authored = typeof err.message === 'string' && err.message.trim() !== '';
+    noteSessionEnd(resp.status, authToken, token);
+    throw new ApiError(
+      resp.status,
+      err.code ?? 'UNKNOWN_ERROR',
+      authored ? err.message : `HTTP ${resp.status}`,
+      authored,
+      typeof err.field === 'string' && err.field !== 'general' ? err.field : null,
+    );
+  }
+  // Standard backend envelope: {status, data} for success
+  // or DRF pagination response (results / next / previous).
+  // The console's "Updated N s ago": the last time any console read came back.
+  if (method === 'GET' && authToken === undefined && typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(CONSOLE_DATA_LOADED, { detail: Date.now() }));
+  }
+  return (json?.data ?? json) as T;
+}
+
+/**
+ * Fired on `window` when a console request is refused for the token it
+ * carried. The shell listens and sends the operator back to sign in with a
+ * message that says the session ENDED -- which is what happened -- rather
+ * than dumping them on a blank sign-in form mid-task with no explanation.
+ */
+export const CONSOLE_SESSION_ENDED = 'saaradhi:console-session-ended';
+
+function noteSessionEnd(status: number, authToken: string | null | undefined, sent: string | null) {
+  // Only the console's own session: a caller that passed its token
+  // explicitly (the public site) handles its own sign-out, and a request
+  // that carried no token at all was never a session.
+  if (status !== 401 || authToken !== undefined || !sent) return;
+  if (typeof window === 'undefined') return;
+  clearTokens();
+  window.dispatchEvent(new Event(CONSOLE_SESSION_ENDED));
+}
+
+/**
+ * Send a file (and fields) as multipart, through OUR API.
+ *
+ * WHY NOT THE PRESIGNED DIRECT-TO-S3 PUT, which exists and is the better
+ * shape on paper: a browser will not make that PUT unless the BUCKET
+ * publishes a CORS rule allowing the origin, and the Railway-managed bucket
+ * does not. Its storage API also refuses `PutBucketCORS` with the
+ * credentials the deployment holds, so the rule cannot be added from the
+ * application side at all. Measured, not assumed: the PUT fails in the
+ * browser with `net::ERR_FAILED` before it leaves.
+ *
+ * The Android apps never hit this because a native HTTP client does not
+ * enforce CORS, which is why the presign path has always looked fine.
+ *
+ * So the web sends the bytes to Django, which writes them to S3 with server
+ * credentials. That costs a worker for the length of the upload, which for
+ * a driver's documents -- a few megabytes, a handful of times, once -- is a
+ * trade worth making to remove a dependency on a bucket setting nobody can
+ * verify. It is also STRICTER: the server validates the real bytes with
+ * `validate_document_file` instead of validating a key and trusting what is
+ * behind it.
+ *
+ * `Content-Type` is deliberately NOT set. The browser must write it itself
+ * so the multipart boundary matches the body; setting it by hand is the
+ * classic way to produce a request Django cannot parse.
+ */
+async function callForm<T>(
+  method: string,
+  path: string,
+  form: FormData,
+  authToken?: string | null,
+): Promise<T> {
+  const token = authToken !== undefined ? authToken : await freshConsoleToken();
+  const resp = await fetch(`${BASE}${path}`, {
+    method,
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: form,
   });
   let json: any = null;
   try {
@@ -49,39 +318,319 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   }
   if (!resp.ok) {
     const err = json?.error ?? {};
+    const authored = typeof err.message === 'string' && err.message.trim() !== '';
     throw new ApiError(
       resp.status,
       err.code ?? 'UNKNOWN_ERROR',
-      err.message ?? `HTTP ${resp.status}`,
+      authored ? err.message : `HTTP ${resp.status}`,
+      authored,
+      typeof err.field === 'string' && err.field !== 'general' ? err.field : null,
     );
   }
-  // Standard backend envelope: {status, data} for success
-  // or DRF pagination response (results / next / previous).
   return (json?.data ?? json) as T;
 }
 
+/**
+ * Fetch a file (a CSV export) with the operator's token.
+ *
+ * A plain link cannot carry the Authorization header, so the export is
+ * fetched here and handed to the browser as a Blob. A refusal comes back as
+ * the server's own JSON error (a row cap, a missing capability), raised as an
+ * ApiError like any other call.
+ */
+export async function apiDownload(path: string): Promise<{ blob: Blob; filename: string }> {
+  const token = await freshConsoleToken();
+  const resp = await fetch(`${BASE}${path}`, {
+    method: 'GET',
+    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  });
+  if (!resp.ok) {
+    let json: any = null;
+    try {
+      json = await resp.json();
+    } catch {
+      /* not JSON */
+    }
+    const err = json?.error ?? {};
+    const authored = typeof err.message === 'string' && err.message.trim() !== '';
+    noteSessionEnd(resp.status, undefined, token);
+    throw new ApiError(
+      resp.status,
+      err.code ?? 'UNKNOWN_ERROR',
+      authored ? err.message : `HTTP ${resp.status}`,
+      authored,
+      null,
+    );
+  }
+  const disposition = resp.headers.get('Content-Disposition') ?? '';
+  const match = /filename="?([^";]+)"?/.exec(disposition);
+  return { blob: await resp.blob(), filename: match?.[1] ?? 'export.csv' };
+}
+
 export const api = {
-  get: <T,>(path: string) => call<T>('GET', path),
-  post: <T,>(path: string, body?: unknown) => call<T>('POST', path, body),
-  patch: <T,>(path: string, body?: unknown) => call<T>('PATCH', path, body),
-  delete: <T,>(path: string) => call<T>('DELETE', path),
+  get: <T,>(path: string, authToken?: string | null) =>
+    call<T>('GET', path, undefined, authToken),
+  post: <T,>(path: string, body?: unknown, authToken?: string | null) =>
+    call<T>('POST', path, body, authToken),
+  patch: <T,>(path: string, body?: unknown, authToken?: string | null) =>
+    call<T>('PATCH', path, body, authToken),
+  put: <T,>(path: string, body?: unknown, authToken?: string | null) =>
+    call<T>('PUT', path, body, authToken),
+  delete: <T,>(path: string, authToken?: string | null) =>
+    call<T>('DELETE', path, undefined, authToken),
+  patchForm: <T,>(path: string, form: FormData, authToken?: string | null) =>
+    callForm<T>('PATCH', path, form, authToken),
+  postForm: <T,>(path: string, form: FormData, authToken?: string | null) =>
+    callForm<T>('POST', path, form, authToken),
 };
 
 // ---- Auth helpers ----
 
+// The console does NOT declare a role. It used to send `role: 'admin'`, and the
+// backend used to honour that -- which is the client half of the privilege
+// escalation closed in the backend this week: a self-declared role was enough to
+// be created as an operator. `POST /auth/otp/` now rejects any privileged role
+// with HTTP 400, so sending it would simply break sign-in.
+//
+// Authority comes from the stored account (role admin AND is_staff, set only by
+// `bootstrap_qa_operator` or the Django admin), never from what the client asks
+// for. An operator signing in here is recognised because of what their account
+// already is.
 export async function requestOtp(phone: string) {
-  return api.post<{ message?: string }>('/auth/otp/', { phone_number: phone, role: 'admin' });
+  return api.post<{ message?: string }>('/auth/otp/', { phone_number: phone });
 }
 
 export async function loginWithOtp(phone: string, otp: string) {
-  type LoginResp = { access?: string; refresh?: string; user?: unknown };
+  // Field names are `token` / `refresh_token`, which is what the backend's
+  // success envelope actually contains. This read `access` / `refresh`, so
+  // `writeTokens` never fired: the login appeared to succeed, stored nothing, and
+  // the console layout bounced straight back to /login. A silent sign-in loop,
+  // and the reason nobody could get into this console.
+  type LoginResp = { token?: string; refresh_token?: string; user?: unknown };
   const data = await api.post<LoginResp>('/auth/login/', {
     phone_number: phone,
     otp,
-    role: 'admin',
   });
-  if (data?.access) {
-    writeTokens({ access: data.access, refresh: data.refresh });
+  if (data?.token) {
+    writeTokens({ access: data.token, refresh: data.refresh_token });
+  } else {
+    throw new ApiError(
+      200,
+      'AUTH_NO_TOKEN',
+      'Signed in but the server returned no token.',
+    );
   }
   return data;
+}
+
+export const ADMIN_USER_KEY = 'saaradhi_admin_user';
+
+export type OperatorUser = {
+  id?: number | string;
+  full_name?: string | null;
+  email?: string | null;
+  phone_number?: string | null;
+  role?: string | null;
+};
+
+export function readOperator(): OperatorUser | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(ADMIN_USER_KEY);
+    return raw ? (JSON.parse(raw) as OperatorUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+export type AdminLoginExtra = {
+  /** The second factor, once `AUTH_MFA_REQUIRED` has asked for it. */
+  mfaCode?: string;
+  /**
+   * One of the single-use recovery codes, INSTEAD of the authenticator
+   * code, when the authenticator is lost. Sent as `recovery_code`: the
+   * server checks that field against the recovery set only, consumes the
+   * code, and answers with how many remain (`recovery_codes_remaining`,
+   * `recovery_codes_low`). This screen used to post it as `mfa_code`,
+   * which the server still accepts, but the field should say what it
+   * carries.
+   */
+  recoveryCode?: string;
+  /**
+   * Why the emergency account is being used. The server demands it from a
+   * break-glass account AFTER the password and the second factor, with
+   * `AUTH_BREAK_GLASS_REASON_REQUIRED`; the console asks and resends.
+   */
+  reason?: string;
+  /**
+   * The replacement for a temporary password, once
+   * `AUTH_PASSWORD_CHANGE_REQUIRED` has asked for one.
+   *
+   * THE CHANGE RIDES ON THE SIGN-IN ITSELF. The server refuses to mint a
+   * token on a temporary password at all, so at this point there is no
+   * bearer token and `/auth/password/change/` cannot be called; the only
+   * way through is this same request with `new_password` added. The gates
+   * run in order -- credentials, second factor, break-glass reason, then
+   * the password -- so whatever the earlier gates asked for is sent again
+   * alongside it. A weak choice, or the temporary password again, comes
+   * back as 400 `AUTH_PASSWORD_WEAK` and the person picks another.
+   */
+  newPassword?: string;
+};
+
+/**
+ * Sign an operator in with an email address (or phone) and a password.
+ *
+ * THE CONSOLE HAD NO PASSWORD DOOR. Its only sign-in was phone + one-time
+ * code, the same OTP route the rider apps use. An operator account created
+ * with an email address and a password -- which is how `admin@saaradhigo.com`
+ * exists -- had nothing it could sign in to: the code route is keyed on a
+ * phone number, and `/auth/admin/login/` only accepted a phone number too.
+ *
+ * `/auth/admin/login/` now takes either identifier. It is the right endpoint
+ * rather than `/auth/email/login/` because it is the one that enforces
+ * `is_operator` BEFORE minting a token, so a token from it always represents
+ * an account allowed to operate the platform.
+ */
+export type AdminLoginResult = {
+  token?: string;
+  refresh_token?: string;
+  user?: OperatorUser;
+  /**
+   * Present on exactly ONE sign-in: the first token after the
+   * authenticator is confirmed, and on a regeneration. The server never
+   * returns them again, so whatever is shown from this must be shown now.
+   */
+  recovery_codes?: string[];
+  recovery_codes_notice?: string;
+  /** After a recovery code was spent: how many are left, and whether that is few. */
+  recovery_codes_remaining?: number;
+  recovery_codes_low?: boolean;
+};
+
+export async function adminLoginWithPassword(
+  identifier: string,
+  password: string,
+  { mfaCode, recoveryCode, reason, newPassword }: AdminLoginExtra = {},
+): Promise<AdminLoginResult> {
+  const looksLikeEmail = identifier.includes('@');
+  const data = await api.post<AdminLoginResult>(
+    '/auth/admin/login/',
+    {
+      ...(looksLikeEmail
+        ? { email: identifier.trim() }
+        : { phone_number: identifier.trim() }),
+      password,
+      ...(mfaCode ? { mfa_code: mfaCode } : {}),
+      ...(recoveryCode ? { recovery_code: recoveryCode } : {}),
+      ...(reason ? { reason } : {}),
+      ...(newPassword ? { new_password: newPassword } : {}),
+    },
+    // Explicitly no token: a stale, expired console session in localStorage
+    // would otherwise be sent on the request that is meant to replace it.
+    null,
+  );
+  if (!data?.token) {
+    throw new ApiError(
+      200,
+      'AUTH_NO_TOKEN',
+      'Signed in but the server returned no token.',
+    );
+  }
+  writeTokens({ access: data.token, refresh: data.refresh_token });
+  try {
+    if (data.user) {
+      window.localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(data.user));
+    }
+  } catch {
+    /* private mode: the console still works, it just cannot greet by name */
+  }
+  return data;
+}
+
+/**
+ * Replace the SIGNED-IN operator's password.
+ *
+ * `/auth/password/change/` needs a bearer token: it checks the current
+ * password server-side and applies the same strength rules as sign-up
+ * (`AUTH_PASSWORD_WEAK` names what was wrong). It is NOT the forced change
+ * at first sign-in -- no token exists then; that goes through
+ * `adminLoginWithPassword` with `newPassword`.
+ */
+export async function changePassword(currentPassword: string, newPassword: string) {
+  return api.post<{ message?: string }>('/auth/password/change/', {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
+}
+
+// ---- The operator's own second factor ----
+
+/**
+ * How many recovery codes were left after the last sign-in that spent one,
+ * kept for THIS browser session so the console can say so on its first
+ * page. The sign-in page cannot show it: the next thing it does is leave.
+ * Cleared when dismissed or when a fresh set is issued.
+ */
+export const RECOVERY_LOW_KEY = 'saaradhi_recovery_codes_low';
+/** Fired on `window` when the note changes, so a banner already on screen follows. */
+export const RECOVERY_LOW_EVENT = 'saaradhi:recovery-codes-low';
+
+export function readRecoveryLow(): number | null {
+  try {
+    const raw = window.sessionStorage.getItem(RECOVERY_LOW_KEY);
+    if (raw === null || raw === '') return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeRecoveryLow(remaining: number | null) {
+  try {
+    if (remaining === null) window.sessionStorage.removeItem(RECOVERY_LOW_KEY);
+    else window.sessionStorage.setItem(RECOVERY_LOW_KEY, String(remaining));
+  } catch {
+    /* no storage: the notice is simply not shown */
+  }
+  try {
+    window.dispatchEvent(new Event(RECOVERY_LOW_EVENT));
+  } catch {
+    /* not in a browser */
+  }
+}
+
+export type MfaStatus = {
+  /** False only outside production, where `ADMIN_MFA_REQUIRED` may be off. */
+  mfa_enabled: boolean;
+  /** A confirmed authenticator. */
+  enrolled: boolean;
+  /** An authenticator set up in a shell and not yet confirmed at sign-in. */
+  pending: boolean;
+  recovery_codes_remaining: number;
+  recovery_codes_low: boolean;
+};
+
+/** `GET /auth/admin/mfa/status/`: the caller's own state, counts and booleans only. */
+export async function fetchMfaStatus() {
+  return api.get<MfaStatus>('/auth/admin/mfa/status/');
+}
+
+export type RecoveryCodesIssued = {
+  recovery_codes: string[];
+  recovery_codes_notice?: string;
+  recovery_codes_remaining: number;
+  recovery_codes_low: boolean;
+};
+
+/**
+ * Replace the caller's recovery codes. Needs a LIVE authenticator code --
+ * a recovery code is refused (`AUTH_INVALID_CODE`, 403) -- and returns the
+ * new set exactly once. Every previous code is dead from this moment.
+ */
+export async function regenerateRecoveryCodes(mfaCode: string) {
+  return api.post<RecoveryCodesIssued>('/auth/admin/mfa/recovery-codes/regenerate/', {
+    mfa_code: mfaCode,
+  });
 }

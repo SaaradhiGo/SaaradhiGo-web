@@ -1,0 +1,171 @@
+# Lint, type-check and build the operations console.
+#
+# This repository had no CI at all. The cost of that was concrete: the Drivers
+# page -- the screen an operator uses to see and approve drivers -- called
+# `/driver/admin/list/`, which does not exist and answers 404 on the deployed
+# backend. The page showed "Could not load drivers" and nothing else. A build is
+# not enough to catch that one, but a repository with no CI is a repository where
+# nobody finds out, and there were no tests either.
+#
+# Three gates, all verified to pass locally before this workflow was added:
+#   lint        eslint . --ext .ts,.tsx --max-warnings 0
+#   type-check  tsc --noEmit
+#   build       next build
+#
+# `next lint` is deliberately NOT used. It is deprecated in Next 15 and, with no
+# ESLint config present, it PROMPTS for one -- which hangs a runner rather than
+# failing it. The ESLint CLI is non-interactive.
+#
+# No secrets are needed. NEXT_PUBLIC_API_BASE_URL has a localhost default in
+# lib/api.ts, and nothing here talks to a real backend.
+name: ops-console
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # A newer push supersedes an in-flight run on the same ref.
+  group: ops-console-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secret-scan:
+    name: secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks over the commits this run introduces
+        # Only NEW commits are scanned; the full history was scanned once by
+        # hand and recorded (internal docs, AUDIT.md section 24.3).
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BASE:-}" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
+            RANGE="$HEAD~1..$HEAD"
+          else
+            RANGE="$BASE..$HEAD"
+          fi
+          echo "scanning $RANGE"
+          docker run --rm -v "$PWD:/repo:ro" ghcr.io/gitleaks/gitleaks:v8.21.2             git /repo --config /repo/.gitleaks.toml --log-opts="$RANGE"             --redact --no-banner --exit-code 1
+
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    # Signs the role cookie in this job's build and servers, so the areas gate
+    # can open the rider and driver pages. A test value, not a secret.
+    env:
+      WEB_SESSION_SECRET: ci-area-gate-session-key-not-a-secret-value
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Next 15.5 supports 18.18+. 22 because the unit tests run TypeScript
+          # through Node's own type stripping (--experimental-strip-types),
+          # which 20 does not have.
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      # `npm ci` rather than `npm install`, so the lockfile is authoritative and a
+      # CI run cannot silently resolve different versions than a developer has.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run type-check
+
+      # node:test, no framework. Today: the environment badge must fail
+      # towards PRODUCTION when it cannot tell where it is.
+      - name: Unit tests
+        run: npm test
+
+      # The browser requests /favicon.ico whether or not anything links to it.
+      # Nothing imports these files, so only a browser (or this step) notices
+      # when one goes missing.
+      - name: Icon assets
+        run: npm run check-icons
+
+      # The design system's tokens.css is the only file allowed to hold a
+      # colour. Nothing in a lint or a type-check notices a hex literal, which
+      # is how this app ended up with two palettes that had drifted apart.
+      - name: Design tokens
+        run: npm run check-tokens
+
+      # Every stylesheet must parse; every `var(--x)` must name a token
+      # that exists; tokens.css may declare custom properties only on the
+      # theme roots; the light theme must define everything the dark one
+      # does. A missing brace once put the whole console ramp inside
+      # `.fare { }` and nothing noticed -- the browser just ignored it.
+      - name: CSS validity and tokens
+        run: npm run check-css
+
+      - name: Build
+        run: npm run build
+
+      # The sign-in preview strip is compiled out of every build that does
+      # not set NEXT_PUBLIC_CONSOLE_PREVIEW=true; CI builds without it, so
+      # the output must contain no trace of it.
+      - name: No preview code in the production bundle
+        run: npm run check-no-preview
+
+      # The public site against the approved design of 2026-11-07
+      # (design/website-2026-11-07): the five sizes and two weights, Inter,
+      # no numbers or banned words in the copy, the header logo, pages that
+      # fit 1440x900 and 1366x768, "See fares" above the fold, no sideways
+      # scroll, and at most 3% of pixels off the reference screenshots.
+      - name: Type tokens
+        run: npm run check-type
+      - name: Layout gate
+        run: |
+          npx next start -p 3100 &
+          npx --yes wait-on@8.0.1 -t 60000 http://localhost:3100/
+          SITE=http://localhost:3100 DIFFS=layout-diff npm run check-layout
+      - name: Upload layout diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: layout-diff
+          path: apps/web/layout-diff/
+          if-no-files-found: ignore
+
+      # The signed-in areas (design/signed-in-2026-11-08, AUDIT 29): role
+      # frames, sideways scroll at 360-1440, type scale, a date and time on
+      # every trip and payout row, no design sample data in src/ or the
+      # bundles, and <=3% pixels off each screen (values masked; the API is
+      # answered from scripts/fixtures/areas.mjs). Uses the server above.
+      - name: Signed-in areas gate
+        run: SITE=http://localhost:3100 DIFFS=areas-diff npm run check-areas
+      - name: Upload area diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: areas-diff
+          path: apps/web/areas-diff/
+          if-no-files-found: ignore
+
+      # Driver area v2 (10 Nov): axe contrast in both themes, one primary button, the focus ring,
+      # date order by market, file statuses and the four design screenshots.
+      - name: Driver v2 gate
+        run: SITE=http://localhost:3100 V2_DIFFS=v2-diff npm run check-driver-v2
+      - name: Upload v2 diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v2-diff
+          path: apps/web/v2-diff/
+          if-no-files-found: ignore

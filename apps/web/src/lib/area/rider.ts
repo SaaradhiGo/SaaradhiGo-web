@@ -1,0 +1,264 @@
+'use client';
+
+import { areaDelete, areaGet, areaPatch, areaPost, areaToken } from './api';
+import { api } from '@/lib/api';
+import { normalisePhone, verifyPhoneForSignup } from '@/lib/publicAuth';
+import { rideBlurbKey, vehicleClassLabel } from '@/lib/vehicles';
+
+/**
+ * The rider area's data: every value on its screens comes from these calls.
+ * Nothing is filled in when the server does not answer.
+ */
+export type SavedPlace = {
+  id: number; address_text: string; latitude: string | number; longitude: string | number;
+  /** What the rider calls it: home, work or other (null for older places). */
+  label?: 'home' | 'work' | 'other' | null;
+  /** The rider's own name for an "other" place. */
+  name?: string;
+  in_service_area?: boolean;
+  /** "Outside our service area for now", when it is. */
+  notice?: string | null;
+};
+
+export type PlaceLabel = 'home' | 'work' | 'other';
+export type PlaceInput = { label: PlaceLabel; name?: string; address_text: string; latitude: number; longitude: number };
+
+export type Trip = {
+  id: number;
+  pickup_address?: string | null;
+  destination_address?: string | null;
+  pickup_lat?: string | number | null;
+  pickup_long?: string | number | null;
+  destination_lat?: string | number | null;
+  destination_long?: string | number | null;
+  currency?: string | null;
+  estimated_fare?: string | null;
+  final_fare?: string | null;
+  rider_payable?: string | null;
+  estimated_distance_km?: string | number | null;
+  actual_distance_km?: string | number | null;
+  payment_method?: string | null;
+  payment_status?: string | null;
+  status?: string | null;
+  driver_name?: string | null;
+  vehicle_info?: { vehicle_number?: string; brand?: string; model?: string; color?: string; type?: string } | null;
+  requested_vehicle_type?: string | null;
+  requested_at?: string | null;
+  accepted_at?: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+  cancelled_at?: string | null;
+  cancelled_by?: string | null;
+  timezone?: string | null;
+  otp?: string | number | null;
+  ratings?: { score?: number; rater_id?: number }[] | null;
+  planned_route_polyline?: string | null;
+  fare_breakdown?: { total_fare?: string | null } | null;
+};
+
+export type Profile = {
+  id?: number;
+  full_name?: string | null;
+  phone_number?: string | null;
+  email?: string | null;
+  created_at?: string | null;
+  roles?: string[];
+  role?: string | null;
+  avatar?: string | null;
+  /** The languages offered in the account's market (10 Nov). */
+  market_languages?: string[];
+  market_country?: string | null;
+};
+
+type Page<T> = { results?: T[] } | T[];
+const list = <T,>(p: Page<T> | null | undefined): T[] => (Array.isArray(p) ? p : p?.results ?? []);
+
+/** Saved places, Home and Work first (GET /rider/places/, 9 Nov). */
+export async function savedPlaces(): Promise<SavedPlace[]> {
+  const r = await areaGet<{ places?: SavedPlace[] }>('/rider/places/');
+  return r.places ?? [];
+}
+
+const coords = (p: Partial<PlaceInput>) => ({
+  ...p,
+  ...(p.latitude !== undefined ? { latitude: p.latitude.toFixed(7) } : {}),
+  ...(p.longitude !== undefined ? { longitude: p.longitude.toFixed(7) } : {}),
+});
+
+export async function createPlace(p: PlaceInput): Promise<SavedPlace> {
+  return (await areaPost<{ place: SavedPlace }>('/rider/places/', coords(p))).place;
+}
+
+export async function updatePlace(id: number, p: Partial<PlaceInput>): Promise<SavedPlace> {
+  return (await areaPatch<{ place: SavedPlace }>(`/rider/places/${id}/`, coords(p))).place;
+}
+
+export async function deletePlace(id: number) {
+  return areaDelete(`/rider/places/${id}/`);
+}
+
+/** Coordinates go as strings: the endpoint trims them as text and refuses numbers. */
+export async function addPlace(p: { address_text: string; latitude: number; longitude: number; label?: 'home' | 'work' | 'other' }) {
+  const r = await areaPost<{ location?: SavedPlace } & SavedPlace>('/rider/locations/', {
+    ...p, latitude: p.latitude.toFixed(7), longitude: p.longitude.toFixed(7),
+  });
+  return r.location ?? r;
+}
+
+export async function removePlace(id: number) {
+  const token = await areaToken();
+  return api.delete(`/rider/locations/${id}/delete/`, token ?? undefined);
+}
+
+export async function trips(status?: 'completed' | 'cancelled'): Promise<Trip[]> {
+  return list(await areaGet<Page<Trip>>(`/ride/ride-history/${status ? `?status=${status}` : ''}`));
+}
+
+export async function trip(id: string | number): Promise<Trip> {
+  return areaGet<Trip>(`/ride/trip/${id}/`);
+}
+
+/** The driver's public facts for a trip: name, rating, vehicle. */
+export async function tripDriver(id: string | number) {
+  return areaGet<{ driver_name?: string; driver_rating?: string | number | null; vehicle_info?: Trip['vehicle_info'] }>(
+    `/ride/trip/${id}/details/`,
+  );
+}
+
+export async function receiptPdf(id: string | number) {
+  return areaGet<{ pdf_url?: string | null }>(`/ride/trip/${id}/receipt/pdf/`);
+}
+
+export async function rateTrip(id: string | number, score: number) {
+  return areaPost('/ride/rate-trip/', { trip_id: Number(id), score });
+}
+
+export async function profile(): Promise<Profile> {
+  const p = await areaGet<Profile & { user?: Profile }>('/auth/profile/');
+  return p.user ?? p;
+}
+
+/** The sign-in number changes only with the code texted to the new one (10 Nov). */
+export async function changePhone(phone: string, otp: string): Promise<Profile> {
+  const { phone_proof } = await verifyPhoneForSignup(phone, otp);
+  return areaPost<Profile>('/auth/phone/change/', { phone_number: normalisePhone(phone), phone_proof });
+}
+
+export async function updateName(patch: { full_name?: string; email?: string }) {
+  const token = await areaToken();
+  return api.patch<Profile>('/auth/update/', patch, token ?? undefined);
+}
+
+export async function exportData() {
+  return areaGet<Record<string, unknown>>('/auth/me/export/');
+}
+
+export async function deleteAccount() {
+  return areaPost('/auth/me/delete/', { confirm: 'DELETE' });
+}
+
+/** The fare the rider booked: the locked estimate the trip carries. */
+export function lockedFare(t: Trip): string | null {
+  return t.estimated_fare ?? null;
+}
+
+/**
+ * What the rider paid: the payable after a promo, else the final fare. A
+ * completed trip whose fare did not change keeps `final_fare` empty (the
+ * quoted fare is the charged fare, ruling D6), so its own fare total, then
+ * its locked fare, is what was paid. Nothing for a trip not completed.
+ */
+export function paidFare(t: Trip): string | null {
+  if (t.rider_payable) return t.rider_payable;
+  if (t.final_fare) return t.final_fare;
+  if (t.status !== 'completed') return null;
+  return t.fare_breakdown?.total_fare ?? t.estimated_fare ?? null;
+}
+
+const CLASS_NAMES = { auto: 'Auto', mini: 'Mini', sedan: 'Sedan', suv: 'SUV' } as const;
+
+/**
+ * The class name riders see, as the rider app names it (Auto, Mini, Sedan,
+ * SUV; `hatchback` is Mini), in Latin in every language.
+ */
+export function className(type: string | null | undefined): string | null {
+  if (!type) return null;
+  const key = rideBlurbKey(type);
+  return key ? CLASS_NAMES[key] : vehicleClassLabel(type);
+}
+
+/** Country calling codes the markets use, longest first. */
+const CODES = ['91', '44', '61', '1'];
+
+/** Masks all but the last three digits: "+91 ••••• ••210". */
+export function maskPhone(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  const digits = phone.replace(/[^\d+]/g, '');
+  if (!digits.startsWith('+')) return phone;
+  const code = CODES.find((c) => digits.slice(1).startsWith(c));
+  if (!code) return phone;
+  const rest = digits.slice(1 + code.length);
+  const hidden = rest.slice(0, -3).replace(/\d/g, '•');
+  return `+${code} ${hidden.slice(0, 5)} ${hidden.slice(5)}${rest.slice(-3)}`.replace(/\s+/g, ' ').trim();
+}
+
+/** The arrival estimate (GET /ride/trip/<id>/eta/); null when there is no honest one. */
+export type Eta = {
+  phase: 'to_pickup' | 'at_pickup' | 'to_drop' | null;
+  pickup_eta_min: number | null;
+  pickup_distance_km: string | null;
+  drop_eta_min: number | null;
+  arrive_at: string | null;
+  estimated: boolean;
+};
+
+export async function tripEta(id: string | number): Promise<Eta | null> {
+  return (await areaGet<{ eta: Eta | null }>(`/ride/trip/${id}/eta/`)).eta ?? null;
+}
+
+export type Contact = { id: number; name: string; phone: string; opted_out?: boolean };
+
+export async function trustedContacts(): Promise<{ contacts: Contact[]; max: number; note: string }> {
+  return areaGet('/sharing/contacts/');
+}
+
+export async function addContact(c: { name: string; phone: string }): Promise<Contact> {
+  return (await areaPost<{ contact: Contact }>('/sharing/contacts/', c)).contact;
+}
+
+export async function removeContact(id: number) {
+  return areaDelete(`/sharing/contacts/${id}/`);
+}
+
+export async function sharingSettings(): Promise<{ auto_share: boolean; contacts: number }> {
+  return areaGet('/sharing/settings/');
+}
+
+export async function setAutoShare(on: boolean): Promise<{ auto_share: boolean }> {
+  return areaPatch('/sharing/settings/', { auto_share: on });
+}
+
+export type Share = { active: boolean; url: string | null; expires_at?: string | null };
+
+export async function tripShare(id: string | number): Promise<Share> {
+  return areaGet(`/sharing/trips/${id}/share/`);
+}
+
+export async function startShare(id: string | number): Promise<Share> {
+  return areaPost(`/sharing/trips/${id}/share/`, {});
+}
+
+export async function stopShare(id: string | number): Promise<Share> {
+  return areaDelete(`/sharing/trips/${id}/share/`);
+}
+
+/** A masked call: a temporary number to dial, never the driver's own. */
+export type Call = { session_id: number; kind: 'number' | 'session'; number: string | null; expires_at: string };
+
+export async function startCall(tripId: string | number): Promise<Call> {
+  return (await areaPost<{ call: Call }>(`/calls/trips/${tripId}/start/`, {})).call;
+}
+
+export async function endCall(sessionId: number) {
+  return areaPost(`/calls/sessions/${sessionId}/end/`, {});
+}

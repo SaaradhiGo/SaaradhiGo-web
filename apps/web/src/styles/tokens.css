@@ -1,0 +1,458 @@
+/* SaaradhiGo — generated from tokens.json */
+/* SaaradhiGo, hybrid design: Direction B layouts, Direction A colours. Daylight
+   (light) is the default since 2026-11-06; black and gold is the dark option.
+   Every text pair is checked in tests/contrast.test.ts (4.5:1 text, 3:1 edges). */
+/* `.sg-on-noir` bands (safety, footer) are black and gold in both themes. */
+[data-theme="dark"], .sg-on-noir:not(.login__brand) {
+  --noir: #000000;
+  --on-noir: #f3eee6;
+  --on-noir-muted: #b4ada2;
+  --bg-000: #000000;
+  --bg-100: #0f0f0f;
+  --bg-200: #181818;
+  --bg-300: #242424;
+  --line: #262626;
+  --line-strong: #6e6a63;
+  --ink: #f3eee6;
+  --ink-muted: #b4ada2;
+  --ink-subtle: #948e84;
+  --gold-500: #ffd700;
+  --gold-300: #ffe34d;
+  --gold-700: #d4b200;
+  --on-gold: #000000;
+  --gold-text: #ffd700;
+  --gold-soft: rgba(255,215,0,0.10);
+  --gold-line: rgba(255,215,0,0.22);
+  --logo-classic: #d6a83e;
+  --bg-glass: #0f0f0f;
+  --map-ground: #0a0a0a;
+  --map-street: #181818;
+  --map-arterial: #262626;
+  --map-highway: #3a3205;
+  --map-water: #0a1418;
+  --map-park: #0d140e;
+  --map-label: #948e84;
+  --logo: #ffd700;
+  --brand-gold: #ffd700;
+  --route: #ffd700;
+  --map-street-edge: #181818;
+  --champagne: #fff4bf;
+  --pickup: #46c98b;
+  --success: #46c98b;
+  --danger: #ff6b5e;
+  --on-danger: #000000;
+  --focus-ring: #ffe766;
+  /* Vehicle classes: the icon colour, and a 14% tint of it behind the icon tile. */
+  --class-bike: #8ab4ff;
+  --class-auto: #4fd1a5;
+  --class-car: #f2a65a;
+  --class-comfort: #b9a3ff;
+  --class-suv: #aab6c8;
+  --class-premium: #fff4bf;
+  --class-premium-bg: #000000;
+  /* Flat surfaces on phones: no glow, no sheen. */
+  --shadow-panel: 0 0 0 1px var(--line);
+  --shadow-glow: none;
+  --shadow-sheen: none;
+}
+:root:not([data-theme="dark"]), [data-theme="light"] {
+  --noir: #000000;
+  --on-noir: #f3eee6;
+  --on-noir-muted: #b4ada2;
+  --bg-000: #faf7f2;
+  --bg-100: #ffffff;
+  --bg-200: #f3eee6;
+  --bg-300: #e9e3d9;
+  --line: #e7e1d7;
+  --line-strong: #8c8579;
+  --ink: #1b1a17;
+  --ink-muted: #57524a;
+  --ink-subtle: #6b655b;
+  /* Marigold fills with ink text; gold as text and links is #8a5300. */
+  --gold-500: #f5a623;
+  --gold-300: #f7b84a;
+  --gold-700: #d98e12;
+  --on-gold: #1b1a17;
+  --gold-text: #8a5300;
+  --gold-soft: rgba(245,166,35,0.16);
+  --gold-line: rgba(138,83,0,0.28);
+  --logo-classic: #d6a83e;
+  --bg-glass: #ffffff;
+  /* The light map (design/maps/sg_map_light.json, shared with both apps). */
+  --map-ground: #efeae1;
+  --map-street: #ffffff;
+  --map-street-edge: #e2dbcf;
+  --map-arterial: #ffffff;
+  --map-highway: #f6d58a;
+  --map-water: #cfe0e6;
+  --map-park: #dce8d2;
+  --map-label: #6b655b;
+  --route: #1b1a17;
+  --logo: #7a6000;
+  --brand-gold: #ffd700;
+  --champagne: #fff4bf;
+  --pickup: #0d7762; /* brief #0E7C66 read 4.44:1 on bg-200; one step darker */
+  --success: #0b6b57;
+  --danger: #b3261e;
+  --on-danger: #ffffff;
+  --focus-ring: #7a6000;
+  --class-bike: #1d4ed8;
+  --class-auto: #0b6b57;
+  --class-car: #8a5300;
+  --class-comfort: #5b3fa8;
+  --class-suv: #334155;
+  --class-premium: #fff4bf;
+  --class-premium-bg: #000000;
+  --shadow-panel: 0 0 0 1px var(--line);
+  --shadow-glow: none;
+  --shadow-sheen: none;
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 72px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+  /* Inter for Latin, Noto Sans Telugu and Devanagari for those scripts
+     (approved design, 2026-11-07; fonts.css). Cinzel is for the "Saaradhi Go"
+     lettering beside the emblem, never headings or body. */
+  --font-sans: "Inter", "Noto Sans Telugu", "Noto Sans Devanagari", sans-serif;
+  --font-display: var(--font-sans);
+  --font-brand: "Cinzel", "Trajan Pro", Georgia, serif;
+}
+/* Every size and weight lives in type.css and site.css (2026-11-07). */
+.sg-num, .fare, .fare-xl { font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { .sg *, .sg *::before, .sg *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }
+
+/* --- Operations console ----------------------------------------------------
+   A cooler, denser grey ramp than the marketing site, because an operator
+   reads tables of it for a shift. Not a second brand palette: gold and the
+   status colours stay within the system.
+
+   THESE USED TO BE DECLARED INSIDE `.fare { }` -- a missing brace put every
+   `--ops-*` property on the fare figure and nowhere else, so the console's
+   `var(--ops-ink-2)` resolved to nothing and every colour fell back to
+   whatever it inherited. The guard saw tokens; the browser never did.
+
+   Both themes are defined, because the console now has a theme switch. The
+   light values are chosen so every `ops-ink` step from 1 to 6 reads at 4.5:1
+   or better on `ops-bg-100`; step 7 is for hairlines and glyphs only. The
+   `ops-gold-*` steps are TEXT golds and go dark on ivory for the same reason
+   `gold-text` does; fills keep using `gold-500`.
+   ----------------------------------------------------------------------- */
+:root, [data-theme="dark"] {
+  --ops-bg-000: #0b0b0b;
+  --ops-bg-100: #121212;
+  --ops-bg-150: #161616;
+  --ops-bg-200: #181818;
+  --ops-bg-300: #1f1f1f;
+  --ops-bg-field: #12141a;
+  --ops-line-strong: #3a3a40;
+  --ops-ink-1: #c6cedb;
+  --ops-ink-2: #9aa6b6;
+  --ops-ink-3: #8e99a8;
+  --ops-ink-3b: #8b95a5;
+  --ops-ink-4: #7d8795;
+  --ops-ink-5: #7a8493;
+  --ops-ink-6: #76808f;
+  --ops-ink-7: #4f5765;
+  --ops-gold-300: #ffe98a;
+  --ops-gold-350: #ffe07a;
+  --ops-gold-500: #c8a75a;
+  --ops-gold-700: #8a7a4e;
+  --ops-success: #7fdcb0;
+  --ops-danger: #ffa98f;
+  --ops-danger-bg: #27100a;
+  /* Translucent overlays: hover washes, hairlines, the scrim behind a drawer.
+     Named because a white wash on ivory is invisible and a black one on noir
+     is, so each theme needs its own. */
+  --ops-wash: rgba(255,255,255,0.045);
+  --ops-wash-strong: rgba(255,255,255,0.09);
+  --ops-hairline: rgba(255,255,255,0.055);
+  --ops-edge-highlight: rgba(255,255,255,0.045);
+  --ops-scrim: rgba(0,0,0,0.6);
+  --ops-lift: 0 1px 2px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.35);
+  --ops-gold-wash: rgba(255,215,0,0.08);
+  --ops-gold-edge: rgba(255,215,0,0.28);
+  --ops-success-wash: rgba(70,201,139,0.1);
+  --ops-success-edge: rgba(70,201,139,0.4);
+  --ops-danger-wash: rgba(255,138,107,0.1);
+  --ops-danger-edge: rgba(255,138,107,0.42);
+  /* Status (owner, 2026-11-03): caution = Watch / High, info = Waiting / Low. Red stays for
+     critical only. Text contrast: caution 8.8:1 and info 6.9:1 on bg-300, 6.9:1 and 5.6:1 on
+     their own wash. */
+  --ops-caution: #f0b429;
+  --ops-caution-wash: rgba(240,180,41,0.12);
+  --ops-caution-edge: rgba(240,180,41,0.45);
+  --ops-info: #7aa7ff;
+  --ops-info-wash: rgba(122,167,255,0.12);
+  --ops-info-edge: rgba(122,167,255,0.45);
+  /* Chart series (Reports, module 14): five categorical hues, in this fixed order, validated for
+     lightness band, chroma, colour-blind separation and 3:1 contrast on the surface of each theme. */
+  --chart-1: #b08500;
+  --chart-2: #d05f8a;
+  --chart-3: #3a98c8;
+  --chart-4: #4fa35b;
+  --chart-5: #9078d8;
+}
+[data-theme="light"] {
+  --ops-bg-000: #f4f4f5;
+  --ops-bg-100: #ffffff;
+  --ops-bg-150: #fbfbfc;
+  --ops-bg-200: #ffffff;
+  --ops-bg-300: #f4f4f5;
+  --ops-bg-field: #ffffff;
+  --ops-line-strong: #c4c7cc;
+  --ops-ink-1: #1f2937;
+  --ops-ink-2: #334155;
+  --ops-ink-3: #475569;
+  --ops-ink-3b: #4b5563;
+  --ops-ink-4: #556070;
+  --ops-ink-5: #5f6b7a;
+  --ops-ink-6: #66717f;
+  --ops-ink-7: #9aa3b0;
+  --ops-gold-300: #7a6000;
+  --ops-gold-350: #6e5600;
+  --ops-gold-500: #8a6d00;
+  --ops-gold-700: #5c4a00;
+  --ops-success: #1a6f47; /* 4.9:1 on the pill wash; #1d7a4e was 4.26:1 at 10.5px bold */
+  --ops-danger: #b83a1e;
+  --ops-danger-bg: #fdf0ec;
+  --ops-wash: rgba(10,10,10,0.04);
+  --ops-wash-strong: rgba(10,10,10,0.08);
+  --ops-hairline: rgba(10,10,10,0.07);
+  --ops-edge-highlight: rgba(255,255,255,0.6);
+  --ops-scrim: rgba(10,10,10,0.35);
+  --ops-lift: 0 1px 2px rgba(10,10,10,0.06), 0 8px 24px rgba(10,10,10,0.08);
+  --ops-gold-wash: rgba(122,96,0,0.08);
+  --ops-gold-edge: rgba(122,96,0,0.32);
+  --ops-success-wash: rgba(26,111,71,0.1);
+  --ops-success-edge: rgba(26,111,71,0.4);
+  --ops-danger-wash: rgba(184,58,30,0.08);
+  --ops-danger-edge: rgba(184,58,30,0.4);
+  /* Status: caution 5.8:1 and info 5.9:1 on bg-000, 5.0:1 and 5.1:1 on their own wash. */
+  --ops-caution: #8a5300;
+  --ops-caution-wash: rgba(138,83,0,0.10);
+  --ops-caution-edge: rgba(138,83,0,0.42);
+  --ops-info: #1d5bb8;
+  --ops-info-wash: rgba(29,91,184,0.10);
+  --ops-info-edge: rgba(29,91,184,0.42);
+  /* Chart series (Reports, module 14): five categorical hues, in this fixed order, validated for
+     lightness band, chroma, colour-blind separation and 3:1 contrast on the surface of each theme. */
+  --chart-1: #8a6d00;
+  --chart-2: #a8326f;
+  --chart-3: #0a7aa0;
+  --chart-4: #2a7a3a;
+  --chart-5: #6a45c0;
+}
+
+/* THE CONSOLE KEEPS ITS PALETTE AND FONTS (owner, 2026-11-05: the console is
+   out of scope of the rider/driver redesign apart from the logo). These are
+   the values the shared tokens had before the hybrid design, pinned to the
+   console shell and its sign-in page so nothing there moves. */
+.ops, .login, .ops[data-theme="dark"], .login[data-theme="dark"] {
+  --noir: #000000;
+  --on-noir: #f1f5f9;
+  --on-noir-muted: #94a3b8;
+  --bg-000: #000000;
+  --bg-100: #141414;
+  --bg-200: #18181b;
+  --bg-300: #27272a;
+  --line: #27272a;
+  --line-strong: #71717a;
+  --ink: #f1f5f9;
+  --ink-muted: #94a3b8;
+  --ink-subtle: #8090a6;
+  --gold-500: #ffd700;
+  --gold-300: #ffe34d;
+  --gold-700: #d4b200;
+  --on-gold: #000000;
+  --gold-text: #ffd700;
+  --gold-soft: rgba(255,215,0,0.10);
+  --gold-line: rgba(255,215,0,0.20);
+  --bg-glass: rgba(10,10,10,0.80);
+  --map-ground: #0a0a0a;
+  --map-street: #18181b;
+  --map-arterial: #27272a;
+  --map-highway: #3a3205;
+  --map-water: #0a1418;
+  --map-park: #0d140e;
+  --map-label: #7d8ba1;
+  --logo: #ffd700;
+  --champagne: #fff4bf;
+  --pickup: #46c98b;
+  --success: #46c98b;
+  --danger: #ff8a6b;
+  --focus-ring: #ffe766;
+  --shadow-panel: 0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,215,0,0.12);
+  --shadow-glow: 0 8px 28px rgba(255,215,0,0.30);
+  --shadow-sheen: inset 0 1px 0 rgba(255,255,255,0.38), inset 0 -2px 0 rgba(0,0,0,0.16);
+  --font-sans: "Manrope", "Noto Sans Telugu", "Noto Sans Devanagari", system-ui, sans-serif;
+}
+.ops[data-theme="light"], .login[data-theme="light"] {
+  --noir: #000000;
+  --on-noir: #f1f5f9;
+  --on-noir-muted: #94a3b8;
+  --bg-000: #fafafa;
+  --bg-100: #ffffff;
+  --bg-200: #f4f4f5;
+  --bg-300: #e4e4e7;
+  --line: #e4e4e7;
+  --line-strong: #71717a;
+  --ink: #0a0a0a;
+  --ink-muted: #475569;
+  --ink-subtle: #5b6577;
+  --gold-500: #ffd700;
+  --gold-300: #ffe34d;
+  --gold-700: #d4b200;
+  --on-gold: #000000;
+  --gold-text: #7a6000;
+  --gold-soft: rgba(255,215,0,0.18);
+  --gold-line: rgba(122,96,0,0.28);
+  --bg-glass: rgba(255,255,255,0.86);
+  --map-ground: #ececec;
+  --map-street: #fafafa;
+  --map-arterial: #ffffff;
+  --map-highway: #fbeaa0;
+  --map-water: #d3dde2;
+  --map-park: #dfe6d8;
+  --map-label: #5b6577;
+  --logo: #7a6000;
+  --champagne: #fff4bf;
+  --pickup: #1d7a4e;
+  --success: #1d7a4e;
+  --danger: #b83a1e;
+  --focus-ring: #7a6000;
+  --shadow-panel: 0 24px 56px rgba(10,10,10,0.12), 0 0 0 1px rgba(10,10,10,0.06);
+  --shadow-glow: 0 8px 24px rgba(212,178,0,0.30);
+  --shadow-sheen: inset 0 1px 0 rgba(255,255,255,0.38), inset 0 -2px 0 rgba(0,0,0,0.16);
+}
+.ops, .login { font-family: var(--font-sans); }
+
+/* THE APPROVED DESIGN OF 2026-11-07 (design/website-2026-11-07; site.css).
+   The reference pages' fixed colours, including the phone mock-ups, which
+   stay light in both themes because they picture the app's screens. */
+:root {
+  --d-white: #FFFFFF;
+  --d-ivory: #F3EEE6;
+  --d-ink: #1B1A17;
+  --d-line: #E7E1D7;
+  --d-ink-text-2: #D8D2C6;
+  --d-rule: #262626;
+  --d-black: #000000;
+  --d-green: #0D7762;
+  --d-amber: #F5A623;
+  --d-slate: #57524A;
+  --d-amber-hover: #E0951A;
+  --d-ring: #3A3A3A;
+  --d-ash: #A8A29A;
+  --d-map: #EEE8DD;
+  --d-gold-2: #F5C451;
+  --d-red: #B3261E;
+  --d-ring-2: #5A564E;
+  --d-ring-hover: #6A6458;
+  --d-dots: #B8AE9E;
+  --d-page: #FAF7F2;
+  --d-bar: #D9D1C3;
+  --d-green-bg: #DDF1E6;
+  --d-green-ink: #0B6B57;
+  --d-noir: #0B0B0B;
+  --d-map-2: #EFEAE1;
+  --d-violet-bg: #ECE6F8;
+  --d-steel-bg: #E4E8EE;
+}
+/* Its colour roles: Daylight is the reference; black and gold maps onto it. */
+:root {
+  --c-page: #FAF7F2;
+  --c-surface: #FFFFFF;
+  --c-muted: #F3EEE6;
+  --c-border: #E7E1D7;
+  --c-field-border: #8C8579;
+  --c-text: #1B1A17;
+  --c-text-2: #57524A;
+  --c-text-3: #4A453E;
+  --c-text-4: #3F3B35;
+  --c-accent: #8A5300;
+  --c-accent-hover: #5E3900;
+  --c-primary: #F5A623;
+  --c-primary-ink: #1B1A17;
+  --c-green: #0D7762;
+  --c-green-ink: #0B6B57;
+  --c-green-bg: #DDF1E6;
+  --c-gold-bg: #F6EBD3;
+  --c-red: #B3261E;
+  --c-red-bg: #FBE3E1;
+  --c-violet: #5B3FA8;
+  --c-violet-bg: #ECE6F8;
+  --c-bar: #D9D1C3;
+  --c-ink: #1B1A17;        /* the dark cards and buttons */
+  --c-ink-text: #F3EEE6;
+  --c-ink-text-2: #D8D2C6;
+  --c-noir: #0B0B0B;       /* header and footer */
+  --c-gold: #E4B24C;
+  --c-gold-2: #F5C451;
+  --c-map: #EEE8DD;
+  --c-photo: #E9DCC4;
+  --c-photo-border: #C9A86A;
+  --c-photo-text: #6B5320;
+  --c-shadow: rgba(27, 26, 23, 0.12);
+  --c-fade: 250, 247, 242;
+  /* The signed-in areas (design/signed-in-2026-11-08). */
+  --c-warn-bg: #FCEFD3;
+  --c-warn-border: #F0D9A8;
+  --c-warn-ink: #7A4A00;
+  --c-area: #F5F2EC;        /* the driver area behind its cards */
+  --c-side: #0B0B0B;        /* the driver sidebar, in both themes */
+  --c-side-card: #1B1A17;
+  --c-side-line: #2E2C28;
+  --c-side-text: #F3EEE6;
+  --c-side-text-2: #D8D2C6;
+  --c-side-text-3: #A8A29A;
+  --c-side-active: rgba(245, 166, 35, 0.14);
+  --c-dot: #8A857C;
+  /* Focus (10 Nov v2): a 2px ring around the whole field plus a soft 4px glow. */
+  --c-focus: #8A5300;
+  --c-focus-glow: rgba(245, 166, 35, 0.25);
+}
+[data-theme="dark"] {
+  --c-page: #0B0B0B;
+  --c-surface: #161513;
+  --c-muted: #211F1B;
+  --c-border: #34302A;
+  --c-field-border: #6E685E;
+  --c-text: #F3EEE6;
+  --c-text-2: #C9C2B6;
+  --c-text-3: #C9C2B6;
+  --c-text-4: #C9C2B6;
+  --c-accent: #F5C451;
+  --c-accent-hover: #FFD978;
+  --c-green: #4CC3A2;
+  --c-green-ink: #7FD9BF;
+  --c-green-bg: #12322A;
+  --c-gold-bg: #2A2214;
+  --c-red: #E5615A;
+  --c-red-bg: #3A1A18;
+  --c-violet: #C3B2F0;
+  --c-violet-bg: #2A2340;
+  --c-bar: #4A453E;
+  --c-ink: #1F1D1A;
+  --c-map: #1A1916;
+  --c-photo: #221D14;
+  --c-photo-border: #6B5320;
+  --c-photo-text: #E4B24C;
+  --c-shadow: rgba(0, 0, 0, 0.5);
+  --c-fade: 11, 11, 11;
+  --c-warn-bg: #2A2214;
+  --c-warn-border: #6B5320;
+  --c-warn-ink: #F5C451;
+  --c-area: #0B0B0B;
+  --c-focus: #F5C451;
+}

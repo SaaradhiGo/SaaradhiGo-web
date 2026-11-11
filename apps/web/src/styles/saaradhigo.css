@@ -1,0 +1,691 @@
+/* SaaradhiGo component styles.
+   ---------------------------------------------------------------------------
+   Ported from the design handoff's `design-system/components/saaradhigo.css`,
+   rule for rule and value for value. Every value is a token from tokens.css.
+   Do not add colours, sizes or components here: this file mirrors the design
+   system, and anything invented in it is a divergence that will show up the
+   next time the handoff is regenerated.
+
+   Taken from the `_f` revision of the handoff, which is a colour-only update:
+   the same classes and the same token names, with noir moved to a true black
+   and the gold to the brighter brand yellow. The values live in tokens.css.
+
+   THREE MECHANICAL DEVIATIONS FROM THE HANDOFF FILE:
+
+   1. The Google Fonts `@import` is gone. A CSS `@import` of a remote
+      stylesheet blocks rendering and cannot be preconnected, so the three
+      families are linked from the root layout's <head> instead -- same
+      families, same weights, `display=swap`.
+
+   2. The `.sg-logo--*` masks were 138KB of inlined base64. They now point at
+      the SVGs in `public/brand/`, which the handoff offers as the
+      alternative, at the artwork's own aspect ratios.
+
+   3. The handoff sets only `-webkit-mask-image`; the unprefixed property is
+      set alongside it so the mark is not invisible in Firefox.
+
+   WHY THE RGBA LITERALS STAY LITERAL. A few rules carry `rgba(255,215,0,...)`
+   rather than `var(--gold-line)`, and that is deliberate in the original:
+   every one of them sits on a `noir` surface that stays black in BOTH themes,
+   where the light theme's token would resolve to a near-invisible hairline.
+   ------------------------------------------------------------------------- */
+
+/* SaaradhiGo component styles. Every value is a token from tokens.css. */
+.sg, .sg * { box-sizing: border-box; }
+.sg { font-family: var(--font-sans); color: var(--ink); -webkit-font-smoothing: antialiased; }
+.sg-num { font-variant-numeric: tabular-nums; }
+
+/* Focus — one rule for every control */
+.sg-btn:focus-visible, .sg-field input:focus-visible, .sg-vehicle:focus-visible, .sg-nav a:focus-visible, .sg-link:focus-visible {
+  outline: 2px solid var(--focus-ring); outline-offset: 2px;
+}
+
+/* Button */
+.sg-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3);
+  height: 48px; padding: 0 var(--space-5); border-radius: var(--radius-md); border: 1px solid transparent;
+  font-family: var(--font-sans); cursor: pointer; text-decoration: none;
+  transition: background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease, border-color 140ms ease; }
+.sg-btn:active { transform: translateY(1px); }
+.sg-btn svg { width: 18px; height: 18px; flex: none; }
+.sg-btn--primary { background: var(--gold-500); color: var(--on-gold); box-shadow: var(--shadow-sheen); }
+.sg-btn--primary:hover { background: var(--gold-300); box-shadow: var(--shadow-sheen), var(--shadow-glow); }
+.sg-btn--primary:active { background: var(--gold-700); box-shadow: none; }
+.sg-btn--secondary { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.sg-btn--secondary:hover { background: var(--bg-300); border-color: var(--gold-500); }
+.sg-btn--ghost { background: transparent; color: var(--ink-muted); }
+.sg-btn--ghost:hover { color: var(--ink); background: var(--bg-300); }
+.sg-btn--lg { height: 56px; padding: 0 var(--space-6); }
+.sg-btn--sm { height: 36px; padding: 0 var(--space-4); border-radius: var(--radius-sm); }
+.sg-btn--block { width: 100%; }
+.sg-btn[disabled] { opacity: .45; cursor: not-allowed; box-shadow: none; }
+
+/* Location field — pickup / destination pair joined by a route rail */
+.sg-route { position: relative; display: grid; gap: var(--space-3); }
+.sg-route::before { content: ""; position: absolute; left: 19px; top: 30px; bottom: 30px; width: 2px;
+  background: repeating-linear-gradient(to bottom, var(--line-strong) 0 4px, transparent 4px 8px); }
+.sg-field { position: relative; display: flex; align-items: center; gap: var(--space-3);
+  height: 60px; padding: 0 var(--space-4) 0 var(--space-3); border-radius: var(--radius-md);
+  background: var(--bg-300); border: 1px solid transparent; transition: border-color 140ms ease, background-color 140ms ease; }
+.sg-field:focus-within { border-color: var(--gold-500); background: var(--bg-200); }
+.sg-field__marker { width: 16px; height: 16px; flex: none; margin: 0 4px; position: relative; z-index: 1; }
+.sg-field__marker--pickup { border-radius: var(--radius-pill); background: var(--pickup); box-shadow: 0 0 0 4px var(--bg-300); }
+.sg-field__marker--drop { border-radius: 3px; background: var(--gold-500); box-shadow: 0 0 0 4px var(--bg-300); }
+.sg-field__body { display: grid; flex: 1; min-width: 0; }
+.sg-field__label { font-family: var(--font-sans); color: var(--ink-subtle); }
+.sg-field input { all: unset; font-family: var(--font-sans); color: var(--ink); width: 100%; }
+.sg-field input::placeholder { color: var(--ink-subtle); }
+.sg-field__action { background: none; border: 0; color: var(--gold-text); padding: var(--space-2); border-radius: var(--radius-sm); cursor: pointer; display: grid; }
+.sg-field__action svg { width: 20px; height: 20px; }
+
+/* Vehicle option row */
+.sg-vehicles { display: grid; gap: var(--space-2); }
+.sg-vehicle { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--bg-200);
+  border: 1px solid var(--line); cursor: pointer; text-align: left; color: var(--ink); font-family: var(--font-sans);
+  transition: border-color 240ms ease, background-color 240ms ease; width: 100%; }
+.sg-vehicle:hover { background: var(--bg-300); }
+.sg-vehicle[aria-pressed="true"], .sg-vehicle.is-selected { border-color: var(--gold-500); background: var(--gold-soft); box-shadow: 0 0 0 3px var(--gold-soft); }
+.sg-vehicle__glyph { width: 56px; height: 40px; border-radius: var(--radius-sm); background: var(--bg-300); display: grid; place-items: center; color: var(--gold-text); }
+.sg-vehicle__glyph svg { width: 30px; height: 30px; }
+.sg-vehicle__name { font-family: var(--font-sans); display: flex; align-items: center; gap: var(--space-2); }
+.sg-vehicle__meta { font-family: var(--font-sans); color: var(--ink-muted); }
+.sg-vehicle__fare { font-family: var(--font-sans); font-variant-numeric: tabular-nums; text-align: right; }
+.sg-vehicle__was { display: block; font-family: var(--font-sans); color: var(--ink-subtle); text-decoration: line-through; }
+
+/* Badge */
+.sg-badge { display: inline-flex; align-items: center; gap: var(--space-1); height: 22px; padding: 0 var(--space-2);
+  border-radius: var(--radius-pill); font-family: var(--font-sans); white-space: nowrap; }
+.sg-badge::before { content: ""; width: 6px; height: 6px; border-radius: var(--radius-pill); background: currentColor; }
+.sg-badge--gold { background: var(--gold-soft); color: var(--gold-text); }
+.sg-badge--premium { background: var(--champagne); color: var(--on-gold); }
+.sg-badge--premium::before { display: none; }
+.sg-badge--success { background: var(--bg-300); color: var(--success); }
+.sg-badge--danger { background: var(--bg-300); color: var(--danger); }
+.sg-badge--neutral { background: var(--bg-300); color: var(--ink-muted); }
+
+/* Panel — the floating booking card */
+.sg-panel { background: var(--bg-100); border-radius: var(--radius-lg); padding: var(--space-6) var(--space-5) var(--space-5); box-shadow: var(--shadow-panel); border: 1px solid var(--gold-line); position: relative; }
+.sg-panel__title { font-family: var(--font-sans); margin: 0 0 var(--space-5); }
+.sg-panel__note { font-family: var(--font-sans); color: var(--ink-subtle); text-align: center; margin: var(--space-3) 0 0; }
+
+/* Fare summary */
+.sg-fare { background: var(--bg-200); border-radius: var(--radius-lg); padding: var(--space-5); border: 1px solid var(--gold-line); }
+.sg-fare__head { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--space-4); }
+.sg-fare__total { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
+.sg-fare__total small { color: var(--gold-text); margin-right: 4px; vertical-align: 6px; }
+.sg-fare__rows { list-style: none; margin: var(--space-4) 0 0; padding: var(--space-4) 0 0; border-top: 1px solid var(--line); display: grid; gap: var(--space-2); }
+.sg-fare__rows li { display: flex; justify-content: space-between; font-family: var(--font-sans); color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.sg-fare__rows li strong { color: var(--ink); }
+.sg-fare__lock { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-4); font-family: var(--font-sans); color: var(--gold-text); }
+.sg-fare__lock svg { width: 16px; height: 16px; }
+
+/* Driver card */
+.sg-driver { display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-4); align-items: center;
+  background: var(--bg-200); border: 1px solid var(--gold-line); border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); }
+.sg-driver__avatar { width: 56px; height: 56px; border-radius: var(--radius-pill); background: var(--bg-300); color: var(--gold-text);
+  display: grid; place-items: center; font-family: var(--font-sans); box-shadow: 0 0 0 2px var(--gold-500); }
+.sg-driver__name { font-family: var(--font-sans); }
+.sg-driver__meta { font-family: var(--font-sans); color: var(--ink-muted); display: flex; gap: var(--space-2); align-items: center; }
+.sg-driver__rating { color: var(--gold-text); }
+.sg-plate { display: inline-block; font-family: var(--font-sans); padding: 4px var(--space-2);
+  border-radius: var(--radius-sm); background: var(--champagne); color: var(--on-gold); font-variant-numeric: tabular-nums; }
+
+/* Steps */
+.sg-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-6); counter-reset: s; }
+.sg-step { display: grid; grid-template-columns: 40px 1fr; gap: var(--space-4); align-items: start; }
+.sg-step::before { counter-increment: s; content: counter(s, decimal-leading-zero); font-family: var(--font-sans); font-variant-numeric: tabular-nums; color: var(--gold-text); }
+.sg-step h4 { margin: 0; font-family: var(--font-sans); }
+.sg-step p { margin: 2px 0 0; font-family: var(--font-sans); color: var(--ink-muted); }
+@media (max-width: 640px) { .sg-steps { grid-template-columns: 1fr; gap: var(--space-5); } }
+
+/* Navigation bar */
+.sg-nav { display: flex; align-items: center; gap: var(--space-6); height: 80px; padding: 0 var(--space-6);
+  background: var(--noir); border-bottom: 1px solid rgba(255,215,0,0.30); }
+.sg-wordmark { display: inline-flex; align-items: center; gap: var(--space-3); font: 600 20px/1 var(--font-brand); letter-spacing: .06em; color: var(--logo); text-decoration: none; white-space: nowrap; }
+.sg-wordmark .sg-logo { width: 48px; }
+.sg-appicon { width: 64px; height: 64px; border-radius: var(--radius-lg); background: var(--noir); overflow: hidden; display: grid; place-items: center; box-shadow: 0 0 0 1px var(--line); }
+.sg-appicon .sg-logo { width: 78%; }
+.sg-nav__links { display: flex; gap: var(--space-1); flex: 1; }
+.sg-nav a.sg-nav__link { font-family: var(--font-sans); color: var(--on-noir-muted); text-decoration: none; padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill); }
+.sg-nav a.sg-nav__link:hover { color: var(--on-noir); }
+.sg-nav a.sg-nav__link[aria-current="page"] { color: var(--on-noir); background: var(--gold-soft); }
+.sg-nav .sg-btn--ghost { color: var(--on-noir-muted); }
+.sg-nav .sg-btn--ghost:hover { color: var(--on-noir); background: rgba(241,245,249,0.08); }
+
+.sg-link { color: var(--gold-text); text-decoration: none; border-bottom: 1px solid currentColor; }
+
+/* ---------- Screens: map, sheet, phone, trip pieces ---------- */
+.sg-map { position: relative; background: var(--bg-100); overflow: hidden; }
+.sg-map > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sg-map .roads path { stroke: var(--line); fill: none; stroke-linecap: round; }
+.sg-map .m-ground { fill: var(--map-ground); }
+.sg-map .m-park { fill: var(--map-park); }
+.sg-map .m-water { fill: var(--map-water); }
+.sg-map .m-street { stroke: var(--map-street); fill: none; }
+.sg-map .m-arterial { stroke: var(--map-arterial); fill: none; stroke-linecap: round; }
+.sg-map .m-highway { stroke: var(--map-highway); fill: none; stroke-linecap: round; }
+.sg-map .m-label { fill: var(--map-label); font-family: var(--font-sans); font-weight: 700; letter-spacing: .14em; }
+.sg-map .m-car rect { fill: var(--on-noir-muted); opacity: .55; } .sg-map .m-car .m-glass, .sg-map .m-glass { fill: var(--noir); opacity: .7; }
+.sg-map .pin-halo { fill: var(--pickup); opacity: .16; } .sg-map .pin-halo--d { fill: var(--gold-500); }
+.sg-map .pin-d-dot { fill: var(--noir); }
+.sg-map .car-halo { fill: var(--gold-500); opacity: .14; }
+.sg-map .roads .major { stroke-width: 9; } .sg-map .roads .minor { stroke-width: 3; }
+.sg-map .route-glow { stroke: var(--gold-soft); stroke-width: 18; fill: none; stroke-linecap: round; }
+.sg-map .blocks rect { fill: var(--bg-200); opacity: .7; }
+.sg-map .route { stroke: var(--gold-500); stroke-width: 4.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.sg-map .route-done { stroke: var(--line-strong); stroke-width: 5; fill: none; stroke-dasharray: 2 9; stroke-linecap: round; }
+.sg-map .pin-p { fill: var(--pickup); stroke: var(--bg-100); stroke-width: 4; }
+.sg-map .pin-d { fill: var(--gold-500); stroke: var(--bg-100); stroke-width: 4; }
+.sg-map .car { fill: var(--champagne); stroke: var(--gold-700); stroke-width: 1.5; }
+.sg-map .ring { fill: none; stroke: var(--pickup); stroke-width: 2; }
+.sg-maplabel { position: absolute; transform: translate(-50%, calc(-100% - 18px)); background: var(--noir); color: var(--on-noir);
+  font-family: var(--font-sans); padding: 7px 12px; border-radius: var(--radius-pill); white-space: nowrap; --x: 50%; max-width: min(240px, calc(2 * (100% - var(--x)) - 16px), calc(2 * var(--x) - 16px)); overflow: hidden; text-overflow: ellipsis; box-shadow: var(--shadow-panel); border: 1px solid rgba(255,215,0,0.35); }
+.sg-maplabel b { color: var(--brand-gold); }
+
+.sg-sheet { background: var(--bg-100); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: var(--space-3) var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-panel); position: relative; }
+.sg-sheet::before { content: ""; display: block; width: 40px; height: 4px; border-radius: var(--radius-pill); background: var(--line-strong); margin: 0 auto var(--space-4); }
+.sg-sheet__title { font-family: var(--font-sans); margin: 0; }
+.sg-sheet__sub { font-family: var(--font-sans); color: var(--ink-muted); margin: 2px 0 0; }
+
+.sg-iconbtn { width: 44px; height: 44px; border-radius: var(--radius-pill); display: grid; place-items: center; border: 1px solid var(--line);
+  background: var(--bg-100); color: var(--ink); cursor: pointer; box-shadow: var(--shadow-panel); }
+.sg-iconbtn svg { width: 20px; height: 20px; }
+
+.sg-chip { display: inline-flex; align-items: center; gap: var(--space-2); height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-pill);
+  background: var(--bg-200); border: 1px solid var(--line); font-family: var(--font-sans); color: var(--ink); white-space: nowrap; }
+.sg-chip svg { width: 16px; height: 16px; color: var(--gold-text); }
+.sg-chip.is-selected { border-color: var(--gold-500); background: var(--gold-soft); color: var(--ink); }
+
+.sg-search { display: flex; align-items: center; gap: var(--space-3); height: 56px; padding: 0 var(--space-4); border-radius: var(--radius-md);
+  background: var(--bg-300); font-family: var(--font-sans); color: var(--ink); }
+.sg-search .sg-field__marker { margin: 0; }
+.sg-search span.sg-search__time { margin-left: auto; font-family: var(--font-sans); color: var(--ink-muted); background: var(--bg-100); padding: 6px 10px; border-radius: var(--radius-pill); }
+
+.sg-place { display: grid; grid-template-columns: 40px 1fr auto; gap: var(--space-3); align-items: center; padding: var(--space-3) 0; border-bottom: 1px solid var(--line); }
+.sg-place:last-child { border-bottom: 0; }
+.sg-place__icon { width: 40px; height: 40px; border-radius: var(--radius-pill); background: var(--bg-200); display: grid; place-items: center; color: var(--ink-muted); }
+.sg-place__icon svg { width: 18px; height: 18px; }
+.sg-place__name { font-family: var(--font-sans); }
+.sg-place__addr { font-family: var(--font-sans); color: var(--ink-muted); }
+.sg-place__km { font-family: var(--font-sans); color: var(--ink-subtle); }
+
+.sg-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) 0; font-family: var(--font-sans); }
+.sg-row__left { display: flex; align-items: center; gap: var(--space-3); }
+.sg-row__left svg { width: 20px; height: 20px; color: var(--gold-text); }
+
+.sg-pin { display: inline-flex; gap: 6px; }
+/* The PIN is six digits on QA, not the four the design drew: six 36px boxes
+   ran off a 390px screen. The row wraps and the boxes shrink to fit. */
+.sg-row--pin { flex-wrap: wrap; }
+@media (max-width: 767px) {
+  .sg-pin span { width: 32px; height: 40px; font-size: var(--text-body); }
+}
+.sg-pin span { width: 36px; height: 44px; border-radius: var(--radius-sm); background: var(--bg-300); display: grid; place-items: center;
+  font: 800 20px/1 var(--font-sans); font-variant-numeric: tabular-nums; color: var(--ink); border: 1px solid var(--line-strong); }
+
+.sg-progress { height: 4px; border-radius: var(--radius-pill); background: var(--bg-300); overflow: hidden; }
+.sg-progress > i { display: block; height: 100%; width: 40%; background: var(--gold-500); border-radius: inherit; }
+
+.sg-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); }
+.sg-action { display: grid; justify-items: center; gap: 6px; font-family: var(--font-sans); color: var(--ink-muted); background: none; border: 0; cursor: pointer; }
+.sg-action i { width: 48px; height: 48px; border-radius: var(--radius-pill); background: var(--bg-200); border: 1px solid var(--line); display: grid; place-items: center; color: var(--ink); }
+.sg-action i svg { width: 20px; height: 20px; }
+.sg-action--safety i { color: var(--danger); }
+
+.sg-btn--safety { color: var(--danger); }
+
+/* Safety on the live trip (D4): hold for 2 s to send. The fill shows how long
+   is left; it is a wash of the danger token so the label keeps its contrast
+   over both halves. */
+.sg-safety { display: grid; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line);
+  border-radius: var(--radius-md); background: var(--bg-200); }
+.sg-sos { position: relative; overflow: hidden; min-height: 56px; width: 100%; border-radius: var(--radius-md);
+  border: 1px solid var(--danger); background: transparent; color: var(--ink); cursor: pointer;
+  font-family: var(--font-sans); touch-action: none; user-select: none; -webkit-user-select: none; }
+.sg-sos:focus-visible { outline: 2px solid var(--danger); outline-offset: 2px; }
+.sg-sos:disabled { cursor: progress; }
+.sg-sos__fill { position: absolute; inset: 0; transform-origin: left center; transform: scaleX(0);
+  background: color-mix(in srgb, var(--danger) 45%, transparent); }
+.sg-sos__label { position: relative; }
+.sg-safety__error { color: var(--danger); }
+
+.sg-stars { display: flex; gap: var(--space-2); justify-content: center; }
+.sg-stars svg { width: 36px; height: 36px; color: var(--gold-500); }
+.sg-stars svg.off { color: var(--bg-300); }
+
+.sg-timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); position: relative; }
+.sg-timeline::before { content: ""; position: absolute; left: 7px; top: 12px; bottom: 12px; width: 2px; background: repeating-linear-gradient(to bottom, var(--line-strong) 0 4px, transparent 4px 8px); }
+.sg-timeline li { display: grid; grid-template-columns: 16px 1fr auto; gap: var(--space-3); align-items: start; position: relative; }
+.sg-timeline li > i { width: 16px; height: 16px; margin-top: 2px; box-shadow: 0 0 0 4px var(--bg-100); }
+.sg-timeline b { display: block; font-family: var(--font-sans); }
+.sg-timeline span { font-family: var(--font-sans); color: var(--ink-muted); }
+.sg-timeline time { font-family: var(--font-sans); color: var(--ink-subtle); }
+
+/* Phone frame used only to present mobile screens */
+.sg-phone { width: 360px; height: 760px; border-radius: 44px; background: var(--bg-000); border: 8px solid var(--noir);
+  box-shadow: 0 0 0 1px var(--line-strong), var(--shadow-panel); overflow: hidden; position: relative; display: flex; flex-direction: column; }
+.sg-statusbar { height: 36px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+  font-family: var(--font-sans); color: var(--ink); position: relative; z-index: 3; }
+.sg-statusbar i { display: inline-block; width: 22px; height: 10px; border: 1.5px solid currentColor; border-radius: 3px; position: relative; }
+.sg-statusbar i::after { content: ""; position: absolute; inset: 1.5px 5px 1.5px 1.5px; background: currentColor; border-radius: 1px; }
+
+/* Premium details */
+.sg-eyebrow { display: inline-flex; align-items: center; font-family: var(--font-sans); color: var(--gold-text); }
+/* No dash before an eyebrow (owner, 2026-11-06): plain uppercase label text. */
+.sg-promise { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--gold-line); border-bottom: 1px solid var(--gold-line); }
+.sg-promise > div { padding: var(--space-6) var(--space-5); display: grid; gap: var(--space-2); align-content: start; }
+.sg-promise > div + div { border-left: 1px solid var(--gold-line); }
+.sg-promise h4 { margin: 0; font-family: var(--font-sans); color: var(--gold-text); }
+.sg-promise p { margin: 0; font-family: var(--font-sans); color: var(--ink); }
+.sg-promise span { font-family: var(--font-sans); color: var(--ink-muted); }
+@media (max-width: 760px) { .sg-promise { grid-template-columns: 1fr; } .sg-promise > div + div { border-left: 0; border-top: 1px solid var(--gold-line); } }
+
+/* Logo — the mark is a CSS mask, coloured by the `logo` token (gold on dark, dark gold on light).
+   Use: <span class="sg-logo sg-logo--badge" role="img" aria-label="SaaradhiGo"></span>; set a width. */
+.sg-logo { display: inline-block; background: var(--logo); -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; flex: none; }
+.sg-nav .sg-logo { background: var(--logo); }
+/* Black surfaces are always black and gold, in both themes. */
+.sg-appicon .sg-logo, .sg-on-noir .sg-logo { background: var(--brand-gold); }
+
+/* Glass — panels floating over the map */
+/* Flat, no blur: backdrop-filter is costly on low-end Android (owner, 2026-11-05). */
+.sg-glass { background: var(--bg-glass); }
+.sg-scrim-left { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, var(--bg-000) 0%, var(--bg-000) 26%, rgba(0,0,0,0) 62%); }
+[data-theme="light"] .sg-scrim-left { background: linear-gradient(90deg, var(--bg-000) 0%, var(--bg-000) 26%, rgba(250,250,250,0) 62%); }
+.sg-scrim-bottom { position: absolute; left: 0; right: 0; bottom: 0; height: 160px; pointer-events: none; background: linear-gradient(0deg, var(--bg-000), rgba(0,0,0,0)); }
+[data-theme="light"] .sg-scrim-bottom { background: linear-gradient(0deg, var(--bg-000), rgba(250,250,250,0)); }
+
+/* Membership card — Saaradhi Black */
+.sg-member { position: relative; width: 380px; aspect-ratio: 1.586; border-radius: 20px; background: var(--noir); overflow: hidden;
+  border: 1px solid rgba(255,215,0,0.45); box-shadow: 0 30px 80px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08); padding: 26px 28px; display: flex; flex-direction: column; justify-content: space-between; color: var(--on-noir); }
+.sg-member .sg-logo--badge-full.wm { position: absolute; right: -60px; top: -30px; width: 280px; opacity: .10; }
+.sg-member__tier { font-family: var(--font-sans); color: var(--brand-gold); }
+.sg-member__name { font-family: var(--font-sans); color: var(--on-noir); }
+.sg-member__meta { display: flex; justify-content: space-between; font-family: var(--font-sans); color: var(--on-noir-muted); }
+
+/* Section scaffolding for marketing pages */
+.sg-section { padding: var(--space-7); }
+.sg-section + .sg-section { padding-top: 0; }
+.sg-h2 { font-family: var(--font-sans); margin: var(--space-4) 0 var(--space-4); }
+.sg-h2 em { font-style: italic; color: var(--gold-text); }
+.sg-lead { font-family: var(--font-sans); color: var(--ink-muted); max-width: 520px; margin: 0; }
+.sg-class { background: var(--bg-100); border: 1px solid var(--gold-line); border-radius: var(--radius-lg); padding: var(--space-5); display: grid; gap: var(--space-3); }
+.sg-class__glyph { width: 64px; height: 48px; color: var(--gold-text); } .sg-class__glyph svg { width: 100%; height: 100%; }
+.sg-class h3 { margin: 0; font-family: var(--font-sans); }
+.sg-class p { margin: 0; font-family: var(--font-sans); color: var(--ink-muted); }
+.sg-class .sg-from { font-family: var(--font-sans); color: var(--gold-text); }
+.sg-store { display: inline-flex; align-items: center; gap: var(--space-3); height: 52px; padding: 0 var(--space-5); border-radius: var(--radius-md);
+  background: var(--noir); color: var(--on-noir); border: 1px solid rgba(255,215,0,0.35); font-family: var(--font-sans); text-decoration: none; }
+.sg-store small { display: block; font-family: var(--font-sans); color: var(--on-noir-muted); }
+.sg-footer { background: var(--noir); color: var(--on-noir-muted); padding: var(--space-7) var(--space-7) var(--space-6); border-top: 1px solid rgba(255,215,0,0.30); }
+.sg-footer h5 { margin: 0 0 var(--space-3); font-family: var(--font-sans); color: var(--brand-gold); }
+.sg-footer a { display: block; color: var(--on-noir-muted); text-decoration: none; font-family: var(--font-sans); }
+.sg-footer a:hover { color: var(--on-noir); }
+.sg-map > :not(svg) { z-index: 2; }
+/* The badge (DRAFT, to be redrawn by the illustrator): the ring, the road-sail and
+   the pin from the owner's logo. `badge` is the small cut for 48px and below;
+   `badge-full` keeps the road dashes and ground line for 96px and above. */
+.sg-logo--badge { aspect-ratio: 1;
+  -webkit-mask-image: url('/brand/badge-small.svg'); mask-image: url('/brand/badge-small.svg'); }
+.sg-logo--badge-full { aspect-ratio: 1;
+  -webkit-mask-image: url('/brand/badge-full.svg'); mask-image: url('/brand/badge-full.svg'); }
+.sg-logo--wordmark { aspect-ratio: 2271 / 336;
+  -webkit-mask-image: url('/brand/wordmark-gold.svg'); mask-image: url('/brand/wordmark-gold.svg'); }
+.sg-logo--lockup { aspect-ratio: 2271 / 2461;
+  -webkit-mask-image: url('/brand/lockup-gold.svg'); mask-image: url('/brand/lockup-gold.svg'); }
+
+/* Controls on a surface that stays `noir` in both themes -- the nav, the
+   footer, any `sg-on-noir` band. `--ink` is near-black in the light theme, so
+   without these a secondary button there is invisible text on a black panel. */
+.sg-on-noir .sg-btn--secondary { color: var(--on-noir); border-color: rgba(255,215,0,0.45); }
+.sg-on-noir .sg-btn--secondary:hover { background: rgba(241,245,249,0.08); border-color: var(--gold-500); }
+.sg-on-noir .sg-btn--ghost { color: var(--on-noir-muted); }
+.sg-on-noir .sg-btn--ghost:hover { color: var(--on-noir); background: rgba(241,245,249,0.08); }
+.sg-on-noir .sg-link { color: var(--brand-gold); }
+
+/* `h3`/`h2` alongside the handoff's `h4`/`h5`, so pages keep a sequential
+   heading outline without restyling the strip or the footer. */
+.sg-promise h3 { margin: 0; font-family: var(--font-sans); color: var(--gold-text); }
+.sg-footer h2 { margin: 0 0 var(--space-3); font-family: var(--font-sans); color: var(--brand-gold); }
+
+
+/* ===========================================================================
+   APPLICATION LAYOUT
+   ---------------------------------------------------------------------------
+   Below this line is NOT from the handoff: it is the responsive and page
+   scaffolding the previews provide as inline <style> in each `preview.html`
+   (`.hero`, `.ws`, `.black`, `.app`, `.foot`, the phone-screen frames), plus
+   the mobile behaviour the brief specifies for under 768px. Every value is
+   still a token; nothing new is introduced.
+   ======================================================================== */
+
+/* The ordinary page gutter.
+   The public layout imposes no container, because the hero and the booking
+   workspace are full-bleed. Every other page takes its width and its gutters
+   from this instead -- 64px at the sides, dropping to 16px on a phone, which
+   is the design system's own spacing and not a second set of margins. */
+.sg-page { max-width: 1408px; margin: 0 auto; padding: 40px var(--space-7) var(--space-7); }
+
+/* The hero: a full-bleed map with the headline and booking panel over it. */
+/* The design's hero is 880px tall because a full-bleed map fills it. This
+   app has no coordinate to centre that map on yet (see the TODO on the
+   homepage), so the hero sizes to its content instead: 880px of empty
+   surface under a headline reads as a page that failed, not as a map. Restore
+   `min-height: 880px` with the map. */
+/* The hero is a two-column grid, not a full-bleed map with text floated on
+   top of it. The visual is one column of that grid, so the section keeps its
+   proportions when the map cannot draw -- which is every build without a
+   browser Maps key, and any moment the provider is down. */
+.sg-hero { position: relative; overflow: hidden; display: grid;
+  grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: var(--space-7);
+  align-items: center; padding: var(--space-8) var(--space-7); }
+.sg-hero__map { position: relative; height: 100%; min-height: 520px;
+  border-radius: var(--radius-lg); overflow: hidden;
+  border: 1px solid var(--gold-line); }
+.sg-hero__inner { position: relative; z-index: 2; width: 100%; }
+.sg-hero__panel { width: 100%; max-width: 440px; }
+.sg-hero__h1 { margin: 0 0 var(--space-4); font-family: var(--font-sans); }
+.sg-hero__h1 em { color: var(--gold-text); font-style: italic; }
+.sg-hero__sub { margin: 0 0 var(--space-6); color: var(--ink-muted); }
+
+/* The booking / live-trip workspace: a floating 430px panel over the map. */
+/* One screen: the workspace is the viewport under the nav (80px), so the panel
+   never needs the page to scroll; its own body scrolls and the primary pins. */
+.sg-ws { position: relative; height: calc(100vh - 80px); height: calc(100dvh - 80px); min-height: 560px; padding: 36px var(--space-7); overflow: hidden; box-sizing: border-box; }
+.sg-ws__map { position: absolute; inset: 0; z-index: 0; }
+/* Fades the map behind the panel and its gutter so the route reads clear of it. */
+.sg-ws__scrim { position: absolute; inset: 0 auto 0 0; width: 580px; pointer-events: none; background: linear-gradient(90deg, var(--bg-000) 0%, var(--bg-000) 55%, transparent 100%); opacity: .9; }
+.sg-ws__panel { position: relative; z-index: 2; width: 430px; max-width: 100%; max-height: 100%; display: flex; flex-direction: column; gap: var(--space-3); }
+.sg-ws__panel > .sg-panel { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.sg-ws__help { margin: 0; flex: none; }
+.sg-ws .sg-vehicle { padding-top: 8px; padding-bottom: 8px; }
+.sg-ws .sg-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); align-content: start; }
+.sg-ws .sg-panel__title { margin: 0; }
+
+/* A journey recap: two rows, each with its own marker shape. */
+.sg-summary { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: var(--space-4); border-radius: var(--radius-md); background: var(--bg-200); border: 1px solid var(--line); }
+.sg-summary > div { min-width: 0; display: flex; gap: var(--space-3); align-items: center; font-family: var(--font-sans); }
+.sg-summary small { color: var(--ink-muted); margin-left: auto; white-space: nowrap; flex: none; }
+
+/* Marketing sections. */
+.sg-wrap { padding: 0 var(--space-7); }
+.sg-head { display: flex; justify-content: space-between; align-items: flex-end; gap: var(--space-7); margin-bottom: 40px; }
+.sg-classes { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); }
+.sg-classes--three { grid-template-columns: repeat(3, 1fr); }
+/* Cards in a row match height, so a longer line does not leave its
+   neighbours floating half-size. */
+.sg-classes > .sg-class { align-content: start; }
+.sg-class.is-black { background: var(--noir); border-color: rgba(214,168,62,0.45); }
+.sg-class.is-black h3 { color: var(--on-noir); }
+.sg-class.is-black p { color: var(--on-noir-muted); }
+.sg-class.is-black .sg-from, .sg-class.is-black .sg-class__glyph { color: var(--brand-gold); }
+
+/* The Saaradhi Black band: `noir` in both themes, like the nav. */
+.sg-black { background: var(--noir); display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7); align-items: center;
+  padding: var(--space-8) var(--space-7); border-top: 1px solid rgba(214,168,62,0.30); border-bottom: 1px solid rgba(214,168,62,0.30); }
+.sg-black__list { list-style: none; margin: 28px 0 36px; padding: 0; display: grid; gap: var(--space-3); }
+.sg-black__list li { font-family: var(--font-sans); color: var(--on-noir); display: flex; gap: 14px; align-items: center; }
+.sg-black__list li::before { content: ""; width: 8px; height: 8px; flex: none; transform: rotate(45deg); background: var(--gold-500); }
+.sg-black__card { display: grid; place-items: center; }
+.sg-black__card .sg-member { transform: rotate(-6deg); }
+
+/* The app section and the footer grid. */
+.sg-app { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7); align-items: end; }
+.sg-section.sg-app { padding-bottom: 0; }
+.sg-app > div:first-child { padding-bottom: 120px; }
+.sg-app__phone { display: flex; justify-content: center; height: 560px; overflow: hidden; align-items: flex-start; }
+/* The handoff's phone sits on `bg-000` and reads as a device because a bright
+   map fills it. This one has no screenshot inside it -- there is no rider
+   data to put there (see the homepage TODO) -- so on the same `bg-000` page
+   the 8px `noir` bezel was invisible and the screen content looked like loose
+   text. `bg-100` is the design system's next surface up and gives the frame
+   an edge without introducing a colour. */
+.sg-app__phone .sg-phone { background: var(--bg-100); }
+.sg-foot { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: var(--space-6); padding-bottom: 40px; border-bottom: 1px solid rgba(214,168,62,0.20); }
+.sg-foot__base { display: flex; justify-content: space-between; gap: var(--space-4); padding-top: var(--space-5); font-family: var(--font-sans); }
+
+/* The panel's primary action, as its own row so the phone rule can pin it. */
+.sg-ws__primary { display: grid; gap: var(--space-2); position: sticky; bottom: 0; z-index: 5;
+  margin: 0 calc(var(--space-5) * -1) calc(var(--space-5) * -1);
+  padding: var(--space-3) var(--space-5) var(--space-5); background: var(--bg-100); border-top: 1px solid var(--line); }
+
+/* The bottom sheet, for phones. The map is on top, the sheet is pinned to the
+   bottom of the viewport, and the single primary action sits at the foot of
+   the sheet where a thumb reaches it. */
+.sg-bottomsheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; max-height: 72vh; overflow-y: auto;
+  padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px)); }
+.sg-bottomsheet__stack { display: grid; gap: var(--space-3); }
+.sg-bottomsheet__primary { position: sticky; bottom: 0; padding-top: var(--space-3); background: var(--bg-100); }
+
+/* --- under 768px: map on top, sheet at the bottom, 48px touch targets ---- */
+@media (max-width: 767px) {
+  .sg-nav { height: 64px; padding: 0 var(--space-4); gap: var(--space-3); }
+  .sg-nav__links { display: none; }
+
+  /* One column, content first: on a phone the booking fields are the point
+     of the hero and the city view is context, so the view does not get to
+     push them below the fold. */
+  .sg-hero { grid-template-columns: 1fr; gap: var(--space-5);
+    padding: var(--space-6) var(--space-4) var(--space-7); }
+  .sg-hero__inner { width: 100%; }
+  .sg-hero__panel { width: 100%; max-width: none; }
+  .sg-hero__map { height: 220px; min-height: 0; }
+  .sg-classes--three { grid-template-columns: 1fr; }
+
+  /* The map fills the screen and the sheet rides over its lower part; the
+     page fits the screen, and the map is padded by the sheet's height. */
+  .sg-ws { height: calc(100vh - 64px); height: calc(100dvh - 64px); min-height: 0; padding: 0; }
+  .sg-ws__scrim { display: none; }
+  .sg-ws__panel { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; max-height: 62%; gap: 0; }
+  .sg-ws__help { padding: var(--space-2) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); background: var(--bg-100); }
+  .sg-ws__panel > [role="alert"], .sg-ws__panel > .alert { margin: 0 var(--space-4) var(--space-2); }
+
+  .sg-wrap, .sg-section { padding-left: var(--space-4); padding-right: var(--space-4); }
+  .sg-page { padding: var(--space-5) var(--space-4) var(--space-6); }
+  .sg-section { padding-top: var(--space-6); padding-bottom: var(--space-6); }
+  .sg-head { flex-direction: column; align-items: flex-start; gap: var(--space-4); margin-bottom: var(--space-5); }
+  .sg-h2 { font-family: var(--font-sans); }
+  .sg-classes { grid-template-columns: 1fr; }
+  .sg-black { grid-template-columns: 1fr; padding: var(--space-7) var(--space-4); }
+  .sg-black__card .sg-member { transform: none; width: 100%; }
+  .sg-app { grid-template-columns: 1fr; }
+  .sg-app > div:first-child { padding-bottom: var(--space-6); }
+  .sg-app__phone { display: none; }
+  .sg-foot { grid-template-columns: 1fr 1fr; }
+  .sg-foot__base { flex-direction: column; gap: var(--space-2); }
+  .sg-footer { padding: var(--space-6) var(--space-4); }
+
+  /* The workspace panel becomes the bottom sheet: it meets the map with
+     square shoulders and a grab handle instead of the floating panel's
+     centred gold bar, which is a detail for a card that has edges. */
+  .sg-ws__panel > .sg-panel {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-left: 0; border-right: 0; border-bottom: 0;
+    margin-top: calc(var(--radius-lg) * -1);
+    padding: var(--space-3) var(--space-4) var(--space-5);
+  }
+  .sg-ws__panel > .sg-panel::before {
+    position: static; display: block; content: "";
+    width: 40px; height: 4px; margin: 0 auto var(--space-4);
+    background: var(--line-strong); border-radius: var(--radius-pill);
+  }
+
+  /* ONE primary button, pinned to the foot of the sheet, where a thumb is.
+     Letting it scroll away with the content is how the button that books the
+     ride ends up off-screen on the device most riders are using. */
+  .sg-ws__primary {
+    margin: 0 calc(var(--space-4) * -1) calc(var(--space-5) * -1);
+    padding: var(--space-3) var(--space-4) var(--space-4);
+  }
+
+  /* Every control a thumb has to hit. `--sm` is desktop-only by design. */
+  .sg-btn { height: 48px; }
+  .sg-btn--sm { height: 48px; }
+  .sg-action i { width: 48px; height: 48px; }
+  .sg-field__action { min-width: 48px; min-height: 48px; place-items: center; }
+}
+
+@media (min-width: 768px) {
+  /* The sheet is a phone pattern; on a desktop the panel floats instead. */
+  .sg-bottomsheet { position: static; max-height: none; overflow: visible; padding-bottom: 0; }
+}
+
+/* Motion, as specified: 140ms for hover and press, 240ms for sheets and
+   selection, ease-out. And none of it for anyone who has asked for none. */
+@media (prefers-reduced-motion: reduce) {
+  .sg-btn, .sg-field, .sg-vehicle, .sg-bottomsheet { transition: none !important; }
+  .sg-btn:active { transform: none; }
+}
+
+/* --- "how did you sign up?" --------------------------------------------
+   Two routes as pressable rows rather than a radio group: the choice is the
+   whole content of the step, so each option is the control. */
+.auth-routes { display: grid; gap: 12px; }
+.auth-route {
+  display: grid; gap: 4px; text-align: left; width: 100%;
+  padding: var(--space-4) var(--space-5);
+  background: var(--bg-100); border: 1px solid var(--line);
+  border-radius: var(--radius-md); cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+.auth-route:hover { border-color: var(--line-strong); background: var(--bg-200); }
+.auth-route__title {
+  font-family: var(--font-sans); color: var(--ink);
+}
+.auth-route__hint {
+  font-family: var(--font-sans); color: var(--ink-muted);
+}
+
+/* ---------------------------------------------------------------------------
+   The account menu in the header.
+
+   The header used to show a signed-in person two words -- "My trips" and
+   "Sign out" -- and nothing about WHO was signed in. There was no name, no
+   number, no role, and no way to reach any of it, which on a driver's
+   session made a correct sign-in look like a failed one.
+
+   The chip sits ON THE NOIR BAR in both themes, like everything else in the
+   header, so its colours are the `on-noir` pair and not `ink`. The menu it
+   opens is a normal surface and uses the panel tokens.
+--------------------------------------------------------------------------- */
+.sg-account { position: relative; flex: none; }
+
+.sg-account__chip {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  height: 36px; padding: 0 10px 0 4px;
+  background: none; border: 1px solid var(--line-strong); border-radius: var(--radius-pill);
+  color: var(--ink); cursor: pointer;
+  font-family: var(--font-sans);
+}
+.sg-account__chip:hover { border-color: var(--gold-500); }
+
+.sg-account__avatar {
+  width: 28px; height: 28px; border-radius: var(--radius-pill);
+  display: grid; place-items: center;
+  background: var(--gold-500); color: var(--on-gold);
+  font-family: var(--font-sans);
+}
+.sg-account__who { max-width: 10ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sg-account__menu {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 60;
+  min-width: 260px; padding: var(--space-3);
+  display: grid; gap: 2px;
+  background: var(--bg-100); border: 1px solid var(--line);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-panel);
+  color: var(--ink);
+}
+.sg-account__head { display: grid; gap: 2px; padding: var(--space-2) var(--space-2) var(--space-3); }
+.sg-account__head strong { font-family: var(--font-sans); color: var(--ink); }
+.sg-account__head span { font-family: var(--font-sans); color: var(--ink-muted); overflow-wrap: anywhere; }
+.sg-account__role {
+  justify-self: start; margin-top: 6px; padding: 2px 8px;
+  border-radius: var(--radius-pill); border: 1px solid var(--line-strong);
+  font-family: var(--font-sans); color: var(--gold-text) !important;
+}
+.sg-account__note {
+  padding: 0 var(--space-2) var(--space-2);
+  font-family: var(--font-sans); color: var(--ink-muted);
+}
+.sg-account__menu a {
+  display: block; padding: 10px var(--space-2); border-radius: var(--radius-sm);
+  font-family: var(--font-sans); color: var(--ink); text-decoration: none;
+}
+.sg-account__menu a:hover { background: var(--bg-200); }
+.sg-account__foot { margin-top: var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--line); }
+
+/* In the phone drawer the menu has no bar to hang off, so it lays out in
+   flow rather than floating over the links beneath it. */
+.hp-drawer .sg-account { width: 100%; }
+.hp-drawer .sg-account__chip { width: 100%; justify-content: flex-start; }
+.hp-drawer .sg-account__menu { position: static; width: 100%; margin-top: var(--space-2); box-shadow: none; }
+.hp-drawer .sg-account__who { max-width: none; }
+
+/* ---------------------------------------------------------------------------
+   The driver's document checklist.
+
+   One row per document the driver's COUNTRY requires, with its own state and
+   its own control. There is deliberately no "submit everything" button: a
+   driver photographing documents on a phone should not lose four uploads
+   because the fifth failed, and should not have to remember which ones went
+   through. Every row is independent and the tick is the server's answer, not
+   an optimistic one.
+--------------------------------------------------------------------------- */
+.sg-doc-list { display: grid; gap: 0; padding: 0; margin: 0; list-style: none; }
+
+.sg-doc {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--line);
+}
+.sg-doc:first-child { padding-top: 0; }
+.sg-doc:last-child { border-bottom: 0; padding-bottom: 0; }
+
+.sg-doc__tick {
+  width: 28px; height: 28px; border-radius: var(--radius-pill);
+  border: 1px solid var(--line-strong);
+  display: grid; place-items: center;
+  color: var(--on-gold);
+}
+.sg-doc__tick.is-done { background: var(--gold-500); border-color: var(--gold-500); }
+.sg-doc__tick svg { width: 16px; height: 16px; }
+
+.sg-doc__text { display: grid; gap: 2px; min-width: 0; }
+.sg-doc__text strong { font-family: var(--font-sans); color: var(--ink); }
+.sg-doc__text span { font-family: var(--font-sans); color: var(--ink-muted); }
+.sg-doc__warn { color: var(--danger) !important; }
+
+.sg-doc__action { justify-self: end; }
+
+/* Under 520px the control drops below the text rather than squeezing the
+   label into two characters. */
+@media (max-width: 520px) {
+  .sg-doc { grid-template-columns: 28px minmax(0, 1fr); }
+  .sg-doc__action { grid-column: 2; justify-self: stretch; }
+  .sg-doc__action .sg-btn { width: 100%; }
+}
+
+/* How far through onboarding this driver is. A number AND a bar: the bar is
+   read at a glance, the number is what they quote to support. */
+.sg-meter {
+  height: 8px; border-radius: var(--radius-pill);
+  background: var(--bg-300); overflow: hidden;
+}
+.sg-meter > i {
+  display: block; height: 100%; background: var(--gold-500);
+  border-radius: inherit; transition: width 240ms ease;
+}
+
+/* The one thing a driver should do next, given where they are in
+   onboarding. It replaces the three empty metric cards that used to lead
+   this page: a driver with no trips does not need "₹0" three times. */
+.sg-next {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-5); flex-wrap: wrap;
+  border-color: var(--gold-500);
+}
+.sg-next__text { display: grid; gap: var(--space-2); min-width: 16rem; flex: 1 1 20rem; }

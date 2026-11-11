@@ -1,0 +1,30 @@
+import { localized } from '@/i18n/server';
+import { PublicShell } from '@/components/sg/PublicShell';
+
+// The public site and the ops console share one Next app and nothing else.
+// This layout wraps only the `(public)` group, so the console keeps its own
+// chrome: a visitor never sees operator navigation, and an operator never
+// sees a marketing header.
+//
+// WIDTH: this layout imposes no container at all. The homepage hero and the
+// booking workspace are full-bleed by design -- a map with a panel floating
+// over it cannot live inside a centred column -- and the pages that do want
+// gutters take them from `.sg-wrap` / `.sg-section`, which carry the design
+// system's 64px gutters and 96px section rhythm. An earlier version centred
+// everything in 1024px, which on a 1440px desktop left a third of the screen
+// empty and made a booking product feel like a blog.
+export const generateMetadata = localized({
+  title: 'SaaradhiGo — book a ride',
+  description:
+    'SaaradhiGo is a ride-hailing service. See the fare before you book, '
+    + 'pay the way that suits you, and get a receipt for every ride. Create '
+    + 'a rider account, or apply to drive.',
+});
+
+export default function PublicLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <PublicShell>{children}</PublicShell>;
+}
