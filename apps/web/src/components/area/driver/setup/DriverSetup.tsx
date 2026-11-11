@@ -85,8 +85,11 @@ export function DriverSetup({ slug }: { slug: string }) {
       const saved = await saver.settled();
       const ok = checks.runAll();
       if (!saved || !ok) {
-        requestAnimationFrame(() => (document.querySelector('[data-testid="setup-step"] [role="alert"]') as HTMLElement | null)
-          ?.scrollIntoView({ block: 'center', behavior: 'smooth' }));
+        requestAnimationFrame(() => {
+          if (typeof document === 'undefined') return;
+          (document.querySelector('[data-testid="setup-step"] [role="alert"]') as HTMLElement | null)
+            ?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+        });
         return;
       }
       (load.refresh ?? load.retry)();
