@@ -743,5 +743,8 @@
   "Your next payout and its estimated amount are on Payouts. Where Withdraw now is on, you can also take your balance today; the provider fee is shown before you confirm.": "మీ తదుపరి చెల్లింపు మరియు దాని అంచనా మొత్తం చెల్లింపుల పేజీలో ఉంటాయి. ఇప్పుడే విత్‌డ్రా ఉన్న చోట, మీ బ్యాలెన్స్ ఈ రోజే తీసుకోవచ్చు; నిర్ధారించే ముందు ప్రొవైడర్ ఫీజు చూపబడుతుంది.",
   "Your photo": "మీ ఫోటో",
   "Your tickets": "మీ టికెట్లు",
-  "{a} of {n} trips": "{n}లో {a} ట్రిప్‌లు"
+  "{a} of {n} trips": "{n}లో {a} ట్రిప్‌లు",
+  "Status unknown": "స్థితి తెలియదు",
+  "Could not load. Try again": "లోడ్ కాలేదు. మళ్ళీ ప్రయత్నించండి",
+  "refunded": "వాపసు"
 }

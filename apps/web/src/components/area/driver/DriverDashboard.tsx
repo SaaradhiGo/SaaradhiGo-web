@@ -59,7 +59,9 @@ export function urgentFiles(data: Requirements | null, hasVehicle: boolean): Fil
   return URGENCY.flatMap((s) => tiles.filter((f) => f.status === s)).slice(0, 3);
 }
 
-function DocumentsCard({ data, hasVehicle, failed, retry }: { data: Requirements | null; hasVehicle: boolean; failed: boolean; retry: () => void }) {
+function DocumentsCard({ data, hasVehicle, noVehicle, failed, retry }: {
+  data: Requirements | null; hasVehicle: boolean; noVehicle: boolean; failed: boolean; retry: () => void;
+}) {
   const tr = useTr();
   const rows = urgentFiles(data, hasVehicle);
   return (
@@ -80,7 +82,7 @@ function DocumentsCard({ data, hasVehicle, failed, retry }: { data: Requirements
           ))}
         </div>
       )}
-      {data && !hasVehicle && <p className="a14 amut" style={{ marginTop: 8 }}>{tr('Vehicle papers appear after you add your vehicle.')}</p>}
+      {data && noVehicle && <p className="a14 amut" style={{ marginTop: 8 }}>{tr('Vehicle papers appear after you add your vehicle.')}</p>}
     </section>
   );
 }
@@ -174,7 +176,8 @@ export function DriverDashboard() {
               <WeekChart load={days} currency={cur} />
             </section>
           )}
-          <DocumentsCard data={req.data} hasVehicle={!!car.data} failed={req.state === 'error'} retry={req.retry} />
+          <DocumentsCard data={req.data} hasVehicle={car.state !== 'ok' || !!car.data} noVehicle={car.state === 'ok' && !car.data}
+            failed={req.state === 'error'} retry={req.retry} />
         </div>
       </main>
     </>

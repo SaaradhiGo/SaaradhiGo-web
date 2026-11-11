@@ -64,6 +64,8 @@ export type EarningRow = {
   pickup_address?: string | null;
   destination_address?: string | null;
   ride_class?: string | null;
+  /** A platform fee returned for this trip (11 Nov), already off `commission` and in `net_amount`. */
+  platform_fee_refunded?: string | null;
 };
 
 export type Profile = {

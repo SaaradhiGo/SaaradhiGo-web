@@ -5,17 +5,25 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { type Day, type Period, type Profile, isOnline, profile as loadProfile } from '@/lib/area/driver';
 import { chartDay, money } from '@/lib/area/format';
-import type { Load } from '@/lib/area/useLoad';
+import { LOAD_TIMEOUT_MS, type Load } from '@/lib/area/useLoad';
 import { DriverHead } from '../DriverShell';
 import { IPower } from '../icons';
 import { ProfileMenu } from '../ProfileMenu';
 import { useArea } from '../useArea';
 import { LoadError, Skel } from '../states';
 
-/** The driver's profile, loaded once per page; `{}` when it could not be read (the header just omits the pill). */
+/**
+ * The driver's profile, loaded once per page: ten seconds, then one more try (11 Nov: a request lost
+ * in a deploy left the header without its pill); `{}` when it could not be read.
+ */
 export function useDriver() {
   const [me, setMe] = useState<Profile | null>(null);
-  useEffect(() => { loadProfile().then(setMe).catch(() => setMe({})); }, []);
+  useEffect(() => {
+    let live = true;
+    const once = () => Promise.race([loadProfile(), new Promise<never>((_, no) => setTimeout(() => no(new Error('timeout')), LOAD_TIMEOUT_MS))]);
+    once().catch(() => once()).then((p) => { if (live) setMe(p); }, () => { if (live) setMe({}); });
+    return () => { live = false; };
+  }, []);
   return me;
 }
 
@@ -36,9 +44,10 @@ export function DriverTop({ title, sub, me }: { title: string; sub?: string | nu
   const on = isOnline(me);
   return (
     <DriverHead title={title} sub={sub}>
-      {me && (
-        <span className={`apill ${on ? 'apill--ok' : 'apill--neu'}`} style={{ height: 36, padding: '0 14px' }}>
-          <span className={`adot${on ? ' adot--on' : ''}`} aria-hidden="true" />{tr(on ? 'Online' : 'Offline')}
+      {/* On every driver page (11 Nov): a placeholder while loading, never a gap. */}
+      {me === null ? <Skel h={36} w={96} /> : (
+        <span className={`apill ${on ? 'apill--ok' : 'apill--neu'}`} style={{ height: 36, padding: '0 14px' }} data-testid="status-pill">
+          <span className={`adot${on ? ' adot--on' : ''}`} aria-hidden="true" />{tr(on ? 'Online' : me.status ? 'Offline' : 'Status unknown')}
         </span>
       )}
       <span className="abtn abtn--dark dr-go" role="note"><IPower size={18} />

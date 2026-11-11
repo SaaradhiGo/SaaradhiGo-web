@@ -20,4 +20,12 @@ describe('useLoad', () => {
     act(() => result.current.retry());
     expect(result.current.data).toBeNull();
   });
+
+  it('a request lost once is tried again quietly before any error shows (11 Nov)', async () => {
+    let n = 0;
+    const { result } = renderHook(() => useLoad(() => (n++ === 0 ? Promise.reject(new Error('lost')) : Promise.resolve(7))));
+    await waitFor(() => expect(result.current.data).toBe(7));
+    expect(result.current.state).toBe('ok');
+    expect(n).toBe(2);
+  });
 });

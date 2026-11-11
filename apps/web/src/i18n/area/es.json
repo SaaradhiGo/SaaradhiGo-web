@@ -743,5 +743,8 @@
   "Your next payout and its estimated amount are on Payouts. Where Withdraw now is on, you can also take your balance today; the provider fee is shown before you confirm.": "Tu próximo pago y su importe estimado están en Pagos. Donde Retirar ahora está activo, también puedes cobrar tu saldo hoy; la comisión del proveedor se muestra antes de confirmar.",
   "Your photo": "Tu foto",
   "Your tickets": "Tus tickets",
-  "{a} of {n} trips": "{a} de {n} viajes"
+  "{a} of {n} trips": "{a} de {n} viajes",
+  "Status unknown": "Estado desconocido",
+  "Could not load. Try again": "No se pudo cargar. Inténtalo de nuevo",
+  "refunded": "devuelto"
 }

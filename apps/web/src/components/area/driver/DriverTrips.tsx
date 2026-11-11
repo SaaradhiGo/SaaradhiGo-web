@@ -88,19 +88,23 @@ export function DriverTrips() {
                 const tid = r.trip_id_val ?? null;
                 return (
                   <tr key={r.id} className={tid ? 'tr-open' : undefined} onClick={tid ? () => setOpen(tid) : undefined} data-trip={tid ?? undefined}>
-                    <td>{when && <div className="ab">{when.first}<div className="a14 amut" style={{ fontWeight: 400 }}>{when.second}</div></div>}</td>
-                    <td className="ab">
+                    <td className="tr-nowrap">{when && <div className="ab">{when.first}<div className="a14 amut" style={{ fontWeight: 400 }}>{when.second}</div></div>}</td>
+                    <td className="ab tr-place">
                       {tid ? (
                         <button type="button" className="tr-open__btn" aria-label={tr('Open trip #{n}').replace('{n}', String(tid))}
                           onClick={(e) => { e.stopPropagation(); setOpen(tid); }}>{places || `#${tid}`}</button>
                       ) : places}
                       {tid ? <div className="a14 amut" style={{ fontWeight: 400 }}>#{tid}</div> : null}
                     </td>
-                    <td>{className(r.ride_class) ?? ''}</td>
-                    <td>{money(r.amount, cur, locale)}</td>
-                    <td className={fee.red ? 'ared' : undefined}>{r.commission != null ? fee.text : ''}</td>
-                    <td className="ab agrn">{money(r.net_amount, cur, locale)}</td>
-                    <td><span className="apill apill--neu">{tr(r.method === 'cash' ? 'Cash' : 'Online')}</span></td>
+                    <td className="tr-nowrap">{className(r.ride_class) ?? ''}</td>
+                    <td className="tr-nowrap">{money(r.amount, cur, locale)}</td>
+                    <td className={`tr-nowrap${fee.red ? ' ared' : ''}`}>
+                      {r.commission != null ? fee.text : ''}
+                      {/* A fee returned for this trip (11 Nov): already off the fee and in the earning. */}
+                      {r.platform_fee_refunded ? <span className="tr-tag" data-testid="refunded-tag">{tr('refunded')}</span> : null}
+                    </td>
+                    <td className="ab agrn tr-nowrap">{money(r.net_amount, cur, locale)}</td>
+                    <td className="tr-nowrap"><span className="apill apill--neu">{tr(r.method === 'cash' ? 'Cash' : 'Online')}</span></td>
                   </tr>
                 );
               })}

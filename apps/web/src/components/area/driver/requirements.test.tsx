@@ -226,6 +226,24 @@ describe('save and return (11 Nov)', () => {
   });
 });
 
+describe('a vehicle that did not load (11 Nov)', () => {
+  it('Profile says Try again and setup step 4 shows the error, never an empty "Done"', async () => {
+    const api = await import('@/lib/area/api');
+    const get = api.areaGet as unknown as ReturnType<typeof vi.fn>;
+    const real = get.getMockImplementation()!;
+    get.mockImplementation(async (p: string) => { if (p === '/driver/vehicles/') throw new Error('lost'); return real(p); });
+    try {
+      const { DriverProfile } = await import('./DriverProfile');
+      wrap(<DriverProfile />);
+      expect(await screen.findByTestId('vehicle-retry')).toBeTruthy();
+      cleanup();
+      await setup('vehicle');
+      await screen.findByText(/couldn't load/i);
+      expect(screen.queryByTestId('vehicle-type')).toBeNull();
+    } finally { get.mockImplementation(real); }
+  });
+});
+
 describe('documents', () => {
   it('before a vehicle exists, its documents say Add your vehicle first', async () => {
     const { DriverDocuments } = await import('./DriverDocuments');

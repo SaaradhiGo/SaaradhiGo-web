@@ -18,7 +18,7 @@ export type History = {
   period: HistoryPeriod; start: string; end: string; timezone: string; currency: string; today: string;
   joined: string | null; has_prev: boolean; has_next: boolean; prev: string; next: string;
   summary: HistorySummary;
-  chart: { unit: 'hour' | 'day' | 'month'; bars: { key: string; earned: string; trips: number }[] };
+  chart: { unit: 'hour' | 'day' | 'month'; bars: { key: string; earned: string; trips: number; fares?: string; platform_fee?: string }[] };
 };
 export type MonthRow = {
   month: string; so_far: boolean; trips: number; fares: string; platform_fee: string; tips: string; earned: string;

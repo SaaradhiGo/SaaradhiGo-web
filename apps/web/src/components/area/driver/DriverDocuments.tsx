@@ -33,6 +33,7 @@ export function DriverDocuments() {
   const car = cars.data?.[0] ?? null;
   const rows = documentRows(data);
   const shown = rows.filter((r) => car || r.target !== 'vehicle');
+  const vehicleRows = rows.some((r) => r.target === 'vehicle');
   const approved = rows.filter((r) => isApproved(r.status)).length;
   const order = dateOrder(data?.config.country);
   const again = () => { (req.refresh ?? req.retry)(); (cars.refresh ?? cars.retry)(); };
@@ -90,6 +91,12 @@ export function DriverDocuments() {
             ) : null;
           })}
         </SaveContext.Provider>
+        {data && vehicleRows && cars.state !== 'ok' && (
+          <section className="acard dr-docs" data-testid="vehicle-documents-loading">
+            <h2 className="a20">{tr('Vehicle photos and papers')}</h2>
+            {cars.state === 'error' ? <LoadError what="documents" retry={cars.retry} /> : <Skel h={18} lines={3} gap={14} />}
+          </section>
+        )}
         {data && cars.data && !car && data.checklist.items.some((i) => i.step === 'vehicle_docs' && i.need === 'required') && (
           <section className="acard dr-docs" data-testid="vehicle-documents-waiting">
             <div className="arow" style={{ gap: 12, flexWrap: 'wrap' }}>

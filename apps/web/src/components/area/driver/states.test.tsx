@@ -1,7 +1,7 @@
 /**
  * Gate (8 Nov): no signed-in card waits forever. A brand-new driver sees
  * zeros and empty messages, a failing API shows the error with Try again (and
- * Try again works), a request that never answers becomes an error after ten
+ * Try again works), a request that never answers becomes an error after two tries of ten
  * seconds, and nothing on the page is a "…" or "•••" placeholder.
  */
 import { act, fireEvent, render } from '@testing-library/react';
@@ -121,12 +121,14 @@ describe('a failing API shows the error, and Try again works', () => {
     expect(container.querySelectorAll('[data-stat]')).toHaveLength(5);
   });
 
-  it('a request that never answers is an error after ten seconds, not endless loading', async () => {
+  it('a request that never answers is tried once more, then an error after twenty seconds, not endless loading', async () => {
     vi.useFakeTimers();
     api.get.mockImplementation((p: string) => (p.startsWith('/driver/earnings/period/') ? new Promise(() => {}) : Promise.resolve(newDriver(p))));
     const { container } = page(<DriverDashboard />);
     await act(async () => { await vi.advanceTimersByTimeAsync(100); });
     expect(container.querySelector('.askel')).not.toBeNull();
+    await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
+    expect(container.textContent).not.toContain("We couldn't load your earnings.");   // the quiet second try
     await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
     expect(container.textContent).toContain("We couldn't load your earnings.");
     expect(container.textContent).not.toMatch(PLACEHOLDER);
