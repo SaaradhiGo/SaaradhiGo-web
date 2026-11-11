@@ -114,8 +114,8 @@ export function DriverSetup({ slug }: { slug: string }) {
                 <p className="amut">{tr(STEP_INFO[step.key].lead)}</p>
               </div>
               <SaveContext.Provider value={saver}>
-                <Body key={step.key + String(car?.id ?? '')} data={data} reload={load.retry} order={dateOrder(data.config.country)}
-                  car={car} reloadCar={cars.retry} />
+                <Body key={step.key + String(car?.id ?? '')} data={data} reload={load.refresh ?? load.retry} order={dateOrder(data.config.country)}
+                  car={car} reloadCar={cars.refresh ?? cars.retry} />
               </SaveContext.Provider>
               <div className="su-actions">
                 {prev || fromProfile ? (
@@ -124,7 +124,7 @@ export function DriverSetup({ slug }: { slug: string }) {
                 <div className="arow" style={{ gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   <SaveNote saving={saver.state.saving} error={saver.state.error} />
                   <button type="button" className="abtn abtn--pri" data-testid="save-continue"
-                    onClick={() => { load.retry(); go(next?.key ?? null); }}>
+                    onClick={() => { (load.refresh ?? load.retry)(); go(next?.key ?? null); }}>
                     {tr(fromProfile ? 'Save and return' : next ? 'Save and continue' : 'Finish')}
                   </button>
                 </div>

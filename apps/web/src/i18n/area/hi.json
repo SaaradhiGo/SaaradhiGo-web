@@ -636,5 +636,6 @@
   "Name matches the account": "नाम खाते से मेल खाता है",
   "Licence, front": "लाइसेंस, आगे",
   "Licence, back": "लाइसेंस, पीछे",
-  "Aadhaar card": "आधार कार्ड"
+  "Aadhaar card": "आधार कार्ड",
+  "{n} payout": "{n} भुगतान"
 }

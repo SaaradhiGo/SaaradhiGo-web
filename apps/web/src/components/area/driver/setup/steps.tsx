@@ -155,7 +155,7 @@ export function PersonalStep({ data, reload, order }: StepProps) {
   const tr = useTr();
   const p = data.personal;
   const [acct, setAcct] = useAccount();
-  const [same, setSame] = useState(false);
+  const [same, setSame] = useState(() => !!p.address && JSON.stringify(p.address) === JSON.stringify(p.permanent_address));
   const after = (fn: () => Promise<unknown>) => async () => { await fn(); reload(); };
   return (
     <>

@@ -636,5 +636,6 @@
   "Name matches the account": "El nombre coincide con la cuenta",
   "Licence, front": "Licencia, frente",
   "Licence, back": "Licencia, reverso",
-  "Aadhaar card": "Tarjeta Aadhaar"
+  "Aadhaar card": "Tarjeta Aadhaar",
+  "{n} payout": "{n} pago"
 }
