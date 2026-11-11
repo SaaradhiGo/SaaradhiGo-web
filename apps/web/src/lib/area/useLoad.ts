@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { reportLoadError } from '@/lib/report';
 
 /**
@@ -12,15 +12,19 @@ import { reportLoadError } from '@/lib/report';
  */
 export const LOAD_TIMEOUT_MS = 10_000;
 
-export type Load<T> = { state: 'loading' | 'ok' | 'error'; data: T | null; retry: () => void };
+/** `refresh` reloads in place: the data on screen stays until the new data arrives (after a save). */
+export type Load<T> = { state: 'loading' | 'ok' | 'error'; data: T | null; retry: () => void; refresh?: () => void };
 
 export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = []): Load<T> {
   const [attempt, setAttempt] = useState(0);
   const [s, setS] = useState<{ state: Load<T>['state']; data: T | null }>({ state: 'loading', data: null });
+  const soft = useRef(false);
 
   useEffect(() => {
     let live = true;
-    setS({ state: 'loading', data: null });
+    const inPlace = soft.current;
+    soft.current = false;
+    if (!inPlace) setS({ state: 'loading', data: null });
     const settle = (next: { state: Load<T>['state']; data: T | null }) => {
       if (!live) return;
       live = false;
@@ -29,6 +33,8 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = []): Load<T> 
     };
     const fail = (e: unknown) => {
       if (live) reportLoadError(e);
+      // A failed refresh leaves what is on screen; a failed load shows the error.
+      if (inPlace) { live = false; clearTimeout(timer); return; }
       settle({ state: 'error', data: null });
     };
     const timer = setTimeout(() => fail('timeout'), LOAD_TIMEOUT_MS);
@@ -38,5 +44,6 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = []): Load<T> 
   }, [attempt, ...deps]);
 
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
-  return { ...s, retry };
+  const refresh = useCallback(() => { soft.current = true; setAttempt((n) => n + 1); }, []);
+  return { ...s, retry, refresh };
 }
