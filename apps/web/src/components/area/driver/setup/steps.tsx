@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTr } from '@/i18n/website';
 import { formatPlate } from '@/lib/booking';
@@ -223,7 +223,10 @@ export function ContactStep({ data, reload }: StepProps) {
   const [rows, setRows] = useState<Contact[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [bad, setBad] = useState<ContactProblems[]>([]);
+  // Once the driver types, a reload that lands later (a slow phone, 11 Nov) never puts the old values back.
+  const typed = useRef(false);
   useEffect(() => {
+    if (typed.current) return;
     const got = data.personal.emergency_contacts.map((c) => ({ ...c, phone_number: spacedPhone(c.phone_number) }));
     setRows(got.length ? got : [blank(1)]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -244,6 +247,7 @@ export function ContactStep({ data, reload }: StepProps) {
     if (ok) reload(); else setErr(problem);
   }
   const set = (i: number, k: keyof Contact, v: string) => {
+    typed.current = true;
     if (bad[i]?.[k as keyof ContactProblems]) setBad(bad.map((b, j) => (j === i ? { ...b, [k]: undefined } : b)));
     return rows.map((r, j) => (j === i ? { ...r, [k]: v } : r));
   };

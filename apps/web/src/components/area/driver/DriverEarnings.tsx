@@ -80,7 +80,7 @@ function Chart({ h, locale, label }: { h: History; locale: string; label: string
               )}
               {h.chart.unit === 'day' ? (
                 <button type="button" className={`er-bar${b.key === h.today ? ' er-bar--today' : ''}`} style={{ height: px }} aria-label={name} {...show}
-                  onPointerDown={(e) => { touch.current = e.pointerType === 'touch'; }}
+                  onPointerDown={(e) => { touch.current = e.pointerType === 'touch'; }} onTouchStart={() => { touch.current = true; }}
                   onClick={() => { if (touch.current && tip !== i) { setTip(i); return; } router.push(`/driver/trips?date=${b.key}`); }} />
               ) : (
                 <span className="er-bar" style={{ height: px }} aria-label={name} role="img" tabIndex={0} {...show} onClick={() => setTip(tip === i ? null : i)} />
