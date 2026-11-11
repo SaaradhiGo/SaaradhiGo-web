@@ -6,7 +6,7 @@ import { reportLoadError } from '@/lib/report';
 /**
  * One card's data (8 Nov): every signed-in view ends in loading, loaded,
  * empty or error -- never waits forever. A request that has not answered in
- * ten seconds is an error with Try again, and each card loads on its own, so
+ * ten seconds is tried once more (11 Nov), then an error with Try again; each card loads on its own, so
  * one failure leaves the rest of the page showing. Every failure is reported
  * with its endpoint and status (lib/report.ts).
  */
@@ -37,8 +37,19 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = []): Load<T> 
       if (inPlace) { live = false; clearTimeout(timer); return; }
       settle({ state: 'error', data: null });
     };
-    const timer = setTimeout(() => fail('timeout'), LOAD_TIMEOUT_MS);
-    fn().then((data) => settle({ state: 'ok', data }), fail);
+    // One quiet second try (11 Nov): a request lost while the server restarts (a deploy) must not
+    // leave a card empty or wrong; only a second failure shows the error.
+    let timer = setTimeout(() => again('timeout'), LOAD_TIMEOUT_MS);
+    let tries = 0;
+    function again(e: unknown) {
+      if (!live) return;
+      if (tries > 0 || inPlace) { fail(e); return; }
+      tries += 1;
+      clearTimeout(timer);
+      timer = setTimeout(() => fail('timeout'), LOAD_TIMEOUT_MS);
+      fn().then((data) => settle({ state: 'ok', data }), fail);
+    }
+    fn().then((data) => settle({ state: 'ok', data }), (e) => again(e));
     return () => { live = false; clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attempt, ...deps]);

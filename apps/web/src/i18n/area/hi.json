@@ -743,5 +743,8 @@
   "Your next payout and its estimated amount are on Payouts. Where Withdraw now is on, you can also take your balance today; the provider fee is shown before you confirm.": "आपका अगला भुगतान और उसकी अनुमानित राशि भुगतान पेज पर है। जहाँ अभी निकालें चालू है, वहाँ आप आज ही बैलेंस ले सकते हैं; पुष्टि से पहले प्रोवाइडर फ़ीस दिखाई जाती है।",
   "Your photo": "आपकी फ़ोटो",
   "Your tickets": "आपके टिकट",
-  "{a} of {n} trips": "{n} में से {a} ट्रिप"
+  "{a} of {n} trips": "{n} में से {a} ट्रिप",
+  "Status unknown": "स्थिति अज्ञात",
+  "Could not load. Try again": "लोड नहीं हुआ। फिर से कोशिश करें",
+  "refunded": "वापस"
 }

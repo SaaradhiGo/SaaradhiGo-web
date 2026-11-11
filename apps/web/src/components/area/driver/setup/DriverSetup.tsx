@@ -142,8 +142,12 @@ export function DriverSetup({ slug }: { slug: string }) {
               </div>
               <SaveContext.Provider value={saver}>
                 <CheckContext.Provider value={checks.ctx}>
-                  <Body key={step.key + String(car?.id ?? '')} data={data} reload={load.refresh ?? load.retry} order={dateOrder(data.config.country)}
-                    car={car} reloadCar={cars.refresh ?? cars.retry} />
+                  {(step.key === 'vehicle' || step.key === 'vehicle_docs') && cars.state !== 'ok' ? (
+                    cars.state === 'error' ? <LoadError what="profile" retry={cars.retry} /> : <Skel h={240} />
+                  ) : (
+                    <Body key={step.key + String(car?.id ?? '')} data={data} reload={load.refresh ?? load.retry} order={dateOrder(data.config.country)}
+                      car={car} reloadCar={cars.refresh ?? cars.retry} />
+                  )}
                 </CheckContext.Provider>
               </SaveContext.Provider>
               <div className="su-actions">

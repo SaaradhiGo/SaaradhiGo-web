@@ -15,7 +15,7 @@ import { documentRows, isApproved, readyToDrive, spacedPhone, stepState, stepWor
 import { useLoad } from '@/lib/area/useLoad';
 import { formatPlate } from '@/lib/booking';
 import { IBank, ICar, IDoc, IHelp, IPhone, IUser } from '../icons';
-import { firstName, useAccount } from '../ProfileMenu';
+import { firstName, initials, useAccount } from '../ProfileMenu';
 import { LoadError, Skel } from '../states';
 import { useArea } from '../useArea';
 import { DriverTop, useDriver } from './parts';
@@ -114,6 +114,8 @@ export function DriverProfile() {
   const id = data?.identity;
   const pm = data?.payout_method;
   const photo = p?.photo ?? null;
+  // The approved photo, or the initials when there is none or it does not load (11 Nov).
+  const [faceBroken, setFaceBroken] = useState<string | null>(null);
   const vehicleFiles = documentRows(data).filter((f) => f.vehicle);
   const label = (s: ItemStatus | undefined) => (s ? tr(STATUS_LABEL[s]) : null);
   const edit = (k: StepKey) => setupHref(k, 'profile');
@@ -126,7 +128,8 @@ export function DriverProfile() {
         {req.state === 'error' && <LoadError what="profile" retry={req.retry} />}
         <section className="acard pf-head" data-testid="profile-summary">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          {photo ? <img src={photo} alt="" className="pf-face" /> : <span className="pf-face" aria-hidden="true"><IUser size={32} /></span>}
+          {photo && faceBroken !== photo ? <img src={photo} alt="" className="pf-face" onError={() => setFaceBroken(photo)} />
+            : <span className="pf-face pf-face--initials" aria-hidden="true">{initials(acct) || <IUser size={32} />}</span>}
           <div className="agrow">
             {acct === null ? <Skel h={28} w={220} /> : <h2 className="a28">{acct.full_name || '—'}</h2>}
             <div className="arow a14 amut pf-meta">
@@ -158,7 +161,11 @@ export function DriverProfile() {
               ...(item(data, 'police_verification') ? [[tr('Police verification'), label(item(data, 'police_verification')?.status)]] as [string, string | null][] : []),
               ...(item(data, 'background_check') ? [[tr('Background check'), label(item(data, 'background_check')?.status)]] as [string, string | null][] : []),
             ]} />
-            <Card id="vehicle" icon={<ICar />} title={tr('Vehicle')} state={stepState(data, 'vehicle', 'vehicle_docs')} href={edit(car ? 'vehicle_docs' : 'vehicle')} open rows={[
+            <Card id="vehicle" icon={<ICar />} title={tr('Vehicle')} state={stepState(data, 'vehicle', 'vehicle_docs')} href={edit(car ? 'vehicle_docs' : 'vehicle')} open rows={cars.state !== 'ok' ? [
+              [tr('Vehicle'), cars.state === 'error'
+                ? <button type="button" className="su-link a14" onClick={cars.retry} data-testid="vehicle-retry">{tr('Could not load. Try again')}</button>
+                : <Skel h={16} w={140} />],
+            ] : [
               [tr('Vehicle'), car ? [car.brand, car.model, car.year].filter(Boolean).join(' ') : ''],
               [tr('Colour'), car?.color ? tr(car.color) : ''],
               [tr('Number plate'), car?.vehicle_number ? formatPlate(car.vehicle_number) : ''],

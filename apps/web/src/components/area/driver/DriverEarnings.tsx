@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { type History, type MonthRow, downloadStatement, months as loadMonths } from '@/lib/area/earnings';
@@ -16,9 +16,9 @@ import { Sheet } from './Sheet';
 import { DriverTop, useDriver } from './parts';
 
 const noon = (d: string) => `${d}T12:00:00Z`;
-/** "₹12.4k": short enough to sit over a month's bar. */
-const compact = (v: number, currency: string | null | undefined, locale: string) => {
-  try { return new Intl.NumberFormat(locale, { style: 'currency', currency: currency || 'INR', notation: 'compact', maximumFractionDigits: v >= 1000 ? 1 : 0 }).format(v); }
+/** Whole rupees ("₹31,021"): the amount over a bar, like the Dashboard's, in full. */
+const whole = (v: number, currency: string | null | undefined, locale: string) => {
+  try { return new Intl.NumberFormat(locale, { style: 'currency', currency: currency || 'INR', maximumFractionDigits: 0 }).format(v); }
   catch { return String(Math.round(v)); }
 };
 
@@ -30,11 +30,16 @@ function chartTitle(h: History, label: string, tr: (s: string) => string): strin
 
 /**
  * Bars of what was earned; a day's bar opens that day's trips. A period with no trips (11 Nov)
- * keeps its day markers and a flat baseline and says so, never a blank area.
+ * keeps its day markers and a flat baseline and says so, never a blank area. The amount sits across
+ * the top of each bar where it fits (a week, a year); every bar shows its full breakdown (earned,
+ * trips, fares, platform fee) on hover, keyboard focus or a tap. A first tap on a phone shows it;
+ * the second opens the day's trips.
  */
 function Chart({ h, locale, label }: { h: History; locale: string; label: string }) {
   const tr = useTr();
   const router = useRouter();
+  const [tip, setTip] = useState<number | null>(null);
+  const touch = useRef(false);
   const bars = h.chart.bars;
   const top = Math.max(...bars.map((b) => Number(b.earned)), 0);
   // Weekly ticks, and none so close to the end that it runs into the last date.
@@ -46,28 +51,40 @@ function Chart({ h, locale, label }: { h: History; locale: string; label: string
     return i === 0 || i === bars.length - 1
       ? month3(new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d)) : String(d.getUTCDate());
   };
+  const when = (key: string) => (h.chart.unit === 'hour' ? `${key}:00` : h.chart.unit === 'month' ? ymLabel(key.slice(0, 7), locale)
+    : dateLabel(noon(key), locale, 'UTC', new Date(), false));
   const empty = bars.every((b) => b.trips === 0 && Number(b.earned) === 0);
-  // The amount over each bar (11 Nov), as on the Dashboard: across for a week or a year, upright for
-  // a month's thirty days so they fit; hour bars carry none. A year scrolls inside its card on a phone.
-  const amounts = h.chart.unit !== 'hour' && !empty;
-  const upright = amounts && bars.length > 14;
+  const across = !empty && h.chart.unit !== 'hour' && bars.length <= 12;
+  const m = (v: string | number | undefined) => money(v ?? 0, h.currency, locale) ?? '';
   return (
-    <div className={h.chart.unit === 'month' ? 'er-scrollx' : undefined}>
-      <div className={`er-bars${empty ? ' er-bars--empty' : ''}${amounts ? ' er-bars--amts' : ''}${upright ? ' er-bars--upright' : ''}`}
+    <div className={h.chart.unit === 'month' ? 'er-scrollx' : undefined} onMouseLeave={() => setTip(null)}>
+      <div className={`er-bars${empty ? ' er-bars--empty' : ''}${across ? ' er-bars--amts' : ''}`}
         role="list" aria-label={tr('Earnings by day')} data-empty={empty || undefined}>
         {empty && <div className="a14 amut er-empty" role="status">{tr('No trips in {period} yet').replace('{period}', label)}</div>}
-        {bars.map((b) => {
+        {bars.map((b, i) => {
           const v = Number(b.earned);
           const px = top > 0 && v > 0 ? Math.max(4, Math.round((v / top) * 120)) : 0;
-          const label = `${tick(b.key, 0)}: ${money(b.earned, h.currency, locale)} · ${tr('{n} trips').replace('{n}', String(b.trips))}`;
-          const amt = amounts && v > 0 ? <span className="er-bar__amt" aria-hidden="true">{compact(v, h.currency, locale)}</span> : null;
+          const name = `${when(b.key)}: ${m(b.earned)} · ${tr('{n} trips').replace('{n}', String(b.trips))}`;
+          const show = { onMouseEnter: () => setTip(i), onFocus: () => setTip(i), onBlur: () => setTip(null) };
           return (
             <span key={b.key} role="listitem" className="er-col">
-              {amt}
+              {across && v > 0 && <span className="er-bar__amt" aria-hidden="true">{whole(v, h.currency, locale)}</span>}
+              {tip === i && !empty && (
+                <span className="er-tip a14" role="tooltip" data-testid="chart-tip" style={i > bars.length / 2 ? { right: 0 } : { left: 0 }}>
+                  <span className="ab">{when(b.key)}</span>
+                  <span>{tr('You earned')} <span className="ab">{m(b.earned)}</span></span>
+                  <span>{tr('{n} trips').replace('{n}', String(b.trips))}</span>
+                  {b.fares !== undefined && <span>{tr('Trip fares')} {m(b.fares)}</span>}
+                  {b.platform_fee !== undefined && <span>{tr('Platform fee')} {deduction(b.platform_fee, h.currency, locale).text}</span>}
+                </span>
+              )}
               {h.chart.unit === 'day' ? (
-                <button type="button" className={`er-bar${b.key === h.today ? ' er-bar--today' : ''}`}
-                  style={{ height: px }} aria-label={label} title={label} onClick={() => router.push(`/driver/trips?date=${b.key}`)} />
-              ) : <span className="er-bar" style={{ height: px }} aria-label={label} title={label} role="img" />}
+                <button type="button" className={`er-bar${b.key === h.today ? ' er-bar--today' : ''}`} style={{ height: px }} aria-label={name} {...show}
+                  onPointerDown={(e) => { touch.current = e.pointerType === 'touch'; }}
+                  onClick={() => { if (touch.current && tip !== i) { setTip(i); return; } router.push(`/driver/trips?date=${b.key}`); }} />
+              ) : (
+                <span className="er-bar" style={{ height: px }} aria-label={name} role="img" tabIndex={0} {...show} onClick={() => setTip(tip === i ? null : i)} />
+              )}
             </span>
           );
         })}

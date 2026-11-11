@@ -36,17 +36,20 @@ export function firstName(p: Profile | null): string {
   return (p?.full_name ?? '').trim().split(/\s+/)[0] ?? '';
 }
 
-function initials(p: Profile | null): string {
+export function initials(p: Profile | null): string {
   const parts = (p?.full_name ?? '').trim().split(/\s+/).filter(Boolean);
   return (parts.length > 1 ? parts[0][0] + parts[parts.length - 1][0] : parts[0]?.[0] ?? '').toUpperCase();
 }
 
+/** The approved photo; the initials when there is none or it does not load (11 Nov). */
 export function Avatar({ me, size = 36 }: { me: Profile | null; size?: number }) {
   const photo = me?.avatar;
+  const [broken, setBroken] = useState<string | null>(null);
+  const show = !!photo && /^https?:/.test(photo) && broken !== photo;
   return (
-    <span className="apm-face" style={{ width: size, height: size }} aria-hidden="true">
+    <span className="apm-face" style={{ width: size, height: size }} aria-hidden="true" data-face={show ? 'photo' : 'initials'}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      {photo && /^https?:/.test(photo) ? <img src={photo} alt="" /> : initials(me)}
+      {show ? <img src={photo!} alt="" onError={() => setBroken(photo!)} /> : initials(me)}
     </span>
   );
 }

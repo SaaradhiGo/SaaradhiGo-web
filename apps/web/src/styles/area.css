@@ -477,7 +477,7 @@ button.er-bar { cursor: pointer; }
 .er-mhead { justify-content: space-between; padding: 16px 20px; flex-wrap: wrap; }
 .er-scroll { overflow-x: auto; }
 .er-grid {
-  display: grid; grid-template-columns: 1.3fr .7fr 1fr 1fr .8fr 1fr 1.2fr; gap: 12px; align-items: center;
+  display: grid; grid-template-columns: minmax(max-content, 1.5fr) .6fr 1fr 1fr .7fr 1fr 1.2fr; gap: 12px; align-items: center;
   padding: 14px 20px; min-width: 760px;
 }
 .er-ghead { padding: 10px 20px; background: var(--c-page); }
@@ -578,10 +578,27 @@ button.er-bar { cursor: pointer; }
 .er-col { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; }
 .er-col .er-bar { flex: none; width: 100%; }
 .er-bars--amts { height: 164px; }
-.er-bars--upright { height: 196px; }
-.er-bars--upright .er-bar__amt { writing-mode: vertical-rl; transform: rotate(180deg); }
+.er-col { position: relative; }
+/* A bar's breakdown on hover, focus or tap (11 Nov). */
+.er-tip {
+  position: absolute; bottom: calc(100% + 6px); z-index: 5; min-width: 168px; padding: 10px 12px; border-radius: 10px;
+  background: var(--c-surface); color: var(--c-text); border: 1px solid var(--c-border); box-shadow: 0 8px 24px rgba(20, 17, 12, 0.16);
+  display: flex; flex-direction: column; gap: 2px; white-space: nowrap; pointer-events: none;
+}
+.er-bars { overflow: visible; }
 /* A year's twelve amounts do not fit a phone: the chart scrolls inside its card, like the Dashboard's. */
 @media (max-width: 767px) {
-  .er-scrollx { overflow-x: auto; padding-bottom: 4px; }
-  .er-scrollx > * { min-width: 672px; }
+  .er-scrollx { overflow-x: auto; padding: 96px 0 4px; margin-top: -96px; }
+  .er-scrollx > * { min-width: 864px; }
+  /* Seven full amounts on a phone: each day keeps its own width and the row scrolls (11 Nov). */
+  .dr-chart > div { min-width: 84px; }
 }
+
+/* Trips and Earnings at 1440 (11 Nov): headers, dates, times and money stay on one line; the trip's
+   places take what is left. */
+.atable th, .atable td.tr-nowrap, .atable td.tr-nowrap * { white-space: nowrap; }
+.atable td.tr-place { min-width: 0; max-width: 280px; }
+.er-row > span:first-child { white-space: nowrap; }
+.tr-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 6px; background: var(--c-muted); color: var(--c-text-2);
+  font-size: var(--text-small); line-height: var(--leading-small); font-weight: 600; }
+.pf-face--initials { font-size: var(--text-heading); font-weight: 600; color: var(--c-accent); background: var(--c-gold-bg); }
