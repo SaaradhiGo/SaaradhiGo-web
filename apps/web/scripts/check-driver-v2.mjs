@@ -290,12 +290,15 @@ for (const [want, answer, label] of [['dd/mm/yyyy', null, 'DRIVER'], ['mm/dd/yyy
   for (const [name, p, box, base, ticks, answer] of charts) {
     const { ctx, page } = await open(browser, 'driver', p, { answer: QA ? null : answer });
     if (QA) {
+      // Previous is disabled while a period loads, so wait for the chart after every step.
+      const loaded = () => page.waitForSelector(box, { timeout: 20000 }).catch(() => {});
       await page.click('.er-tabs [role="tab"]:has-text("Day")').catch(() => {});
+      await page.waitForTimeout(300); await loaded();
       for (let i = 0; i < 40 && !(await page.$('.er-bars[data-empty]')); i += 1) {
         const prev = await page.$('.er-arrow[aria-label="Previous"]:not([disabled])');
         if (!prev) break;
         await prev.click();
-        await page.waitForTimeout(900);
+        await page.waitForTimeout(300); await loaded();
       }
     }
     const el = await page.$(box);
