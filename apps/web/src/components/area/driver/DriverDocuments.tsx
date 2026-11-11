@@ -1,238 +1,105 @@
 'use client';
 
-import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { useTr } from '@/i18n/website';
-import { messageFor } from '@/lib/publicAuth';
-import { DOCUMENT_ACCEPT, uploadDriverDocument, uploadVehicleDocument } from '@/lib/uploads';
-import { requirements as loadRequirements, uploadFile } from '@/lib/area/requirements';
-import { StatusPill } from './profile/shared';
-import {
-  type Doc, type Onboarding, type Profile, type Vehicle, daysUntil, onboarding as loadDocs, vehicles as loadVehicles,
-} from '@/lib/area/driver';
+import { vehicles as loadVehicles } from '@/lib/area/driver';
+import { dateOrder } from '@/lib/area/format';
+import { setupHref, uploadFile } from '@/lib/area/requirements';
+import { type DocRow, documentRows, isApproved } from '@/lib/area/setupChecks';
 import { useLoad } from '@/lib/area/useLoad';
-import { IDoc, IHelp } from '../icons';
+import { IHelp } from '../icons';
 import { LoadError, Skel } from '../states';
 import { DriverTop, useDriver } from './parts';
+import { useRequirementsLoad } from './profile/shared';
+import { DocTile, SaveContext, useSaveState } from './setup/fields';
+import { IMAGE_ACCEPT, squarePhoto } from './setup/steps';
 
-export type DocRow = {
-  key: string; label: string; status: string; reason: string | null; expiresIn: number | null;
-  present?: boolean; kind?: string | null; target?: 'driver' | 'vehicle'; recordable?: boolean; expires?: string | null;
-};
-
-/** The expiry date the server keeps for a document, if any. */
-function expiryFor(key: string, me: Profile | null, car: Vehicle | null): string | null | undefined {
-  const k = key.toLowerCase();
-  if (k.includes('insurance')) return car?.insurance_expiry ?? me?.active_vehicle_details?.insurance_expiry;
-  if (k.includes('permit')) return car?.permit_expiry ?? me?.active_vehicle_details?.permit_expiry;
-  if (k.includes('fitness')) return car?.fitness_expiry;
-  if (k.includes('puc') || k.includes('pollution')) return car?.puc_expiry;
-  if (k.includes('licen')) return me?.license_expiry;
-  return null;
-}
-
-/** Every required document with its review state and days to expiry. */
-export function docRows(o: Onboarding | null, me: Profile | null, car: Vehicle | null): DocRow[] {
-  if (!o) return [];
-  const all: Doc[] = [...(o.driver_documents ?? []), ...(o.vehicle_documents ?? [])].filter((d) => d.required);
-  return all.map((d) => ({
-    key: d.key,
-    label: d.label,
-    status: d.status ?? (d.present ? 'in_review' : 'missing'),
-    reason: d.reason ?? null,
-    expiresIn: daysUntil(expiryFor(d.key, me, car)),
-    expires: expiryFor(d.key, me, car) ?? null,
-    present: d.present, kind: d.upload_kind ?? null, target: d.target, recordable: d.recordable !== false,
-  }));
-}
-
-function Pill({ row }: { row: DocRow }) {
-  const tr = useTr();
-  if (row.expiresIn !== null && row.expiresIn <= 30) {
-    return (
-      <span className="apill apill--warn">
-        {row.expiresIn < 0 ? tr('Expired') : row.expires ? tr('Expiring {date}').replace('{date}', row.expires)
-          : tr('Expires in {n} days').replace('{n}', `${row.expiresIn}`)}
-      </span>
-    );
-  }
-  const map: Record<string, [string, string]> = {
-    approved: ['apill--ok', 'Approved'], rejected: ['apill--err', 'Rejected'],
-    in_review: ['apill--warn', 'In review'], missing: ['apill--neu', 'Missing'],
-  };
-  const [cls, label] = map[row.status] ?? ['apill--neu', row.status];
-  return <span className={`apill ${cls}`}>{tr(label)}</span>;
-}
+const NEEDS_YOU = ['rejected', 'missing', 'expiring'];
+const GROUPS: [DocRow['target'], string][] = [['personal', 'Your photo'], ['identity', 'Identity and address'], ['vehicle', 'Vehicle photos and papers']];
 
 /**
- * Upload or replace one document from the web (10 Nov), through the same upload the phone uses;
- * it goes to the reviewer queue and the list is read again.
- */
-export function UploadButton({ row, vehicleId, onDone, dark, upload }: {
-  row: DocRow; vehicleId: number | null; onDone: () => void; dark?: boolean; upload?: (f: File) => Promise<unknown>;
-}) {
-  const tr = useTr();
-  const input = useRef<HTMLInputElement | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  if (!row.kind || row.recordable === false) return null;
-  const needsCar = row.target === 'vehicle' && !vehicleId;
-
-  async function pick(file: File) {
-    setBusy(true); setErr(null);
-    try {
-      if (upload) await upload(file);
-      else if (row.target === 'vehicle' && vehicleId) await uploadVehicleDocument(vehicleId, row.kind!, file);
-      else await uploadDriverDocument(row.kind!, file);
-      onDone();
-    } catch (e) {
-      setErr(messageFor(e, tr('We could not upload that. Try again.')));
-    } finally { setBusy(false); }
-  }
-
-  return (
-    <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-      <input ref={input} type="file" accept={DOCUMENT_ACCEPT} className="sr-only" aria-label={tr(row.label)}
-        onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void pick(f); }} />
-      {needsCar ? <Link href="/driver/profile" className="a14">{tr('Add your vehicle first')}</Link> : (
-        <button type="button" className={`abtn ${dark ? 'abtn--dark' : 'abtn--ghost a14'}`} style={dark ? undefined : { height: 36, padding: '0 14px' }}
-          disabled={busy} data-testid={`upload-${row.key}`} onClick={() => input.current?.click()}>
-          {busy ? tr('Uploading…') : tr(row.present ? 'Replace' : 'Upload')}
-        </button>
-      )}
-      {err && <span className="a14 ared" role="alert">{err}</span>}
-    </span>
-  );
-}
-
-/** The documents as rows: icon, name, a note when action is needed, status, and Upload or Replace. */
-export function DocList({ rows, action }: { rows: DocRow[]; action?: (r: DocRow) => React.ReactNode }) {
-  const tr = useTr();
-  if (!rows.length) return <p className="aempty">{tr('No documents are needed yet.')}</p>;
-  return (
-    <div style={{ marginTop: 8 }}>
-      {rows.map((r) => (
-        <div key={r.key} className="arow" style={{ padding: '12px 0', borderTop: '1px solid var(--c-border)' }}>
-          <span className="aico"><IDoc /></span>
-          <div className="agrow">
-            <div className="ab">{tr(r.label)}</div>
-            {r.expiresIn !== null && r.expiresIn <= 30 && <div className="a14 ared">{tr('Renewal needed')}</div>}
-            {r.status === 'rejected' && r.reason && <div className="a14 ared">{r.reason}</div>}
-          </div>
-          <Pill row={r} />
-          {action?.(r)}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/**
- * /driver/documents (driver-web-documents.html): how many are approved, the
- * document that needs renewing first, and the rest with their states.
+ * /driver/documents (driver-web-documents.html; 11 Nov): one source with setup, Profile and the
+ * Dashboard, the server's checklist for the driver's country, state and vehicle. The count is the
+ * approved files out of the files the market asks for (the profile photo and the five vehicle
+ * photos included); what needs the driver comes first; each paper shows its expiry date.
  */
 export function DriverDocuments() {
   const tr = useTr();
   const me = useDriver();
-  const docs = useLoad(loadDocs);
-  const car = useLoad(async () => (await loadVehicles())[0] ?? null);
-  const rows = docRows(docs.data, me, car.data);
-  const approved = rows.filter((r) => r.status === 'approved').length;
-  const urgent = rows.filter((r) => (r.expiresIn !== null && r.expiresIn <= 30) || r.status === 'rejected' || r.status === 'missing');
-  const rest = rows.filter((r) => !urgent.includes(r));
-  const vehicleId = docs.data?.vehicle?.id ?? car.data?.id ?? null;
-  const again = () => { docs.retry(); car.retry(); };
+  const req = useRequirementsLoad();
+  const cars = useLoad(loadVehicles);
+  const saver = useSaveState();
+  const data = req.data;
+  const car = cars.data?.[0] ?? null;
+  const rows = documentRows(data);
+  const shown = rows.filter((r) => car || r.target !== 'vehicle');
+  const approved = rows.filter((r) => isApproved(r.status)).length;
+  const order = dateOrder(data?.config.country);
+  const again = () => { (req.refresh ?? req.retry)(); (cars.refresh ?? cars.retry)(); };
+  const field = (key: string) => data?.upload_kinds[key] ?? key;
+
+  async function upload(r: DocRow, f: File) {
+    if (r.target === 'personal') await uploadFile('personal', 'photo', await squarePhoto(f));
+    else if (r.target === 'vehicle' && car) await uploadFile({ vehicle: car.id }, field(r.key), f);
+    else await uploadFile('identity', field(r.key), f);
+    again();
+  }
+  const tile = (r: DocRow) => (
+    <DocTile key={r.key} file={r} expires={r.expires} order={order} photo={r.target === 'personal' || r.key.startsWith('vehicle_photo')}
+      accept={r.target === 'personal' || r.key.startsWith('vehicle_photo') ? IMAGE_ACCEPT : undefined} upload={(f) => upload(r, f)} />
+  );
+  const urgent = shown.filter((r) => NEEDS_YOU.includes(r.status));
 
   return (
     <>
       <DriverTop title={tr('Documents')} me={me} />
       <main className="dr-main">
-        <section className="acard" style={{ padding: 20 }}>
+        <section className="acard" style={{ padding: 20 }} data-testid="documents-summary">
           <div className="arow" style={{ flexWrap: 'wrap' }}>
             <div className="agrow">
-              <h2 className="a20">{rows.length ? tr('{a} of {n} approved').replace('{a}', `${approved}`).replace('{n}', `${rows.length}`) : tr('Documents')}</h2>
-              <div className="a14 amut">{tr('We remind you before any document expires.')}</div>
+              <h2 className="a20" data-testid="documents-count">
+                {rows.length ? tr('{a} of {n} approved').replace('{a}', `${approved}`).replace('{n}', `${rows.length}`) : tr('Documents')}
+              </h2>
+              <div className="a14 amut">{tr('We remind you 30, 7 and 1 days before a document expires.')}</div>
             </div>
             <Link href="/driver/support" className="abtn abtn--ghost"><IHelp size={18} />{tr('Contact driver support')}</Link>
           </div>
-          {docs.state === 'error' && <LoadError what="documents" retry={docs.retry} />}
-          {docs.state === 'loading' && <Skel h={10} style={{ marginTop: 16 }} />}
-          {docs.state === 'ok' && rows.length === 0 && <p className="aempty">{tr('No documents are needed yet.')}</p>}
+          {req.state === 'error' && <LoadError what="documents" retry={req.retry} />}
+          {!data && req.state !== 'error' && <Skel h={10} style={{ marginTop: 16 }} />}
+          {data && rows.length === 0 && <p className="aempty">{tr('No documents are needed yet.')}</p>}
           {rows.length > 0 && (
-            <div style={{ marginTop: 16, height: 10, borderRadius: 5, background: 'var(--c-muted)' }}>
-              <div style={{ width: `${(approved / rows.length) * 100}%`, height: 10, borderRadius: 5, background: 'var(--c-green)' }} />
+            <div className="dr-meter" role="img" aria-label={tr('{a} of {n} approved').replace('{a}', `${approved}`).replace('{n}', `${rows.length}`)}>
+              <div style={{ width: `${(approved / rows.length) * 100}%` }} />
             </div>
           )}
         </section>
-        {urgent.map((r) => (
-          <section key={r.key} className="acard arow" style={{ padding: 20, borderColor: 'var(--c-warn-border)', borderWidth: 2, flexWrap: 'wrap' }}>
-            <span className="aico" style={{ width: 56, height: 56, background: 'var(--c-warn-bg)', color: 'var(--c-warn-ink)' }}><IDoc /></span>
-            <div className="agrow">
-              <div className="arow" style={{ gap: 10, flexWrap: 'wrap' }}><h2 className="a20">{tr(r.label)}</h2><Pill row={r} /></div>
-              <div className="amut">
-                {r.status === 'rejected' && r.reason ? r.reason
-                  : r.status === 'missing' ? tr('Upload this document. Our team reviews it, usually the same day.')
-                    : tr('Upload the renewed document. Our team reviews it, usually the same day. Until it expires you can keep driving.')}
-              </div>
+        <SaveContext.Provider value={saver}>
+          {urgent.length > 0 && (
+            <section className="acard dr-docs dr-docs--urgent" data-testid="documents-urgent">
+              <h2 className="a20">{tr('Needs you')}</h2>
+              <div className="su-tiles">{urgent.map(tile)}</div>
+            </section>
+          )}
+          {GROUPS.map(([target, title]) => {
+            const group = shown.filter((r) => r.target === target && !urgent.includes(r));
+            return group.length ? (
+              <section key={target} className="acard dr-docs" data-testid={`documents-${target}`}>
+                <h2 className="a20">{tr(title)}</h2>
+                <div className="su-tiles">{group.map(tile)}</div>
+              </section>
+            ) : null;
+          })}
+        </SaveContext.Provider>
+        {data && cars.data && !car && data.checklist.items.some((i) => i.step === 'vehicle_docs' && i.need === 'required') && (
+          <section className="acard dr-docs" data-testid="vehicle-documents-waiting">
+            <div className="arow" style={{ gap: 12, flexWrap: 'wrap' }}>
+              <div className="agrow"><h2 className="a20">{tr('Vehicle photos and papers')}</h2>
+                <div className="a14 amut">{tr('Add your vehicle first')}</div></div>
+              <Link href={setupHref('vehicle')} className="abtn abtn--dark">{tr('Add vehicle')}</Link>
             </div>
-            <UploadButton row={r} vehicleId={vehicleId} onDone={again} dark />
           </section>
-        ))}
-        {rest.length > 0 && <section className="acard" style={{ padding: '8px 20px' }}><DocList rows={rest} action={(r) => <UploadButton row={r} vehicleId={vehicleId} onDone={again} />} /></section>}
-        <MarketDocuments hasVehicle={!!vehicleId} onDone={again} />
+        )}
       </main>
-    </>
-  );
-}
-
-/** Identity documents beyond the licence, and, until a vehicle exists, its documents (10 Nov). */
-const IDENTITY_FILES: Record<string, string> = {
-  address_proof: 'address_proof_doc', aadhaar: 'aadhaar_doc', pan: 'pan_doc', police_verification: 'police_verification_doc',
-};
-const VEHICLE_DOC_KEYS = ['rc', 'registration', 'insurance', 'permit', 'fitness', 'puc', 'inspection'];
-
-function MarketDocuments({ hasVehicle, onDone }: { hasVehicle: boolean; onDone: () => void }) {
-  const tr = useTr();
-  const req = useLoad(loadRequirements);
-  const items = req.data?.checklist.items ?? [];
-  const identity = items.filter((i) => i.key in IDENTITY_FILES);
-  const vehicleDocs = hasVehicle ? [] : items.filter((i) => VEHICLE_DOC_KEYS.includes(i.key));
-  const again = () => { req.retry(); onDone(); };
-  if (!identity.length && !vehicleDocs.length) return null;
-  return (
-    <>
-      {identity.length > 0 && (
-        <section className="acard" style={{ padding: '8px 20px' }} data-testid="identity-documents">
-          {identity.map((i) => (
-            <div key={i.key} className="arow" style={{ padding: '12px 0', borderTop: '1px solid var(--c-border)', gap: 12, flexWrap: 'wrap' }}>
-              <span className="aico"><IDoc /></span>
-              <div className="agrow">
-                <div className="ab">{tr(i.label)}</div>
-                {i.status === 'rejected' && i.reason && <div className="a14 ared">{i.reason}</div>}
-              </div>
-              <StatusPill it={i} />
-              <UploadButton row={{ key: i.key, label: i.label, status: i.status, reason: i.reason, expiresIn: null,
-                present: i.status !== 'missing', kind: IDENTITY_FILES[i.key], target: 'driver', recordable: true }}
-                vehicleId={null} onDone={again} upload={(f) => uploadFile('identity', IDENTITY_FILES[i.key], f)} />
-            </div>
-          ))}
-        </section>
-      )}
-      {vehicleDocs.length > 0 && (
-        <section className="acard" style={{ padding: '8px 20px' }} data-testid="vehicle-documents-waiting">
-          <div className="arow" style={{ padding: '12px 0', gap: 12, flexWrap: 'wrap' }}>
-            <h2 className="a20 agrow">{tr('Vehicle documents')}</h2>
-            <Link href="/driver/setup/vehicle" className="abtn abtn--dark">{tr('Add vehicle')}</Link>
-          </div>
-          {vehicleDocs.map((i) => (
-            <div key={i.key} className="arow" style={{ padding: '12px 0', borderTop: '1px solid var(--c-border)', gap: 12 }}>
-              <span className="aico"><IDoc /></span>
-              <div className="agrow"><div className="ab">{tr(i.label)}</div><div className="a14 amut">{tr('Add your vehicle first')}</div></div>
-              <span className="apill apill--neu">{tr('Missing')}</span>
-            </div>
-          ))}
-        </section>
-      )}
     </>
   );
 }

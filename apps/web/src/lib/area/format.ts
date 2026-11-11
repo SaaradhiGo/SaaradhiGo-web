@@ -86,16 +86,19 @@ export function clock(iso: string, locale: string, timeZone?: string | null): st
   return new Intl.DateTimeFormat(locale, { timeZone: tz(timeZone), hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
 }
 
+/** Every short month in three letters (11 Nov): "Sep", never the British "Sept". */
+export const month3 = (s: string) => s.replace(/\bSept\b/g, 'Sep');
+
 /** "Sun, 8 Nov", with the year when it is not the current one. */
 export function dateLabel(iso: string, locale: string, timeZone?: string | null, now = new Date(), withYear = false): string {
   if (!readable(iso)) return '';
   const zone = tz(timeZone);
   const at = new Date(iso);
   const otherYear = ymd(at, zone).slice(0, 4) !== ymd(now, zone).slice(0, 4);
-  return new Intl.DateTimeFormat(locale, {
+  return month3(new Intl.DateTimeFormat(locale, {
     timeZone: zone, weekday: 'short', day: 'numeric', month: 'short',
     ...(otherYear || withYear ? { year: 'numeric' } : {}),
-  }).format(at);
+  }).format(at));
 }
 
 /** The two lines of a trip, payout or receipt row. */
@@ -134,7 +137,7 @@ export function rangeLabel(start: string, end: string, locale: string): string {
       timeZone: 'UTC', weekday: 'short', day: 'numeric', ...(month ? { month: 'short' } : {}),
     }).formatToParts(at);
     const pick = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
-    return [pick('weekday'), pick('day'), month ? pick('month') : ''].filter(Boolean).join(' ');
+    return [pick('weekday'), pick('day'), month ? month3(pick('month')) : ''].filter(Boolean).join(' ');
   };
   const sameMonth = start.slice(0, 7) === end.slice(0, 7);
   return `${fmt(start, !sameMonth)} – ${fmt(end, true)}`;
@@ -174,5 +177,5 @@ export function parseNumericDate(text: string, order: DateOrder): string | null 
 /** "10 Nov" from an ISO instant, for "Uploaded 10 Nov". */
 export function dayMonth(iso: string | null | undefined, locale: string): string {
   if (!iso || Number.isNaN(Date.parse(iso))) return '';
-  return new Intl.DateTimeFormat(locale, { timeZone: marketZone(), day: 'numeric', month: 'short' }).format(new Date(iso));
+  return month3(new Intl.DateTimeFormat(locale, { timeZone: marketZone(), day: 'numeric', month: 'short' }).format(new Date(iso)));
 }

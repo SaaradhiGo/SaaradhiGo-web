@@ -5,6 +5,7 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { type DateOrder, dayMonth, datePlaceholder, numericDate, parseNumericDate } from '@/lib/area/format';
 import { type FileTile, STATUS_LABEL, STATUS_TONE } from '@/lib/area/requirements';
+import { dateProblem } from '@/lib/area/setupChecks';
 import { messageFor } from '@/lib/publicAuth';
 import { DOCUMENT_ACCEPT } from '@/lib/uploads';
 import { ICalendar, ICamera, IDoc } from '../../icons';
@@ -22,6 +23,7 @@ export function useSaveState() {
   const [state, setState] = useState<SaveState>({ saving: 0, error: null });
   // One save at a time: a vehicle date saved while a photo uploads must not write the row back.
   const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const lastFailed = useRef(false);
   function run(fn: () => Promise<unknown>) {
     setState((s) => ({ saving: s.saving + 1, error: null }));
     const next = queue.current.then(async () => {
@@ -29,8 +31,9 @@ export function useSaveState() {
       let timer: ReturnType<typeof setTimeout> | undefined;
       const tooLong = new Error('timeout');
       const late = new Promise<never>((_, no) => { timer = setTimeout(() => no(tooLong), SAVE_TIMEOUT_MS); });
-      try { await Promise.race([fn(), late]); setState((s) => ({ ...s, saving: s.saving - 1 })); return true; }
+      try { await Promise.race([fn(), late]); lastFailed.current = false; setState((s) => ({ ...s, saving: s.saving - 1 })); return true; }
       catch (e) {
+        lastFailed.current = true;
         setState((s) => ({ saving: s.saving - 1, error: e === tooLong ? tr('That took too long. Check your connection and try again.') : messageFor(e, tr('We could not save that. Try again.')) }));
         return false;
       } finally { clearTimeout(timer); }
@@ -38,7 +41,32 @@ export function useSaveState() {
     queue.current = next;
     return next;
   }
-  return { state, run };
+  /** Every save sent so far has answered; true when the last one went through. */
+  const settled = async () => { await queue.current; return !lastFailed.current; };
+  return { state, run, settled };
+}
+
+/**
+ * Save and continue / Save and return (11 Nov): every field of the open step registers a check;
+ * the button runs them all, and a problem shows under its field while the step stays open with
+ * what was typed. Nothing is left behind unsaved without a word.
+ */
+type Check = () => boolean;
+export const CheckContext = createContext<{ add: (c: Check) => () => void } | null>(null);
+
+export function useChecks() {
+  const checks = useRef(new Set<Check>());
+  const ctx = useRef({ add: (c: Check) => { checks.current.add(c); return () => { checks.current.delete(c); }; } });
+  const runAll = () => { let ok = true; checks.current.forEach((c) => { if (!c()) ok = false; }); return ok; };
+  return { ctx: ctx.current, runAll };
+}
+
+/** Register this field's check while it is on screen. */
+export function useCheck(check: Check) {
+  const ctx = useContext(CheckContext);
+  const latest = useRef(check);
+  latest.current = check;
+  useEffect(() => ctx?.add(() => latest.current()), [ctx]);
 }
 
 export function useSave() {
@@ -69,6 +97,7 @@ export function TextField({ id, label, help, value, save, clean = (v) => v, plac
   const [err, setErr] = useState<string | null>(null);
   const saved = useRef(value);
   useEffect(() => { setV(value); saved.current = value; }, [value]);
+  useCheck(() => !err);
   async function blur() {
     if (v === saved.current || !v.trim()) return;
     setErr(null);
@@ -98,6 +127,11 @@ export function DateField({ id, label, help, value, order, save, testid }: {
   const picker = useRef<HTMLInputElement | null>(null);
   const saved = useRef(value ?? '');
   useEffect(() => { setText(numericDate(value, order)); saved.current = value ?? ''; }, [value, order]);
+  useCheck(() => {
+    const problem = dateProblem(text, order);
+    if (problem) setErr(tr('Enter the date as {p}.').replace('{p}', datePlaceholder(order)));
+    return !problem && !err;
+  });
   async function commit(iso: string | null) {
     if (!text.trim() && !iso) return;
     if (!iso) { setErr(tr('Enter the date as {p}.').replace('{p}', datePlaceholder(order))); return; }
@@ -124,14 +158,14 @@ export function DateField({ id, label, help, value, order, save, testid }: {
   );
 }
 
-export function SelectField({ id, label, help, value, options, onChange, placeholder, testid }: {
-  id: string; label: string; help?: string | null; value: string; options: { value: string; label: string }[];
+export function SelectField({ id, label, help, error, value, options, onChange, placeholder, testid }: {
+  id: string; label: string; help?: string | null; error?: string | null; value: string; options: { value: string; label: string }[];
   onChange: (v: string) => void; placeholder?: string; testid?: string;
 }) {
   const tr = useTr();
   return (
-    <Labelled id={id} label={label} help={help}>
-      <div className="ainput">
+    <Labelled id={id} label={label} help={help} error={error}>
+      <div className={`ainput${error ? ' ainput--bad' : ''}`}>
         <select id={id} value={value} data-testid={testid} onChange={(e) => onChange(e.target.value)}>
           <option value="">{placeholder ?? tr('Choose')}</option>
           {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -147,15 +181,19 @@ export function FilePill({ status }: { status: FileTile['status'] }) {
 }
 
 /** One document or photo: its own status, the reviewer's reason, when it was uploaded, and Upload or Replace. */
-export function DocTile({ file, upload, accept = DOCUMENT_ACCEPT, photo = false, wide = false }: {
+export function DocTile({ file, upload, accept = DOCUMENT_ACCEPT, photo = false, wide = false, expires, order }: {
   file: FileTile; upload: (f: File) => Promise<unknown>; accept?: string; photo?: boolean; wide?: boolean;
+  /** The paper's expiry date (Documents, 11 Nov), shown in the market's order. */
+  expires?: string | null; order?: DateOrder;
 }) {
   const tr = useTr();
   const { locale } = useLocale();
   const run = useSave();
   const input = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
-  const present = file.status !== 'missing';
+  // An upload's problem belongs to its document (11 Nov), not to the step's Save line.
+  const [err, setErr] = useState<string | null>(null);
+  const present = file.status !== 'missing' || !!file.uploaded_at;
   const when = file.uploaded_at ? dayMonth(file.uploaded_at, locale) : '';
   return (
     <div className={`su-tile${present ? '' : ' su-tile--empty'}${wide ? ' su-tile--wide' : ''}`} data-file={file.key} data-status={file.status}>
@@ -164,14 +202,20 @@ export function DocTile({ file, upload, accept = DOCUMENT_ACCEPT, photo = false,
         <div className="ab">{tr(file.label)}</div>
         <div className="arow a14 su-tile__meta">
           <FilePill status={file.status} />
-          {file.status === 'rejected' && file.reason ? <span className="amut">{file.reason}</span>
-            : present && when && file.status !== 'approved' ? <span className="amut">{tr('Uploaded {d}').replace('{d}', when)}</span> : null}
+          {(file.status === 'rejected' || file.status === 'missing') && file.reason ? <span className="amut">{file.reason}</span>
+            : present && when && file.status !== 'approved' ? <span className="amut su-when">{tr('Uploaded {d}').replace('{d}', when)}</span> : null}
+          {expires && order ? <span className="amut su-when" data-testid={`expires-${file.key}`}>{tr('Valid until {d}').replace('{d}', numericDate(expires, order))}</span> : null}
         </div>
+        {err && <div className="a14 ared" role="alert" data-testid={`upload-error-${file.key}`}>{err}</div>}
       </div>
       <input ref={input} type="file" accept={accept} className="sr-only" aria-label={tr(file.label)} data-testid={`file-${file.key}`}
         onChange={(e) => {
           const f = e.target.files?.[0]; e.target.value = '';
-          if (f) { setBusy(true); void run(() => upload(f)).finally(() => setBusy(false)); }
+          if (!f) return;
+          setBusy(true); setErr(null);
+          void run(async () => {
+            try { await upload(f); } catch (x) { setErr(messageFor(x, tr('We could not upload that. Try again.'))); }
+          }).finally(() => setBusy(false));
         }} />
       {present && file.status !== 'rejected' ? (
         <button type="button" className="abtn abtn--ghost su-tbtn" disabled={busy} onClick={() => input.current?.click()}>

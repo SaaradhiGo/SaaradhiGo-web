@@ -4,6 +4,7 @@ import { ApiError, api } from '@/lib/api';
 import { readRiderToken } from '@/lib/publicAuth';
 import { describeFileProblem } from '@/lib/uploads';
 import { areaGet, areaPatch, areaPost } from './api';
+import { STEP_SLUG, type StepKey } from './setupSlugs';
 
 /**
  * What a driver provides, per market (10 Nov). The server decides which items the market asks
@@ -15,7 +16,7 @@ export type Need = 'required' | 'optional' | 'off';
 export type FileTile = {
   key: string; label: string; status: ItemStatus; reason: string | null; uploaded_at: string | null; vehicle: boolean;
 };
-export type StepKey = 'personal' | 'contact' | 'identity' | 'vehicle' | 'vehicle_docs' | 'payouts';
+export type { StepKey };
 export type StepStatus = 'done' | 'in_review' | 'todo' | 'action';
 export type Step = { key: StepKey; number: number; items: string[]; status: StepStatus };
 export type ChecklistItem = {
@@ -105,9 +106,7 @@ export function stepSub(step: Step, tr: (s: string) => string): string {
   const shown = names.slice(0, 4).join(', ') + (names.length > 4 ? '…' : '');
   return shown.charAt(0).toUpperCase() + shown.slice(1);
 }
-export const STEP_SLUG: Record<StepKey, string> = {
-  personal: 'personal', contact: 'contact', identity: 'identity', vehicle: 'vehicle', vehicle_docs: 'photos-and-papers', payouts: 'payouts',
-};
+export { STEP_SLUG };
 export const stepFromSlug = (slug: string) => (Object.keys(STEP_SLUG) as StepKey[]).find((k) => STEP_SLUG[k] === slug) ?? null;
 export const setupHref = (step: StepKey | null | undefined, from?: 'profile') =>
   `/driver/setup/${STEP_SLUG[step ?? 'personal']}${from ? `?from=${from}` : ''}`;

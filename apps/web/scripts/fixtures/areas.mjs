@@ -78,7 +78,11 @@ function HISTORY(path) {
     summary: { trips: 298, days_driven: 26, fares: '33995.50', avg_fare: '114.08', commission: '0.00', daily_fee: '2975.00',
       platform_fee: '2975.00', tips: '0.00', tip_riders: 0, earned: '31020.50', paid_to_bank: '18612.00', payouts: 6,
       cash_collected: '12408.50', unresolved_trips: 0, fee_note: 'Capped at ₹149.00 a day', tips_enabled: false },
-    chart: { unit: period === 'year' || period === 'taxyear' ? 'month' : period === 'day' ? 'hour' : 'day', bars },
+    // A year (11 Nov): twelve month bars keyed YYYY-MM, as the API sends them.
+    chart: period === 'year' || period === 'taxyear'
+      ? { unit: 'month', bars: Array.from({ length: 12 }, (_, i) => ({ key: `${today.slice(0, 4)}-${String(i + 1).padStart(2, '0')}`,
+        earned: i < Number(today.slice(5, 7)) ? (heights[i] * 260).toFixed(2) : '0.00', trips: i < Number(today.slice(5, 7)) ? heights[i] : 0 })) }
+      : { unit: 'day', bars },
   };
 }
 
@@ -163,6 +167,20 @@ export function fixture(method, path, body) {
         .filter((r) => !q || String(r.trip_id_val) === q || `${r.pickup_address} ${r.destination_address}`.toLowerCase().includes(q));
       return { count: rows.length, results: rows };
     }
+    case /^\/driver\/trips\/\d+\/$/.test(p): {
+      // One trip (11 Nov): the detail sheet on Trips.
+      const id = Number(p.split('/')[3]);
+      const [d, hh, mm, fare, com, a, b] = SETTLED[(id - 300) % SETTLED.length] ?? SETTLED[0];
+      return { id, status: 'completed', currency: 'INR', pickup_address: a, destination_address: b, requested_at: at(d, hh, mm - 20),
+        started_at: at(d, hh, mm - 14), completed_at: at(d, hh, mm), distance_km: '6.40', duration_min: '14', ride_class: 'sedan',
+        payment_method: 'cash', fare, platform_fee: com, platform_fee_refunded: null, tips: '0.00', earned: String(Number(fare) - Number(com)),
+        cash_in_hand: fare, rider: { first_name: 'Rider', rating: '4.80' } };
+    }
+    case p === '/support/tickets/':
+      return { count: 1, results: [{ id: 41, status: 'open', issue_type: 'payment', description: 'My payout of 3 Nov has not arrived.',
+        created_at: at(2, 10, 5), trip_id: null }] };
+    case p === '/support/tickets/create/':
+      return { id: 42 };
     case p === '/ride/driver-history/':
       return { results: SETTLED.map(([, , , , , a, b], i) => trip(300 + i, { pickup_address: a, destination_address: b })) };
     default:

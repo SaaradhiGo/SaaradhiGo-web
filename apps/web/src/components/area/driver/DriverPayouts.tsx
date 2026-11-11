@@ -73,7 +73,7 @@ export function DriverPayouts() {
               {h && payouts.data && !q && <span className="a14 amut" data-testid="payouts-summary">{where} · {tr(count === 1 ? '{n} payout' : '{n} payouts').replace('{n}', String(count))}</span>}
             </div>
             <div className="pay-period">
-              <PeriodSwitcher s={s}><SearchBox label={tr('Search by payout number or amount')} onSearch={setQ} /></PeriodSwitcher>
+              <PeriodSwitcher s={s}><SearchBox label={tr('Search payouts')} onSearch={setQ} /></PeriodSwitcher>
             </div>
             <div style={{ marginTop: 8 }} data-testid="payouts-list">
               {(s.hist.state === 'error' ? s.hist : payouts.state === 'error' ? payouts : null) && (

@@ -7,9 +7,10 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 
+const nav = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock('next/navigation', () => ({
   usePathname: () => '/driver/setup/identity',
-  useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }),
+  useRouter: () => ({ replace: vi.fn(), push: nav.push, refresh: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -186,6 +187,42 @@ describe('vehicle', () => {
     fireEvent.change(screen.getByLabelText('Number plate'), { target: { value: 'TS10CD5678' } });
     fireEvent.change(screen.getByLabelText('Colour'), { target: { value: 'White' } });
     await waitFor(() => expect(posts.at(-1)?.[1]).toMatchObject({ custom: true, brand: 'Hindustan', model: 'Ambassador' }));
+  });
+});
+
+describe('save and return (11 Nov)', () => {
+  it('a 5-digit number or no relationship stays on the page with the error under the field', async () => {
+    nav.push.mockClear();
+    await setup('contact');
+    const name = await screen.findByTestId('contact-0-name');
+    fireEvent.change(name, { target: { value: 'Lakshmi' } });
+    fireEvent.change(screen.getByTestId('contact-0-phone'), { target: { value: '+91 98765' } });
+    await act(async () => { fireEvent.click(screen.getByTestId('save-continue')); });
+    await screen.findByText('Enter a 10-digit mobile number.');
+    expect(screen.getByText('Choose how you know them.')).toBeTruthy();
+    expect(nav.push).not.toHaveBeenCalled();
+    expect((screen.getByTestId('contact-0-name') as HTMLInputElement).value).toBe('Lakshmi');
+    expect((screen.getByTestId('contact-0-phone') as HTMLInputElement).value).toBe('+91 98765');
+    expect(posts.some(([p]) => p === '/driver/personal/')).toBe(false);
+  });
+
+  it('a complete contact moves on', async () => {
+    nav.push.mockClear();
+    await setup('contact');
+    fireEvent.change(await screen.findByTestId('contact-0-name'), { target: { value: 'Lakshmi' } });
+    fireEvent.change(screen.getByTestId('contact-0-relationship'), { target: { value: 'spouse' } });
+    fireEvent.change(screen.getByTestId('contact-0-phone'), { target: { value: '+91 98765 43210' } });
+    await act(async () => { fireEvent.click(screen.getByTestId('save-continue')); });
+    await waitFor(() => expect(nav.push).toHaveBeenCalledWith('/driver/setup/identity'));
+  });
+
+  it('a half-typed date on the identity step stays on the page', async () => {
+    nav.push.mockClear();
+    await setup('identity');
+    fireEvent.change(await screen.findByTestId('licence-expiry'), { target: { value: '31/12' } });
+    await act(async () => { fireEvent.click(screen.getByTestId('save-continue')); });
+    await screen.findByText('Enter the date as dd/mm/yyyy.');
+    expect(nav.push).not.toHaveBeenCalled();
   });
 });
 

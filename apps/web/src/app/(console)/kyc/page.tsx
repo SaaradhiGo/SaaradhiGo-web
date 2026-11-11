@@ -13,6 +13,7 @@ import {
   otherSide, paceFrom, reasonReady, reuploadReason, shortDuration, sideOf, stepIndex,
 } from '@/lib/kycReview';
 import { type ApprovalBody, interpretWrite } from '@/lib/trips';
+import { DATED_DOCUMENTS } from '@/lib/drivers';
 import { type ChipTone, StatusChip } from '@/components/console/kit/StatusChip';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { PageHead } from '@/components/console/kit/ListBits';
@@ -63,6 +64,7 @@ type View =
 type Notice = { text: string; kind: 'done' | 'pending' | 'error' };
 
 const QUEUE_SIZE = 50;
+const DATED = DATED_DOCUMENTS;
 const AUDIT_ACTION = 'driver_document_reviewed';
 
 function message(err: unknown, fallback: string): string {
@@ -89,6 +91,8 @@ export default function KycReviewPage() {
   const [zoom, setZoom] = useState(1);
 
   const [reason, setReason] = useState('');
+  // Insurance, permit, fitness and PUC are approved with their expiry date, read from the paper (11 Nov).
+  const [expiry, setExpiry] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [pace, setPace] = useState<{ drivers: number; medianSeconds: number } | null>(null);
@@ -195,8 +199,9 @@ export default function KycReviewPage() {
     try {
       await api.post(`/driver/admin/${detail.id}/documents/review/`, {
         document_key: doc.key, vehicle_id: doc.vehicle_id, decision, reason: decision === 'reject' ? sent : '',
+        ...(decision === 'approve' && DATED.includes(doc.key) && expiry ? { expiry } : {}),
       });
-      setReason('');
+      setReason(''); setExpiry('');
       setNotice({ text: decision === 'approve' ? `${doc.label} approved.` : `${doc.label} rejected. The driver will see your reason.`, kind: 'done' });
       void loadPace();
       const fresh = await fetchDetail(detail.id);
@@ -211,7 +216,7 @@ export default function KycReviewPage() {
     } finally {
       setBusy(false);
     }
-  }, [detail, doc, docIndex, fetchDetail, loadPace, nextDriver]);
+  }, [detail, doc, docIndex, expiry, fetchDetail, loadPace, nextDriver]);
 
   const approveDriver = useCallback(async () => {
     if (!detail) return;
@@ -466,6 +471,13 @@ export default function KycReviewPage() {
                     </>
                   ) : (
                     <>
+                      {doc && DATED.includes(doc.key) ? (
+                        <label className="ops-form__label" htmlFor="kyc-expiry">
+                          Valid until, as printed on the {docLabel.toLowerCase()} (needed to approve it)
+                          <input id="kyc-expiry" type="date" className="input" value={expiry} data-testid="kyc-expiry"
+                            onChange={(e) => setExpiry(e.target.value)} />
+                        </label>
+                      ) : null}
                       <button
                         type="button" className="sg-btn sg-btn--primary ops-kyc__primary" onClick={onApprove}
                         disabled={!canApprove || doc?.review_state === 'approved'}

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { type ApprovalBody, interpretWrite, newIdempotencyKey } from '@/lib/trips';
-import { type DriverActionKey, FALLBACK_SUSPEND_REASONS } from '@/lib/drivers';
+import { DATED_DOCUMENTS, type DriverActionKey, FALLBACK_SUSPEND_REASONS } from '@/lib/drivers';
 import { Drawer } from '@/components/console/ui';
 
 const TITLE: Record<DriverActionKey, string> = {
@@ -154,10 +154,13 @@ export function DocumentReviewDrawer({
   onClose: () => void; onDone: (message: string) => void;
 }) {
   const [reason, setReason] = useState('');
+  const [expiry, setExpiry] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const reject = decision === 'reject';
+  // Insurance, permit, fitness and PUC are approved with their expiry date (11 Nov).
+  const dated = DATED_DOCUMENTS.includes(doc.key);
   const ready = !busy && (!reject || reason.trim().length >= 5);
 
   async function submit() {
@@ -165,6 +168,7 @@ export function DocumentReviewDrawer({
     try {
       await api.post(`/driver/admin/${driverId}/documents/review/`, {
         document_key: doc.key, vehicle_id: doc.vehicle_id, decision, reason: reject ? reason.trim() : '',
+        ...(!reject && dated && expiry ? { expiry } : {}),
       });
       const message = reject ? `${doc.label} rejected. The driver can read your reason in the app.` : `${doc.label} approved.`;
       setDone(message);
@@ -207,10 +211,19 @@ export function DocumentReviewDrawer({
             <p className="help">The driver sees this in the app, word for word. Write it for them.</p>
           </>
         ) : (
-          <div className="ops-confirm">
-            <b>{title}</b>
-            <span>Approving one document does not approve the driver: that is a separate step once every document is in order.</span>
-          </div>
+          <>
+            <div className="ops-confirm">
+              <b>{title}</b>
+              <span>Approving one document does not approve the driver: that is a separate step once every document is in order.</span>
+            </div>
+            {dated ? (
+              <>
+                <label className="ops-form__label" htmlFor="doc-expiry">Valid until, as printed on the document</label>
+                <input id="doc-expiry" type="date" className="input" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
+                <p className="help">Needed to approve it unless the driver already entered it. Drivers are reminded 30, 7 and 1 days before.</p>
+              </>
+            ) : null}
+          </>
         )}
         {error && <div className="alert-error" role="alert">{error}</div>}
       </div>
