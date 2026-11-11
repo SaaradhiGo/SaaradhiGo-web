@@ -14,6 +14,7 @@ import { ICalendar, ICamera, IDoc } from '../../icons';
  * says "Saved automatically" (or what went wrong). Focus is a ring on the field's outer box.
  */
 type SaveState = { saving: number; error: string | null };
+export const SAVE_TIMEOUT_MS = 60_000;
 export const SaveContext = createContext<{ state: SaveState; run: (fn: () => Promise<unknown>) => Promise<boolean> } | null>(null);
 
 export function useSaveState() {
@@ -24,11 +25,15 @@ export function useSaveState() {
   function run(fn: () => Promise<unknown>) {
     setState((s) => ({ saving: s.saving + 1, error: null }));
     const next = queue.current.then(async () => {
-      try { await fn(); setState((s) => ({ ...s, saving: s.saving - 1 })); return true; }
+      // A request that never answers (an instance replaced mid-deploy) must not hold every later save.
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const tooLong = new Error('timeout');
+      const late = new Promise<never>((_, no) => { timer = setTimeout(() => no(tooLong), SAVE_TIMEOUT_MS); });
+      try { await Promise.race([fn(), late]); setState((s) => ({ ...s, saving: s.saving - 1 })); return true; }
       catch (e) {
-        setState((s) => ({ saving: s.saving - 1, error: messageFor(e, tr('We could not save that. Try again.')) }));
+        setState((s) => ({ saving: s.saving - 1, error: e === tooLong ? tr('That took too long. Check your connection and try again.') : messageFor(e, tr('We could not save that. Try again.')) }));
         return false;
-      }
+      } finally { clearTimeout(timer); }
     });
     queue.current = next;
     return next;
