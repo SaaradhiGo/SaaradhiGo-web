@@ -145,7 +145,9 @@ export function DriverSetup({ slug }: { slug: string }) {
                   {(step.key === 'vehicle' || step.key === 'vehicle_docs') && cars.state !== 'ok' ? (
                     cars.state === 'error' ? <LoadError what="profile" retry={cars.retry} /> : <Skel h={240} />
                   ) : (
-                    <Body key={step.key + String(car?.id ?? '')} data={data} reload={load.refresh ?? load.retry} order={dateOrder(data.config.country)}
+                    // Only the vehicle steps depend on the car (11 Nov): the vehicle list arriving later must not
+                    // remount another step and drop what the driver typed.
+                    <Body key={step.key + (step.key === 'vehicle' || step.key === 'vehicle_docs' ? String(car?.id ?? '') : '')} data={data} reload={load.refresh ?? load.retry} order={dateOrder(data.config.country)}
                       car={car} reloadCar={cars.refresh ?? cars.retry} />
                   )}
                 </CheckContext.Provider>
