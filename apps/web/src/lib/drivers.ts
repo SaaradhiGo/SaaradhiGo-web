@@ -314,3 +314,6 @@ export function approvedCaveats(d: {
   if (noVehicle) out.push('No vehicle');
   return out;
 }
+
+/** Papers approved only with the expiry date printed on them (11 Nov); the API refuses without one. */
+export const DATED_DOCUMENTS = ['insurance', 'permit', 'fitness', 'puc'];

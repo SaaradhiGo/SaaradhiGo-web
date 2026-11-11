@@ -493,3 +493,95 @@ button.er-bar { cursor: pointer; }
   .er-bars { gap: 2px; }
   .er-label { min-width: 0; }
 }
+
+/* ---- Driver QA fixes (11 Nov). */
+.dr-head__title { flex: 1; min-width: 0; }
+/* Phone: the sidebar gives way to a bottom bar; the header keeps the pill, Go online and the profile. */
+.dr-tabbar { display: none; }
+.dr-go__short { display: none; }
+@media (max-width: 767px) {
+  .dr-side { display: none; }
+  .dr-body { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  .dr-tabbar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: var(--c-side);
+    border-top: 1px solid var(--c-side-line); justify-content: space-around; gap: 2px;
+    padding: 6px max(6px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px));
+  }
+  .ar .dr-tab {
+    flex: 1 1 0; min-width: 0; min-height: 56px; border-radius: 10px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px; text-decoration: none; color: var(--c-side-text-2);
+    font-size: var(--text-small); line-height: var(--leading-small); font-weight: 600; cursor: pointer; list-style: none;
+  }
+  .dr-tab::-webkit-details-marker { display: none; }
+  .ar .dr-tab--on { color: var(--c-gold-2); background: var(--c-side-active); }
+  .dr-tab__dots { font-size: var(--text-body); line-height: 22px; letter-spacing: 1px; }
+  .dr-more { flex: 1 1 0; min-width: 0; display: flex; position: relative; }
+  .dr-more > summary { width: 100%; }
+  .dr-more__menu {
+    position: absolute; right: 0; bottom: calc(100% + 8px); min-width: 200px; background: var(--c-surface);
+    border: 1px solid var(--c-border); border-radius: 14px; padding: 6px; display: flex; flex-direction: column;
+    box-shadow: 0 12px 32px rgba(20, 17, 12, 0.18);
+  }
+  .ar .dr-more__menu a {
+    min-height: 48px; padding: 0 12px; border-radius: 10px; display: flex; align-items: center; gap: 10px;
+    color: var(--c-text); text-decoration: none; font-weight: 600;
+  }
+  .dr-more__menu a[aria-current="page"] { background: var(--c-muted); }
+  .dr-head { min-height: 0; padding-block: 10px; gap: 8px; }
+  .dr-head__title { flex-basis: 100%; }
+  .dr-head .a28 { font-size: var(--text-title); line-height: var(--leading-title); }
+  .ar .dr-head .dr-go {
+    flex: 1 1 0; min-width: 0; min-height: 40px; height: 40px; padding: 0 10px; gap: 6px;
+    font-size: var(--text-small); white-space: nowrap; overflow: hidden;
+  }
+  .pf-head { padding: 20px; gap: 16px; }
+  .pf-head .pf-face { width: 64px; height: 64px; }
+  .pf-head .agrow { min-width: 180px; }
+  .dr-head .apill { height: 40px !important; }
+  .dr-go__long { display: none; }
+  .dr-go__short { display: inline; }
+}
+
+/* Documents: one card per group, the meter, an expiry or upload date kept on one line. */
+.dr-meter { margin-top: 16px; height: 10px; border-radius: 5px; background: var(--c-muted); overflow: hidden; }
+.dr-meter > div { height: 10px; border-radius: 5px; background: var(--c-green); }
+.dr-docs { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.dr-docs--urgent { border-color: var(--c-warn-border); border-width: 2px; }
+.su-tile__meta { flex-wrap: wrap; }
+.su-when { white-space: nowrap; }
+
+/* Withdraw now: a white panel inside the black card keeps the page's own text colours (4.5:1 and up). */
+.dr-stat .wn-panel, .dr-stat.acard--ink .wn-panel .a14, .dr-stat.acard--ink .wn-panel dd { color: var(--c-text); }
+.dr-stat.acard--ink .wn-panel label, .dr-stat.acard--ink .wn-panel dt { color: var(--c-text-2); }
+.wn-panel .a14 { margin-top: 0; }
+
+/* Trips: a row opens its trip. */
+.atable tr.tr-open { cursor: pointer; }
+.atable tr.tr-open:hover td { background: var(--c-muted); }
+.tr-open__btn { all: unset; cursor: pointer; font-weight: 600; }
+.tr-open__btn:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; border-radius: 4px; }
+.td-lines { display: grid; gap: 8px; }
+.td-line { display: flex; justify-content: space-between; gap: 12px; }
+.td-place { display: grid; grid-template-columns: 16px 1fr; gap: 4px 10px; align-items: start; }
+.td-dot { width: 10px; height: 10px; border-radius: 5px; margin-top: 7px; background: var(--c-green); }
+.td-dot--end { background: var(--c-primary); }
+
+/* Month and year charts: the amount over each bar. */
+.er-bar__amt { font-size: var(--text-small); line-height: var(--leading-small); color: var(--c-text-2); white-space: nowrap; }
+
+/* Driver support. */
+.ds-topics { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.ds-topic { padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+.ds-topic details { border-top: 1px solid var(--c-border); padding: 10px 0 0; }
+.ds-topic summary { cursor: pointer; font-weight: 600; }
+.ds-topic details p { margin: 6px 0 0; }
+.er-col { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; }
+.er-col .er-bar { flex: none; width: 100%; }
+.er-bars--amts { height: 164px; }
+.er-bars--upright { height: 196px; }
+.er-bars--upright .er-bar__amt { writing-mode: vertical-rl; transform: rotate(180deg); }
+/* A year's twelve amounts do not fit a phone: the chart scrolls inside its card, like the Dashboard's. */
+@media (max-width: 767px) {
+  .er-scrollx { overflow-x: auto; padding-bottom: 4px; }
+  .er-scrollx > * { min-width: 672px; }
+}

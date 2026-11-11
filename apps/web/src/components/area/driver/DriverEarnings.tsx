@@ -6,15 +6,21 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { type History, type MonthRow, downloadStatement, months as loadMonths } from '@/lib/area/earnings';
 import { areaGet } from '@/lib/area/api';
-import { addition, dateLabel, deduction, money } from '@/lib/area/format';
+import { addition, dateLabel, dateOrder, deduction, money, month3, numericDate } from '@/lib/area/format';
 import { useLoad } from '@/lib/area/useLoad';
 import { messageFor } from '@/lib/publicAuth';
 import { IDoc } from '../icons';
 import { LoadError, Skel } from '../states';
 import { PeriodSwitcher, periodLabel, usePeriod, ymLabel } from './PeriodSwitcher';
+import { Sheet } from './Sheet';
 import { DriverTop, useDriver } from './parts';
 
 const noon = (d: string) => `${d}T12:00:00Z`;
+/** "₹12.4k": short enough to sit over a month's bar. */
+const compact = (v: number, currency: string | null | undefined, locale: string) => {
+  try { return new Intl.NumberFormat(locale, { style: 'currency', currency: currency || 'INR', notation: 'compact', maximumFractionDigits: v >= 1000 ? 1 : 0 }).format(v); }
+  catch { return String(Math.round(v)); }
+};
 
 function chartTitle(h: History, label: string, tr: (s: string) => string): string {
   if (h.chart.unit === 'hour') return tr('Hour by hour, {p}').replace('{p}', label);
@@ -35,30 +41,41 @@ function Chart({ h, locale, label }: { h: History; locale: string; label: string
   const tickAt = (i: number) => h.chart.unit !== 'day' || bars.length <= 7 || i === 0 || i === bars.length - 1 || (i % 7 === 0 && i < bars.length - 4);
   const tick = (key: string, i: number) => {
     if (h.chart.unit === 'hour') return `${key}:00`;
-    if (h.chart.unit === 'month') return new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(new Date(`${key}-15T12:00:00Z`));
+    if (h.chart.unit === 'month') return month3(new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(new Date(`${key.slice(0, 7)}-15T12:00:00Z`)));
     const d = new Date(noon(key));
     return i === 0 || i === bars.length - 1
-      ? new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d) : String(d.getUTCDate());
+      ? month3(new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d)) : String(d.getUTCDate());
   };
   const empty = bars.every((b) => b.trips === 0 && Number(b.earned) === 0);
+  // The amount over each bar (11 Nov), as on the Dashboard: across for a week or a year, upright for
+  // a month's thirty days so they fit; hour bars carry none. A year scrolls inside its card on a phone.
+  const amounts = h.chart.unit !== 'hour' && !empty;
+  const upright = amounts && bars.length > 14;
   return (
-    <>
-      <div className={`er-bars${empty ? ' er-bars--empty' : ''}`} role="list" aria-label={tr('Earnings by day')} data-empty={empty || undefined}>
+    <div className={h.chart.unit === 'month' ? 'er-scrollx' : undefined}>
+      <div className={`er-bars${empty ? ' er-bars--empty' : ''}${amounts ? ' er-bars--amts' : ''}${upright ? ' er-bars--upright' : ''}`}
+        role="list" aria-label={tr('Earnings by day')} data-empty={empty || undefined}>
         {empty && <div className="a14 amut er-empty" role="status">{tr('No trips in {period} yet').replace('{period}', label)}</div>}
         {bars.map((b) => {
           const v = Number(b.earned);
           const px = top > 0 && v > 0 ? Math.max(4, Math.round((v / top) * 120)) : 0;
           const label = `${tick(b.key, 0)}: ${money(b.earned, h.currency, locale)} · ${tr('{n} trips').replace('{n}', String(b.trips))}`;
-          return h.chart.unit === 'day' ? (
-            <button key={b.key} type="button" role="listitem" className={`er-bar${b.key === h.today ? ' er-bar--today' : ''}`}
-              style={{ height: px }} aria-label={label} title={label} onClick={() => router.push(`/driver/trips?date=${b.key}`)} />
-          ) : <span key={b.key} role="listitem" className="er-bar" style={{ height: px }} aria-label={label} title={label} />;
+          const amt = amounts && v > 0 ? <span className="er-bar__amt" aria-hidden="true">{compact(v, h.currency, locale)}</span> : null;
+          return (
+            <span key={b.key} role="listitem" className="er-col">
+              {amt}
+              {h.chart.unit === 'day' ? (
+                <button type="button" className={`er-bar${b.key === h.today ? ' er-bar--today' : ''}`}
+                  style={{ height: px }} aria-label={label} title={label} onClick={() => router.push(`/driver/trips?date=${b.key}`)} />
+              ) : <span className="er-bar" style={{ height: px }} aria-label={label} title={label} role="img" />}
+            </span>
+          );
         })}
       </div>
       <div className="er-ticks a14 amut" aria-hidden="true">
         {bars.map((b, i) => <span key={b.key}>{tickAt(i) ? tick(b.key, i) : ''}</span>)}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -72,7 +89,12 @@ function Stat({ label, value, sub, ink = false, tone }: { label: string; value: 
   );
 }
 
-type Statement = { summary: MonthRow & Record<string, unknown>; trips: { at: string | null; trip_id: number | null; method: string; fare: string | null; fee: string | null; earned: string | null }[]; payouts: { at: string; amount: string }[]; currency: string; month: string };
+type Statement = {
+  summary: MonthRow & Record<string, unknown>; trips: { at: string | null; trip_id: number | null; method: string; fare: string | null; fee: string | null; earned: string | null }[];
+  payouts: { at: string; amount: string }[]; currency: string; month: string; start: string; end: string;
+  driver: string; phone_masked: string; pan_masked: string | null; city: string; country: string; number: string; produced_on: string; fee_note?: string;
+  company: { name: string; address: string; gstin: string };
+};
 
 /** A month's statement on screen: the summary, every trip and every payout. */
 function StatementSheet({ month, onClose }: { month: string; onClose: () => void }) {
@@ -81,14 +103,23 @@ function StatementSheet({ month, onClose }: { month: string; onClose: () => void
   const st = useLoad(() => areaGet<Statement>(`/driver/earnings/statement/?month=${month}`), [month]);
   const s = st.data;
   const m = (v: string | null | undefined) => money(v ?? 0, s?.currency, locale) ?? '';
+  const d = (iso: string) => numericDate(iso, dateOrder(s?.country));
   return (
-    <div className="asheet-scrim" role="dialog" aria-modal="true" aria-label={tr('Statement')} onClick={onClose}>
-      <div className="asheet" onClick={(e) => e.stopPropagation()}>
-        <div className="arow" style={{ justifyContent: 'space-between' }}>
-          <h2 className="a20">{tr('Statement, {m}').replace('{m}', ymLabel(month, locale))}</h2>
-          <button type="button" className="abtn abtn--ghost" onClick={onClose}>{tr('Close')}</button>
-        </div>
+    <Sheet label={tr('Statement, {m}').replace('{m}', ymLabel(month, locale))} onClose={onClose} testid="statement-sheet">
         {st.state === 'error' && <LoadError what="earnings" retry={st.retry} />}
+        {s && (
+          <div className="td-lines a14" data-testid="statement-head">
+            <div className="td-line"><span className="amut">{tr('Statement number')}</span><span className="ab">{s.number}</span></div>
+            <div className="td-line"><span className="amut">{tr('Produced on')}</span><span>{d(s.produced_on)}</span></div>
+            <div className="td-line"><span className="amut">{tr('Issued by')}</span><span style={{ textAlign: 'right' }}>{[s.company.name, s.company.address].filter(Boolean).join(', ')}</span></div>
+            {s.company.gstin && <div className="td-line"><span className="amut">GSTIN</span><span>{s.company.gstin}</span></div>}
+            <div className="td-line"><span className="amut">{tr('Driver')}</span><span>{[s.driver, s.phone_masked].filter(Boolean).join(' · ')}</span></div>
+            {s.pan_masked && <div className="td-line"><span className="amut">PAN</span><span>{s.pan_masked}</span></div>}
+            {s.city && <div className="td-line"><span className="amut">{tr('City')}</span><span>{s.city}</span></div>}
+            <div className="td-line"><span className="amut">{tr('Period')}</span><span>{d(s.start)} – {d(s.end)}</span></div>
+            {s.fee_note && <div className="td-line"><span className="amut">{tr('Platform fee')}</span><span style={{ textAlign: 'right' }}>{s.fee_note}</span></div>}
+          </div>
+        )}
         {!s && st.state !== 'error' && <Skel h={18} lines={5} gap={12} />}
         {s && (
           <>
@@ -104,8 +135,7 @@ function StatementSheet({ month, onClose }: { month: string; onClose: () => void
             {s.payouts.map((p, i) => <div key={i} className="pf-row a14"><span>{dateLabel(p.at, locale)}</span><span>{m(p.amount)}</span></div>)}
           </>
         )}
-      </div>
-    </div>
+    </Sheet>
   );
 }
 

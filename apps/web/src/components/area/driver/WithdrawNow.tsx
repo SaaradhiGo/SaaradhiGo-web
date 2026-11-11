@@ -72,7 +72,7 @@ export function WithdrawNow({ bal, onDone }: { bal: Balance; onDone: () => void 
     );
   }
   return (
-    <div className="acard acol" style={{ marginTop: 12, padding: 16, gap: 10, color: 'var(--c-text)' }} role="dialog" aria-label={tr('Withdraw now')}>
+    <div className="acard acol wn-panel" style={{ marginTop: 12, padding: 16, gap: 10 }} role="dialog" aria-label={tr('Withdraw now')} data-testid="withdraw-panel">
       {done ? (
         <p className="ab" role="status">{tr('Your withdrawal is on its way.')}</p>
       ) : (

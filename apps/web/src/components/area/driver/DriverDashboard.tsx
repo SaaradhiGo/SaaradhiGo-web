@@ -5,7 +5,8 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { balance as loadBalance, daily, nextExpiry, period, vehicles as loadVehicles } from '@/lib/area/driver';
 import { money, rangeLabel, setMarketZone } from '@/lib/area/format';
-import { type FileTile, type Requirements, STEP_INFO, setupHref } from '@/lib/area/requirements';
+import { type FileTile, type Requirements, STEP_INFO, fixAt, setupHref } from '@/lib/area/requirements';
+import { blockingLabels, readyToDrive } from '@/lib/area/setupChecks';
 import { useLoad } from '@/lib/area/useLoad';
 import { IAlert, IDoc } from '../icons';
 import { LoadError, Skel } from '../states';
@@ -17,7 +18,19 @@ import { FilePill } from './setup/fields';
 function SetupCard({ data }: { data: Requirements | null }) {
   const tr = useTr();
   const c = data?.checklist;
-  if (!c || c.approved || !c.steps?.length) return null;
+  if (!c || readyToDrive(data) || !c.steps?.length) return null;
+  if (c.approved) {
+    // Approved before the market's checklist, or a paper expired (11 Nov): offline until fixed.
+    return (
+      <section className="acard dr-setup" data-testid="setup-card" data-held="true">
+        <div className="agrow">
+          <h2 className="a20">{tr('You cannot go online yet')}</h2>
+          <div className="amut">{tr('Fix these first: {items}').replace('{items}', blockingLabels(data).map((l) => tr(l)).join(', '))}</div>
+        </div>
+        <Link href={fixAt(c.blocking[0])} className="abtn abtn--pri dr-setup__go" data-testid="continue-setup">{tr('Fix now →')}</Link>
+      </section>
+    );
+  }
   const n = c.steps.length;
   const done = c.steps_done ?? 0;
   const next = c.next_step ?? c.steps[0].key;

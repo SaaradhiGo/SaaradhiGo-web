@@ -1,7 +1,7 @@
 // Gate for the signed-in areas (owner, 2026-11-08; design/signed-in-2026-11-08).
 // Fails on, for every rider and driver page:
-//   frame      a driver page without the sidebar and DRIVER badge, or a rider
-//              page with either
+//   frame      a driver page without the sidebar and DRIVER badge (under 768 wide, 11 Nov:
+//              without the bottom bar), or a rider page with either
 //   sideways   horizontal scroll at 360, 390, 768, 1024 or 1440 wide
 //   type       a size other than 14/16/20/28/40 (22 and 32 only on phone
 //              headings), a weight other than 400/600, text under 14px
@@ -52,15 +52,10 @@ const SHOTS = process.env.SHOTS || null;
 const MAX_DIFF = 0.03;
 // Screens where a part of the design is hidden on purpose, so everything below
 // it moves up. Each allowance names what is missing and why (AUDIT 29).
-const ALLOW = {
-  // 11 Nov: the owner's period switcher and search above the payout history (Srini's QA check)
-  // move the list down by one row.
-  'driver-web-payouts': [0.06, 'Withdraw button and the Paid to bank card are hidden (no web money flow tonight); the 11 Nov period switcher and search move the history down'],
-  // 10 Nov: the owner's header profile button (name and arrow) on every page, and Upload or
-  // Replace on every document row, are not in the 8 Nov design.
-  'driver-web-trips': [0.04, 'the header profile button (10 Nov) is not in the design'],
-  'driver-web-documents': [0.05, 'Upload or Replace on each document row and the header profile button (10 Nov) are not in the design'],
-};
+// 11 Nov (owner): every screen at 3%. The driver Trips, Documents and Payouts references were
+// replaced with the approved 10-11 Nov screens (header profile button, period switcher and search,
+// one-source Documents), so no allowance is left.
+const ALLOW = {};
 // Redesigned on 10 Nov (design/driver-v2-2026-11-10): compared with those screenshots by
 // check-driver-v2.mjs, in the design's own state, not here.
 const V2 = new Set(['driver-web-dashboard', 'driver-web-earnings', 'driver-web-profile', 'driver-v2-setup']);
@@ -229,6 +224,8 @@ const measure = (page) => page.evaluate(({ sizes, phone }) => {
     side: !!document.querySelector('.dr-side') && getComputedStyle(document.querySelector('.dr-side')).display !== 'none',
     badge: [...document.querySelectorAll('.dr-badge')].some((b) => b.getBoundingClientRect().width > 0 && b.textContent.trim() === 'DRIVER'),
     anyBadge: !!document.querySelector('.dr-badge, .dr-side'),
+    // On a phone (11 Nov) the sidebar gives way to the driver's bottom bar.
+    tabbar: (() => { const r = document.querySelector('[data-testid="driver-tabbar"]')?.getBoundingClientRect(); return !!r && r.height > 40; })(),
     type: bad.slice(0, 5),
     rows: [...document.querySelectorAll('.atable tbody tr, [data-row="dated"]')].map((r) => (r.querySelector('td') ?? r).innerText.trim()).filter(Boolean),
     payoutRows: [...document.querySelectorAll('main .acard .arow')].filter((r) => /\d/.test(r.innerText) && r.querySelector('.apill')).map((r) => r.innerText.trim()),
@@ -271,7 +268,7 @@ for (const [role, pages] of process.env.STATES_ONLY === '1' ? [] : [['rider', RI
       if (new URL(page.url()).pathname !== p.split('?')[0]) fail(`${at}: landed on ${new URL(page.url()).pathname}`);
       if (m.sideways) fail(`${at}: scrolls sideways`);
       if (m.type.length) fail(`${at}: type off the scale: ${m.type.join('; ')}`);
-      if (role === 'driver' && (!m.badge || (w >= 1024 && !m.side))) fail(`${at}: no driver sidebar or DRIVER badge`);
+      if (role === 'driver' && (w < 768 ? !m.tabbar : (!m.badge || (w >= 1024 && !m.side)))) fail(`${at}: no driver sidebar and DRIVER badge (or, on a phone, the bottom bar)`);
       if (role === 'rider' && m.anyBadge) fail(`${at}: a rider page shows driver chrome`);
       if (w === 1440 && lang === 'en' && DATED.includes(p)) {
         const rows = p === '/driver/payouts' ? m.payoutRows : m.rows;

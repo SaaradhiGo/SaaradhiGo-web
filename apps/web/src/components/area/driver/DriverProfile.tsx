@@ -8,9 +8,10 @@ import { useTr } from '@/i18n/website';
 import { vehicles as loadVehicles } from '@/lib/area/driver';
 import { dateOrder, monthYear, numericDate } from '@/lib/area/format';
 import {
-  type ItemStatus, type Requirements, type StepKey, type StepStatus, STATUS_LABEL, setupHref, worst,
+  type ItemStatus, type StepKey, type StepStatus, STATUS_LABEL, setupHref, worst,
 } from '@/lib/area/requirements';
 import { maskPhone } from '@/lib/area/rider';
+import { documentRows, isApproved, readyToDrive, spacedPhone, stepState, stepWords } from '@/lib/area/setupChecks';
 import { useLoad } from '@/lib/area/useLoad';
 import { formatPlate } from '@/lib/booking';
 import { IBank, ICar, IDoc, IHelp, IPhone, IUser } from '../icons';
@@ -21,23 +22,14 @@ import { DriverTop, useDriver } from './parts';
 import { item, useRequirementsLoad } from './profile/shared';
 import type { Car } from './setup/steps';
 
-const PILL: Record<StepStatus, [string, string]> = {
-  done: ['apill--ok', 'Approved'], in_review: ['apill--warn', 'In review'], todo: ['apill--neu', 'To do'],
-  action: ['apill--err', 'Needs your action'],
-};
-const RANK: StepStatus[] = ['action', 'todo', 'in_review', 'done'];
+const TONE: Record<StepStatus, string> = { done: 'apill--ok', in_review: 'apill--warn', todo: 'apill--neu', action: 'apill--err' };
 const VERIFY: Record<string, string> = {
   verified: 'Name matches the account', pending: 'Verification pending', pending_config: 'Verification pending (config)',
   failed: 'Could not be verified',
 };
 
-function stepState(data: Requirements | null, ...keys: StepKey[]): StepStatus | null {
-  const got = (data?.checklist.steps ?? []).filter((s) => keys.includes(s.key)).map((s) => s.status);
-  return got.length ? RANK.find((r) => got.includes(r)) ?? 'done' : null;
-}
-
-function Card({ id, icon, title, state, rows, href, open = false }: {
-  id: string; icon: React.ReactNode; title: string; state: StepStatus | null; rows: [string, React.ReactNode][];
+function Card({ id, icon, title, state, step, rows, href, open = false }: {
+  id: string; icon: React.ReactNode; title: string; state: StepStatus | null; step?: StepKey; rows: [string, React.ReactNode][];
   href: string; open?: boolean;
 }) {
   const tr = useTr();
@@ -45,7 +37,7 @@ function Card({ id, icon, title, state, rows, href, open = false }: {
     <section className="acard pf-card" id={id} data-testid={`card-${id}`}>
       <div className="arow" style={{ justifyContent: 'space-between', marginBottom: 8, alignItems: 'flex-start' }}>
         <div className="arow" style={{ gap: 10 }}><span className="aico">{icon}</span><h2 className="a20">{title}</h2></div>
-        {state && <span className={`apill ${PILL[state][0]}`} data-state={state}>{tr(PILL[state][1])}</span>}
+        {state && <span className={`apill ${TONE[state]}`} data-state={state}>{tr(stepWords(state, step))}</span>}
       </div>
       {rows.map(([label, value]) => (
         <div key={label} className="pf-row"><span className="a14 amut">{label}</span><span className="a14 ab">{value || '—'}</span></div>
@@ -116,12 +108,13 @@ export function DriverProfile() {
   const order = dateOrder(data?.config.country ?? acct?.market_country);
   const rating = me?.ratings != null && Number(me.ratings) > 0 ? Number(me.ratings).toFixed(1) : null;
   const trips = Number(me?.total_trips ?? 0);
-  const approved = !!data?.checklist.approved;
+  const approved = readyToDrive(data);
+  const held = !!data?.checklist.approved && !approved;
   const p = data?.personal;
   const id = data?.identity;
   const pm = data?.payout_method;
   const photo = p?.photo ?? null;
-  const vehicleFiles = (data?.checklist.items ?? []).filter((i) => i.step === 'vehicle_docs' && i.need === 'required').flatMap((i) => i.files ?? []);
+  const vehicleFiles = documentRows(data).filter((f) => f.vehicle);
   const label = (s: ItemStatus | undefined) => (s ? tr(STATUS_LABEL[s]) : null);
   const edit = (k: StepKey) => setupHref(k, 'profile');
   const contactRel = (code: string) => tr(data?.relationships.find((r) => r.code === code)?.label ?? code).toLowerCase();
@@ -143,8 +136,8 @@ export function DriverProfile() {
             </div>
           </div>
           {data && (
-            <span className={`apill ${approved ? 'apill--ok' : 'apill--warn'} pf-status`} data-testid="profile-status">
-              {tr(approved ? 'Approved to drive' : 'Setup in progress')}
+            <span className={`apill ${approved ? 'apill--ok' : held ? 'apill--err' : 'apill--warn'} pf-status`} data-testid="profile-status">
+              {tr(approved ? 'Approved to drive' : held ? 'Offline until fixed' : 'Setup in progress')}
             </span>
           )}
         </section>
@@ -156,8 +149,8 @@ export function DriverProfile() {
               [tr('Email'), acct?.email ?? ''],
               [tr('Address'), p.address ? `${[p.address.line2 || p.address.line1, p.address.city].filter(Boolean).join(', ')} ${p.address.postal_code}` : ''],
             ]} />
-            <Card id="contacts" icon={<IPhone />} title={tr('Emergency contacts')} state={stepState(data, 'contact')} href={edit('contact')}
-              rows={p.emergency_contacts.length ? p.emergency_contacts.map((c) => [`${c.name} (${contactRel(c.relationship)})`, maskPhone(c.phone_number) ?? '']) : [[tr('Contact'), '']]} />
+            <Card id="contacts" icon={<IPhone />} title={tr('Emergency contacts')} state={stepState(data, 'contact')} step="contact" href={edit('contact')}
+              rows={p.emergency_contacts.length ? p.emergency_contacts.map((c) => [`${c.name} (${contactRel(c.relationship)})`, spacedPhone(c.phone_number)]) : [[tr('Contact'), '']]} />
             <Card id="identity" icon={<IDoc />} title={tr('Licence and identity')} state={stepState(data, 'identity')} href={edit('identity')} open rows={[
               [tr('Licence'), id.license_expiry ? tr('Valid until {d}').replace('{d}', numericDate(id.license_expiry, order)) : ''],
               ...(item(data, 'aadhaar') ? [[tr('Aadhaar'), id.aadhaar_masked ? `•••• ${id.aadhaar_masked.slice(-4)}` : '']] as [string, string][] : []),
@@ -169,7 +162,7 @@ export function DriverProfile() {
               [tr('Vehicle'), car ? [car.brand, car.model, car.year].filter(Boolean).join(' ') : ''],
               [tr('Colour'), car?.color ? tr(car.color) : ''],
               [tr('Number plate'), car?.vehicle_number ? formatPlate(car.vehicle_number) : ''],
-              [tr('Photos and papers'), car ? tr('{a} of {n} approved').replace('{a}', String(vehicleFiles.filter((f) => f.status === 'approved' || f.status === 'expiring').length)).replace('{n}', String(vehicleFiles.length)) : ''],
+              [tr('Photos and papers'), car ? tr('{a} of {n} approved').replace('{a}', String(vehicleFiles.filter((f) => isApproved(f.status)).length)).replace('{n}', String(vehicleFiles.length)) : ''],
             ]} />
             <Card id="payouts" icon={<IBank />} title={tr('Bank and payouts')} state={stepState(data, 'payouts')} href={edit('payouts')} rows={
               pm.kind === 'stripe' || data.config.country === 'US' ? [[tr('Paid through'), 'Stripe'], [tr('Status'), tr(pm.stripe_status === 'ready' ? 'Ready' : pm.stripe_status === 'in_progress' ? 'In progress' : 'Not started')]]

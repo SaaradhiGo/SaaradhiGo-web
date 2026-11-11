@@ -13,6 +13,13 @@
 //   empty      a chart of a period with no trips without its day markers, a flat baseline and
 //              "No trips in {period} yet", or blank; each chart's screenshot is in V2_DIFFS
 //   zero       "− ₹0.00" (a minus on nothing) anywhere on any page, light or dark
+//   withdraw   (11 Nov) the Withdraw now fee rows under 4.5:1 (axe colour contrast on the open panel)
+//   phone      (11 Nov) at 375 px: sideways scroll on a driver page, no bottom bar, the six-item menu
+//              above the page, or a header taller than 140 px
+//   detail     (11 Nov) a trip row that does not open its trip by keyboard, a sheet that Escape does
+//              not close or that leaves focus elsewhere; the same for the statement
+//   support    (11 Nov) /driver/support without the driver header or with the rider's questions
+//   setup      (11 Nov) /driver/setup/licence not opening the identity step
 //
 // CI: SITE=http://localhost:3100 WEB_SESSION_SECRET=... node scripts/check-driver-v2.mjs
 //   (the API is answered from scripts/fixtures; diffs and screenshots in V2_DIFFS)
@@ -340,6 +347,116 @@ for (const [want, answer, label] of [['dd/mm/yyyy', null, 'DRIVER'], ['mm/dd/yyy
     if (share < 0.01) fail(`${p}: empty ${name} chart is blank (${(share * 100).toFixed(2)}% ink)`);
     await ctx.close();
   }
+}
+
+// ---- Withdraw now (11 Nov): the fee rows are the page's own text colours, at least 4.5:1, both themes.
+// Fixtures switch instant cash-out on for this check; QA has it off, so only CI checks the panel.
+if (!QA) {
+  const instant = (method, url, body) => {
+    const p = url.replace(/^.*\/api\/v1/, '').split('?')[0];
+    if (p === '/driver/withdrawals/balance/') return { available_balance: '397.00', currency: 'INR', withdrawals_available: true, instant: { available: true, provider: 'RazorpayX', saaradhigo_fee: '0.00' } };
+    if (p === '/driver/withdrawals/instant/quote/') return { amount: '397.00', provider_fee: '5.90', provider_fee_label: 'Provider fee (RazorpayX)', saaradhigo_fee: '0.00', you_receive: '391.10', currency: 'INR', destination: 'UPI ra••@okaxis', arrival: 'In about 30 minutes', valid: true };
+    return fixture(method, url, body);
+  };
+  for (const theme of ['light', 'dark']) {
+    const { ctx, page } = await open(browser, 'driver', '/driver/payouts', { theme, answer: instant });
+    await page.getByRole('button', { name: 'Withdraw now' }).click();
+    await page.getByRole('button', { name: 'See the fee' }).click();
+    await page.waitForSelector('[data-testid="withdraw-panel"] dl', { timeout: 5000 }).catch(() => fail(`/driver/payouts (${theme}): the fee rows did not show`));
+    await page.addScriptTag({ content: AXE });
+    const bad = await page.evaluate(async () => {
+      const r = await window.axe.run('[data-testid="withdraw-panel"]', { runOnly: { type: 'rule', values: ['color-contrast'] } });
+      return [...r.violations, ...r.incomplete.filter((v) => v.nodes.some((n) => n.any.some((c) => c.data?.contrastRatio && c.data.contrastRatio < 4.5)))]
+        .flatMap((v) => v.nodes.map((n) => `${n.target.join(' ')} ${n.any[0]?.data?.contrastRatio ?? ''}`));
+    });
+    if (bad.length) fail(`/driver/payouts (${theme}): Withdraw now panel under 4.5:1 on ${bad.slice(0, 4).join(' | ')}`);
+    await ctx.close();
+  }
+}
+
+// ---- Phone (11 Nov): every driver page at 375 px; the bottom bar, a compact header, no sideways scroll.
+for (const p of DRIVER.filter((x) => !x.includes('#'))) {
+  const { ctx, page } = await open(browser, 'driver', p);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.waitForTimeout(400);
+  const got = await page.evaluate(() => {
+    const head = document.querySelector('.dr-head')?.getBoundingClientRect();
+    const side = document.querySelector('.dr-side')?.getBoundingClientRect();
+    const bar = document.querySelector('[data-testid="driver-tabbar"]')?.getBoundingClientRect();
+    return { wide: document.documentElement.scrollWidth - window.innerWidth, head: head?.height ?? 0, side: side?.height ?? 0,
+      bar: bar ? bar.height : 0, barAt: bar ? window.innerHeight - bar.bottom : -1 };
+  });
+  if (got.wide > 0) fail(`${p} at 375: ${got.wide}px of sideways scroll`);
+  if (got.side > 0) fail(`${p} at 375: the sidebar menu is still above the page (${Math.round(got.side)}px)`);
+  if (!(got.bar > 40) || Math.abs(got.barAt) > 1) fail(`${p} at 375: no bottom bar`);
+  if (got.head > 140) fail(`${p} at 375: the header is ${Math.round(got.head)}px tall`);
+  for (const x of await axe(page)) {
+    if (x.id === 'color-contrast' || x.impact === 'critical' || x.impact === 'serious') fail(`${p} at 375: axe ${x.id} (${x.impact}) on ${x.nodes.join(' | ')}`);
+  }
+  await ctx.close();
+}
+
+// ---- Trip detail and the statement (11 Nov): open by keyboard, Escape closes, focus comes back.
+if (!QA) {
+  {
+    const { ctx, page } = await open(browser, 'driver', '/driver/trips');
+    const btn = page.locator('.tr-open__btn').first();
+    if (!(await btn.count())) fail('/driver/trips: no trip row opens its trip');
+    else {
+      await btn.focus();
+      await page.keyboard.press('Enter');
+      const sheet = await page.waitForSelector('[data-testid="trip-detail"] [data-testid="trip-fare-lines"]', { timeout: 5000 }).catch(() => null);
+      if (!sheet) fail('/driver/trips: Enter on a row did not open the trip with its fare lines');
+      else {
+        const text = await page.locator('[data-testid="trip-detail"]').innerText();
+        for (const w of ['Fare', 'Platform fee', 'Tips', 'You earned', 'Distance', 'Duration', 'Paid', 'Rider', 'Report a problem']) {
+          if (!text.includes(w)) fail(`/driver/trips: the trip detail has no "${w}"`);
+        }
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(200);
+        if (await page.locator('[data-testid="trip-detail"]').count()) fail('/driver/trips: Escape did not close the trip');
+        if (!(await page.evaluate(() => document.activeElement?.classList.contains('tr-open__btn')))) fail('/driver/trips: focus did not go back to the row');
+      }
+    }
+    await ctx.close();
+  }
+  {
+    const { ctx, page } = await open(browser, 'driver', '/driver/earnings');
+    const view = page.getByRole('button', { name: 'View' }).first();
+    await view.focus();
+    await page.keyboard.press('Enter');
+    const head = await page.waitForSelector('[data-testid="statement-sheet"]', { timeout: 5000 }).catch(() => null);
+    if (!head) fail('/driver/earnings: View did not open the statement');
+    else {
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(200);
+      if (await page.locator('[data-testid="statement-sheet"]').count()) fail('/driver/earnings: Escape did not close the statement');
+      if (!(await page.evaluate(() => document.activeElement?.textContent?.trim() === 'View'))) fail('/driver/earnings: focus did not go back to View');
+    }
+    await ctx.close();
+  }
+}
+
+// ---- Driver support (11 Nov): the driver header and the driver's topics, no rider questions.
+{
+  const { ctx, page } = await open(browser, 'driver', '/driver/support');
+  const got = await page.evaluate(() => ({
+    head: !!document.querySelector('.dr-head .apm-btn') && !!document.querySelector('.dr-head .dr-go'),
+    text: document.body.innerText,
+  }));
+  if (!got.head) fail('/driver/support: no driver header (status, Go online, profile)');
+  for (const t of ['Earnings and payouts', 'Documents and expiry', 'Platform fee', 'Trips and fares', 'Safety and SOS', 'Your account']) {
+    if (!got.text.includes(t)) fail(`/driver/support: no "${t}" topic`);
+  }
+  if (/apply to drive/i.test(got.text)) fail('/driver/support: shows "How do I apply to drive?"');
+  await ctx.close();
+}
+
+// ---- An older setup address opens its step (11 Nov).
+{
+  const { ctx, page } = await open(browser, 'driver', '/driver/setup/licence');
+  if (!page.url().endsWith('/driver/setup/identity')) fail(`/driver/setup/licence went to ${page.url().replace(SITE, '')}`);
+  await ctx.close();
 }
 
 await browser.close();

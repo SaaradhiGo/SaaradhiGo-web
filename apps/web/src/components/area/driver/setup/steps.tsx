@@ -15,8 +15,11 @@ import {
 import { changePhone, className, maskPhone, updateName } from '@/lib/area/rider';
 import { messageFor, sendPublicOtp } from '@/lib/publicAuth';
 import { useAccount } from '../../ProfileMenu';
+import {
+  type ContactProblems, addressProblem, contactProblems, payoutProblem, spacedPhone, vehicleProblem,
+} from '@/lib/area/setupChecks';
 import { StatusPill, asked, item } from '../profile/shared';
-import { DateField, DocTile, Labelled, SelectField, TextField, useSave } from './fields';
+import { DateField, DocTile, Labelled, SelectField, TextField, useCheck, useSave } from './fields';
 
 export type Car = Vehicle & { year?: number | null; catalogue_entry?: number | null; custom_make_model?: boolean } & Record<string, unknown>;
 export type StepProps = { data: Requirements; reload: () => void; order: DateOrder; car: Car | null; reloadCar: () => void };
@@ -61,6 +64,11 @@ function AddressBlock({ prefix, value, save, data }: {
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => { setA(value ?? EMPTY); }, [value]);
   const complete = (x: Address) => !!(x.line1.trim() && x.city.trim() && x.state_code && x.postal_code.trim());
+  useCheck(() => {
+    const problem = addressProblem(a, data.config.country);
+    if (problem) setErr(tr(problem));
+    return !problem && !err;
+  });
   async function commit(next: Address) {
     if (!complete(next) || JSON.stringify(next) === JSON.stringify(value ?? EMPTY)) return;
     setErr(null);
@@ -214,34 +222,46 @@ export function ContactStep({ data, reload }: StepProps) {
   const blank = (position: number): Contact => ({ position, name: '', relationship: '', phone_number: prefix });
   const [rows, setRows] = useState<Contact[]>([]);
   const [err, setErr] = useState<string | null>(null);
+  const [bad, setBad] = useState<ContactProblems[]>([]);
   useEffect(() => {
-    const got = data.personal.emergency_contacts;
+    const got = data.personal.emergency_contacts.map((c) => ({ ...c, phone_number: spacedPhone(c.phone_number) }));
     setRows(got.length ? got : [blank(1)]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
-  const done = (r: Contact) => !!(r.name.trim() && r.relationship && r.phone_number.replace(/\D/g, '').length >= 10);
+  const done = (r: Contact, i: number) => !Object.keys(contactProblems([r], data.config.country, prefix)[0] ?? {}).length && (i === 0 || !!r.name.trim());
+  useCheck(() => {
+    const found = contactProblems(rows, data.config.country, prefix);
+    setBad(found);
+    return found.every((f) => !Object.keys(f).length) && !err;
+  });
+  const problem = (i: number, k: keyof ContactProblems) => (bad[i]?.[k] ? tr(bad[i][k]!) : null);
   async function commit(next: Contact[]) {
-    const body = next.filter(done).map((r, i) => ({ ...r, position: i + 1 }));
+    const body = next.filter(done).map((r, i) => ({ ...r, phone_number: r.phone_number.replace(/\s/g, ''), position: i + 1 }));
     if (!body.length || JSON.stringify(body) === JSON.stringify(data.personal.emergency_contacts)) return;
     setErr(null);
     let problem: string | null = null;
     const ok = await run(async () => { try { await savePersonal({ emergency_contacts: body }); } catch (e) { problem = messageFor(e, ''); throw e; } });
     if (ok) reload(); else setErr(problem);
   }
-  const set = (i: number, k: keyof Contact, v: string) => rows.map((r, j) => (j === i ? { ...r, [k]: v } : r));
+  const set = (i: number, k: keyof Contact, v: string) => {
+    if (bad[i]?.[k as keyof ContactProblems]) setBad(bad.map((b, j) => (j === i ? { ...b, [k]: undefined } : b)));
+    return rows.map((r, j) => (j === i ? { ...r, [k]: v } : r));
+  };
   return (
     <>
       {rows.map((r, i) => (
         <Part key={i} title={i === 0 ? tr('Contact 1') : tr('Contact 2 (optional)')} first={i === 0}>
           <div className="su-grid">
-            <Labelled id={`su-c${i}-n`} label={tr('Name')}>
-              <div className="ainput"><input id={`su-c${i}-n`} value={r.name} onChange={(e) => setRows(set(i, 'name', e.target.value))} onBlur={() => void commit(rows)} /></div>
+            <Labelled id={`su-c${i}-n`} label={tr('Name')} error={problem(i, 'name')}>
+              <div className={`ainput${problem(i, 'name') ? ' ainput--bad' : ''}`}><input id={`su-c${i}-n`} value={r.name} data-testid={`contact-${i}-name`}
+                aria-invalid={!!problem(i, 'name')} onChange={(e) => setRows(set(i, 'name', e.target.value))} onBlur={() => void commit(rows)} /></div>
             </Labelled>
-            <SelectField id={`su-c${i}-r`} label={tr('Relationship')} value={r.relationship}
+            <SelectField id={`su-c${i}-r`} label={tr('Relationship')} value={r.relationship} error={problem(i, 'relationship')} testid={`contact-${i}-relationship`}
               options={data.relationships.map((x) => ({ value: x.code, label: tr(x.label) }))}
               onChange={(v) => { const next = set(i, 'relationship', v); setRows(next); void commit(next); }} />
-            <Labelled id={`su-c${i}-p`} label={tr('Mobile number')}>
-              <div className="ainput"><input id={`su-c${i}-p`} type="tel" value={r.phone_number} onChange={(e) => setRows(set(i, 'phone_number', e.target.value))} onBlur={() => void commit(rows)} /></div>
+            <Labelled id={`su-c${i}-p`} label={tr('Mobile number')} error={problem(i, 'phone_number')}>
+              <div className={`ainput${problem(i, 'phone_number') ? ' ainput--bad' : ''}`}><input id={`su-c${i}-p`} type="tel" value={r.phone_number} data-testid={`contact-${i}-phone`}
+                aria-invalid={!!problem(i, 'phone_number')} onChange={(e) => setRows(set(i, 'phone_number', e.target.value))} onBlur={() => void commit(rows)} /></div>
             </Labelled>
           </div>
         </Part>
@@ -342,6 +362,13 @@ export function VehicleStep({ data, reload, car, reloadCar }: StepProps) {
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => { if (type) catalogue(type).then(setCat, () => setCat(null)); }, [type]);
   const models = useMemo(() => cat?.makes.find((m) => m.make === make)?.models ?? [], [cat, make]);
+  useCheck(() => {
+    const custom = make === OTHER || modelId === OTHER;
+    const problem = vehicleProblem({ type, make, modelId, year, colour, plate }, !!car)
+      ?? (custom && (!otherModel.trim() || (make === OTHER && !otherMake.trim())) ? 'Enter the make and model names.' : null);
+    if (problem) setErr(tr(problem));
+    return !problem && !err;
+  });
 
   async function commit(over: Partial<Record<'type' | 'make' | 'modelId' | 'year' | 'colour' | 'plate', string>> = {}) {
     const v = { type, make, modelId, year, colour, plate, ...over };
@@ -482,6 +509,12 @@ export function PayoutsStep({ data, reload }: StepProps) {
     setBank(null);
     if (/^[A-Z]{4}0[A-Z0-9]{6}$/.test(code)) lookupIfsc(code).then((b) => setBank(`${b.bank}, ${b.branch}`), () => setBank(''));
   }, [code]);
+  useCheck(() => {
+    if (data.config.country === 'US') return true;
+    const problem = payoutProblem({ method, holder, number, confirm, code, upi });
+    if (problem) setErr(tr(problem));
+    return !problem && !err;
+  });
 
   if (data.config.country === 'US') {
     return (

@@ -10,6 +10,7 @@ import { className } from '@/lib/area/rider';
 import { useLoad } from '@/lib/area/useLoad';
 import { LoadError, Skel } from '../states';
 import { Pager, PeriodSwitcher, SearchBox, periodLabel, usePeriod } from './PeriodSwitcher';
+import { TripDetail } from './TripDetail';
 import { DriverTop, useDriver } from './parts';
 
 /** First part of an address, for "Pickup → Drop". */
@@ -17,9 +18,10 @@ const short = (a: string | null | undefined) => (a ?? '').split(',')[0].trim();
 
 /**
  * /driver/trips (driver-web-trips.html): every settled trip in the period with its fare, the
- * commission, what the driver earned and how it was paid, from the settlement ledger, a page at a
+ * platform fee, what the driver earned and how it was paid, from the settlement ledger, a page at a
  * time back to the first trip. The periods are Earnings' (11 Nov) and a search finds a place or a
- * trip number; a bar of the earnings chart opens its day (?date=YYYY-MM-DD).
+ * trip number in the whole period; a bar of the earnings chart opens its day (?date=YYYY-MM-DD).
+ * A row opens the trip (11 Nov), by click or keyboard.
  */
 export function DriverTrips() {
   const tr = useTr();
@@ -30,6 +32,7 @@ export function DriverTrips() {
   const h = s.hist.data;
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
+  const [open, setOpen] = useState<number | null>(null);
   useEffect(() => setPage(1), [h?.start, h?.end, q]);
   const rows = useLoad(() => (h ? ledgerPage(h.start, h.end, q, page) : new Promise<never>(() => {})), [h?.start, h?.end, q, page]);
   const failed = s.hist.state === 'error' ? s.hist : rows.state === 'error' ? rows : null;
@@ -47,8 +50,10 @@ export function DriverTrips() {
           <SearchBox label={tr('Search by place or trip number')} onSearch={setQ} />
           {h && (
             <span className="a14 amut" data-testid="trips-summary">
-              {periodLabel(h, locale)}{' · '}{tr('{n} trips').replace('{n}', `${h.summary.trips}`)}{' · '}
-              {tr('you earned {amount}').replace('{amount}', money(h.summary.earned, cur, locale) ?? '—')}
+              {periodLabel(h, locale)}{' · '}
+              {q && rows.data ? tr('{a} of {n} trips').replace('{a}', `${count}`).replace('{n}', `${h.summary.trips}`)
+                : tr('{n} trips').replace('{n}', `${h.summary.trips}`)}
+              {!q && <>{' · '}{tr('you earned {amount}').replace('{amount}', money(h.summary.earned, cur, locale) ?? '—')}</>}
             </span>
           )}
         </div>
@@ -57,7 +62,7 @@ export function DriverTrips() {
             <thead>
               <tr className="albl">
                 <th>{tr('Date and time')}</th><th>{tr('Trip')}</th><th>{tr('Ride')}</th>
-                <th>{tr('Fare')}</th><th>{tr('Commission')}</th><th>{tr('You earned')}</th><th>{tr('Paid')}</th>
+                <th>{tr('Fare')}</th><th>{tr('Platform fee')}</th><th>{tr('You earned')}</th><th>{tr('Paid')}</th>
               </tr>
             </thead>
             <tbody>
@@ -80,10 +85,17 @@ export function DriverTrips() {
                 const when = listWhen(r.created_at, locale, h?.timezone, words);
                 const places = r.pickup_address || r.destination_address ? `${short(r.pickup_address)} → ${short(r.destination_address)}` : '';
                 const fee = deduction(r.commission, cur, locale);
+                const tid = r.trip_id_val ?? null;
                 return (
-                  <tr key={r.id}>
+                  <tr key={r.id} className={tid ? 'tr-open' : undefined} onClick={tid ? () => setOpen(tid) : undefined} data-trip={tid ?? undefined}>
                     <td>{when && <div className="ab">{when.first}<div className="a14 amut" style={{ fontWeight: 400 }}>{when.second}</div></div>}</td>
-                    <td className="ab">{places}{r.trip_id_val ? <div className="a14 amut" style={{ fontWeight: 400 }}>#{r.trip_id_val}</div> : null}</td>
+                    <td className="ab">
+                      {tid ? (
+                        <button type="button" className="tr-open__btn" aria-label={tr('Open trip #{n}').replace('{n}', String(tid))}
+                          onClick={(e) => { e.stopPropagation(); setOpen(tid); }}>{places || `#${tid}`}</button>
+                      ) : places}
+                      {tid ? <div className="a14 amut" style={{ fontWeight: 400 }}>#{tid}</div> : null}
+                    </td>
                     <td>{className(r.ride_class) ?? ''}</td>
                     <td>{money(r.amount, cur, locale)}</td>
                     <td className={fee.red ? 'ared' : undefined}>{r.commission != null ? fee.text : ''}</td>
@@ -96,6 +108,7 @@ export function DriverTrips() {
           </table>
           <Pager page={page} count={count} size={PAGE_SIZE} noun={tr('{n} trips').replace('{n}', String(count))} onPage={setPage} />
         </div>
+        {open !== null && <TripDetail id={open} onClose={() => setOpen(null)} />}
       </main>
     </>
   );

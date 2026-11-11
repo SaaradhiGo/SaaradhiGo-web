@@ -1,16 +1,6 @@
-'use client';
+import { DriverSupport } from '@/components/area/driver/DriverSupport';
 
-import { DriverHead } from '@/components/area/DriverShell';
-import { HelpContent } from '@/components/pages/HelpContent';
-import { useTr } from '@/i18n/website';
-
-/** Support: the Help page on the Driving topic, inside the driver area. */
+/** Support (11 Nov): the driver's own topics inside the driver frame, never the rider's help page. */
 export default function DriverSupportPage() {
-  const tr = useTr();
-  return (
-    <>
-      <DriverHead title={tr('Support')} />
-      <div className="site"><HelpContent topic="driving" /></div>
-    </>
-  );
+  return <DriverSupport />;
 }
