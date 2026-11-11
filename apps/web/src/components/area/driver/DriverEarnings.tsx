@@ -4,29 +4,17 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
-import {
-  type History, type HistoryPeriod, type MonthRow, downloadStatement, history as loadHistory, months as loadMonths,
-} from '@/lib/area/earnings';
+import { type History, type MonthRow, downloadStatement, months as loadMonths } from '@/lib/area/earnings';
 import { areaGet } from '@/lib/area/api';
-import { dateLabel, dateOrder, datePlaceholder, monthYear, money, numericDate, parseNumericDate, rangeLabel, setMarketZone } from '@/lib/area/format';
+import { addition, dateLabel, deduction, money } from '@/lib/area/format';
 import { useLoad } from '@/lib/area/useLoad';
 import { messageFor } from '@/lib/publicAuth';
-import { IBack, IChevron, IClock, IDoc } from '../icons';
+import { IDoc } from '../icons';
 import { LoadError, Skel } from '../states';
+import { PeriodSwitcher, periodLabel, usePeriod, ymLabel } from './PeriodSwitcher';
 import { DriverTop, useDriver } from './parts';
-import { useAccount } from '../ProfileMenu';
 
-const TABS: [HistoryPeriod, string][] = [['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['year', 'Year'], ['custom', 'Custom range']];
 const noon = (d: string) => `${d}T12:00:00Z`;
-const ymLabel = (ym: string, locale: string) => monthYear(`${ym}-15T12:00:00Z`, locale) ?? ym;
-
-function periodLabel(h: History, locale: string): string {
-  if (h.period === 'day') return dateLabel(noon(h.start), locale, 'UTC', new Date(), true);
-  if (h.period === 'week' || h.period === 'custom') return rangeLabel(h.start, h.end, locale);
-  if (h.period === 'month') return ymLabel(h.start.slice(0, 7), locale);
-  if (h.period === 'year') return h.start.slice(0, 4);
-  return `${ymLabel(h.start.slice(0, 7), locale)} – ${ymLabel(h.end.slice(0, 7), locale)}`;
-}
 
 function chartTitle(h: History, label: string, tr: (s: string) => string): string {
   if (h.chart.unit === 'hour') return tr('Hour by hour, {p}').replace('{p}', label);
@@ -34,8 +22,11 @@ function chartTitle(h: History, label: string, tr: (s: string) => string): strin
   return tr('Day by day, {p}').replace('{p}', label);
 }
 
-/** Bars of what was earned; a day's bar opens that day's trips. */
-function Chart({ h, locale }: { h: History; locale: string }) {
+/**
+ * Bars of what was earned; a day's bar opens that day's trips. A period with no trips (11 Nov)
+ * keeps its day markers and a flat baseline and says so, never a blank area.
+ */
+function Chart({ h, locale, label }: { h: History; locale: string; label: string }) {
   const tr = useTr();
   const router = useRouter();
   const bars = h.chart.bars;
@@ -49,9 +40,11 @@ function Chart({ h, locale }: { h: History; locale: string }) {
     return i === 0 || i === bars.length - 1
       ? new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d) : String(d.getUTCDate());
   };
+  const empty = bars.every((b) => b.trips === 0 && Number(b.earned) === 0);
   return (
     <>
-      <div className="er-bars" role="list" aria-label={tr('Earnings by day')}>
+      <div className={`er-bars${empty ? ' er-bars--empty' : ''}`} role="list" aria-label={tr('Earnings by day')} data-empty={empty || undefined}>
+        {empty && <div className="a14 amut er-empty" role="status">{tr('No trips in {period} yet').replace('{period}', label)}</div>}
         {bars.map((b) => {
           const v = Number(b.earned);
           const px = top > 0 && v > 0 ? Math.max(4, Math.round((v / top) * 120)) : 0;
@@ -69,7 +62,7 @@ function Chart({ h, locale }: { h: History; locale: string }) {
   );
 }
 
-function Stat({ label, value, sub, ink = false, tone }: { label: string; value: string; sub: string; ink?: boolean; tone?: 'red' }) {
+function Stat({ label, value, sub, ink = false, tone }: { label: string; value: string; sub: string; ink?: boolean; tone?: 'red' | false }) {
   return (
     <div className={`acard er-stat${ink ? ' acard--ink' : ''}`}>
       <div className="albl">{label}</div>
@@ -124,82 +117,32 @@ export function DriverEarnings() {
   const tr = useTr();
   const { locale } = useLocale();
   const me = useDriver();
-  const [acct] = useAccount();
-  const india = (acct?.market_country ?? 'IN') !== 'US';
-  const order = dateOrder(acct?.market_country);
-  const [period, setPeriod] = useState<HistoryPeriod>('month');
-  const [anchor, setAnchor] = useState<string | undefined>(undefined);
-  const [range, setRange] = useState<{ start: string; end: string } | null>(null);
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [rangeErr, setRangeErr] = useState<string | null>(null);
+  const ps = usePeriod('month');
+  const { period, range, hist } = ps;
   const [viewing, setViewing] = useState<string | null>(null);
   const [fileErr, setFileErr] = useState<string | null>(null);
-  const hist = useLoad(() => (period === 'custom' && !range ? Promise.resolve(null)
-    : loadHistory(period, anchor, period === 'custom' ? range ?? undefined : undefined)), [period, anchor, range]);
   const all = useLoad(loadMonths);
   const h = hist.data;
-  setMarketZone(h?.timezone);
   const m = (v: string | number | null | undefined) => money(v ?? 0, h?.currency ?? all.data?.currency, locale) ?? '';
   const label = h ? periodLabel(h, locale) : '';
   const s = h?.summary;
+  const cur = h?.currency ?? all.data?.currency;
+  const fee = deduction(s?.platform_fee, cur, locale);
   const statementMonth = h ? h.start.slice(0, 7) : null;
 
   async function file(month: string, as: 'pdf' | 'csv') {
     setFileErr(null);
     try { await downloadStatement(month, as); } catch (e) { setFileErr(messageFor(e, tr('We could not make that statement. Try again.'))); }
   }
-  function pick(p: HistoryPeriod) { setPeriod(p); setAnchor(undefined); if (p !== 'custom') setRange(null); }
-  function applyRange() {
-    const a = parseNumericDate(from, order); const b = parseNumericDate(to, order);
-    if (!a || !b || a > b) { setRangeErr(tr('Enter both dates as {p}, the first on or before the second.').replace('{p}', datePlaceholder(order))); return; }
-    setRangeErr(null); setRange({ start: a, end: b });
-  }
 
   return (
     <>
       <DriverTop title={tr('Earnings')} me={me} />
       <main className="dr-main">
-        <div className="er-top">
-          <div className="er-tabs" role="tablist" aria-label={tr('Period')}>
-            {TABS.map(([p, name]) => {
-              const on = period === p || (p === 'year' && period === 'taxyear');
-              return (
-                <button key={p} type="button" role="tab" aria-selected={on} className={`achip${on ? ' achip--on' : ' er-tab'}`} onClick={() => pick(p)}>
-                  {p === 'custom' && <IClock size={16} />}{tr(name)}
-                </button>
-              );
-            })}
-          </div>
-          <div className="arow" style={{ gap: 8, flexWrap: 'wrap' }}>
-            {india && (period === 'year' || period === 'taxyear') && (
-              <select aria-label={tr('Year type')} className="achip" value={period} onChange={(e) => pick(e.target.value as HistoryPeriod)}>
-                <option value="year">{tr('Calendar year')}</option>
-                <option value="taxyear">{tr('Tax year (April to March)')}</option>
-              </select>
-            )}
-            {period !== 'custom' && (
-              <>
-                <button type="button" className="er-arrow" aria-label={tr('Previous')} disabled={!h?.has_prev} onClick={() => h && setAnchor(h.prev)}><IBack size={18} /></button>
-                <span className="a20 er-label" data-testid="period-label">{label}</span>
-                <button type="button" className="er-arrow" aria-label={tr('Next')} disabled={!h?.has_next} onClick={() => h && setAnchor(h.next)}><IChevron size={18} /></button>
-              </>
-            )}
-            <button type="button" className="abtn abtn--ghost" style={{ marginLeft: 8 }} disabled={!statementMonth} data-testid="download-statement"
-              onClick={() => statementMonth && void file(statementMonth, 'pdf')}><IDoc size={18} />{tr('Download statement')}</button>
-          </div>
-        </div>
-        {period === 'custom' && (
-          <div className="acard er-range">
-            <label className="su-field"><span className="a14 ab">{tr('From')}</span>
-              <span className="ainput"><input value={from} placeholder={datePlaceholder(order)} inputMode="numeric" onChange={(e) => setFrom(e.target.value)} /></span></label>
-            <label className="su-field"><span className="a14 ab">{tr('To')}</span>
-              <span className="ainput"><input value={to} placeholder={datePlaceholder(order)} inputMode="numeric" onChange={(e) => setTo(e.target.value)} /></span></label>
-            <button type="button" className="abtn abtn--dark" onClick={applyRange}>{tr('Show')}</button>
-            {rangeErr && <p className="a14 ared" role="alert" style={{ width: '100%' }}>{rangeErr}</p>}
-            {range && <p className="a14 amut" style={{ width: '100%' }}>{numericDate(range.start, order)} – {numericDate(range.end, order)}</p>}
-          </div>
-        )}
+        <PeriodSwitcher s={ps}>
+          <button type="button" className="abtn abtn--ghost" style={{ marginLeft: 8 }} disabled={!statementMonth} data-testid="download-statement"
+            onClick={() => statementMonth && void file(statementMonth, 'pdf')}><IDoc size={18} />{tr('Download statement')}</button>
+        </PeriodSwitcher>
         {fileErr && <p className="a14 ared" role="alert">{fileErr}</p>}
         {hist.state === 'error' && <LoadError what="earnings" retry={hist.retry} />}
         <div className="er-stats" data-testid="earnings-stats">
@@ -208,8 +151,8 @@ export function DriverEarnings() {
               <Stat ink label={tr('You earned')} value={m(s.earned)}
                 sub={`${tr('{n} trips').replace('{n}', String(s.trips))} · ${tr('{n} days driven').replace('{n}', String(s.days_driven))}`} />
               <Stat label={tr('Trip fares')} value={m(s.fares)} sub={tr('Avg {a} per trip').replace('{a}', m(s.avg_fare))} />
-              <Stat label={tr('Platform fee')} value={`− ${m(s.platform_fee)}`} tone="red" sub={s.fee_note ? tr(s.fee_note) : tr('From your trip ledger')} />
-              <Stat label={tr('Tips')} value={`+ ${m(s.tips)}`} sub={s.tips_enabled ? tr('From {n} riders').replace('{n}', String(s.tip_riders)) : tr('Tips are not on yet')} />
+              <Stat label={tr('Platform fee')} value={fee.text} tone={fee.red && 'red'} sub={s.fee_note ? tr(s.fee_note) : tr('From your trip ledger')} />
+              <Stat label={tr('Tips')} value={addition(s.tips, cur, locale)} sub={s.tips_enabled ? tr('From {n} riders').replace('{n}', String(s.tip_riders)) : tr('Tips are not on yet')} />
               <Stat label={tr('Paid to your bank')} value={m(s.paid_to_bank)}
                 sub={tr(s.payouts === 1 ? '{n} payout' : '{n} payouts').replace('{n}', String(s.payouts)) + (Number(s.cash_collected) > 0 ? ` · ${tr('rest in cash')}` : '')} />
             </>
@@ -221,7 +164,7 @@ export function DriverEarnings() {
               <h2 className="a20">{chartTitle(h, label, tr)}</h2>
               {h.chart.unit === 'day' && <span className="a14 amut">{tr('Tap a day to see its trips')}</span>}
             </div>
-            <Chart h={h} locale={locale} />
+            <Chart h={h} locale={locale} label={label} />
           </section>
         )}
         <section className="acard" style={{ overflow: 'hidden' }} data-testid="all-months">
@@ -238,8 +181,8 @@ export function DriverEarnings() {
                 <span className="ab">{ymLabel(row.month, locale)}{row.so_far ? ` ${tr('(so far)')}` : ''}</span>
                 <span>{row.trips}</span>
                 <span>{m(row.fares)}</span>
-                <span className="ared">− {m(row.platform_fee)}</span>
-                <span>+ {m(row.tips)}</span>
+                {(() => { const f = deduction(row.platform_fee, cur, locale); return <span className={f.red ? 'ared' : undefined}>{f.text}</span>; })()}
+                <span>{addition(row.tips, cur, locale)}</span>
                 <span className="ab agrn" data-earned={row.earned}>{m(row.earned)}</span>
                 <span className="arow" style={{ gap: 12 }}>
                   <button type="button" className="su-link a14" onClick={() => setViewing(row.month)}>{tr('View')}</button>

@@ -53,7 +53,9 @@ const MAX_DIFF = 0.03;
 // Screens where a part of the design is hidden on purpose, so everything below
 // it moves up. Each allowance names what is missing and why (AUDIT 29).
 const ALLOW = {
-  'driver-web-payouts': [0.05, 'Withdraw button and the Paid to bank card are hidden (no web money flow tonight)'],
+  // 11 Nov: the owner's period switcher and search above the payout history (Srini's QA check)
+  // move the list down by one row.
+  'driver-web-payouts': [0.06, 'Withdraw button and the Paid to bank card are hidden (no web money flow tonight); the 11 Nov period switcher and search move the history down'],
   // 10 Nov: the owner's header profile button (name and arrow) on every page, and Upload or
   // Replace on every document row, are not in the 8 Nov design.
   'driver-web-trips': [0.04, 'the header profile button (10 Nov) is not in the design'],

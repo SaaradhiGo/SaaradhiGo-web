@@ -56,6 +56,22 @@ function HISTORY(path) {
   const last = new Date(Date.UTC(Number(today.slice(0, 4)), Number(today.slice(5, 7)), 0)).getUTCDate();
   const heights = [70, 115, 109, 56, 0, 87, 117, 100, 120, 114, 48, 0, 117, 41, 100, 73, 110, 69, 0, 64, 100, 109, 110, 100, 90, 0, 121, 59, 0, 69, 121];
   const bars = Array.from({ length: last }, (_, i) => ({ key: `${month}${String(i + 1).padStart(2, '0')}`, earned: (heights[i] * 12.5).toFixed(2), trips: Math.round(heights[i] / 10) }));
+  // A day (11 Nov): today, hour by hour, from SETTLED.
+  if (period === 'day') {
+    const hours = Array.from({ length: 24 }, (_, h) => {
+      const at = SETTLED.filter((r) => r[0] === 0 && r[1] === h);
+      return { key: String(h).padStart(2, '0'), earned: at.reduce((t, r) => t + Number(r[3]) - Number(r[4]), 0).toFixed(2), trips: at.length };
+    });
+    const fares = SETTLED.reduce((t, r) => t + Number(r[3]), 0); const fees = SETTLED.reduce((t, r) => t + Number(r[4]), 0);
+    return {
+      period, start: today, end: today, timezone: 'Asia/Kolkata', currency: 'INR', today, joined: ymdAgo(40),
+      has_prev: true, has_next: false, prev: ymdAgo(1), next: today,
+      summary: { trips: SETTLED.length, days_driven: 1, fares: fares.toFixed(2), avg_fare: (fares / SETTLED.length).toFixed(2), commission: fees.toFixed(2),
+        daily_fee: '0.00', platform_fee: fees.toFixed(2), tips: '0.00', tip_riders: 0, earned: (fares - fees).toFixed(2), paid_to_bank: '0.00', payouts: 0,
+        cash_collected: fares.toFixed(2), unresolved_trips: 0, fee_note: '', tips_enabled: false },
+      chart: { unit: 'hour', bars: hours },
+    };
+  }
   return {
     period, start: `${month}01`, end: `${month}${last}`, timezone: 'Asia/Kolkata', currency: 'INR', today, joined: ymdAgo(40),
     has_prev: true, has_next: false, prev: ymdAgo(35), next: today,
@@ -138,8 +154,15 @@ export function fixture(method, path, body) {
         { month: ymdAgo(35).slice(0, 7), so_far: false, trips: 298, fares: '33995.50', platform_fee: '2975.00', tips: '0.00', earned: '31020.50', paid_to_bank: '18612.00', payouts: 6, cash_collected: '12408.50' },
       ] };
     case p === '/driver/earnings/':
-      return { count: SETTLED.length, results: SETTLED.map(([d, hh, mm, fare, com], i) => ({
-        id: i + 1, trip_id_val: 300 + i, amount: fare, commission: com, net_amount: String(Number(fare) - Number(com)), created_at: at(d, hh, mm), method: 'cash' })) };
+    {
+      // ?q= (11 Nov): a place or a trip number, as the API matches it.
+      const q = decodeURIComponent((path.match(/[?&]q=([^&]*)/) ?? [])[1] ?? '').replace(/\+/g, ' ').replace(/^#/, '').toLowerCase();
+      const rows = SETTLED.map(([d, hh, mm, fare, com, a, b], i) => ({
+        id: i + 1, trip_id_val: 300 + i, amount: fare, commission: com, net_amount: String(Number(fare) - Number(com)), created_at: at(d, hh, mm), method: 'cash',
+        pickup_address: a, destination_address: b, ride_class: ['auto', 'mini', 'sedan'][i % 3] }))
+        .filter((r) => !q || String(r.trip_id_val) === q || `${r.pickup_address} ${r.destination_address}`.toLowerCase().includes(q));
+      return { count: rows.length, results: rows };
+    }
     case p === '/ride/driver-history/':
       return { results: SETTLED.map(([, , , , , a, b], i) => trip(300 + i, { pickup_address: a, destination_address: b })) };
     default:

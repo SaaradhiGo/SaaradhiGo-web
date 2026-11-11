@@ -211,7 +211,7 @@
 }
 .dr-main { padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; }
 .dr-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.dr-grid2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; }
+.dr-grid2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; align-items: start; }
 .dr-grid2 > *, .dr-grid3 > * { min-width: 0; }
 .dr-grid2--earn { grid-template-columns: 1.2fr 1fr; }
 .dr-grid2--pay { grid-template-columns: 1fr 1.4fr; align-items: start; }
@@ -228,6 +228,11 @@
 .dr-chart__well { height: 120px; display: flex; align-items: flex-end; }
 .dr-chart__bar { width: 32px; border-radius: 8px 8px 4px 4px; background: var(--c-bar); }
 .dr-chart__bar--today { background: var(--c-primary); }
+/* No trips in the period (11 Nov): a flat baseline under the day markers and a line saying so. */
+.dr-chart--empty { position: relative; }
+.dr-chart--empty .dr-chart__well { border-bottom: 2px solid var(--c-bar); align-self: stretch; margin: 0 -4px; }
+.dr-chart--empty .dr-chart__bar { display: none; }
+.dr-chart--empty .er-empty { top: 28px; bottom: 30px; }
 
 /* Tables of trips and payouts. */
 .atable { width: 100%; border-collapse: collapse; }
@@ -455,6 +460,17 @@
 }
 button.er-bar { cursor: pointer; }
 .er-bar--today { background: var(--c-primary); }
+.er-bars--empty { position: relative; border-bottom: 2px solid var(--c-bar); }
+.er-empty {
+  position: absolute; inset: 0; margin: 0; display: flex; align-items: center; justify-content: center; text-align: center;
+}
+.er-search { width: 320px; max-width: 100%; gap: 8px; color: var(--c-text-2); }
+.pay-period { display: grid; gap: 12px; margin-top: 12px; }
+.pay-period .er-top { justify-content: flex-start; }
+.pay-period .er-top > .arow { width: 100%; }
+.pay-period .er-label { min-width: 0; }
+.pay-period .er-search { flex: 1; min-width: 220px; }
+.er-pager { gap: 8px; padding: 12px 20px; border-top: 1px solid var(--c-border); flex-wrap: wrap; }
 .er-ticks { display: flex; gap: 6px; margin-top: 6px; }
 .er-ticks > span { flex: 1; min-width: 0; white-space: nowrap; overflow: visible; }
 .er-ticks > span:last-child { text-align: right; direction: rtl; }

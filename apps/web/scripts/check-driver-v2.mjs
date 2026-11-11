@@ -8,6 +8,11 @@
 //   locale     an Indian driver's date field not dd/mm/yyyy, a US driver's not mm/dd/yyyy
 //   status     a file tile whose pill is not its own status (an uploaded file shown as Missing)
 //   earnings   the cards not adding up: fares - platform fee + tips != you earned
+//   periods    Trips or Payouts without Earnings' periods (Day ... Custom range, previous, next)
+//              (11 Nov)
+//   empty      a chart of a period with no trips without its day markers, a flat baseline and
+//              "No trips in {period} yet", or blank; each chart's screenshot is in V2_DIFFS
+//   zero       "− ₹0.00" (a minus on nothing) anywhere on any page, light or dark
 //
 // CI: SITE=http://localhost:3100 WEB_SESSION_SECRET=... node scripts/check-driver-v2.mjs
 //   (the API is answered from scripts/fixtures; diffs and screenshots in V2_DIFFS)
@@ -38,7 +43,7 @@ const DRIVER = ['/driver', '/driver#approved', '/driver/setup/identity', '/drive
 const RIDER = ['/ride', '/trips', '/trips/101', '/account'];
 const failures = [];
 const fail = (m) => failures.push(m);
-const report = { axe: {}, visual: {} };
+const report = { axe: {}, visual: {}, empty: {} };
 
 // ---- The design's state, for the visual diff: a driver part-way through setup (Dashboard and
 // setup), and an approved driver with trips (Profile, Earnings). TEST DATA ONLY.
@@ -170,6 +175,8 @@ for (const [role, pages] of [['driver', DRIVER], ['rider', RIDER]]) {
       for (const x of v) {
         if (x.id === 'color-contrast' || x.impact === 'critical' || x.impact === 'serious') fail(`${at}: axe ${x.id} (${x.impact}) on ${x.nodes.join(' | ')}`);
       }
+      const minusZero = await page.evaluate(() => (document.body.innerText.match(/[−-]\s*(?:₹|\$|Rs\.?|INR|USD)\s*0[.,]00(?!\d)/g) ?? []));
+      if (minusZero.length) fail(`${at}: a minus on a zero amount (${minusZero.slice(0, 3).join(', ')})`);
       const primaries = await page.evaluate(() => [...document.querySelectorAll('.abtn--pri')].filter((e) => e.getBoundingClientRect().width > 0).length);
       if (primaries > 1) fail(`${at}: ${primaries} orange buttons (one at most)`);
       if (!QA && theme === 'light' && ONE_PRIMARY.has(p) && primaries !== 1) fail(`${at}: ${primaries} orange buttons (exactly one)`);
@@ -245,9 +252,97 @@ for (const [want, answer, label] of [['dd/mm/yyyy', null, 'DRIVER'], ['mm/dd/yyy
   await ctx.close();
 }
 
+// ---- Trips and Payouts have the Earnings periods (11 Nov).
+{
+  const tabs = {};
+  for (const p of ['/driver/earnings', '/driver/trips', '/driver/payouts']) {
+    const { ctx, page } = await open(browser, 'driver', p);
+    tabs[p] = await page.evaluate(() => [...document.querySelectorAll('.er-tabs [role="tab"]')].map((t) => t.textContent.trim()).join(' | '));
+    const arrows = await page.evaluate(() => ['Previous', 'Next'].every((l) => document.querySelector(`.er-arrow[aria-label="${l}"]`)));
+    if (!arrows) fail(`${p}: no previous and next period arrows`);
+    if (p !== '/driver/earnings' && !(await page.$('.er-search input'))) fail(`${p}: no search`);
+    if (p === '/driver/trips' && !QA) {
+      // Fixtures answer ?q= as the API does; only the matching trips stay.
+      await page.fill('.er-search input', 'Airport');
+      await page.waitForTimeout(1200);
+      const rows = await page.evaluate(() => [...document.querySelectorAll('[data-testid="trips-table"] tbody tr')].map((r) => r.textContent));
+      if (!rows.length || rows.some((r) => !r.includes('Airport'))) fail(`/driver/trips: search "Airport" shows ${JSON.stringify(rows.slice(0, 3))}`);
+    }
+    await ctx.close();
+  }
+  if (tabs['/driver/earnings'] !== 'Day | Week | Month | Year | Custom range') fail(`/driver/earnings: periods "${tabs['/driver/earnings']}"`);
+  for (const p of ['/driver/trips', '/driver/payouts']) if (tabs[p] !== tabs['/driver/earnings']) fail(`${p}: periods "${tabs[p]}", Earnings has "${tabs['/driver/earnings']}"`);
+}
+
+// ---- Each chart in a period with no trips: day markers, a flat baseline and the line; not blank.
+// Fixtures: zero bars. QA: the earnings chart stepped back a day at a time to a day with no trips.
+{
+  const zeroHistory = (method, url, body) => {
+    const h = fixture(method, url, body);
+    if (!/\/driver\/earnings\/history\//.test(url) || !h) return h;
+    return { ...h, summary: { ...h.summary, trips: 0, days_driven: 0, fares: '0.00', avg_fare: '0.00', platform_fee: '0.00', earned: '0.00' },
+      chart: { ...h.chart, bars: h.chart.bars.map((b) => ({ ...b, earned: '0.00', trips: 0 })) } };
+  };
+  const zeroWeek = (method, url, body) => (/\/driver\/earnings\/daily\//.test(url)
+    ? { days: fixture(method, url, body).days.map((d) => ({ ...d, trips: 0, gross: '0', commission: '0', net: '0' })) } : fixture(method, url, body));
+  const charts = [['earnings', '/driver/earnings', '[data-testid="earnings-chart"]', '.er-bars', '.er-ticks > span', zeroHistory]];
+  if (!QA) charts.push(['dashboard', '/driver#approved', '.dr-chart', '.dr-chart__well', '.dr-chart > div > .amut', zeroWeek]);
+  for (const [name, p, box, base, ticks, answer] of charts) {
+    const { ctx, page } = await open(browser, 'driver', p, { answer: QA ? null : answer });
+    if (QA) {
+      await page.click('.er-tabs [role="tab"]:has-text("Day")').catch(() => {});
+      for (let i = 0; i < 40 && !(await page.$('.er-bars[data-empty]')); i += 1) {
+        const prev = await page.$('.er-arrow[aria-label="Previous"]:not([disabled])');
+        if (!prev) break;
+        await prev.click();
+        await page.waitForTimeout(900);
+      }
+    }
+    const el = await page.$(box);
+    if (!el) { fail(`${p}: no ${name} chart`); await ctx.close(); continue; }
+    const shot = await el.screenshot();
+    mkdirSync(DIFFS, { recursive: true });
+    writeFileSync(path.join(DIFFS, `empty-${name}.png`), shot);
+    const got = await page.evaluate(([b, bs, ts]) => {
+      const root = document.querySelector(b);
+      const line = root.querySelector('.er-empty');
+      const baseEl = root.querySelector(bs);
+      return {
+        empty: !!root.querySelector('[data-empty]') || root.hasAttribute('data-empty'),
+        line: line ? line.textContent.trim() : null,
+        lineVisible: !!line && line.getBoundingClientRect().height > 0,
+        // The line's centre against the chart's: off by more than 5% of its width is off centre.
+        offCentre: line ? Math.abs((line.getBoundingClientRect().left + line.getBoundingClientRect().right) / 2
+          - (root.getBoundingClientRect().left + root.getBoundingClientRect().right) / 2) / root.getBoundingClientRect().width : 1,
+        markers: [...root.querySelectorAll(ts)].filter((t) => t.textContent.trim()).length,
+        // The baseline's drawn width across the chart, as a share of the chart's width.
+        baseline: [...root.querySelectorAll(bs)].reduce((w, e) => w + (parseFloat(getComputedStyle(e).borderBottomWidth) >= 1 ? e.getBoundingClientRect().width : 0), 0)
+          / (root.getBoundingClientRect().width || 1),
+      };
+    }, [box, base, ticks]);
+    // Not blank: enough pixels away from the card's own colour (text, markers, baseline).
+    const png = PNG.sync.read(shot);
+    const [r0, g0, b0] = png.data;
+    let ink = 0;
+    for (let i = 0; i < png.data.length; i += 4) {
+      if (Math.abs(png.data[i] - r0) + Math.abs(png.data[i + 1] - g0) + Math.abs(png.data[i + 2] - b0) > 60) ink += 1;
+    }
+    const share = ink / (png.width * png.height);
+    report.empty[name] = { ...got, ink: Number((share * 100).toFixed(2)) };
+    if (!got.empty) { if (!QA) fail(`${p}: the ${name} chart is not shown as empty`); else report.empty[name].skipped = 'no empty day found'; await ctx.close(); continue; }
+    if (!got.line || !/^No trips in .+ yet$/.test(got.line) || !got.lineVisible) fail(`${p}: empty ${name} chart line is "${got.line}"`);
+    if (got.offCentre > 0.05) fail(`${p}: the empty ${name} chart's line is off centre`);
+    if (got.markers < 2) fail(`${p}: empty ${name} chart has ${got.markers} day markers`);
+    if (!(got.baseline >= 0.6)) fail(`${p}: empty ${name} chart has no baseline across it (${(got.baseline * 100).toFixed(0)}%)`);
+    if (share < 0.01) fail(`${p}: empty ${name} chart is blank (${(share * 100).toFixed(2)}% ink)`);
+    await ctx.close();
+  }
+}
+
 await browser.close();
 writeFileSync(process.env.V2_REPORT || 'v2-report.json', JSON.stringify(report, null, 1));
 console.log('visual', JSON.stringify(report.visual));
+console.log('empty charts', JSON.stringify(report.empty));
 console.log('axe pages with findings', Object.entries(report.axe).filter(([, v]) => v.length).length);
 if (failures.length) {
   console.log(`check-driver-v2: ${failures.length} failure(s)`);

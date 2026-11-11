@@ -1,79 +1,59 @@
 'use client';
 
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
-import { type Period, history as loadHistory, ledger as loadLedger, period as loadPeriod } from '@/lib/area/driver';
-import { dateLabel, listWhen, marketZone, money, rangeLabel, setMarketZone } from '@/lib/area/format';
+import { PAGE_SIZE, ledgerPage } from '@/lib/area/driver';
+import { deduction, listWhen, money } from '@/lib/area/format';
 import { className } from '@/lib/area/rider';
 import { useLoad } from '@/lib/area/useLoad';
 import { LoadError, Skel } from '../states';
-import { DriverTop, PeriodChips, useDriver } from './parts';
-
-/** The local calendar date (YYYY-MM-DD) of an instant in a time zone. */
-function localDate(iso: string, timeZone: string): string {
-  try {
-    return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(iso));
-  } catch {
-    return iso.slice(0, 10);
-  }
-}
+import { Pager, PeriodSwitcher, SearchBox, periodLabel, usePeriod } from './PeriodSwitcher';
+import { DriverTop, useDriver } from './parts';
 
 /** First part of an address, for "Pickup → Drop". */
 const short = (a: string | null | undefined) => (a ?? '').split(',')[0].trim();
 
 /**
- * /driver/trips (driver-web-trips.html): each settled trip in the period with
- * its fare, the commission, what the driver earned and how it was paid, from
- * the settlement ledger; the places and class come from the trip.
+ * /driver/trips (driver-web-trips.html): every settled trip in the period with its fare, the
+ * commission, what the driver earned and how it was paid, from the settlement ledger, a page at a
+ * time back to the first trip. The periods are Earnings' (11 Nov) and a search finds a place or a
+ * trip number; a bar of the earnings chart opens its day (?date=YYYY-MM-DD).
  */
 export function DriverTrips() {
   const tr = useTr();
   const { locale } = useLocale();
   const me = useDriver();
-  // One day, from a bar of the earnings chart (10 Nov v2): /driver/trips?date=YYYY-MM-DD.
-  const day = useSearchParams()?.get('date') ?? null;
-  const [p, setP] = useState<Period>('today');
-  const [all, setAll] = useState(false);
-  const totals = useLoad(() => loadPeriod(p), [p]);
-  const ledger = useLoad(() => loadLedger(day), [day]);
-  // Places and class only; a row still shows without them.
-  const history = useLoad(async () => Object.fromEntries((await loadHistory(day ?? undefined, day ?? undefined)).map((x) => [x.id, x])), [day]);
-  const period = totals.data; const rows = ledger.data; const trips = history.data ?? {};
-  const t = useMemo(() => (period && day && rows ? {
-    ...period, start: day, end: day, trips: rows.length,
-    net: String(rows.reduce((sum, r) => sum + Number(r.net_amount ?? 0), 0)),
-  } : period), [period, day, rows]);
-  setMarketZone(t?.timezone);
-  const failed = totals.state === 'error' ? totals : ledger.state === 'error' ? ledger : null;
-
-  const inPeriod = useMemo(() => {
-    if (!rows || !t) return null;
-    const zone = t.timezone || marketZone();
-    return rows.filter((r) => r.created_at && localDate(r.created_at, zone) >= t.start && localDate(r.created_at, zone) <= t.end);
-  }, [rows, t]);
-  const shown = inPeriod ? (all ? inPeriod : inPeriod.slice(0, 6)) : null;
+  const day = useSearchParams()?.get('date') ?? undefined;
+  const s = usePeriod('day', day);
+  const h = s.hist.data;
+  const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
+  useEffect(() => setPage(1), [h?.start, h?.end, q]);
+  const rows = useLoad(() => (h ? ledgerPage(h.start, h.end, q, page) : new Promise<never>(() => {})), [h?.start, h?.end, q, page]);
+  const failed = s.hist.state === 'error' ? s.hist : rows.state === 'error' ? rows : null;
+  const list = rows.data?.results ?? null;
+  const count = rows.data?.count ?? 0;
   const words = { today: tr('Today'), yesterday: tr('Yesterday') };
-  const cur = t?.currency;
+  const cur = h?.currency;
 
   return (
     <>
       <DriverTop title={tr('Trips')} me={me} />
       <main className="dr-main">
+        <PeriodSwitcher s={s} />
         <div className="arow" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
-          {day ? <Link href="/driver/trips" className="achip">{tr('All trips')}</Link>
-            : <PeriodChips value={p} onChange={(v) => { setP(v); setAll(false); }} />}
-          {t && (
-            <span className="a14 amut">
-              {(p === 'today' || day ? dateLabel(`${t.start}T12:00:00Z`, locale, 'UTC') : rangeLabel(t.start, t.end, locale))}
-              {' · '}{tr('{n} trips').replace('{n}', `${t.trips}`)}{' · '}{tr('you earned {amount}').replace('{amount}', money(t.net, cur, locale) ?? '—')}
+          <SearchBox label={tr('Search by place or trip number')} onSearch={setQ} />
+          {h && (
+            <span className="a14 amut" data-testid="trips-summary">
+              {periodLabel(h, locale)}{' · '}{tr('{n} trips').replace('{n}', `${h.summary.trips}`)}{' · '}
+              {tr('you earned {amount}').replace('{amount}', money(h.summary.earned, cur, locale) ?? '—')}
             </span>
           )}
         </div>
         <div className="acard" style={{ overflowX: 'auto' }}>
-          <table className="atable">
+          <table className="atable" data-testid="trips-table">
             <thead>
               <tr className="albl">
                 <th>{tr('Date and time')}</th><th>{tr('Trip')}</th><th>{tr('Ride')}</th>
@@ -82,25 +62,31 @@ export function DriverTrips() {
             </thead>
             <tbody>
               {failed && <tr><td colSpan={7}><LoadError what="trips" retry={failed.retry} /></td></tr>}
-              {!failed && shown === null && [0, 1, 2].map((i) => <tr key={i}><td colSpan={7}><Skel h={18} /></td></tr>)}
-              {!failed && rows?.length === 0 && (
+              {!failed && list === null && s.period !== 'custom' && [0, 1, 2].map((i) => <tr key={i}><td colSpan={7}><Skel h={18} /></td></tr>)}
+              {!failed && s.period === 'custom' && !s.range && <tr><td colSpan={7} className="amut">{tr('Choose the dates to see their trips.')}</td></tr>}
+              {!failed && list?.length === 0 && !q && h && !h.has_prev && !h.has_next && (
                 <tr><td colSpan={7}>
                   <div className="ab">{tr('No trips yet')}</div>
                   <div className="a14 amut">{tr('Go online in the driver app to get your first ride request.')}</div>
                 </td></tr>
               )}
-              {!failed && !!rows?.length && shown?.length === 0 && <tr><td colSpan={7} className="amut">{tr('No trips in this period.')}</td></tr>}
-              {shown?.map((r) => {
-                const trip = r.trip_id_val ? trips[r.trip_id_val] : undefined;
-                const when = listWhen(r.created_at, locale, trip?.timezone ?? t?.timezone, words);
-                const route = trip ? `${short(trip.pickup_address)} → ${short(trip.destination_address)}` : r.trip_id_val ? `#${r.trip_id_val}` : '';
+              {!failed && list?.length === 0 && (q || !h || h.has_prev || h.has_next) && (
+                <tr><td colSpan={7} className="amut">
+                  {q ? tr('No trips match “{q}” in {period}.').replace('{q}', q).replace('{period}', h ? periodLabel(h, locale) : '')
+                    : tr('No trips in {period} yet').replace('{period}', h ? periodLabel(h, locale) : '')}
+                </td></tr>
+              )}
+              {list?.map((r) => {
+                const when = listWhen(r.created_at, locale, h?.timezone, words);
+                const places = r.pickup_address || r.destination_address ? `${short(r.pickup_address)} → ${short(r.destination_address)}` : '';
+                const fee = deduction(r.commission, cur, locale);
                 return (
                   <tr key={r.id}>
                     <td>{when && <div className="ab">{when.first}<div className="a14 amut" style={{ fontWeight: 400 }}>{when.second}</div></div>}</td>
-                    <td className="ab">{route}</td>
-                    <td>{className(trip?.vehicle_info?.type ?? trip?.requested_vehicle_type) ?? ''}</td>
+                    <td className="ab">{places}{r.trip_id_val ? <div className="a14 amut" style={{ fontWeight: 400 }}>#{r.trip_id_val}</div> : null}</td>
+                    <td>{className(r.ride_class) ?? ''}</td>
                     <td>{money(r.amount, cur, locale)}</td>
-                    <td className="ared">{r.commission != null ? `− ${money(r.commission, cur, locale)}` : ''}</td>
+                    <td className={fee.red ? 'ared' : undefined}>{r.commission != null ? fee.text : ''}</td>
                     <td className="ab agrn">{money(r.net_amount, cur, locale)}</td>
                     <td><span className="apill apill--neu">{tr(r.method === 'cash' ? 'Cash' : 'Online')}</span></td>
                   </tr>
@@ -108,13 +94,7 @@ export function DriverTrips() {
               })}
             </tbody>
           </table>
-          {inPeriod && inPeriod.length > 6 && !all && (
-            <div className="a14 amut" style={{ padding: '12px 20px', borderTop: '1px solid var(--c-border)' }}>
-              {tr('Showing {a} of {n}').replace('{a}', '6').replace('{n}', `${inPeriod.length}`)} ·{' '}
-              <button type="button" className="aacc ab" style={{ background: 'none', border: 0, padding: 0, font: 'inherit', cursor: 'pointer' }}
-                onClick={() => setAll(true)}>{tr('Show all')}</button>
-            </div>
-          )}
+          <Pager page={page} count={count} size={PAGE_SIZE} noun={tr('{n} trips').replace('{n}', String(count))} onPage={setPage} />
         </div>
       </main>
     </>
