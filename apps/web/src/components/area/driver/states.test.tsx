@@ -4,7 +4,7 @@
  * Try again works), a request that never answers becomes an error after two tries of ten
  * seconds, and nothing on the page is a "…" or "•••" placeholder.
  */
-import { act, fireEvent, render } from '@testing-library/react';
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { DriverDashboard } from './DriverDashboard';
@@ -46,7 +46,7 @@ function newDriver(path: string): unknown {
   if (path.startsWith('/ride/driver-history/')) return { count: 0, results: [] };
   if (path.startsWith('/driver/driver/onboarding/')) return { driver_documents: [], vehicle_documents: [] };
   if (path.startsWith('/driver/vehicles/')) return [];
-  if (path.startsWith('/driver/driver/profile/')) return { status: 'off' };
+  if (path.startsWith('/driver/driver/profile/')) return { status: 'off', total_trips: 0, ratings: null };
   return {};
 }
 
@@ -62,7 +62,8 @@ const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 20
 const PLACEHOLDER = /…|•••/;
 
 beforeEach(() => { api.get.mockReset(); api.get.mockImplementation(async (p: string) => newDriver(p)); });
-afterEach(() => { vi.useRealTimers(); });
+// Unmount every page before the next test, so no timer (the search box's 300 ms) outlives its environment.
+afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 describe('a brand-new driver sees zeros, not dots', () => {
   it('dashboard: ₹0.00 today, this week and ready to withdraw; seven ₹0.00 bars', async () => {
