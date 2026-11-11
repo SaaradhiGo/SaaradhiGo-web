@@ -19,13 +19,19 @@ export const SaveContext = createContext<{ state: SaveState; run: (fn: () => Pro
 export function useSaveState() {
   const tr = useTr();
   const [state, setState] = useState<SaveState>({ saving: 0, error: null });
-  async function run(fn: () => Promise<unknown>) {
+  // One save at a time: a vehicle date saved while a photo uploads must not write the row back.
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  function run(fn: () => Promise<unknown>) {
     setState((s) => ({ saving: s.saving + 1, error: null }));
-    try { await fn(); setState((s) => ({ ...s, saving: s.saving - 1 })); return true; }
-    catch (e) {
-      setState((s) => ({ saving: s.saving - 1, error: messageFor(e, tr('We could not save that. Try again.')) }));
-      return false;
-    }
+    const next = queue.current.then(async () => {
+      try { await fn(); setState((s) => ({ ...s, saving: s.saving - 1 })); return true; }
+      catch (e) {
+        setState((s) => ({ saving: s.saving - 1, error: messageFor(e, tr('We could not save that. Try again.')) }));
+        return false;
+      }
+    });
+    queue.current = next;
+    return next;
   }
   return { state, run };
 }
