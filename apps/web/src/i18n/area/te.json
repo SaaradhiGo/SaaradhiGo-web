@@ -636,5 +636,6 @@
   "Name matches the account": "పేరు ఖాతాతో సరిపోలింది",
   "Licence, front": "లైసెన్స్, ముందు",
   "Licence, back": "లైసెన్స్, వెనుక",
-  "Aadhaar card": "ఆధార్ కార్డ్"
+  "Aadhaar card": "ఆధార్ కార్డ్",
+  "{n} payout": "{n} చెల్లింపు"
 }

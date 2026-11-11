@@ -40,7 +40,8 @@ function Chart({ h, locale }: { h: History; locale: string }) {
   const router = useRouter();
   const bars = h.chart.bars;
   const top = Math.max(...bars.map((b) => Number(b.earned)), 0);
-  const tickAt = (i: number) => h.chart.unit !== 'day' || bars.length <= 7 || i === 0 || i === bars.length - 1 || i % 7 === 0;
+  // Weekly ticks, and none so close to the end that it runs into the last date.
+  const tickAt = (i: number) => h.chart.unit !== 'day' || bars.length <= 7 || i === 0 || i === bars.length - 1 || (i % 7 === 0 && i < bars.length - 4);
   const tick = (key: string, i: number) => {
     if (h.chart.unit === 'hour') return `${key}:00`;
     if (h.chart.unit === 'month') return new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(new Date(`${key}-15T12:00:00Z`));
@@ -210,7 +211,7 @@ export function DriverEarnings() {
               <Stat label={tr('Platform fee')} value={`− ${m(s.platform_fee)}`} tone="red" sub={s.fee_note ? tr(s.fee_note) : tr('From your trip ledger')} />
               <Stat label={tr('Tips')} value={`+ ${m(s.tips)}`} sub={s.tips_enabled ? tr('From {n} riders').replace('{n}', String(s.tip_riders)) : tr('Tips are not on yet')} />
               <Stat label={tr('Paid to your bank')} value={m(s.paid_to_bank)}
-                sub={tr('{n} payouts').replace('{n}', String(s.payouts)) + (Number(s.cash_collected) > 0 ? ` · ${tr('rest in cash')}` : '')} />
+                sub={tr(s.payouts === 1 ? '{n} payout' : '{n} payouts').replace('{n}', String(s.payouts)) + (Number(s.cash_collected) > 0 ? ` · ${tr('rest in cash')}` : '')} />
             </>
           ) : period === 'custom' && !range ? null : [0, 1, 2, 3, 4].map((i) => <div key={i} className="acard er-stat"><Skel h={56} /></div>)}
         </div>
