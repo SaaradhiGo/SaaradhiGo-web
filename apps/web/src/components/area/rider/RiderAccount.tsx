@@ -13,6 +13,7 @@ import { useLoad } from '@/lib/area/useLoad';
 import { ICard, IChevron, IUser } from '../icons';
 import { LoadError, Skel } from '../states';
 import { SafetyCard, SavedPlacesCard } from './AccountCards';
+import { type ResendState, resendConfirmation, resendNote } from './ConfirmEmail';
 import { useArea } from '../useArea';
 
 function Row({ label, value, children }: { label?: string; value: React.ReactNode; children?: React.ReactNode }) {
@@ -46,6 +47,7 @@ export function RiderAccount() {
   const [dark, setDark] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [resend, setResend] = useState<ResendState>('idle');
 
   // Each card on its own (8 Nov): profile and saved places load, fail and retry separately.
   const profileLoad = useLoad(loadProfile);
@@ -132,9 +134,24 @@ export function RiderAccount() {
             <>
               <Row label={tr('Name')} value={me?.full_name || '—'} />
               <Row label={tr('Mobile')} value={maskPhone(me?.phone_number) ?? '—'}>
-                {me?.phone_number && <span className="apill apill--ok">{tr('Verified')}</span>}
+                {me?.phone_number && me?.phone_verified !== false && <span className="apill apill--ok">{tr('Verified')}</span>}
               </Row>
-              <Row label={tr('Email')} value={me?.email || '—'} />
+              <Row label={tr('Email')} value={me?.email || '—'}>
+                {me?.email && (me.email_verified === false ? (
+                  <span className="acol" style={{ alignItems: 'flex-end', gap: 4 }} data-testid="email-status">
+                    <span className="apill apill--warn">{tr('Not confirmed')}</span>
+                    {resend !== 'sent' && (
+                      <button type="button" className="aacc ab a14" style={linkBtn} disabled={resend === 'busy'}
+                        onClick={async () => { setResend('busy'); setResend(await resendConfirmation()); }}>
+                        {tr('Resend')}
+                      </button>
+                    )}
+                  </span>
+                ) : <span className="apill apill--ok" data-testid="email-status">{tr('Confirmed')}</span>)}
+              </Row>
+              {resendNote(resend, tr) && (
+                <p className={`a14 ${resend === 'sent' ? 'amut' : 'ared'}`} role="status">{resendNote(resend, tr)}</p>
+              )}
             </>
           )}
         </section>

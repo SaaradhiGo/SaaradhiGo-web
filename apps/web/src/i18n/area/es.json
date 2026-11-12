@@ -798,5 +798,18 @@
   "Pay {fare} in cash to your driver.": "Paga {fare} en efectivo a tu conductor.",
   "Choose a reason.": "Elige un motivo.",
   "We will also open the safety options: SOS, share your trip and call support.": "También abriremos las opciones de seguridad: SOS, compartir el viaje y llamar a soporte.",
-  "This number cannot get a code here. Use an approved test number.": "Este número no puede recibir un código aquí. Usa un número de prueba aprobado."
+  "This number cannot get a code here. Use an approved test number.": "Este número no puede recibir un código aquí. Usa un número de prueba aprobado.",
+  "Confirm your email: {email}.": "Confirma tu correo: {email}.",
+  "Confirmed": "Confirmado",
+  "Drop": "Destino",
+  "Fare adjustment": "Ajuste de tarifa",
+  "Minimum fare adjustment": "Ajuste a tarifa mínima",
+  "Not confirmed": "Sin confirmar",
+  "Resend": "Reenviar",
+  "Rounding": "Redondeo",
+  "Send link": "Enviar enlace",
+  "Sent. Check your inbox.": "Enviado. Revisa tu bandeja de entrada.",
+  "Something went wrong. Try again.": "Algo salió mal. Inténtalo de nuevo.",
+  "Taxable value": "Base imponible",
+  "We could not send the email right now. Try again later.": "No pudimos enviar el correo ahora. Inténtalo más tarde."
 }
