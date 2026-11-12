@@ -357,14 +357,24 @@ export class RideSocket {
   }
 }
 
-/** The five reasons `/ride/trip/<id>/cancel/` accepts from a RIDER. */
-export const RIDER_CANCEL_REASONS = [
-  { value: 'no_show', label: 'The driver did not arrive' },
-  { value: 'wrong_location', label: 'The pickup point is wrong' },
+/**
+ * Why a rider cancels (11 Nov): nothing preselected, and the reasons follow the trip state.
+ * Before a driver is assigned there is no driver to be late or at the wrong point.
+ */
+export const CANCEL_BEFORE_DRIVER = [
+  { value: 'changed_plans', label: 'Changed my plans' },
+  { value: 'booked_by_mistake', label: 'Booked by mistake' },
   { value: 'too_long', label: 'The wait is too long' },
-  { value: 'safety', label: 'I feel unsafe' },
   { value: 'other', label: 'Something else' },
 ] as const;
+export const CANCEL_WITH_DRIVER = [
+  ...CANCEL_BEFORE_DRIVER,
+  { value: 'no_show', label: 'The driver did not arrive' },
+  { value: 'wrong_location', label: 'The pickup point is wrong' },
+  { value: 'safety', label: 'I feel unsafe' },
+] as const;
+/** @deprecated kept for older imports; the full set with a driver assigned. */
+export const RIDER_CANCEL_REASONS = CANCEL_WITH_DRIVER;
 
 /** What cancelling now costs (9 Nov): free (and until when), or the fee due on the next ride. */
 export type CancelPreview = { free: boolean; free_until: string | null; fee: string | null; currency: string };

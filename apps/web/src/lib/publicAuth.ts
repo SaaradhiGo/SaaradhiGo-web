@@ -51,6 +51,9 @@ export type PublicRole = 'rider' | 'driver';
  */
 export type SessionUser = {
   id?: number | string;
+  /** 11 Nov: riders sign up by email; the number is proved at the first booking. */
+  phone_verified?: boolean;
+  email_verified?: boolean;
   full_name?: string | null;
   email?: string | null;
   phone_number?: string | null;
@@ -329,6 +332,22 @@ export async function signInWithEmail(
   if (expectedRole) requireRole(session, expectedRole);
   const area = await establishServerSession(session.token as string, expectedRole);
   return { ...session, area: area?.role ?? null };
+}
+
+/**
+ * A rider's account from a name, an email and a password (11 Nov, Srini's ruling). The server
+ * signs the new rider in at once; the confirmation link it sends does not block anything.
+ */
+export async function registerRider(input: { fullName: string; email: string; password: string }) {
+  const data = await api.post<LoginResp>('/auth/email/register/', {
+    full_name: input.fullName.trim(),
+    email: input.email.trim(),
+    password: input.password,
+    role: 'rider',
+  });
+  const session = storeSession(data);
+  await establishServerSession(session.token as string, 'rider');
+  return session;
 }
 
 /**

@@ -205,5 +205,12 @@
   "How to sign in": "लॉग इन कैसे करें",
   "We could not find that page": "वह पेज नहीं मिला",
   "The link may be old, or the page may have moved.": "लिंक पुराना हो सकता है, या पेज कहीं और चला गया हो।",
-  "Go to the home page": "होम पेज पर जाएँ"
+  "Go to the home page": "होम पेज पर जाएँ",
+  "Tell us what to call you.": "बताइए आपको क्या कहकर बुलाएं।",
+  "Enter a valid email address.": "सही ईमेल पता लिखें।",
+  "Use at least 10 characters.": "कम से कम 10 अक्षर रखें।",
+  "We could not create the account. Please try again.": "खाता नहीं बन सका। फिर से कोशिश करें।",
+  "This email already has an account.": "इस ईमेल पर पहले से खाता है।",
+  "Forgot password?": "पासवर्ड भूल गए?",
+  "Creating your account…": "आपका खाता बना रहे हैं…"
 }

@@ -89,6 +89,9 @@ export default function MapSurface({
   pickRef.current = onPick;
   const listening = useRef(false);
   const [live, setLive] = useState(false);
+  // 11 Nov: "Map view unavailable" showed while the map was still loading. The error now shows
+  // only once loading has actually failed; until then a plain placeholder.
+  const [failed, setFailed] = useState(() => !mapsConfigured());
   // Bumped whenever the theme changes, to re-resolve the tokens and redraw.
   const [themeTick, setThemeTick] = useState(0);
 
@@ -111,7 +114,7 @@ export default function MapSurface({
     let cancelled = false;
     if (!mapsConfigured() || !onScreen) return;
     loadGoogleMaps().then((ok) => {
-      if (!cancelled) setLive(ok);
+      if (!cancelled) { setLive(ok); setFailed(!ok); }
     });
     return () => {
       cancelled = true;
@@ -141,6 +144,7 @@ export default function MapSurface({
         + 'the browser key’s HTTP referrer restrictions.',
       );
       setLive(false);
+      setFailed(true);
       previous?.();
     };
     return () => {
@@ -409,7 +413,9 @@ export default function MapSurface({
           padding: `${fitPadding.top}px ${fitPadding.right}px ${fitPadding.bottom}px ${fitPadding.left}px`,
         } : undefined}
       >
-        {ready || showingMap ? null : (
+        {ready || showingMap ? null : !failed ? (
+          <div className="sg-map__loading" {...(live ? { 'aria-hidden': true } : { role: 'status', 'aria-label': 'Loading the map' })} />
+        ) : (
           <div className="max-w-sm">
             <svg
               aria-hidden="true"

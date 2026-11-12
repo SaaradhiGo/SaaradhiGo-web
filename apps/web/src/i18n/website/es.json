@@ -205,5 +205,12 @@
   "How to sign in": "Cómo iniciar sesión",
   "We could not find that page": "No encontramos esa página",
   "The link may be old, or the page may have moved.": "El enlace puede ser antiguo o la página se movió.",
-  "Go to the home page": "Ir a la página de inicio"
+  "Go to the home page": "Ir a la página de inicio",
+  "Tell us what to call you.": "Dinos cómo llamarte.",
+  "Enter a valid email address.": "Escribe un correo electrónico válido.",
+  "Use at least 10 characters.": "Usa al menos 10 caracteres.",
+  "We could not create the account. Please try again.": "No pudimos crear la cuenta. Inténtalo de nuevo.",
+  "This email already has an account.": "Este correo ya tiene una cuenta.",
+  "Forgot password?": "¿Olvidaste tu contraseña?",
+  "Creating your account…": "Creando tu cuenta…"
 }

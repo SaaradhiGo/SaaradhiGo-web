@@ -48,6 +48,7 @@ export function RiderReceipt({ id }: { id: string }) {
   const when = t.completed_at ?? t.cancelled_at ?? t.requested_at;
   const paidHow = t.payment_method === 'cash' ? tr('Paid in cash') : t.payment_method ? tr('Paid online') : null;
   const km = t.actual_distance_km ?? t.estimated_distance_km;
+  const inv = t.invoice ?? null;
 
   async function pdf() {
     try {
@@ -102,6 +103,7 @@ export function RiderReceipt({ id }: { id: string }) {
             <Link href="/contact" className="abtn abtn--ghost"><IHelp size={18} />{tr('Get help with this trip')}</Link>
           </div>
           {note && <p className="a14 amut" role="status" style={{ marginTop: 12 }}>{note}</p>}
+          {inv && !cancelled && <Invoice t={t} />}
         </div>
         <div className="acard acol" style={{ padding: 24, gap: 14 }}>
           <div className="a20">{tr('Trip')}</div>
@@ -130,7 +132,9 @@ export function RiderReceipt({ id }: { id: string }) {
               <span className="aico" style={{ width: 44, height: 44, borderRadius: 22, background: 'var(--c-border)' }}><IUser /></span>
               <div className="agrow">
                 <div className="ab">{t.driver_name}</div>
-                <div className="a14 amut">{[v?.color, ride, v?.vehicle_number ? formatPlate(v.vehicle_number) : null].filter(Boolean).join(' · ')}</div>
+                <div className="a14 amut" data-testid="receipt-vehicle">
+                  {t.vehicle_line ?? [v?.color, ride, v?.vehicle_number ? formatPlate(v.vehicle_number) : null].filter(Boolean).join(' · ')}
+                </div>
               </div>
             </div>
           )}
@@ -150,5 +154,48 @@ export function RiderReceipt({ id }: { id: string }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * The tax invoice (11 Nov), the same lines as the PDF: number, rider, issuer with address and
+ * GSTIN where configured, both addresses, and the fare broken into base, distance and time,
+ * demand and tax.
+ */
+function Invoice({ t }: { t: Trip }) {
+  const tr = useTr();
+  const { locale } = useLocale();
+  const inv = t.invoice;
+  if (!inv) return null;
+  const f = t.fare_breakdown ?? {};
+  const cur = inv.currency ?? t.currency;
+  const dist = Number(f.distance_fare ?? 0) + Number(f.time_fare ?? 0);
+  const surge = Number(f.surge_multiplier ?? 1);
+  const row = (label: string, value: string | null | undefined, strong = false) => (
+    <div className="arow" style={{ justifyContent: 'space-between', padding: '8px 0', gap: 12 }}>
+      <span className={strong ? 'ab' : undefined}>{label}</span><span className={strong ? 'ab' : undefined}>{value ?? '—'}</span>
+    </div>
+  );
+  return (
+    <section className="acol" style={{ gap: 4, marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--c-border)' }}
+      aria-labelledby="inv-title" data-testid="invoice">
+      <h2 className="a20" id="inv-title">{tr('Tax invoice')}</h2>
+      {row(tr('Invoice number'), inv.number)}
+      {row(tr('Issued to'), inv.rider_name)}
+      <div className="a14 amut" style={{ padding: '4px 0' }}>
+        <div className="ab" style={{ color: 'var(--c-text)' }}>{inv.company.name}</div>
+        {inv.company.address && <div>{inv.company.address}</div>}
+        {inv.company.gstin && <div>GSTIN {inv.company.gstin}</div>}
+      </div>
+      {row(tr('Pickup'), t.pickup_address)}
+      {row(tr('Drop'), t.destination_address)}
+      <div className="asep" style={{ marginTop: 8 }}>
+        {row(tr('Base fare'), money(f.base_fare ?? null, cur, locale))}
+        {row(tr('Distance and time'), money(dist, cur, locale))}
+        {surge > 1 && row(tr('Demand'), 'x ' + surge.toFixed(2))}
+        {row(inv.tax_label ?? tr('Tax'), money(inv.tax_amount ?? null, cur, locale))}
+        {row(tr('Total'), money(inv.total ?? null, cur, locale), true)}
+      </div>
+    </section>
   );
 }

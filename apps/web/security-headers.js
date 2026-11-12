@@ -43,7 +43,9 @@ function contentSecurityPolicy(env = process.env) {
 
   const directives = {
     'default-src': ["'self'"],
-    'script-src': ["'self'", "'unsafe-inline'", ...google, ...(dev ? ["'unsafe-eval'"] : [])],
+    // Razorpay Checkout (11 Nov): riders pay UPI or card at the end of a trip.
+    'script-src': ["'self'", "'unsafe-inline'", ...google, 'https://checkout.razorpay.com', ...(dev ? ["'unsafe-eval'"] : [])],
+    'frame-src': ["'self'", 'https://api.razorpay.com', 'https://checkout.razorpay.com'],
     'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
     'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
     'img-src': ["'self'", 'data:', 'blob:', ...google, 'https://*.google.com',
@@ -51,7 +53,7 @@ function contentSecurityPolicy(env = process.env) {
       // KYC documents are shown from short-lived signed URLs on Cloudflare R2 (QA storage since 2026-11-03).
       'https://*.r2.cloudflarestorage.com'],
     // The Sentry ingest host, when a DSN is set: load failures are reported there (lib/report.ts).
-    'connect-src': ["'self'", api, ws, ...google, 'https://*.google.com',
+    'connect-src': ["'self'", api, ws, ...google, 'https://*.google.com', 'https://api.razorpay.com', 'https://lumberjack.razorpay.com',
       originOf((env.NEXT_PUBLIC_SENTRY_DSN || '').replace(/\/\/[^@/]+@/, '//'))].filter(Boolean),
     'worker-src': ["'self'", 'blob:'],
     'object-src': ["'none'"],

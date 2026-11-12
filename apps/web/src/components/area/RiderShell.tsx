@@ -7,6 +7,7 @@ import { useTr } from '@/i18n/website';
 import { AREA_FLAGS } from '@/lib/area/flags';
 import { IHelp, IMoon, ISun, ISwitch } from './icons';
 import { ProfileMenu } from './ProfileMenu';
+import { ConfirmEmail } from './rider/ConfirmEmail';
 import { areaPath, useArea } from './useArea';
 
 /**
@@ -73,6 +74,7 @@ export function RiderShell({ children }: { children: React.ReactNode }) {
           )} />
         </div>
       </header>
+      <ConfirmEmail />
       <main id="main" className="ar-main">{children}</main>
     </div>
   );
