@@ -205,5 +205,12 @@
   "How to sign in": "How to sign in",
   "We could not find that page": "We could not find that page",
   "The link may be old, or the page may have moved.": "The link may be old, or the page may have moved.",
-  "Go to the home page": "Go to the home page"
+  "Go to the home page": "Go to the home page",
+  "Tell us what to call you.": "Tell us what to call you.",
+  "Enter a valid email address.": "Enter a valid email address.",
+  "Use at least 10 characters.": "Use at least 10 characters.",
+  "We could not create the account. Please try again.": "We could not create the account. Please try again.",
+  "This email already has an account.": "This email already has an account.",
+  "Forgot password?": "Forgot password?",
+  "Creating your account…": "Creating your account…"
 }

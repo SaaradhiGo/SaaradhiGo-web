@@ -205,5 +205,12 @@
   "How to sign in": "ఎలా లాగిన్ అవ్వాలి",
   "We could not find that page": "ఆ పేజీ దొరకలేదు",
   "The link may be old, or the page may have moved.": "లింక్ పాతది కావచ్చు, లేదా పేజీ వేరే చోటికి మారి ఉండవచ్చు.",
-  "Go to the home page": "హోమ్ పేజీకి వెళ్ళండి"
+  "Go to the home page": "హోమ్ పేజీకి వెళ్ళండి",
+  "Tell us what to call you.": "మిమ్మల్ని ఏమని పిలవాలో చెప్పండి.",
+  "Enter a valid email address.": "సరైన ఇమెయిల్ చిరునామా ఇవ్వండి.",
+  "Use at least 10 characters.": "కనీసం 10 అక్షరాలు వాడండి.",
+  "We could not create the account. Please try again.": "ఖాతా సృష్టించలేకపోయాం. మళ్లీ ప్రయత్నించండి.",
+  "This email already has an account.": "ఈ ఇమెయిల్‌కు ఇప్పటికే ఖాతా ఉంది.",
+  "Forgot password?": "పాస్‌వర్డ్ మర్చిపోయారా?",
+  "Creating your account…": "మీ ఖాతా సృష్టిస్తున్నాం…"
 }

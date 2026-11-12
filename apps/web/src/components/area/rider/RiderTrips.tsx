@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { listWhen, money } from '@/lib/area/format';
 import { className, paidFare, trips as loadTrips } from '@/lib/area/rider';
 import { useLoad } from '@/lib/area/useLoad';
+import { localDay, useRiderPeriod } from '@/lib/area/riderPeriod';
+import { PeriodSwitcher, SearchBox, periodLabel } from '../driver/PeriodSwitcher';
 import { IHelp } from '../icons';
 import { LoadError, Skel } from '../states';
 
@@ -22,7 +24,20 @@ export function RiderTrips() {
   const { locale } = useLocale();
   const [filter, setFilter] = useState<Filter>('all');
   const load = useLoad(() => loadTrips(filter === 'all' ? undefined : filter), [filter]);
-  const rows = load.data;
+  // 11 Nov: the driver Trips page's periods and search, over the rider's own trips.
+  const s = useRiderPeriod('month');
+  const h = s.hist.data;
+  const [q, setQ] = useState('');
+  const rows = useMemo(() => {
+    if (!load.data) return null;
+    const needle = q.toLowerCase().replace(/^#/, '');
+    return load.data.filter((t) => {
+      const d = localDay(t.completed_at ?? t.cancelled_at ?? t.requested_at, t.timezone);
+      if (!h || !d || d < h.start || d > h.end) return false;
+      if (!needle) return true;
+      return [t.pickup_address, t.destination_address, String(t.id)].some((x) => (x ?? '').toLowerCase().includes(needle));
+    });
+  }, [load.data, h, q]);
 
   const words = { today: tr('Today'), yesterday: tr('Yesterday') };
 
@@ -42,6 +57,8 @@ export function RiderTrips() {
           ))}
         </div>
       </div>
+      <PeriodSwitcher s={s} />
+      <SearchBox label={tr('Search by place or trip number')} onSearch={setQ} />
       <div className="acard" style={{ overflowX: 'auto' }}>
         <table className="atable">
           <thead>
@@ -52,10 +69,20 @@ export function RiderTrips() {
           <tbody>
             {load.state === 'error' && <tr><td colSpan={6}><LoadError what="trips" retry={load.retry} /></td></tr>}
             {load.state === 'loading' && [0, 1, 2].map((i) => <tr key={i}><td colSpan={6}><Skel h={18} /></td></tr>)}
-            {rows && rows.length === 0 && (
+            {s.period === 'custom' && !h && <tr><td colSpan={6} className="amut">{tr('Choose the dates to see their trips.')}</td></tr>}
+            {rows && rows.length === 0 && h && (
               <tr><td colSpan={6}>
-                <div className="ab">{tr('No trips yet')}</div>
-                <div className="a14 amut">{tr('Book your first ride from the Ride page.')}</div>
+                {load.data?.length === 0 ? (
+                  <>
+                    <div className="ab">{tr('No trips yet')}</div>
+                    <div className="a14 amut">{tr('Book your first ride from the Ride page.')}</div>
+                  </>
+                ) : (
+                  <div className="ab" data-testid="trips-none">
+                    {q ? tr('No trips match “{q}” in {period}.').replace('{q}', q).replace('{period}', periodLabel(h, locale))
+                      : tr('No trips in {period}.').replace('{period}', periodLabel(h, locale))}
+                  </div>
+                )}
               </td></tr>
             )}
             {rows?.map((t) => {

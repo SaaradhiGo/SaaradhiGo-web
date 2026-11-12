@@ -2,12 +2,12 @@ import { Suspense } from 'react';
 import { localized } from '@/i18n/server';
 import { KeepNextLink } from '@/components/KeepNextLink';
 import { AuthShell } from '@/components/form';
-import RegisterForm from '@/components/RegisterForm';
+import RiderSignUpForm from '@/components/RiderSignUpForm';
 import { Tr } from '@/i18n/website';
 
 export const generateMetadata = localized({
   title: 'Sign up — SaaradhiGo',
-  description: 'Create your SaaradhiGo rider account with an email address and a password.',
+  description: 'Create your SaaradhiGo rider account with your name, email and a password.',
 });
 
 // WRAPPED IN SUSPENSE BECAUSE THE FORM READS `next`.
@@ -31,7 +31,7 @@ export default function Page() {
       }
     >
       <Suspense fallback={<div className="h-48" aria-hidden="true" />}>
-        <RegisterForm role="rider" />
+        <RiderSignUpForm />
       </Suspense>
     </AuthShell>
   );

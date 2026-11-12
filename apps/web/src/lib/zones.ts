@@ -37,6 +37,8 @@ export type Zone = {
   zone_type: string; parent: number | null; parent_code: string | null;
   polygon_geojson: Geometry; priority: number; currency: string; timezone_name: string;
   distance_unit: string; tax_mode: string; per_trip_fee: string; per_trip_fee_label: string;
+  /** Seconds dispatch looks for a driver (11 Nov); null: the parent zone's, else 180. */
+  dispatch_timeout_seconds?: number | null;
   geo_node: string | null; is_active: boolean; metadata: Record<string, unknown>;
   version: number; area_km2: number | null; created_at: string; updated_at: string;
 };
@@ -114,7 +116,7 @@ export const TYPE_WORDS: Record<string, string> = {
 
 export const FIELD_WORDS: Record<string, string> = {
   polygon_geojson: 'shape', zone_type: 'type', state_code: 'state code', timezone_name: 'time zone',
-  distance_unit: 'distance unit', tax_mode: 'tax', per_trip_fee: 'per-trip fee', per_trip_fee_label: 'fee name',
+  distance_unit: 'distance unit', tax_mode: 'tax', per_trip_fee: 'per-trip fee', per_trip_fee_label: 'fee name', dispatch_timeout_seconds: 'driver search time',
 };
 export const fieldWord = (f: string) => FIELD_WORDS[f] ?? f.replace(/_/g, ' ');
 
@@ -343,6 +345,7 @@ export type Draft = {
   name: string; zone_type: string; priority: string; state_code: string; city: string;
   parent: string; currency: string; timezone_name: string; distance_unit: string;
   tax_mode: string; per_trip_fee: string; per_trip_fee_label: string;
+  dispatch_timeout_seconds: string;
   rows: VertexRow[]; marketOverrideReason: string;
 };
 
@@ -352,6 +355,7 @@ export function draftFromZone(z: Zone): Draft {
     city: z.city, parent: z.parent_code ?? '', currency: z.currency, timezone_name: z.timezone_name,
     distance_unit: z.distance_unit, tax_mode: z.tax_mode, per_trip_fee: String(z.per_trip_fee ?? '0'),
     per_trip_fee_label: z.per_trip_fee_label ?? '', rows: rowsFromGeometry(z.polygon_geojson),
+    dispatch_timeout_seconds: z.dispatch_timeout_seconds != null ? String(z.dispatch_timeout_seconds) : '',
     marketOverrideReason: '',
   };
 }
@@ -373,6 +377,7 @@ export function changedFields(z: Zone, d: Draft): string[] {
   if (!same(z.tax_mode, d.tax_mode)) out.push('tax_mode');
   if (Number(z.per_trip_fee ?? 0) !== Number(d.per_trip_fee || 0)) out.push('per_trip_fee');
   if (!same(z.per_trip_fee_label, d.per_trip_fee_label)) out.push('per_trip_fee_label');
+  if (!same(z.dispatch_timeout_seconds != null ? String(z.dispatch_timeout_seconds) : '', d.dispatch_timeout_seconds)) out.push('dispatch_timeout_seconds');
   const a = JSON.stringify(rowsFromGeometry(z.polygon_geojson).map((r) => [num(r.lat), num(r.lng)]));
   const b = JSON.stringify(d.rows.map((r) => [num(r.lat), num(r.lng)]));
   if (a !== b) out.push('polygon_geojson');
@@ -385,6 +390,7 @@ export function changeBody(z: Zone, d: Draft, reason: string): Record<string, un
   for (const f of changedFields(z, d)) {
     if (f === 'polygon_geojson') body.polygon_geojson = polygonFromRows(d.rows);
     else if (f === 'priority') body.priority = Number(d.priority);
+    else if (f === 'dispatch_timeout_seconds') body.dispatch_timeout_seconds = d.dispatch_timeout_seconds.trim() ? Number(d.dispatch_timeout_seconds) : null;
     else body[f] = (d as unknown as Record<string, string>)[f];
   }
   if (d.marketOverrideReason.trim()) body.market_override_reason = d.marketOverrideReason.trim();
@@ -398,6 +404,7 @@ export function createBody(code: string, geoNode: string, country: string, d: Dr
     zone_type: d.zone_type, priority: Number(d.priority), state_code: d.state_code.trim(),
     city: d.city.trim(), polygon_geojson: polygonFromRows(d.rows), reason: reason.trim(),
     per_trip_fee: d.per_trip_fee || '0', per_trip_fee_label: d.per_trip_fee_label.trim(),
+    ...(d.dispatch_timeout_seconds.trim() ? { dispatch_timeout_seconds: Number(d.dispatch_timeout_seconds) } : {}),
   };
   if (d.parent.trim()) body.parent = d.parent.trim();
   for (const k of ['currency', 'timezone_name', 'distance_unit', 'tax_mode'] as const) {

@@ -245,7 +245,7 @@ function BookPageInner() {
   const [socketState, setSocketState] =
     useState<'connecting' | 'open' | 'closed'>('closed');
   const [cancelReason, setCancelReason] = useState<string>(
-    RIDER_CANCEL_REASONS[4].value,
+    'other',
   );
 
   // Padding that keeps the route clear of the panel (desktop) or sheet (phone).

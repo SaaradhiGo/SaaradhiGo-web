@@ -53,7 +53,15 @@ export type Trip = {
   otp?: string | number | null;
   ratings?: { score?: number; rater_id?: number }[] | null;
   planned_route_polyline?: string | null;
-  fare_breakdown?: { total_fare?: string | null } | null;
+  fare_breakdown?: { total_fare?: string | null; base_fare?: string | null; distance_fare?: string | null;
+    time_fare?: string | null; surge_multiplier?: string | null; gst_amount?: string | null } | null;
+  /** 11 Nov: why the system cancelled (no_driver_accepted), when the search ends, the invoice. */
+  cancellation_reason?: string | null;
+  cancellation_message?: string | null;
+  search_expires_at?: string | null;
+  vehicle_line?: string | null;
+  invoice?: { number: string; issued_at?: string | null; rider_name: string; tax_label?: string; tax_amount?: string;
+    total?: string; currency?: string; company: { name: string; address?: string; gstin?: string } } | null;
 };
 
 export type Profile = {
@@ -68,6 +76,9 @@ export type Profile = {
   /** The languages offered in the account's market (10 Nov). */
   market_languages?: string[];
   market_country?: string | null;
+  /** 11 Nov: riders sign up by email; the number is proved at the first booking. */
+  phone_verified?: boolean;
+  email_verified?: boolean;
 };
 
 type Page<T> = { results?: T[] } | T[];
@@ -261,4 +272,65 @@ export async function startCall(tripId: string | number): Promise<Call> {
 
 export async function endCall(sessionId: number) {
   return areaPost(`/calls/sessions/${sessionId}/end/`, {});
+}
+
+
+// --- 11 Nov rider QA fixes ------------------------------------------------------------------
+
+/** Send the "Confirm your email" link again. */
+export async function requestEmailConfirmation() {
+  return areaPost('/auth/email/verify/request/', {});
+}
+
+export type PayMethod = 'upi' | 'card' | 'cash';
+export type BookingOptions = {
+  payment: { methods: PayMethod[]; default: PayMethod | null; online_unavailable_reason?: string };
+  search_timeout_seconds: number;
+  phone_required: boolean;
+};
+
+/** How the rider can pay here, the city's search time, and whether the mobile is still needed. */
+export async function bookingOptions(p: { lat: number; lng: number }) {
+  const q = new URLSearchParams({ lat: String(p.lat), lng: String(p.lng) });
+  return areaGet<BookingOptions>(`/ride/booking-options/?${q}`);
+}
+
+/** A street address for a point (one cached Maps call), or null. */
+export async function streetAddress(p: { lat: number; lng: number }): Promise<string | null> {
+  const data = await areaPost<{ results?: { formatted_address?: string }[] }>('/ride/maps/reverse-geocode', { lat: p.lat, lng: p.lng });
+  return data?.results?.[0]?.formatted_address ?? null;
+}
+
+/**
+ * The trip being planned, kept in this tab rather than the URL (11 Nov): coordinates in a URL
+ * end up in logs and analytics. The URL carries only a random id.
+ */
+export type RideDraft = { from: { lat: number; lng: number; label: string }; to: { lat: number; lng: number; label: string } };
+const DRAFT_KEY = 'sg-ride-draft:';
+export function saveDraft(d: RideDraft): string {
+  const id = Math.random().toString(36).slice(2, 10);
+  try { sessionStorage.setItem(DRAFT_KEY + id, JSON.stringify(d)); } catch { /* the page still has it */ }
+  return id;
+}
+export function readDraft(id: string | null): RideDraft | null {
+  if (!id) return null;
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY + id);
+    return raw ? (JSON.parse(raw) as RideDraft) : null;
+  } catch { return null; }
+}
+
+/** Online payment at the end of the trip, for the locked fare (Razorpay Checkout). */
+export type Order = { payment_id: number; gateway: string; order_id?: string; gateway_order_id?: string; key_id?: string;
+  amount_paise?: string | number; currency?: string; description?: string;
+  prefill?: { name?: string; contact?: string; email?: string } };
+export async function createOrder(tripId: string | number) {
+  return areaPost<Order>('/payments/create-order/', { trip_id: Number(tripId) });
+}
+export async function verifyPayment(body: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
+  return areaPost('/payments/verify/', { ...body, gateway: 'razorpay' });
+}
+/** The fallback when online payment fails: the rider pays the driver in cash. */
+export async function payByCash(tripId: string | number) {
+  return areaPost('/payments/switch/', { trip_id: Number(tripId), new_method: 'cash' });
 }

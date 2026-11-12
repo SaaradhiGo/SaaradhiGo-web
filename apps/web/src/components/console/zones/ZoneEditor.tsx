@@ -29,7 +29,7 @@ import { PointTester } from '@/components/console/zones/PointTester';
 const BLANK: Draft = {
   name: '', zone_type: 'city', priority: '10', state_code: '', city: '', parent: '', currency: '',
   timezone_name: '', distance_unit: '', tax_mode: '', per_trip_fee: '0', per_trip_fee_label: '',
-  rows: [], marketOverrideReason: '',
+  dispatch_timeout_seconds: '', rows: [], marketOverrideReason: '',
 };
 
 export function ZoneEditor({ zone, zones, cities, onSent, onCancel }: {
@@ -57,7 +57,7 @@ export function ZoneEditor({ zone, zones, cities, onSent, onCancel }: {
   const [lng, setLng] = useState('');
   const seq = useRef(0);
   const ids = { name: useId(), type: useId(), priority: useId(), state: useId(), city: useId(), parent: useId(),
-    cur: useId(), tz: useId(), unit: useId(), tax: useId(), fee: useId(), feeLabel: useId(), code: useId(),
+    cur: useId(), tz: useId(), unit: useId(), tax: useId(), fee: useId(), feeLabel: useId(), search: useId(), code: useId(),
     node: useId(), why: useId(), override: useId() };
 
   const city = cities.find((c) => c.code === geoNode) ?? null;
@@ -238,6 +238,12 @@ export function ZoneEditor({ zone, zones, cities, onSent, onCancel }: {
               <div>
                 <label className="ops-form__label" htmlFor={ids.feeLabel}>Fee name</label>
                 <input id={ids.feeLabel} className="input" value={draft.per_trip_fee_label} onChange={(e) => set('per_trip_fee_label', e.target.value)} />
+              </div>
+              <div>
+                <label className="ops-form__label" htmlFor={ids.search}>Driver search time (seconds)</label>
+                <input id={ids.search} className="input" inputMode="numeric" placeholder="180" value={draft.dispatch_timeout_seconds}
+                  onChange={(e) => set('dispatch_timeout_seconds', e.target.value)} aria-describedby={`${ids.search}-help`} />
+                <p id={`${ids.search}-help`} className="caption text-ink-muted">How long to look for a driver before the rider is told nobody is nearby. 30 to 900; blank uses the parent zone or 180.</p>
               </div>
             </div>
             {marketTouched ? (
