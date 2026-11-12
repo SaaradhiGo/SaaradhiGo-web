@@ -186,6 +186,19 @@ export async function deleteAccount() {
   return areaPost('/auth/me/delete/', { confirm: 'DELETE' });
 }
 
+/** 13 Nov: what deleting the account removes and keeps, and money still owed (drivers). */
+export type AccountClosure = {
+  deleted: string[]; kept: string[];
+  pending_payouts: { balance: string; currency: string; in_flight: number } | null;
+  closure: { status: string; requested_at: string } | null; web_url: string;
+};
+export async function accountClosure() {
+  return areaGet<AccountClosure>('/auth/me/delete/');
+}
+export async function closeAccount() {
+  return areaPost<{ status: 'closed' | 'waiting_payouts'; message?: string }>('/auth/me/delete/', { confirm: 'DELETE' });
+}
+
 /** The fare the rider booked: the locked estimate the trip carries. */
 export function lockedFare(t: Trip): string | null {
   return t.estimated_fare ?? null;

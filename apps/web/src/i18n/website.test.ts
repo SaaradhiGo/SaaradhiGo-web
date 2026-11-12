@@ -19,6 +19,11 @@ const MISSING = [
   // 13 Nov launch approvals: English until the reviewer translates them.
   'Country', 'Registered office', 'file number', 'Tell me when we launch',
   'SaaradhiGo is not available in this area yet.', 'We could not save that. Please try again.',
+  // 13 Nov follow-up: account deletion.
+  'Your account closes after your earnings are paid.', 'Delete your account',
+  'Closing: waiting for your earnings to be paid.', 'What we delete', 'What we must keep',
+  'You are still owed {amount}. Your account closes after it is paid; until then you stay signed in and cannot go online.',
+  'Type DELETE to confirm', 'Keep my account',
 ];
 
 /** Class names the rider app shows in Latin script in every language. */

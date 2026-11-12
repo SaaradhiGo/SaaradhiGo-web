@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useLegal } from '@/components/sg/LegalProvider';
 import { SUPPORT_EMAIL } from '@/lib/support';
@@ -9,7 +10,7 @@ import { Masthead } from './PageShell';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
-export type DocKind = 'riderTerms' | 'driverTerms' | 'privacy' | 'refunds' | 'textMessages' | 'grievance' | 'cookies';
+export type DocKind = 'riderTerms' | 'driverTerms' | 'privacy' | 'refunds' | 'textMessages' | 'grievance' | 'cookies' | 'deleteAccount';
 
 type FareCity = {
   zone: string; city: string; city_status: string; country: string; currency: string;
@@ -46,7 +47,13 @@ export function DocBody({ doc }: { doc: Doc }) {
           return (
             <div className="sg-legal-doc__block" key={s.h}>
               <h2>{s.h}</h2>
-              {lines.map((line) => <p key={line.slice(0, 48)}>{line}</p>)}
+              {lines.map((line) => (
+                <p key={line.slice(0, 48)}>
+                  {content.linkParts(line).map((part, i) => ('href' in part
+                    ? <Link key={i} href={part.href}>{part.label}</Link>
+                    : <span key={i}>{part.text}</span>))}
+                </p>
+              ))}
             </div>
           );
         })}
@@ -71,6 +78,7 @@ export function LegalDoc({ kind }: { kind: DocKind }) {
     case 'textMessages': doc = content.textMessages(ctx); break;
     case 'grievance': doc = content.grievance(ctx); break;
     case 'cookies': doc = content.cookies(ctx); break;
+    case 'deleteAccount': doc = content.deleteAccount(ctx); break;
     default: {
       const city = (fares ?? []).find((c) => c.cancellation);
       doc = content.refunds(ctx, city ? content.cancellationLine(city.cancellation, city.currency) : null);

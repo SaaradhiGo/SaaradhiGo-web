@@ -13,7 +13,7 @@ import { SITE_URL } from '@/lib/support';
  * the content changed when it did not; leaving it out says nothing false.
  */
 const PAGES = ['', '/ride', '/drive', '/fares', '/safety', '/about', '/help', '/contact', '/privacy', '/terms',
-  '/driver-terms', '/refunds', '/text-messages', '/grievance', '/cookies'];
+  '/driver-terms', '/refunds', '/text-messages', '/grievance', '/cookies', '/delete-account'];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return PAGES.map((path) => ({

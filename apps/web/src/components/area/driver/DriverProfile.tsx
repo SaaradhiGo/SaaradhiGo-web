@@ -1,5 +1,6 @@
 'use client';
 
+import { DeleteAccountSheet } from '../DeleteAccountSheet';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
@@ -51,7 +52,8 @@ function Card({ id, icon, title, state, step, rows, href, open = false }: {
 function PrefsCard() {
   const tr = useTr();
   const { language, setLanguage } = useLocale();
-  const { both, switchTo } = useArea();
+  const { both, switchTo, signOut } = useArea();
+  const [deleting, setDeleting] = useState(false);
   const [acct] = useAccount();
   const [editing, setEditing] = useState(false);
   const [dark, setDark] = useState(false);
@@ -85,6 +87,11 @@ function PrefsCard() {
       {editing && both && (
         <button type="button" className="su-link a14" style={{ marginTop: 12, textAlign: 'left' }} onClick={() => switchTo('rider')}>{tr('Switch to rider')}</button>
       )}
+      {editing && (
+        <button type="button" className="su-link a14 ared" style={{ marginTop: 12, textAlign: 'left' }}
+          onClick={() => setDeleting(true)} data-testid="driver-delete-account">{tr('Delete account')}</button>
+      )}
+      {deleting && <DeleteAccountSheet onClose={() => setDeleting(false)} onClosed={() => signOut()} />}
       <button type="button" className="su-link a14 pf-go" onClick={() => setEditing(!editing)}>{tr(editing ? 'Done' : 'Edit')} {editing ? '' : '→'}</button>
     </section>
   );

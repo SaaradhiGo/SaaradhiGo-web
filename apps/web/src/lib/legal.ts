@@ -107,4 +107,5 @@ export const POLICY_PAGES = {
   grievance: '/grievance',
   cookies: '/cookies',
   safety: '/safety',
+  deleteAccount: '/delete-account',
 } as const;

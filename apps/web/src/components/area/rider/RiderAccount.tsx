@@ -1,5 +1,6 @@
 'use client';
 
+import { DeleteAccountSheet } from '../DeleteAccountSheet';
 import { useEffect, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { LANGUAGES, LANGUAGE_INFO, type Language } from '@/i18n/locales';
@@ -7,7 +8,7 @@ import { useTr } from '@/i18n/website';
 import { AREA_FLAGS } from '@/lib/area/flags';
 import { monthYear } from '@/lib/area/format';
 import {
-  type Profile, deleteAccount, exportData, maskPhone, profile as loadProfile, updateName,
+  type Profile, exportData, maskPhone, profile as loadProfile, updateName,
 } from '@/lib/area/rider';
 import { useLoad } from '@/lib/area/useLoad';
 import { ICard, IChevron, IUser } from '../icons';
@@ -90,14 +91,6 @@ export function RiderAccount() {
     }
   }
 
-  async function remove() {
-    try {
-      await deleteAccount();
-      signOut();
-    } catch {
-      setNote(tr('We could not delete your account. Contact support.'));
-    }
-  }
 
   const since = monthYear(me?.created_at, locale);
 
@@ -202,14 +195,8 @@ export function RiderAccount() {
               <button type="button" style={linkBtn} aria-label={tr('Sign out')} onClick={() => signOut()}><IChevron /></button>
             </Row>
             <Row value={<span className="ared">{tr('Delete account')}</span>}>
-              {confirming ? (
-                <span className="arow" style={{ gap: 8 }}>
-                  <button type="button" className="a14 ab" style={linkBtn} onClick={() => setConfirming(false)}>{tr('Keep')}</button>
-                  <button type="button" className="a14 ab ared" style={linkBtn} onClick={remove}>{tr('Delete')}</button>
-                </span>
-              ) : (
-                <button type="button" className="a14 amut" style={linkBtn} onClick={() => setConfirming(true)}>{tr('Asks to confirm')}</button>
-              )}
+              <button type="button" className="a14 amut" style={linkBtn} onClick={() => setConfirming(true)}>{tr('Asks to confirm')}</button>
+              {confirming && <DeleteAccountSheet onClose={() => setConfirming(false)} onClosed={() => signOut()} />}
             </Row>
           </div>
         </section>
