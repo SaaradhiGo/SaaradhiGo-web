@@ -29,7 +29,8 @@ import { PointTester } from '@/components/console/zones/PointTester';
 const BLANK: Draft = {
   name: '', zone_type: 'city', priority: '10', state_code: '', city: '', parent: '', currency: '',
   timezone_name: '', distance_unit: '', tax_mode: '', per_trip_fee: '0', per_trip_fee_label: '',
-  dispatch_timeout_seconds: '', rows: [], marketOverrideReason: '',
+  dispatch_timeout_seconds: '', kyc_review_target_days: '', low_rating_below: '', low_rating_min_ratings: '',
+  rows: [], marketOverrideReason: '',
 };
 
 export function ZoneEditor({ zone, zones, cities, onSent, onCancel }: {
@@ -57,7 +58,7 @@ export function ZoneEditor({ zone, zones, cities, onSent, onCancel }: {
   const [lng, setLng] = useState('');
   const seq = useRef(0);
   const ids = { name: useId(), type: useId(), priority: useId(), state: useId(), city: useId(), parent: useId(),
-    cur: useId(), tz: useId(), unit: useId(), tax: useId(), fee: useId(), feeLabel: useId(), search: useId(), code: useId(),
+    cur: useId(), tz: useId(), unit: useId(), tax: useId(), fee: useId(), feeLabel: useId(), search: useId(), kycTarget: useId(), lowBelow: useId(), lowMin: useId(), code: useId(),
     node: useId(), why: useId(), override: useId() };
 
   const city = cities.find((c) => c.code === geoNode) ?? null;
@@ -244,6 +245,24 @@ export function ZoneEditor({ zone, zones, cities, onSent, onCancel }: {
                 <input id={ids.search} className="input" inputMode="numeric" placeholder="180" value={draft.dispatch_timeout_seconds}
                   onChange={(e) => set('dispatch_timeout_seconds', e.target.value)} aria-describedby={`${ids.search}-help`} />
                 <p id={`${ids.search}-help`} className="caption text-ink-muted">How long to look for a driver before the rider is told nobody is nearby. 30 to 900; blank uses the parent zone or 180.</p>
+              </div>
+              <div>
+                <label className="ops-form__label" htmlFor={ids.kycTarget}>KYC review target (working days)</label>
+                <input id={ids.kycTarget} className="input" inputMode="numeric" placeholder="1" value={draft.kyc_review_target_days}
+                  onChange={(e) => set('kyc_review_target_days', e.target.value)} aria-describedby={`${ids.kycTarget}-help`} />
+                <p id={`${ids.kycTarget}-help`} className="caption text-ink-muted">Past this, the KYC queue marks a driver past target and alerts; drivers are told the same number. 1 to 10; blank uses the parent zone or 1.</p>
+              </div>
+              <div>
+                <label className="ops-form__label" htmlFor={ids.lowBelow}>Low rating: average below</label>
+                <input id={ids.lowBelow} className="input" inputMode="decimal" placeholder="4.5" value={draft.low_rating_below}
+                  onChange={(e) => set('low_rating_below', e.target.value)} aria-describedby={`${ids.lowBelow}-help`} />
+                <p id={`${ids.lowBelow}-help`} className="caption text-ink-muted">A driver here is &ldquo;Low rating&rdquo; below this average. 1 to 5; blank uses the parent zone or 4.5.</p>
+              </div>
+              <div>
+                <label className="ops-form__label" htmlFor={ids.lowMin}>Low rating: from at least (ratings)</label>
+                <input id={ids.lowMin} className="input" inputMode="numeric" placeholder="10" value={draft.low_rating_min_ratings}
+                  onChange={(e) => set('low_rating_min_ratings', e.target.value)} aria-describedby={`${ids.lowMin}-help`} />
+                <p id={`${ids.lowMin}-help`} className="caption text-ink-muted">Fewer ratings than this is never &ldquo;Low rating&rdquo;. 1 to 1000; blank uses the parent zone or 10.</p>
               </div>
             </div>
             {marketTouched ? (

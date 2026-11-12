@@ -20,6 +20,7 @@ import { PageHead } from '@/components/console/kit/ListBits';
 import { RecordPanel } from '@/components/console/kit/RecordPanel';
 import { Empty, ErrorState, Skeleton } from '@/components/console/ui';
 import { marketDate } from '@/lib/consoleTime';
+import { EXPIRY_WARN_DAYS } from '@/components/console/DocExpiry';
 
 /**
  * KYC review, built for throughput (design board E).
@@ -610,6 +611,9 @@ function ExpiryRow({ iso, today }: { iso: string | null | undefined; today: stri
   if (check.state === 'none') return <Check label="Expiry date" value="Not on record" chip={['Not set', 'caution']} />;
   if (check.state === 'expired') {
     return <Check label="Expiry date" value={`${marketDate(iso)} · ${check.days} day${check.days === 1 ? '' : 's'} ago`} chip={['Expired', 'critical']} />;
+  }
+  if (check.days <= EXPIRY_WARN_DAYS) {
+    return <Check label="Expiry date" value={`${marketDate(iso)} · expires in ${check.days} day${check.days === 1 ? '' : 's'}`} chip={['Expires soon', 'caution']} />;
   }
   return <Check label="Expiry date" value={`${marketDate(iso)} · ${check.days} day${check.days === 1 ? '' : 's'} left`} chip={['Valid', 'good']} />;
 }

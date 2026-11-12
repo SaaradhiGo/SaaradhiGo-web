@@ -28,6 +28,7 @@ import {
 } from '@/components/console/kit/ListBits';
 import { Drawer, Fact, Facts, Skeleton } from '@/components/console/ui';
 import { marketDate } from '@/lib/consoleTime';
+import { DocExpiry } from '@/components/console/DocExpiry';
 
 /**
  * Drivers: the fleet and the KYC queue, as a list with the driver beside it
@@ -79,7 +80,7 @@ type BulkResult = { results: Array<{ id: number; result: string }>; counts: Reco
 type AuditRow = { id: number; action: string; created_at: string | null; reason: string;
   created_by?: { label?: string; role?: string } | null };
 type Doc = { key: string; label: string; owner: 'driver' | 'vehicle'; vehicle_id: number | null;
-  present: boolean; review_state: string };
+  present: boolean; review_state: string; expires?: string | null };
 type DriverDetail = {
   id: number; status: string; approved: boolean; ratings: string; total_trips: number;
   license_expiry: string | null; upi_id: string | null;
@@ -442,6 +443,10 @@ function DriverRecord({ row, queue, onClose, onChanged }: {
     .filter((r, i, all) => all.findIndex((x) => x.id === r.id) === i)
     .sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''))
     .map((r) => ({ at: when(r.created_at), text: <>{words(r.action)}{r.reason ? ` · ${r.reason}` : ''}</>, who: r.created_by?.label ?? null }));
+  // 13 Nov: a vehicle replaced by a newer one is history, not part of the overview.
+  for (const v of data.vehicles.filter((x) => x.status === 'archived')) {
+    history.push({ at: 'Archived', text: <>Earlier vehicle · {[v.type, v.vehicle_number].filter(Boolean).join(' · ')}</>, who: null });
+  }
 
   const tone = (t: string): ChipTone => chipTone(t);
   const [kycLabel, kycTone] = KYC_LABEL[data.kyc_state ?? ''] ?? [words(data.kyc_state), 'neutral'];
@@ -509,7 +514,7 @@ function DriverRecord({ row, queue, onClose, onChanged }: {
                   </p>
                 ))}
                 <RecordFacts rows={[
-                  ['Vehicle', data.vehicles.map((v) => [v.type, v.vehicle_number].filter(Boolean).join(' · ')).join(', ') || 'None on file'],
+                  ['Vehicle', data.vehicles.filter((v) => v.is_active_vehicle).map((v) => [v.type, v.vehicle_number].filter(Boolean).join(' · ')).join(', ') || 'None active'],
                   ['Licence expiry', data.license_expiry ? marketDate(data.license_expiry, (data.home_city?.code ?? 'IN').split('-')[0]) : 'Not set'],
                   ['Joined', when(data.joined_at)],
                   ['Account active', data.user.is_active ? 'Yes' : 'No'],
@@ -560,7 +565,7 @@ function DriverRecord({ row, queue, onClose, onChanged }: {
                       const [label, t] = REVIEW_LABEL[d.review_state] ?? [words(d.review_state), 'neutral'];
                       return (
                         <li key={`${d.owner}-${d.vehicle_id ?? 0}-${d.key}`}>
-                          <span>{d.label}</span>
+                          <span>{d.label} <DocExpiry iso={d.expires} country={(data.home_city?.code ?? 'IN').split('-')[0]} /></span>
                           <StatusChip tone={d.present ? tone(t) : 'neutral'}>{d.present ? label : 'Missing'}</StatusChip>
                         </li>
                       );

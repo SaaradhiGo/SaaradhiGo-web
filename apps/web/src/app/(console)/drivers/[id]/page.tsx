@@ -21,6 +21,7 @@ import {
 } from '@/components/console/ui';
 import { DriverRecords } from '@/components/console/drivers/DriverRecords';
 import { marketDate } from '@/lib/consoleTime';
+import { DocExpiry } from '@/components/console/DocExpiry';
 
 /**
  * One driver: the evidence, the decision, and the record.
@@ -39,7 +40,7 @@ import { marketDate } from '@/lib/consoleTime';
 type Doc = {
   key: string; label: string; description?: string; owner: 'driver' | 'vehicle';
   vehicle_id: number | null; present: boolean; recordable: boolean;
-  viewable: boolean; url_withheld: boolean; review_state: string;
+  viewable: boolean; url_withheld: boolean; review_state: string; expires?: string | null;
   review: { state: string; reason: string; reviewed_at: string | null; current: boolean;
     created_by?: { label?: string } | null } | null;
 };
@@ -151,7 +152,7 @@ export default function DriverDetailPage() {
 
   const docGroups: Array<[string, Doc[]]> = [
     ['Driver documents', documents.filter((d) => d.owner === 'driver')],
-    ...data.vehicles.map((v): [string, Doc[]] => [
+    ...data.vehicles.filter((v) => v.status !== 'archived').map((v): [string, Doc[]] => [
       `Vehicle · ${v.vehicle_number || `#${v.id}`}${v.is_active_vehicle ? ' (active)' : ''}`,
       documents.filter((d) => d.owner === 'vehicle' && d.vehicle_id === v.id),
     ]),
@@ -231,7 +232,16 @@ export default function DriverDetailPage() {
             {data.vehicles.length === 0 ? (
               <Empty title="No vehicle on file" detail="A driver cannot be approved without one." />
             ) : (
-              <DataTable caption="Vehicles" rows={data.vehicles} columns={vehicleColumns} rowKey={(v) => v.id} density="compact" maxHeight={false} />
+              <>
+              <DataTable caption="Vehicles" rows={data.vehicles.filter((v) => v.status !== 'archived')} columns={vehicleColumns} rowKey={(v) => v.id} density="compact" maxHeight={false} />
+              {data.vehicles.some((v) => v.status === 'archived') ? (
+                <>
+                  <h3 className="ops-subhead">History · earlier vehicles</h3>
+                  <DataTable caption="Earlier vehicles (archived)" rows={data.vehicles.filter((v) => v.status === 'archived')}
+                    columns={vehicleColumns.filter((c) => c.key !== 'act')} rowKey={(v) => v.id} density="compact" maxHeight={false} />
+                </>
+              ) : null}
+              </>
             )}
           </Panel>
           <Panel title="Recent trips" flush>
@@ -258,6 +268,7 @@ export default function DriverDetailPage() {
                     <span className={`ops-doc__tick ${doc.present ? 'is-on' : 'is-off'}`} aria-hidden="true">{doc.present ? '✓' : '!'}</span>
                     <span className="ops-doc__text">
                       <b>{doc.label} <Pill tone={tone}>{label}</Pill></b>
+                      {doc.expires ? <DocExpiry iso={doc.expires} country={(data.home_city?.code ?? 'IN').split('-')[0]} /> : null}
                       <span>
                         {!doc.recordable ? 'Required, but there is nowhere to store it: cannot be satisfied'
                           : doc.review?.current && doc.review.state === 'rejected' ? `Rejected: ${doc.review.reason}`

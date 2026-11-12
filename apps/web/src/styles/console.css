@@ -914,6 +914,8 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .ops-doc__tick.is-off { border-color: var(--ops-danger-edge); color: var(--ops-danger); }
 .ops-doc__text { display: grid; gap: 1px; min-width: 0; }
 .ops-doc__text b { font: 600 13.5px/1.35 var(--font-sans); }
+/* 13 Nov: a document's expiry under its name; the chip turns amber within 30 days. */
+.ops-doc__expiry { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; font: 500 12.5px/1.4 var(--font-sans); color: var(--ops-ink-2); }
 .ops-doc__text span { font: 500 11.5px/1.45 var(--font-sans); color: var(--ops-ink-5); }
 .ops-doc__open { font: 700 11.5px/1 var(--font-sans); color: var(--gold-text); text-decoration: none; border: 1px solid var(--ops-gold-edge); border-radius: 8px; padding: 7px 11px; white-space: nowrap; }
 .ops-doc__open:hover { background: var(--ops-gold-wash); }
