@@ -811,5 +811,7 @@
   "Sent. Check your inbox.": "పంపాము. మీ ఇన్‌బాక్స్ చూడండి.",
   "Something went wrong. Try again.": "ఏదో తప్పు జరిగింది. మళ్లీ ప్రయత్నించండి.",
   "Taxable value": "పన్ను విధించదగిన విలువ",
-  "We could not send the email right now. Try again later.": "ఇప్పుడు ఇమెయిల్ పంపలేకపోయాము. తర్వాత మళ్లీ ప్రయత్నించండి."
+  "We could not send the email right now. Try again later.": "ఇప్పుడు ఇమెయిల్ పంపలేకపోయాము. తర్వాత మళ్లీ ప్రయత్నించండి.",
+  "You can go online once every step is approved. We usually review within {n} working days.": "ప్రతి దశ ఆమోదించిన తర్వాత మీరు ఆన్‌లైన్‌కి రావచ్చు. మేము సాధారణంగా {n} పని దినాల్లో సమీక్షిస్తాము.",
+  "Usually {n} working days. Each document shows its own state; a rejected one says why.": "సాధారణంగా {n} పని దినాలు. ప్రతి పత్రం దాని స్థితిని చూపుతుంది; తిరస్కరించినది ఎందుకో చెబుతుంది."
 }

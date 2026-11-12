@@ -39,6 +39,12 @@ export function readToken(): string | null {
 export function writeTokens({ access, refresh }: { access: string; refresh?: string }) {
   window.localStorage.setItem(TOKEN_KEY, access);
   if (refresh) window.localStorage.setItem(REFRESH_KEY, refresh);
+  // 12 Nov: this browser now signs in to the console; an ended session on /trips goes to /login.
+  try {
+    document.cookie = 'sg-area=console; path=/; max-age=31536000; samesite=lax';
+  } catch {
+    /* no cookie access: routing falls back to the console, as before */
+  }
 }
 
 /** Seconds since the epoch at which a JWT expires, or null if it cannot be read. */

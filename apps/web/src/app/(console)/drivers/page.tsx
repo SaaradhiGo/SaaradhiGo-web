@@ -27,6 +27,7 @@ import {
   ActionNotice, MoreFilters, RecordFacts, RecordFailed, RecordLoading, RecordSection, chipTone,
 } from '@/components/console/kit/ListBits';
 import { Drawer, Fact, Facts, Skeleton } from '@/components/console/ui';
+import { marketDate } from '@/lib/consoleTime';
 
 /**
  * Drivers: the fleet and the KYC queue, as a list with the driver beside it
@@ -108,7 +109,7 @@ type View = 'all' | 'online' | 'low' | 'expiring' | 'kyc' | 'suspended';
 const VIEWS: Array<{ key: View; label: string; preset: Partial<DriverFilters> }> = [
   { key: 'all', label: 'All drivers', preset: {} },
   { key: 'online', label: 'Online now', preset: { online: true } },
-  { key: 'low', label: 'Low rating', preset: { ratingMax: '4.5' } },
+  { key: 'low', label: 'Low rating', preset: { lowRating: true } },
   { key: 'expiring', label: 'Documents expiring', preset: { expiringWithin: '30' } },
   { key: 'kyc', label: 'Waiting for KYC', preset: { tab: 'queue' } },
   { key: 'suspended', label: 'Suspended', preset: { suspended: true } },
@@ -119,7 +120,7 @@ function viewOf(f: DriverFilters): View {
   if (f.suspended) return 'suspended';
   if (f.online) return 'online';
   if (f.expiringWithin === '30') return 'expiring';
-  if (f.ratingMax === '4.5' && !f.ratingMin) return 'low';
+  if (f.lowRating) return 'low';
   return 'all';
 }
 
@@ -509,7 +510,7 @@ function DriverRecord({ row, queue, onClose, onChanged }: {
                 ))}
                 <RecordFacts rows={[
                   ['Vehicle', data.vehicles.map((v) => [v.type, v.vehicle_number].filter(Boolean).join(' · ')).join(', ') || 'None on file'],
-                  ['Licence expiry', data.license_expiry ?? 'Not set'],
+                  ['Licence expiry', data.license_expiry ? marketDate(data.license_expiry, (data.home_city?.code ?? 'IN').split('-')[0]) : 'Not set'],
                   ['Joined', when(data.joined_at)],
                   ['Account active', data.user.is_active ? 'Yes' : 'No'],
                   queue && row.waiting_seconds != null ? ['Waiting for review', waitingLabel(row.waiting_seconds)] : null,

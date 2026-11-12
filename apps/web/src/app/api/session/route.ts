@@ -9,6 +9,7 @@ import {
   signSession,
   verifySession,
 } from '@/lib/session/cookie';
+import { AREA_COOKIE } from '@/lib/session/routing';
 
 /**
  * Turns the browser's rider/driver token into the signed role cookie the
@@ -27,7 +28,7 @@ function rolesOf(p: Profile): Role[] {
   return ROLES.filter((r) => all.includes(r));
 }
 
-function cookieFor(res: NextResponse, value: string, maxAge = SESSION_MAX_AGE) {
+function cookieFor(res: NextResponse, value: string, maxAge = SESSION_MAX_AGE, area?: Role) {
   res.cookies.set(SESSION_COOKIE, value, {
     httpOnly: true,
     sameSite: 'lax',
@@ -35,6 +36,12 @@ function cookieFor(res: NextResponse, value: string, maxAge = SESSION_MAX_AGE) {
     path: '/',
     maxAge,
   });
+  // 12 Nov: which sign-in to send this browser to once the session has ended (routing.ts AREA_COOKIE).
+  if (area) {
+    res.cookies.set(AREA_COOKIE, area, {
+      sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 365 * 24 * 60 * 60,
+    });
+  }
   return res;
 }
 
@@ -57,7 +64,7 @@ export async function POST(req: NextRequest) {
 
   const role = roles.includes(wanted as Role) ? (wanted as Role) : roles[0];
   const session: Session = { uid: String(profile.id), roles, role, exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE };
-  return cookieFor(NextResponse.json({ role, roles }), await signSession(session, secret));
+  return cookieFor(NextResponse.json({ role, roles }), await signSession(session, secret), SESSION_MAX_AGE, role);
 }
 
 /** Switch area; only to a role the signed cookie already lists. */
@@ -68,7 +75,7 @@ export async function PATCH(req: NextRequest) {
   const { role } = (await req.json().catch(() => ({}))) as { role?: string };
   if (!current.roles.includes(role as Role)) return NextResponse.json({ error: 'ROLE_NOT_HELD' }, { status: 403 });
   const next: Session = { ...current, role: role as Role };
-  return cookieFor(NextResponse.json({ role: next.role, roles: next.roles }), await signSession(next, secret));
+  return cookieFor(NextResponse.json({ role: next.role, roles: next.roles }), await signSession(next, secret), SESSION_MAX_AGE, next.role);
 }
 
 /** The active role and the roles held, for the "Switch to …" control. */

@@ -6,10 +6,13 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { areaGet, areaPost } from '@/lib/area/api';
 import { dateLabel } from '@/lib/area/format';
+import { requirements, reviewPromise } from '@/lib/area/requirements';
 import { useLoad } from '@/lib/area/useLoad';
 import { messageFor } from '@/lib/publicAuth';
 import { LoadError, Skel } from '../states';
 import { DriverTop, useDriver } from './parts';
+
+const REVIEW_Q = 'How long does a review take?';
 
 /** The driver's questions, by topic (11 Nov). Answers point at the screen that holds the detail. */
 const TOPICS: { key: string; title: string; href: string; link: string; qa: [string, string][] }[] = [
@@ -84,6 +87,7 @@ export function DriverSupport() {
   const tr = useTr();
   const { locale } = useLocale();
   const me = useDriver();
+  const reviewDays = useLoad(async () => (await requirements()).review_target_working_days ?? 1).data;
   const tickets = useLoad(async () => {
     const got = await areaGet<{ results?: Ticket[] } | Ticket[]>('/support/tickets/');
     return Array.isArray(got) ? got : got.results ?? [];
@@ -97,7 +101,7 @@ export function DriverSupport() {
             <section key={t.title} className="acard ds-topic" data-topic={t.title}>
               <h2 className="a20">{tr(t.title)}</h2>
               {t.qa.map(([q, a]) => (
-                <details key={q}><summary>{tr(q)}</summary><p className="a14 amut">{tr(a)}</p></details>
+                <details key={q}><summary>{tr(q)}</summary><p className="a14 amut">{q === REVIEW_Q ? reviewPromise(reviewDays, tr, true) : tr(a)}</p></details>
               ))}
               <Link href={t.href} className="aacc ab a14">{tr(t.link)} →</Link>
             </section>

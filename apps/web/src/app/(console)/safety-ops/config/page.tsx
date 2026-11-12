@@ -11,6 +11,7 @@ import {
   Drawer, Empty, ErrorState, Pill, Skeleton,
 } from '@/components/console/ui';
 import { PageHead, RecordSection } from '@/components/console/kit/ListBits';
+import { OnCallRota } from '@/components/console/safety/OnCallRota';
 
 /**
  * Safety settings: the per-country timers, thresholds and emergency numbers.
@@ -136,7 +137,7 @@ export default function SafetyConfigPage() {
     <>
       <PageHead
         title="Safety settings"
-        summary={<><Link href="/safety-ops">Safety</Link> · timers, detection thresholds and emergency numbers, one set per country</>}
+        summary={<><Link href="/safety-ops">Safety</Link> · timers, detection thresholds and emergency numbers, one set per country; who is on call, per city</>}
       />
       {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
 
@@ -212,6 +213,7 @@ export default function SafetyConfigPage() {
               )}
             </RecordSection>
           ))}
+          <OnCallRota />
         </div>
       ) : null}
 

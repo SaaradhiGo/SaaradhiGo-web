@@ -15,15 +15,18 @@ const exp = () => Math.floor(Date.now() / 1000) + 3600;
 const rider: Session = { uid: '1', roles: ['rider'], role: 'rider', exp: exp() };
 const driver: Session = { uid: '2', roles: ['driver'], role: 'driver', exp: exp() };
 
-async function visit(path: string, session?: Session | string) {
+async function visit(path: string, session?: Session | string, area?: string) {
   const req = new NextRequest(new URL(path, 'https://qa.example'));
+  if (area) req.cookies.set('sg-area', area);
   if (session) {
     const value = typeof session === 'string' ? session : await signSession(session, SECRET);
     req.cookies.set(SESSION_COOKIE, value);
   }
   const res = await middleware(req);
+  const location = res.headers.get('location');
   return {
-    redirect: res.headers.get('location') ? new URL(res.headers.get('location')!).pathname : null,
+    next: location ? new URL(location).searchParams.get('next') : null,
+    redirect: location ? new URL(location).pathname : null,
     rewrite: res.headers.get('x-middleware-rewrite') ? new URL(res.headers.get('x-middleware-rewrite')!).pathname : null,
   };
 }
@@ -78,5 +81,25 @@ describe('role routing', () => {
 
   it('never serves /rider/* directly', async () => {
     expect((await visit('/rider/account', rider)).redirect).toBe('/ride');
+  });
+});
+
+describe('an ended session goes to its own sign-in (12 Nov)', () => {
+  it('a rider on /trips/207 goes to the rider sign-in and keeps the page', async () => {
+    const r = await visit('/trips/207', undefined, 'rider');
+    expect(r.redirect).toBe('/sign-in');
+    expect(r.next).toBe('/trips/207');
+  });
+  it('a driver on a driver page goes to the driver sign-in and keeps the page', async () => {
+    const r = await visit('/driver/earnings?period=week', { ...driver, exp: 10 }, 'driver');
+    expect(r.redirect).toBe('/driver/sign-in');
+    expect(r.next).toBe('/driver/earnings?period=week');
+  });
+  it('a driver on /trips/5 goes to the driver sign-in', async () => {
+    expect((await visit('/trips/5', undefined, 'driver')).redirect).toBe('/driver/sign-in');
+  });
+  it('only the console routes are left to the staff login', async () => {
+    expect((await visit('/trips/207', undefined, 'console')).redirect).toBeNull();
+    expect((await visit('/trips/207')).redirect).toBeNull();
   });
 });
