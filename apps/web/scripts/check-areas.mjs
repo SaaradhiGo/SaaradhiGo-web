@@ -69,8 +69,8 @@ const LANG_WIDTHS = [[360, 740], [1440, 900]];
 
 const RIDER = [
   ['/ride', 'rider-web-home'],
-  [QA ? '/ride/choose?from=17.4504,78.3810&to=17.4344,78.3866&tl=Inorbit%20Mall%2C%20Madhapur'
-    : '/ride/choose?from=17.4504,78.3810&to=17.2403,78.4294&tl=International%20Airport', 'rider-web-choose'],
+  // The trip lives in the tab, never in the URL (11 Nov): the draft is seeded in every context.
+  [QA ? '/ride/choose?d=gateqa' : '/ride/choose?d=gate', 'rider-web-choose'],
   ['/ride/trip/201', 'rider-web-trip'],
   ['/trips', 'rider-web-trips'],
   ['/trips/101', 'rider-web-receipt'],
@@ -123,6 +123,13 @@ async function context(browser, role, width, height, lang = 'en') {
   });
   await ctx.addCookies([{ name: 'sg-language', value: lang, url: SITE }]);
   await ctx.addInitScript((l) => { try { localStorage.setItem('sg-theme', 'light'); localStorage.setItem('sg-language', l); } catch {} }, lang);
+  await ctx.addInitScript(() => {
+    const from = { lat: 17.4504, lng: 78.381, label: 'Current location' };
+    try {
+      sessionStorage.setItem('sg-ride-draft:gate', JSON.stringify({ from, to: { lat: 17.2403, lng: 78.4294, label: 'International Airport' } }));
+      sessionStorage.setItem('sg-ride-draft:gateqa', JSON.stringify({ from, to: { lat: 17.4344, lng: 78.3866, label: 'Inorbit Mall, Madhapur' } }));
+    } catch {}
+  });
   if (QA) {
     const { signIn } = await import(pathToFileURL(path.resolve(process.env.LOGIN_MJS || 'scripts/qa-login.mjs')).href);
     const r = await signIn(ctx, SITE, role === 'driver' ? 'DRIVER' : 'RIDER');
