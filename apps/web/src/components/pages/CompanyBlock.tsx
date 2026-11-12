@@ -21,7 +21,7 @@ export function CompanyBlock() {
        ['Phone', entity.support_phone], ['Email', entity.support_email]];
   return (
     <section className="s-wrap sg-company" aria-label="Company" data-testid="company-block">
-      <b>SaaradhiGo is operated by {entity.legal_name}.</b>
+      <span className="sg-company__name">SaaradhiGo is operated by {entity.legal_name}.</span>
       {rows.filter(([, v]) => v).map(([k, v]) => <span key={k}>{k}: {v}</span>)}
       {market === 'IN' && <span>Complaints: <Link href={P.grievance}>Grievance redressal</Link></span>}
     </section>

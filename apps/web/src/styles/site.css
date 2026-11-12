@@ -611,7 +611,7 @@
 .sg-legal-doc__table th, .sg-legal-doc__table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--c-border); color: var(--c-text); }
 .sg-legal-doc__table thead th { color: var(--c-text-2); font-weight: 600; }
 .sg-company { margin-top: 28px; display: grid; gap: 6px; color: var(--c-text-2); }
-.sg-company b { color: var(--c-text); }
+.sg-company__name { color: var(--c-text); font-weight: 600; }
 .s-consent { display: grid; gap: 10px; }
 .s-consent__check { display: flex; gap: 10px; align-items: flex-start; font-size: var(--text-small); line-height: 1.45; color: var(--c-text-2); }
 .s-consent__check input { margin-top: 3px; width: 18px; height: 18px; flex: 0 0 auto; }

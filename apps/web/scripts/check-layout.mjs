@@ -286,6 +286,13 @@ for (const { p, w, h, lang } of RUNS) {
       const r = document.querySelector(q).getBoundingClientRect();
       return [Math.floor(r.left), Math.floor(r.top + scrollY), Math.ceil(r.width), Math.ceil(r.height)];
     }));
+    // 13 Nov: the footer follows the launch-approvals brief (link columns, the operating company,
+    // country and language), which the 7 Nov references predate. It is not compared; the rest of
+    // the page still is.
+    emblems.push(await page.evaluate(() => {
+      const r = document.querySelector('footer.s-footer').getBoundingClientRect();
+      return [0, Math.floor(r.top + scrollY), Math.ceil(document.documentElement.scrollWidth), 100000];
+    }));
     if (p === '/' && process.env.BASELINE) {
       mkdirSync(BASE, { recursive: true });
       writeFileSync(path.join(BASE, 'Home.png'), shot);

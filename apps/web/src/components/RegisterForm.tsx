@@ -414,9 +414,6 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           help={tab === 'email' || smsToAnyone ? tr('We text a code to confirm it.') : 'QA test numbers get a fixed code, no SMS.'}
         />
         <span className="s-only-desk" aria-hidden="true" />
-        <div className="s-span">
-          <SmsConsent marketing={marketingSms} onMarketing={setMarketingSms} us={toE164(market, national).startsWith('+1')} />
-        </div>
 
         {tab === 'email' ? (
           <>
@@ -457,6 +454,8 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           />
         )}
       </div>
+
+      <SmsConsent marketing={marketingSms} onMarketing={setMarketingSms} us={toE164(market, national).startsWith('+1')} />
 
       {tab === 'email' ? (
         <>

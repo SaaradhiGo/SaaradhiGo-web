@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleProvider';
-import { LANGUAGES, LANGUAGE_INFO, MARKET_INFO, MARKETS, type Language, type Market } from '@/i18n/locales';
+import { MARKET_INFO, MARKETS, type Market } from '@/i18n/locales';
+import { LanguagePicker } from './LanguagePicker';
 import { useTr } from '@/i18n/website';
 import { useSite } from '@/i18n/site';
 import { copyrightLine, POLICY_PAGES as P } from '@/lib/legal';
@@ -36,7 +37,7 @@ export function Footer() {
   const tr = useTr();
   const s = useSite();
   const { market, entity, choose } = useLegal();
-  const { language, setLanguage, setMarket } = useLocale();
+  const { setMarket } = useLocale();
 
   const onCountry = (m: Market) => {
     choose(m);
@@ -91,12 +92,8 @@ export function Footer() {
               {MARKETS.map((m) => <option key={m} value={m}>{MARKET_INFO[m].label}</option>)}
             </select>
           </label>
-          <label className="s-footer__pick">
-            <span>{tr('Language')}</span>
-            <select value={language} onChange={(e) => setLanguage(e.target.value as Language)}>
-              {LANGUAGES.map((l) => <option key={l} value={l}>{LANGUAGE_INFO[l].label}</option>)}
-            </select>
-          </label>
+          {/* The same globe as the header: the languages are listed only when it is opened. */}
+          <LanguagePicker />
         </div>
       </div>
     </footer>
