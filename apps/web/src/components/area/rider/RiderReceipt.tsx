@@ -11,6 +11,7 @@ import { useLoad } from '@/lib/area/useLoad';
 import { readSessionUser } from '@/lib/publicAuth';
 import { IBack, IDownload, IHelp, IUser } from '../icons';
 import { LoadError, Skel } from '../states';
+import { FareLinesList } from './FareLinesList';
 
 const STAR = 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z';
 
@@ -167,10 +168,6 @@ function Invoice({ t }: { t: Trip }) {
   const { locale } = useLocale();
   const inv = t.invoice;
   if (!inv) return null;
-  const f = t.fare_breakdown ?? {};
-  const cur = inv.currency ?? t.currency;
-  const dist = Number(f.distance_fare ?? 0) + Number(f.time_fare ?? 0);
-  const surge = Number(f.surge_multiplier ?? 1);
   const row = (label: string, value: string | null | undefined, strong = false) => (
     <div className="arow" style={{ justifyContent: 'space-between', padding: '8px 0', gap: 12 }}>
       <span className={strong ? 'ab' : undefined}>{label}</span><span className={strong ? 'ab' : undefined}>{value ?? '—'}</span>
@@ -183,18 +180,19 @@ function Invoice({ t }: { t: Trip }) {
       {row(tr('Invoice number'), inv.number)}
       {row(tr('Issued to'), inv.rider_name)}
       <div className="a14 amut" style={{ padding: '4px 0' }}>
-        <div className="ab" style={{ color: 'var(--c-text)' }}>{inv.company.name}</div>
+        {inv.company.name && <div className="ab" style={{ color: 'var(--c-text)' }}>{inv.company.name}</div>}
         {inv.company.address && <div>{inv.company.address}</div>}
         {inv.company.gstin && <div>GSTIN {inv.company.gstin}</div>}
       </div>
       {row(tr('Pickup'), t.pickup_address)}
       {row(tr('Drop'), t.destination_address)}
       <div className="asep" style={{ marginTop: 8 }}>
-        {row(tr('Base fare'), money(f.base_fare ?? null, cur, locale))}
-        {row(tr('Distance and time'), money(dist, cur, locale))}
-        {surge > 1 && row(tr('Demand'), 'x ' + surge.toFixed(2))}
-        {row(inv.tax_label ?? tr('Tax'), money(inv.tax_amount ?? null, cur, locale))}
-        {row(tr('Total'), money(inv.total ?? null, cur, locale), true)}
+        {inv.breakdown ? <FareLinesList lines={inv.breakdown} /> : (
+          <>
+            {row(inv.tax_label ?? tr('Tax'), money(inv.tax_amount ?? null, inv.currency ?? t.currency, locale))}
+            {row(tr('Total'), money(inv.total ?? null, inv.currency ?? t.currency, locale), true)}
+          </>
+        )}
       </div>
     </section>
   );

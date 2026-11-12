@@ -61,7 +61,19 @@ export type Trip = {
   search_expires_at?: string | null;
   vehicle_line?: string | null;
   invoice?: { number: string; issued_at?: string | null; rider_name: string; tax_label?: string; tax_amount?: string;
-    total?: string; currency?: string; company: { name: string; address?: string; gstin?: string } } | null;
+    total?: string; currency?: string; company: { name: string; address?: string; gstin?: string };
+    /** 12 Nov: the lines before tax, the taxable value, the tax and the total, adding up exactly. */
+    breakdown?: FareLines | null } | null;
+};
+
+/** The fare lines (servers/ride/invoice_lines.py): lines sum to `taxable`; taxable + tax + extras = total. */
+export type FareLines = {
+  lines: { code: string; label: string; amount: string }[];
+  taxable: string;
+  tax: { label: string; percent: string; amount: string; included: boolean };
+  extras: { code: string; label: string; amount: string }[];
+  total: string;
+  currency: string;
 };
 
 export type Profile = {
@@ -79,6 +91,8 @@ export type Profile = {
   /** 11 Nov: riders sign up by email; the number is proved at the first booking. */
   phone_verified?: boolean;
   email_verified?: boolean;
+  /** 12 Nov: present while the email is unconfirmed: whether a link can be emailed here at all. */
+  email_mail_configured?: boolean;
 };
 
 type Page<T> = { results?: T[] } | T[];

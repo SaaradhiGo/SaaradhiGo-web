@@ -798,5 +798,18 @@
   "Pay {fare} in cash to your driver.": "{fare} अपने ड्राइवर को नकद दें।",
   "Choose a reason.": "एक कारण चुनें।",
   "We will also open the safety options: SOS, share your trip and call support.": "हम सुरक्षा विकल्प भी खोलेंगे: SOS, यात्रा साझा करें और सहायता को कॉल करें।",
-  "This number cannot get a code here. Use an approved test number.": "इस नंबर पर यहाँ कोड नहीं आएगा। स्वीकृत टेस्ट नंबर इस्तेमाल करें।"
+  "This number cannot get a code here. Use an approved test number.": "इस नंबर पर यहाँ कोड नहीं आएगा। स्वीकृत टेस्ट नंबर इस्तेमाल करें।",
+  "Confirm your email: {email}.": "अपना ईमेल पुष्टि करें: {email}.",
+  "Confirmed": "पुष्टि हो गई",
+  "Drop": "ड्रॉप",
+  "Fare adjustment": "किराया समायोजन",
+  "Minimum fare adjustment": "न्यूनतम किराया समायोजन",
+  "Not confirmed": "पुष्टि नहीं हुई",
+  "Resend": "फिर से भेजें",
+  "Rounding": "राउंडिंग",
+  "Send link": "लिंक भेजें",
+  "Sent. Check your inbox.": "भेज दिया। अपना इनबॉक्स देखें।",
+  "Something went wrong. Try again.": "कुछ गलत हो गया। फिर से कोशिश करें।",
+  "Taxable value": "कर योग्य मूल्य",
+  "We could not send the email right now. Try again later.": "अभी ईमेल नहीं भेज सके। बाद में फिर कोशिश करें।"
 }

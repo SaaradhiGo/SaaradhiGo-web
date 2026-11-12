@@ -23,6 +23,7 @@
 
 import { ApiError, api } from './api';
 import { readRiderToken } from './publicAuth';
+import type { FareLines } from './area/rider';
 
 export type LatLng = { lat: number; lng: number };
 
@@ -53,6 +54,8 @@ export type FareQuote = {
   currency?: string | null;
   distance_unit?: string | null;
   fare_breakdown?: Record<string, unknown>;
+  /** 12 Nov: "How this fare is worked out", the same lines as the tax invoice. */
+  fare_lines?: FareLines | null;
   /** The quote to book at: the fare holds until it expires (servers/ride/quotes.py). */
   quote_id?: string | null;
   quote_expires_at?: string | null;

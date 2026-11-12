@@ -798,5 +798,18 @@
   "Pay {fare} in cash to your driver.": "{fare} మీ డ్రైవర్‌కు నగదుగా ఇవ్వండి.",
   "Choose a reason.": "ఒక కారణం ఎంచుకోండి.",
   "We will also open the safety options: SOS, share your trip and call support.": "భద్రతా ఎంపికలు కూడా తెరుస్తాం: SOS, ట్రిప్ షేర్, సపోర్ట్‌కు కాల్.",
-  "This number cannot get a code here. Use an approved test number.": "ఈ నంబర్‌కు ఇక్కడ కోడ్ రాదు. ఆమోదించిన టెస్ట్ నంబర్ వాడండి."
+  "This number cannot get a code here. Use an approved test number.": "ఈ నంబర్‌కు ఇక్కడ కోడ్ రాదు. ఆమోదించిన టెస్ట్ నంబర్ వాడండి.",
+  "Confirm your email: {email}.": "మీ ఇమెయిల్‌ను నిర్ధారించండి: {email}.",
+  "Confirmed": "నిర్ధారించబడింది",
+  "Drop": "డ్రాప్",
+  "Fare adjustment": "ఛార్జీ సర్దుబాటు",
+  "Minimum fare adjustment": "కనీస ఛార్జీ సర్దుబాటు",
+  "Not confirmed": "నిర్ధారించలేదు",
+  "Resend": "మళ్లీ పంపండి",
+  "Rounding": "రౌండింగ్",
+  "Send link": "లింక్ పంపండి",
+  "Sent. Check your inbox.": "పంపాము. మీ ఇన్‌బాక్స్ చూడండి.",
+  "Something went wrong. Try again.": "ఏదో తప్పు జరిగింది. మళ్లీ ప్రయత్నించండి.",
+  "Taxable value": "పన్ను విధించదగిన విలువ",
+  "We could not send the email right now. Try again later.": "ఇప్పుడు ఇమెయిల్ పంపలేకపోయాము. తర్వాత మళ్లీ ప్రయత్నించండి."
 }
