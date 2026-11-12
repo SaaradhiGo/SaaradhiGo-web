@@ -52,7 +52,20 @@ export type Requirements = {
   checklist: Checklist; personal: Personal; identity: Identity; payout_method: PayoutMethod;
   states: { code: string; name: string }[]; relationships: { code: string; label: string }[];
   vehicle_types: string[]; vehicle_years: number[]; upload_kinds: Record<string, string>;
+  /** 12 Nov: the city's KYC review target, the same number the console's queue alerts on. */
+  review_target_working_days?: number;
 };
+
+/** "We usually review within one working day." from the city's review target (12 Nov). */
+export function reviewPromise(days: number | null | undefined, tr: (s: string) => string, short = false): string {
+  const n = days && days > 0 ? days : 1;
+  if (short) {
+    return n === 1 ? tr('Usually one working day. Each document shows its own state; a rejected one says why.')
+      : tr('Usually {n} working days. Each document shows its own state; a rejected one says why.').replace('{n}', String(n));
+  }
+  return n === 1 ? tr('You can go online once every step is approved. We usually review within one working day.')
+    : tr('You can go online once every step is approved. We usually review within {n} working days.').replace('{n}', String(n));
+}
 export type Catalogue = { type: string; makes: { make: string; models: { id: number; model: string }[] }[]; colours: string[] };
 
 export const requirements = () => areaGet<Requirements>('/driver/requirements/');

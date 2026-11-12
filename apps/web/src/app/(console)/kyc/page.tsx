@@ -19,6 +19,7 @@ import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { PageHead } from '@/components/console/kit/ListBits';
 import { RecordPanel } from '@/components/console/kit/RecordPanel';
 import { Empty, ErrorState, Skeleton } from '@/components/console/ui';
+import { marketDate } from '@/lib/consoleTime';
 
 /**
  * KYC review, built for throughput (design board E).
@@ -38,6 +39,9 @@ type QueueRow = {
   user_details?: { full_name?: string | null } | null;
   vehicle_type?: string | null;
   waiting_seconds?: number | null;
+  /** 12 Nov: the city's review target and whether this driver is past it. */
+  review_target_days?: number | null;
+  past_target?: boolean;
 };
 type QueuePage = { count: number; results: QueueRow[] };
 
@@ -52,6 +56,19 @@ type Detail = {
   documents?: ReviewDoc[];
   approval_blockers?: Array<{ code: string; message: string }>;
   actions?: DriverActions;
+  /** 12 Nov: automated checks (servers/driver/verification.py). */
+  verification?: Verification;
+};
+type VerificationRow = {
+  check: string; label: string; status: string; test_result: boolean;
+  detail: { reason?: string; score?: number | null; valid_until?: string | null }; checked_at: string | null;
+};
+type Verification = { provider: string | null; connected: boolean; test_provider: boolean; checks: VerificationRow[] };
+
+const CHECK_CHIP: Record<string, [string, ChipTone]> = {
+  verified: ['Verified', 'good'], mismatch: ['Mismatch', 'critical'], not_found: ['Not found', 'caution'],
+  pending: ['Pending', 'neutral'], error: ['Error', 'critical'], not_connected: ['Not connected', 'neutral'],
+  not_run: ['Not run yet', 'neutral'],
 };
 
 type View =
@@ -184,6 +201,18 @@ export default function KycReviewPage() {
 
   // -- Decisions -------------------------------------------------------------
   const mayReview = detail?.actions?.review_documents ?? false;
+  const [checking, setChecking] = useState(false);
+  const runChecks = async (id: number) => {
+    setChecking(true);
+    try {
+      const v = await api.post<Verification>(`/driver/admin/${id}/verify/`, {});
+      setDetail((d) => (d && d.id === id ? { ...d, verification: v } : d));
+    } catch {
+      /* the row keeps its last result; the API error is logged by the client */
+    } finally {
+      setChecking(false);
+    }
+  };
   const mayApprove = detail?.actions?.approve ?? false;
   const blockers = detail?.approval_blockers ?? [];
   const everyApproved = allApproved(docs);
@@ -353,7 +382,9 @@ export default function KycReviewPage() {
   const queueColumns: ListColumn<QueueRow>[] = [
     { key: 'driver', label: 'Driver', primary: true, render: (r) => <span>{r.user_details?.full_name || 'Driver'} <span className="ops-ref sg-num">D-{r.id}</span></span> },
     { key: 'vehicle', label: 'Vehicle', render: (r) => r.vehicle_type ?? <span className="muted">None</span> },
-    { key: 'waiting', label: 'Waiting', num: true, render: (r) => waitingLabel(r.waiting_seconds ?? null) },
+    { key: 'waiting', label: 'Waiting', num: true, render: (r) => (
+      <span>{waitingLabel(r.waiting_seconds ?? null)}{r.past_target ? <> <StatusChip tone="critical">Past target</StatusChip></> : null}</span>
+    ) },
   ];
   const reviewTab = (
     <>
@@ -411,10 +442,7 @@ export default function KycReviewPage() {
                   <h2 id="kyc-checks">Checks</h2>
                   <ul className="ops-kyc__checks">
                     <Check label="Name on profile" value={detail.user.full_name || 'Not given'} />
-                    <Check label="Name on document" value="Not read automatically" chip={['Not connected', 'neutral']} />
-                    {doc?.owner === 'driver' && doc.key.startsWith('license') ? (
-                      <Check label="Licence number" value="Not sent to the console" chip={['Not connected', 'neutral']} />
-                    ) : null}
+                    {verificationRows(detail.verification, ['name_match', ...(doc?.owner === 'driver' && doc.key.startsWith('license') ? ['licence'] : []), ...(doc?.key === 'rc' || doc?.key === 'registration' ? ['rc'] : []), ...(doc?.key === 'aadhaar' ? ['aadhaar'] : [])])}
                     {doc ? <ExpiryRow iso={expiryFor(doc, detail.license_expiry, detail.vehicles)} today={today} /> : null}
                     <Check
                       label="Vehicle class"
@@ -426,9 +454,16 @@ export default function KycReviewPage() {
                     {doc?.review?.current && doc.review.state === 'rejected' ? (
                       <Check label="Driver was told" value={doc.review.reason} />
                     ) : null}
-                    <Check label="Face match" value="No face check on this platform" chip={['Not connected', 'neutral']} />
-                    <Check label="Police check" value="No police check on this platform" chip={['Not connected', 'neutral']} />
+                    {verificationRows(detail.verification, ['face_match', 'police'])}
                   </ul>
+                  {mayReview ? (
+                    <p className="ops-kyc__meta">
+                      <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={checking} onClick={() => void runChecks(detail.id)}>
+                        {checking ? 'Running checks…' : 'Run checks'}
+                      </button>
+                      {detail.verification?.test_provider ? ' Test provider: results are not real.' : ''}
+                    </p>
+                  ) : null}
                 </section>
 
                 {mayReview ? (
@@ -545,6 +580,20 @@ function NoticeBar({ notice }: { notice: Notice }) {
   return <div className={notice.kind === 'pending' ? 'ops-confirm mb-5' : 'alert-success mb-5'} role="status"><b>{notice.text}</b></div>;
 }
 
+/** The automated checks named in `keys`, from the driver's latest results. */
+function verificationRows(v: Verification | undefined, keys: string[]) {
+  return keys.map((key) => {
+    const row = v?.checks.find((c) => c.check === key);
+    if (!row) return <Check key={key} label={key} value="Not available" chip={CHECK_CHIP.not_connected} />;
+    const bits = [
+      row.detail.reason, row.detail.valid_until ? `valid until ${marketDate(row.detail.valid_until)}` : '',
+      row.detail.score ? `score ${Math.round(row.detail.score * 100)}%` : '',
+      row.checked_at ? `checked ${marketDate(row.checked_at)}` : '', row.test_result ? 'test result' : '',
+    ].filter(Boolean);
+    return <Check key={key} label={row.label} value={bits.join(' · ') || (v?.connected ? 'Not run yet' : 'No provider connected')} chip={CHECK_CHIP[row.status] ?? CHECK_CHIP.not_run} />;
+  });
+}
+
 function Check({ label, value, chip }: { label: string; value: string; chip?: [string, ChipTone] }) {
   return (
     <li>
@@ -560,9 +609,9 @@ function ExpiryRow({ iso, today }: { iso: string | null | undefined; today: stri
   const check = expiryCheck(iso, today);
   if (check.state === 'none') return <Check label="Expiry date" value="Not on record" chip={['Not set', 'caution']} />;
   if (check.state === 'expired') {
-    return <Check label="Expiry date" value={`${(iso ?? "").slice(0, 10)} · ${check.days} day${check.days === 1 ? '' : 's'} ago`} chip={['Expired', 'critical']} />;
+    return <Check label="Expiry date" value={`${marketDate(iso)} · ${check.days} day${check.days === 1 ? '' : 's'} ago`} chip={['Expired', 'critical']} />;
   }
-  return <Check label="Expiry date" value={`${(iso ?? "").slice(0, 10)} · ${check.days} day${check.days === 1 ? '' : 's'} left`} chip={['Valid', 'good']} />;
+  return <Check label="Expiry date" value={`${marketDate(iso)} · ${check.days} day${check.days === 1 ? '' : 's'} left`} chip={['Valid', 'good']} />;
 }
 
 function DocumentStage({ doc, view, label, rotation, zoom, onBroken }: {

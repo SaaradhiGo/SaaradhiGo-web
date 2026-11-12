@@ -811,5 +811,7 @@
   "Sent. Check your inbox.": "Enviado. Revisa tu bandeja de entrada.",
   "Something went wrong. Try again.": "Algo salió mal. Inténtalo de nuevo.",
   "Taxable value": "Base imponible",
-  "We could not send the email right now. Try again later.": "No pudimos enviar el correo ahora. Inténtalo más tarde."
+  "We could not send the email right now. Try again later.": "No pudimos enviar el correo ahora. Inténtalo más tarde.",
+  "You can go online once every step is approved. We usually review within {n} working days.": "Podrás conectarte cuando se aprueben todos los pasos. Normalmente revisamos en {n} días laborables.",
+  "Usually {n} working days. Each document shows its own state; a rejected one says why.": "Normalmente {n} días laborables. Cada documento muestra su estado; uno rechazado dice por qué."
 }

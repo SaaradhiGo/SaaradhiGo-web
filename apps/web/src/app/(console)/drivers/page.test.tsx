@@ -98,7 +98,7 @@ describe('drivers list', () => {
     routeFetch();
     render(<DriversPage />);
     fireEvent.click(await screen.findByRole('tab', { name: /Low rating/ }));
-    expect(push).toHaveBeenCalledWith('/drivers?rating_max=4.5');
+    expect(push).toHaveBeenCalledWith('/drivers?low_rating=true');
   });
 });
 

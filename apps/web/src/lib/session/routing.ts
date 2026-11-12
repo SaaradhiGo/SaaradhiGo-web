@@ -19,6 +19,15 @@ export type Decision =
   | { kind: 'rewrite'; to: string }
   | { kind: 'redirect'; to: string };
 
+/**
+ * Which sign-in this browser used last (12 Nov), from the `sg-area` cookie: rider and driver sign-in
+ * set it (app/api/session), the console sets 'console' (lib/api writeTokens). Not a session and never
+ * trusted for access; it only decides where a visitor WITHOUT a session is sent to sign in, so a rider
+ * whose session ended on /trips/207 goes to the rider sign-in and comes back, not to the staff login.
+ */
+export const AREA_COOKIE = 'sg-area';
+export type AreaHint = 'rider' | 'driver' | 'console' | null;
+
 export const RIDER_HOME = '/ride';
 export const DRIVER_HOME = '/driver';
 
@@ -51,7 +60,7 @@ function signIn(path: string, search: string, driver: boolean) {
   return `${driver ? '/driver/sign-in' : '/sign-in'}?next=${next}`;
 }
 
-export function decide(pathname: string, search: string, session: Session | null): Decision {
+export function decide(pathname: string, search: string, session: Session | null, area: AreaHint = null): Decision {
   const p = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
 
   // The internal rider paths are never addressed directly.
@@ -67,7 +76,11 @@ export function decide(pathname: string, search: string, session: Session | null
 
   if (isRiderPath(p)) {
     if (!session) {
-      // A guest keeps the marketing /ride and the console's /trips.
+      // A guest keeps the marketing /ride and the console's /trips -- unless this browser last signed
+      // in as a rider or driver: then their session ended here, and they sign in again and come back.
+      if ((p === '/trips' || p.startsWith('/trips/')) && (area === 'rider' || area === 'driver')) {
+        return { kind: 'redirect', to: signIn(p, search, area === 'driver') };
+      }
       if (p === '/ride' || p === '/trips' || p.startsWith('/trips/')) return { kind: 'next' };
       if (p === '/my-trips') return { kind: 'redirect', to: signIn('/trips', '', false) };
       return { kind: 'redirect', to: signIn(p, search, false) };

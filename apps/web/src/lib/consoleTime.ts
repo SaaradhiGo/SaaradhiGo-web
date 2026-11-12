@@ -89,3 +89,14 @@ export function longDate(date: Date, timeZone?: string): string {
     return date.toDateString();
   }
 }
+
+/**
+ * A calendar date ("2028-10-31" or an ISO timestamp) as the market writes it (12 Nov): dd/mm/yyyy
+ * for India (the default), mm/dd/yyyy for the USA. Never shifted by a time zone: it is a date.
+ */
+export function marketDate(iso: string | null | undefined, country: string = 'IN'): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? '');
+  if (!m) return iso ?? '';
+  const [, y, mo, d] = m;
+  return country.toUpperCase() === 'US' ? `${mo}/${d}/${y}` : `${d}/${mo}/${y}`;
+}

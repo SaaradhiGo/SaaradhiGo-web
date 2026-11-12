@@ -20,6 +20,7 @@ import {
   Column, DataTable, Drawer, Empty, ErrorState, Fact, Facts, PageHeader, Panel, Pill, Skeleton,
 } from '@/components/console/ui';
 import { DriverRecords } from '@/components/console/drivers/DriverRecords';
+import { marketDate } from '@/lib/consoleTime';
 
 /**
  * One driver: the evidence, the decision, and the record.
@@ -221,7 +222,7 @@ export default function DriverDetailPage() {
               <Fact label="Tickets">
                 <PageLink page="support" href="/support">{data.counts?.tickets_total ?? 0} total, {data.counts?.tickets_open ?? 0} open</PageLink>
               </Fact>
-              <Fact label="Licence expiry">{data.license_expiry ?? 'Not set'}{data.documents_expired ? ' · a document has expired' : ''}</Fact>
+              <Fact label="Licence expiry">{data.license_expiry ? marketDate(data.license_expiry, (data.home_city?.code ?? 'IN').split('-')[0]) : 'Not set'}{data.documents_expired ? ' · a document has expired' : ''}</Fact>
               <Fact label="Joined">{when(data.joined_at)}</Fact>
               <Fact label="Account active">{data.user.is_active ? 'Yes' : 'No'}</Fact>
             </Facts>

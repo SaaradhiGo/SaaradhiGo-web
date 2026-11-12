@@ -811,5 +811,7 @@
   "Sent. Check your inbox.": "भेज दिया। अपना इनबॉक्स देखें।",
   "Something went wrong. Try again.": "कुछ गलत हो गया। फिर से कोशिश करें।",
   "Taxable value": "कर योग्य मूल्य",
-  "We could not send the email right now. Try again later.": "अभी ईमेल नहीं भेज सके। बाद में फिर कोशिश करें।"
+  "We could not send the email right now. Try again later.": "अभी ईमेल नहीं भेज सके। बाद में फिर कोशिश करें।",
+  "You can go online once every step is approved. We usually review within {n} working days.": "हर चरण मंज़ूर होने के बाद आप ऑनलाइन जा सकते हैं। हम आमतौर पर {n} कार्यदिवसों में समीक्षा करते हैं।",
+  "Usually {n} working days. Each document shows its own state; a rejected one says why.": "आमतौर पर {n} कार्यदिवस। हर दस्तावेज़ अपनी स्थिति दिखाता है; अस्वीकृत दस्तावेज़ कारण बताता है।"
 }
