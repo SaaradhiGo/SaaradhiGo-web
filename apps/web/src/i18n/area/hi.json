@@ -797,5 +797,6 @@
   "Fee {fee} on your next ride": "अगली यात्रा पर {fee} शुल्क",
   "Pay {fare} in cash to your driver.": "{fare} अपने ड्राइवर को नकद दें।",
   "Choose a reason.": "एक कारण चुनें।",
-  "We will also open the safety options: SOS, share your trip and call support.": "हम सुरक्षा विकल्प भी खोलेंगे: SOS, यात्रा साझा करें और सहायता को कॉल करें।"
+  "We will also open the safety options: SOS, share your trip and call support.": "हम सुरक्षा विकल्प भी खोलेंगे: SOS, यात्रा साझा करें और सहायता को कॉल करें।",
+  "This number cannot get a code here. Use an approved test number.": "इस नंबर पर यहाँ कोड नहीं आएगा। स्वीकृत टेस्ट नंबर इस्तेमाल करें।"
 }

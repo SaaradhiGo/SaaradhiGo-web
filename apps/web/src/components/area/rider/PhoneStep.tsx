@@ -52,7 +52,9 @@ export function PhoneStep({ country, onDone, onClose }: { country: string; onDon
       setWait(RESEND_AFTER_S);
       setTimeout(() => codeRef.current?.focus(), 0);
     } catch (err) {
-      setError({ field: 'phone', text: messageFor(err, tr('We could not send the code. Try again.')) });
+      const off = err instanceof ApiError && err.code === 'OTP_SENDING_DISABLED';
+      setError({ field: 'phone', text: off ? tr('This number cannot get a code here. Use an approved test number.')
+        : messageFor(err, tr('We could not send the code. Try again.')) });
     } finally {
       setBusy(false);
     }
@@ -115,7 +117,8 @@ export function PhoneStep({ country, onDone, onClose }: { country: string; onDon
         )}
         <div className="arow" style={{ gap: 8 }}>
           <button type="button" className="abtn abtn--ghost" onClick={onClose}>{tr('Cancel')}</button>
-          <button type="submit" className="abtn abtn--pri agrow" disabled={busy}>
+          {/* Dark, not orange: the page's Book stays the one orange button on screen. */}
+          <button type="submit" className="abtn abtn--dark agrow" disabled={busy}>
             {busy ? tr('Please wait…') : sent ? tr('Verify and book') : tr('Send code')}
           </button>
         </div>

@@ -59,7 +59,7 @@ export function RiderTrips() {
       </div>
       <PeriodSwitcher s={s} />
       <SearchBox label={tr('Search by place or trip number')} onSearch={setQ} />
-      <div className="acard" style={{ overflowX: 'auto' }}>
+      <div className="acard" style={{ overflowX: 'auto' }} tabIndex={0} role="region" aria-label={tr('Your trips')}>
         <table className="atable">
           <thead>
             <tr className="albl">
@@ -97,7 +97,7 @@ export function RiderTrips() {
                     {when && <div className="ab">{when.first}<div className="a14 amut" style={{ fontWeight: 400 }}>{when.second}</div></div>}
                   </td>
                   <td>
-                    <div className="ab">{t.destination_address}</div>
+                    <Link href={done || cancelled ? `/trips/${t.id}` : `/ride/trip/${t.id}`} className="ab" style={{ color: "inherit", display: "block" }}>{t.destination_address}</Link>
                     {t.pickup_address && <div className="a14 amut">{tr('from')} {t.pickup_address}</div>}
                   </td>
                   <td>{className(t.vehicle_info?.type ?? t.requested_vehicle_type)}</td>
