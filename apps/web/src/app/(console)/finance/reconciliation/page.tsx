@@ -13,6 +13,7 @@ import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { History, RecordPanel } from '@/components/console/kit/RecordPanel';
 import { StatusChip } from '@/components/console/kit/StatusChip';
 import { Fact, Facts, Skeleton } from '@/components/console/ui';
+import { marketDate } from '@/lib/consoleTime';
 
 /**
  * Reconciliation: where our own records disagree with each other. The
@@ -299,7 +300,7 @@ function ReconciliationInner() {
                   const skipped = Object.entries(r.checks).filter(([, v]) => v === 'not_configured').map(([k]) => k.replace(/_/g, ' '));
                   return (
                     <tr key={r.id}>
-                      <td>{r.date}</td>
+                      <td>{marketDate(r.date, r.country)}</td>
                       <td>{r.country} · {r.currency}</td>
                       <td>{r.gateway}</td>
                       <td><RunChip status={r.status} /></td>
