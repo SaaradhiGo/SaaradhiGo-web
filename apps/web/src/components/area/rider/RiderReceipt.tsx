@@ -11,6 +11,7 @@ import { useLoad } from '@/lib/area/useLoad';
 import { readSessionUser } from '@/lib/publicAuth';
 import { IBack, IDownload, IHelp, IUser } from '../icons';
 import { LoadError, Skel } from '../states';
+import { useOnScreenMarket } from '@/components/sg/LegalProvider';
 import { FareLinesList } from './FareLinesList';
 
 const STAR = 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z';
@@ -25,6 +26,8 @@ export function RiderReceipt({ id }: { id: string }) {
   const { locale } = useLocale();
   const load = useLoad(() => loadTrip(id), [id]);
   const t: Trip | null = load.data;
+  // The receipt's own market names the operating company in the footer (13 Nov).
+  useOnScreenMarket(t ? (t.currency === 'USD' ? 'US' : 'IN') : null);
   const [stars, setStars] = useState(0);
   const [note, setNote] = useState<string | null>(null);
 
@@ -176,12 +179,13 @@ function Invoice({ t }: { t: Trip }) {
   return (
     <section className="acol" style={{ gap: 4, marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--c-border)' }}
       aria-labelledby="inv-title" data-testid="invoice">
-      <h2 className="a20" id="inv-title">{tr('Tax invoice')}</h2>
-      {row(tr('Invoice number'), inv.number)}
+      <h2 className="a20" id="inv-title">{tr(inv.title ?? 'Tax invoice')}</h2>
+      {row(tr(inv.title === 'Receipt' ? 'Receipt number' : 'Invoice number'), inv.number)}
       {row(tr('Issued to'), inv.rider_name)}
       <div className="a14 amut" style={{ padding: '4px 0' }}>
         {inv.company.name && <div className="ab" style={{ color: 'var(--c-text)' }}>{inv.company.name}</div>}
         {inv.company.address && <div>{inv.company.address}</div>}
+        {inv.company.cin && <div>CIN {inv.company.cin}</div>}
         {inv.company.gstin && <div>GSTIN {inv.company.gstin}</div>}
       </div>
       {row(tr('Pickup'), t.pickup_address)}

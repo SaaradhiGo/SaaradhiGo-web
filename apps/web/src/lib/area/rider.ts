@@ -61,7 +61,9 @@ export type Trip = {
   search_expires_at?: string | null;
   vehicle_line?: string | null;
   invoice?: { number: string; issued_at?: string | null; rider_name: string; tax_label?: string; tax_amount?: string;
-    total?: string; currency?: string; company: { name: string; address?: string; gstin?: string };
+    total?: string; currency?: string; company: { name: string; address?: string; gstin?: string; cin?: string };
+    /** 13 Nov: 'Receipt' while the market's entity is not GST-registered, else 'Tax invoice'. */
+    title?: string | null;
     /** 12 Nov: the lines before tax, the taxable value, the tax and the total, adding up exactly. */
     breakdown?: FareLines | null } | null;
 };
@@ -74,6 +76,8 @@ export type FareLines = {
   extras: { code: string; label: string; amount: string }[];
   total: string;
   currency: string;
+  /** 13 Nov: false while GST is off: no taxable value and no tax line. */
+  tax_shown?: boolean;
 };
 
 export type Profile = {
@@ -296,7 +300,7 @@ export async function requestEmailConfirmation() {
   return areaPost('/auth/email/verify/request/', {});
 }
 
-export type PayMethod = 'upi' | 'card' | 'cash';
+export type PayMethod = 'upi' | 'card' | 'netbanking' | 'cash';
 export type BookingOptions = {
   payment: { methods: PayMethod[]; default: PayMethod | null; online_unavailable_reason?: string };
   search_timeout_seconds: number;
@@ -337,12 +341,18 @@ export function readDraft(id: string | null): RideDraft | null {
 /** Online payment at the end of the trip, for the locked fare (Razorpay Checkout). */
 export type Order = { payment_id: number; gateway: string; order_id?: string; gateway_order_id?: string; key_id?: string;
   amount_paise?: string | number; currency?: string; description?: string;
-  prefill?: { name?: string; contact?: string; email?: string } };
+  prefill?: { name?: string; contact?: string; email?: string };
+  /** 13 Nov, US card through Stripe: the PaymentIntent the browser confirms. */
+  client_secret?: string; publishable_key?: string };
 export async function createOrder(tripId: string | number) {
   return areaPost<Order>('/payments/create-order/', { trip_id: Number(tripId) });
 }
 export async function verifyPayment(body: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
   return areaPost('/payments/verify/', { ...body, gateway: 'razorpay' });
+}
+/** Stripe has no client signature: the server re-reads the PaymentIntent (13 Nov). */
+export async function verifyStripePayment(orderId: string) {
+  return areaPost('/payments/verify/', { gateway_order_id: orderId, gateway: 'stripe' });
 }
 /** The fallback when online payment fails: the rider pays the driver in cash. */
 export async function payByCash(tripId: string | number) {

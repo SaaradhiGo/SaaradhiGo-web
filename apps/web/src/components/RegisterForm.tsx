@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Alert, Field, SubmitButton } from '@/components/form';
+import { SmsConsent, saveSmsMarketingConsent } from '@/components/SmsConsent';
 import PhoneField, { usePhoneMarkets } from '@/components/PhoneField';
 import { useSite } from '@/i18n/site';
 import { useTr } from '@/i18n/website';
@@ -97,6 +98,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
   const auth = useSite().auth;
 
   const [fullName, setFullName] = useState('');
+  const [marketingSms, setMarketingSms] = useState(false);
   const [country, setCountry] = useState('');
   const [national, setNational] = useState('');
   const [email, setEmail] = useState('');
@@ -270,6 +272,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
     setBusy(true);
     try {
       await verifyPublicOtp(toE164(market, national), otp, role);
+      await saveSmsMarketingConsent(marketingSms);
       // The name and the address were typed on the first step; the code
       // route creates the account from the number alone, so they are
       // attached now. A failure here does not undo a valid sign-in --
@@ -411,6 +414,9 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           help={tab === 'email' || smsToAnyone ? tr('We text a code to confirm it.') : 'QA test numbers get a fixed code, no SMS.'}
         />
         <span className="s-only-desk" aria-hidden="true" />
+        <div className="s-span">
+          <SmsConsent marketing={marketingSms} onMarketing={setMarketingSms} us={toE164(market, national).startsWith('+1')} />
+        </div>
 
         {tab === 'email' ? (
           <>

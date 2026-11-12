@@ -12,7 +12,8 @@ import { SITE_URL } from '@/lib/support';
  * No `lastModified` guesses. A date invented at build time tells a crawler
  * the content changed when it did not; leaving it out says nothing false.
  */
-const PAGES = ['', '/ride', '/drive', '/safety', '/about', '/help', '/contact', '/privacy', '/terms'];
+const PAGES = ['', '/ride', '/drive', '/fares', '/safety', '/about', '/help', '/contact', '/privacy', '/terms',
+  '/driver-terms', '/refunds', '/text-messages', '/grievance', '/cookies'];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return PAGES.map((path) => ({

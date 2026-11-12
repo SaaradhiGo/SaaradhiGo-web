@@ -607,3 +607,8 @@ button.er-bar { cursor: pointer; }
 .tr-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 6px; background: var(--c-muted); color: var(--c-text-2);
   font-size: var(--text-small); line-height: var(--leading-small); font-weight: 600; }
 .pf-face--initials { font-size: var(--text-heading); font-weight: 600; color: var(--c-accent); background: var(--c-gold-bg); }
+
+/* 13 Nov: the operating company under every signed-in page. */
+.sg-legal-line { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; padding: 14px 16px 20px; font-size: var(--text-small); line-height: var(--leading-small); color: var(--c-text-2); border-top: 1px solid var(--c-border); margin-top: 24px; }
+.sg-legal-line__links { display: inline-flex; gap: 14px; }
+.sg-legal-line a { color: inherit; text-decoration: underline; }

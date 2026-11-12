@@ -21,7 +21,10 @@ import { AREA_COOKIE } from '@/lib/session/routing';
  */
 const API = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
 
-type Profile = { id?: number | string; role?: string | null; roles?: string[] | null };
+type Profile = { id?: number | string; role?: string | null; roles?: string[] | null; country?: string | null };
+
+/** 13 Nov: the account's market, which the footer and legal pages fall back to (lib/legal.ts). */
+export const ACCOUNT_MARKET_COOKIE = 'sg-account-market';
 
 function rolesOf(p: Profile): Role[] {
   const all = [...(p.roles ?? []), p.role ?? ''];
@@ -64,7 +67,14 @@ export async function POST(req: NextRequest) {
 
   const role = roles.includes(wanted as Role) ? (wanted as Role) : roles[0];
   const session: Session = { uid: String(profile.id), roles, role, exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE };
-  return cookieFor(NextResponse.json({ role, roles }), await signSession(session, secret), SESSION_MAX_AGE, role);
+  const out = cookieFor(NextResponse.json({ role, roles }), await signSession(session, secret), SESSION_MAX_AGE, role);
+  const country = String(profile.country ?? '').toUpperCase();
+  if (country === 'IN' || country === 'US') {
+    out.cookies.set(ACCOUNT_MARKET_COOKIE, country, {
+      sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: SESSION_MAX_AGE,
+    });
+  }
+  return out;
 }
 
 /** Switch area; only to a role the signed cookie already lists. */
