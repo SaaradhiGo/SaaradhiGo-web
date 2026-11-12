@@ -28,7 +28,7 @@ See each app's own README for setup details:
 - **`develop` deploys to QA automatically.** Railway (QA project, service `web`, root `apps/web`) builds every new commit on `develop` once its GitHub checks pass ("wait for CI"). Nobody deploys QA by hand except to redeploy a commit already on `develop`.
 - **`main` is production.** It takes pull requests from `develop` only (`source branch` check, `.github/workflows/main-source.yml`), with every CI check green, merged with a merge commit. No direct pushes or force-pushes, for admins too.
 - **Production deploys only from `main`, through CI, never by hand.** When a production environment exists, its deploy runs from a push to `main` after CI, never from `workflow_dispatch`, a local machine or a dashboard button.
-- **Today** there is no production environment, so a merge to `main` deploys nothing.
+- **How (13 Nov):** `.github/workflows/production.yml` runs after `ops-console` is green for a push to `main`, only when `PRODUCTION_DEPLOY_ENABLED` is `true` and `AWS_DEPLOY_ROLE_ARN` is set. It builds `apps/web/Dockerfile` with the production URLs, pushes it to ECR (AWS ap-south-1) and rolls the web instances. The stack itself is code in SaaradhiGo-backend `infra/production`. Until the variables are set, a merge to `main` deploys nothing.
 - The older five-branch model (`testing`, `staging`, `release`) and [BRANCH_PROTECTION_GUIDE.md](BRANCH_PROTECTION_GUIDE.md) are retired; those branches are not used.
 
 ## Related repositories

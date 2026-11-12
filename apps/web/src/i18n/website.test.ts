@@ -16,6 +16,9 @@ const MISSING = [
   // SiteCopy
   'Ride now', 'Schedule', 'Trip type', // the hidden Schedule switch
   'Mobile number · we text a code', 'Confirm', // unused phone variants
+  // 13 Nov launch approvals: English until the reviewer translates them.
+  'Country', 'Registered office', 'file number', 'Tell me when we launch',
+  'SaaradhiGo is not available in this area yet.', 'We could not save that. Please try again.',
 ];
 
 /** Class names the rider app shows in Latin script in every language. */

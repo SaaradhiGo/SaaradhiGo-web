@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import { LegalLine } from '@/components/sg/Footer';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CONSOLE_SESSION_ENDED, readOperator, readToken, signOutConsole,
@@ -203,6 +204,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
               </span>
             </div>
           ) : children}
+          <LegalLine />
         </main>
       </div>
     </div>

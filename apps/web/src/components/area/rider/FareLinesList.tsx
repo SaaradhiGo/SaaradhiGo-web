@@ -26,8 +26,8 @@ export function FareLinesList({ lines, compact = false }: { lines: FareLines; co
   return (
     <dl className="acol" style={{ gap: 0, margin: 0 }} data-testid="fare-lines">
       {lines.lines.map((l, i) => row(`l${i}`, tr(l.label), l.amount))}
-      {row('taxable', tr('Taxable value'), lines.taxable, true)}
-      {Number(lines.tax.percent) > 0 || Number(lines.tax.amount) > 0 ? row('tax', taxName, lines.tax.amount) : null}
+      {lines.tax_shown !== false && row('taxable', tr('Taxable value'), lines.taxable, true)}
+      {lines.tax_shown !== false && (Number(lines.tax.percent) > 0 || Number(lines.tax.amount) > 0) ? row('tax', taxName, lines.tax.amount) : null}
       {lines.extras.map((l, i) => row(`x${i}`, tr(l.label), l.amount))}
       {row('total', tr('Total'), lines.total, true)}
     </dl>

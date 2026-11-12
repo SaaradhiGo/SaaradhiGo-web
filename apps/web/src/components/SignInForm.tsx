@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Alert, Field, SubmitButton } from '@/components/form';
 import PhoneField, { usePhoneMarkets } from '@/components/PhoneField';
+import { SmsConsent, saveSmsMarketingConsent } from '@/components/SmsConsent';
 import { useTr } from '@/i18n/website';
 import { nationalLooksValid, toE164 } from '@/lib/markets';
 import { safeReturnTo } from '@/lib/returnTo';
@@ -139,6 +140,8 @@ export default function SignInForm({ role }: { role: PublicRole }) {
     }
   }
 
+  const [marketingSms, setMarketingSms] = useState(false);
+
   async function submitPhone(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -163,6 +166,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
     setBusy(true);
     try {
       const s = await verifyPublicOtp(phone, otp, role);
+      await saveSmsMarketingConsent(marketingSms);
       done(s.area);
     } catch (err) {
       setError(messageFor(err, 'That code did not work.'));
@@ -275,6 +279,7 @@ export default function SignInForm({ role }: { role: PublicRole }) {
               texts nobody, so a tester typed a real number, pressed Send
               code and got an error that looked like a product fault. Now
               the control states the rule before it is used. */}
+          <SmsConsent marketing={marketingSms} onMarketing={setMarketingSms} us={phone.startsWith('+1')} />
           <SubmitButton busy={busy} busyLabel="Sending…" disabled={!canSendCode}>
             Send code
           </SubmitButton>

@@ -164,6 +164,18 @@
   justify-content: space-between; gap: 10px; font-size: var(--text-small); line-height: var(--leading-small); color: var(--d-ash);
 }
 .s-footer__legal { display: flex; gap: 20px; }
+/* 13 Nov: three link columns, the operating company, country and language side by side. */
+.s-footer__cols { display: grid; grid-template-columns: repeat(3, minmax(0, auto)); gap: 8px 48px; }
+.s-footer__colhead { font-size: var(--text-small); line-height: var(--leading-small); color: var(--d-ash); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin: 0 0 8px; }
+.s-footer__col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.site .s-footer__col a { color: var(--d-ivory); text-decoration: none; }
+.site .s-footer__col a:hover { color: var(--d-white); text-decoration: underline; }
+.s-footer__entity { display: grid; gap: 4px; min-width: 0; }
+.s-footer__details { color: var(--d-ash); overflow-wrap: anywhere; }
+.s-footer__pickers { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.s-footer__pick { display: inline-flex; align-items: center; gap: 6px; color: var(--d-ash); }
+.s-footer__pick select { background: transparent; color: var(--d-ivory); border: 1px solid var(--d-rule); border-radius: 6px; padding: 6px 8px; min-height: 36px; font: inherit; }
+.s-footer__pick select option { color: var(--c-text); }
 .site .s-footer__legal a { color: var(--d-ash); }
 .site .s-footer__legal a:hover { color: var(--d-ivory); }
 .s-footer__phone-link { display: none; }
@@ -172,6 +184,7 @@
   .s-footer__mark { width: 48px; height: 42px; }
   .s-footer__line { font-size: var(--text-small); line-height: var(--leading-small); }
   .s-footer__nav { margin-top: 16px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .s-footer__cols { margin-top: 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px; }
   .s-footer__phone-link { display: inline; }
   .s-footer__base { margin-top: 16px; border-top: 0; padding-top: 0; padding-bottom: 22px; }
 }
@@ -587,3 +600,18 @@
 @media (max-width: 767px) {
   .s-btn { white-space: normal; height: auto; min-height: 48px; padding-top: 12px; padding-bottom: 12px; text-align: center; max-width: 100%; }
 }
+
+/* ---------------------------------------------------------------- policy pages (13 Nov) */
+.sg-legal-doc { max-width: 760px; display: grid; gap: 28px; }
+.sg-legal-doc__block h2 { font-size: var(--text-title); line-height: var(--leading-title); font-weight: 600; margin: 0 0 10px; color: var(--c-text); }
+.sg-legal-doc__block p { margin: 0 0 10px; color: var(--c-text-2); line-height: 1.6; }
+.sg-legal-doc__updated { color: var(--c-text-2); font-size: var(--text-small); }
+.sg-legal-doc__table { overflow-x: auto; margin: 4px 0 12px; }
+.sg-legal-doc__table table { border-collapse: collapse; min-width: 520px; width: 100%; font-size: var(--text-small); }
+.sg-legal-doc__table th, .sg-legal-doc__table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--c-border); color: var(--c-text); }
+.sg-legal-doc__table thead th { color: var(--c-text-2); font-weight: 600; }
+.sg-company { margin-top: 28px; display: grid; gap: 6px; color: var(--c-text-2); }
+.sg-company__name { color: var(--c-text); font-weight: 600; }
+.s-consent { display: grid; gap: 10px; }
+.s-consent__check { display: flex; gap: 10px; align-items: flex-start; font-size: var(--text-small); line-height: 1.45; color: var(--c-text-2); }
+.s-consent__check input { margin-top: 3px; width: 18px; height: 18px; flex: 0 0 auto; }

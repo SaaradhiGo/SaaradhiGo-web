@@ -64,7 +64,15 @@ export type FareQuote = {
   drivers_nearby?: boolean;
   /** A cancellation fee from an earlier trip that this booking carries (MVAG 2025), shown before booking. */
   cancellation_due?: { amount: string; currency: string; trip_ids: number[] } | null;
+  /** 13 Nov: the city has not launched yet. Fares show; Book says this message instead. */
+  launching?: { code: string; message: string } | null;
 };
+
+/** "Tell me when we launch" (13 Nov): idempotent per rider and city. */
+export async function tellMeAtLaunch(at: { lat: number; lng: number }) {
+  const { api } = await import('./api');
+  return api.post<{ city: string; already_live: boolean }>('/platform/launch-interest/', at);
+}
 
 /** Seats per class, as the rider app shows them. */
 const SEATS: Record<string, number> = {

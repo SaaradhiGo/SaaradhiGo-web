@@ -1,0 +1,26 @@
+# The production web image (13 Nov): built ONLY by .github/workflows/production.yml on main, with
+# the production NEXT_PUBLIC_* values baked in (Next.js inlines them at build time). Runtime
+# secrets (WEB_SESSION_SECRET) come from SSM Parameter Store on the instance, never the image.
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY . .
+ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_WS_BASE_URL
+ARG NEXT_PUBLIC_MARKET=IN
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
+    NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
+    NEXT_PUBLIC_WS_BASE_URL=$NEXT_PUBLIC_WS_BASE_URL \
+    NEXT_PUBLIC_MARKET=$NEXT_PUBLIC_MARKET
+RUN npm run build && npm prune --omit=dev
+
+FROM node:22-alpine
+WORKDIR /app
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000
+COPY --from=build /app ./
+USER node
+EXPOSE 3000
+CMD ["npm", "run", "start", "--", "-p", "3000"]

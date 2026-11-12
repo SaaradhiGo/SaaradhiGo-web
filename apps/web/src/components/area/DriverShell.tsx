@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { LegalLine } from '@/components/sg/Footer';
 import { useEffect, useRef } from 'react';
 import { useTr } from '@/i18n/website';
 import { IBank, ICard, IDashboard, IDoc, IHelp, IList, IUser } from './icons';
@@ -75,7 +76,7 @@ export function DriverShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
       </aside>
-      <div className="dr-body">{children}</div>
+      <div className="dr-body">{children}<LegalLine className="dr-legal" /></div>
       <nav className="dr-tabbar" aria-label={tr('Driver sections')} data-testid="driver-tabbar">
         {NAV.filter((n) => BAR.includes(n.href)).map(({ href, label, Icon }) => (
           <Link key={href} href={href} className={isOn(href, path) ? 'dr-tab dr-tab--on' : 'dr-tab'} aria-current={isOn(href, path) ? 'page' : undefined}>

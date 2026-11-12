@@ -1,5 +1,6 @@
 'use client';
 
+import { LegalLine } from '@/components/sg/Footer';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -76,6 +77,7 @@ export function RiderShell({ children }: { children: React.ReactNode }) {
       </header>
       <ConfirmEmail />
       <main id="main" className="ar-main">{children}</main>
+      <LegalLine />
     </div>
   );
 }

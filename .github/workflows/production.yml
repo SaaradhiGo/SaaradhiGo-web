@@ -1,0 +1,72 @@
+name: production
+
+# Production deploys only from main, through CI, never by hand (owner rule, 12 Nov). This runs
+# when the ops-console CI workflow has finished GREEN for a push to main, and only once
+# production is switched on: repository variable PRODUCTION_DEPLOY_ENABLED is 'true' and
+# AWS_DEPLOY_ROLE_ARN is set (the OIDC role from SaaradhiGo-backend/infra/bootstrap; no stored key).
+# It builds the web image with the production URLs, pushes it to ECR, records the tag in SSM and
+# rolls the web instances (SaaradhiGo-backend/infra/production reads the tag at boot).
+on:
+  workflow_run:
+    workflows: [ops-console]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: production-web
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      vars.PRODUCTION_DEPLOY_ENABLED == 'true' && vars.AWS_DEPLOY_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-south-1
+
+      - name: Build and push
+        run: |
+          set -euo pipefail
+          REGISTRY="$(aws sts get-caller-identity --query Account --output text).dkr.ecr.ap-south-1.amazonaws.com"
+          aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY"
+          IMAGE="$REGISTRY/saaradhigo/web:$SHA"
+          if ! aws ecr describe-images --repository-name saaradhigo/web --image-ids imageTag="$SHA" >/dev/null 2>&1; then
+            docker build apps/web -t "$IMAGE" \
+              --build-arg NEXT_PUBLIC_SITE_URL=https://www.saaradhigo.com \
+              --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.saaradhigo.com/api/v1 \
+              --build-arg NEXT_PUBLIC_WS_BASE_URL=wss://api.saaradhigo.com
+            docker push "$IMAGE"
+          fi
+
+      - name: Record the tag and roll the web instances
+        run: |
+          set -euo pipefail
+          aws ssm put-parameter --name /saaradhigo/production/deploy/web_image_tag --type String \
+            --value "$SHA" --overwrite
+          ASG=saaradhigo-prod-web
+          DESIRED=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names "$ASG" \
+            --query 'AutoScalingGroups[0].DesiredCapacity' --output text)
+          if [ "$DESIRED" = "0" ]; then
+            # First web release: bring the web tier up (the backend deploy keeps it there).
+            aws autoscaling update-auto-scaling-group --auto-scaling-group-name "$ASG" \
+              --min-size 2 --desired-capacity 2
+          else
+            aws autoscaling start-instance-refresh --auto-scaling-group-name "$ASG" \
+              --preferences '{"MinHealthyPercentage": 50}'
+          fi

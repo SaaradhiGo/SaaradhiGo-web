@@ -13,6 +13,7 @@ import {
 import { money } from '@/lib/area/format';
 import { type BookingOptions, type PayMethod, bookingOptions, className, readDraft } from '@/lib/area/rider';
 import { LOAD_TIMEOUT_MS } from '@/lib/area/useLoad';
+import { tellMeAtLaunch } from '@/lib/booking';
 import { IBack, ICar, ICard, ILock, IUser } from '../icons';
 import { Skel } from '../states';
 import { FareWorkings } from './FareWorkings';
@@ -21,7 +22,7 @@ import { PhoneStep } from './PhoneStep';
 /** Seats per class, as the rider app shows them (lib/booking.ts). */
 const SEATS: Record<string, number> = { auto: 3, mini: 4, hatchback: 4, sedan: 4, suv: 6, bike: 1 };
 const TINT: Record<string, string> = { auto: 'var(--c-warn-bg)', mini: 'var(--c-green-bg)', hatchback: 'var(--c-green-bg)', sedan: 'var(--c-violet-bg)', suv: 'var(--d-steel-bg)' };
-const PAY_LABEL: Record<PayMethod, string> = { upi: 'UPI', card: 'Card', cash: 'Cash' };
+const PAY_LABEL: Record<PayMethod, string> = { upi: 'UPI', card: 'Card', netbanking: 'Netbanking', cash: 'Cash' };
 
 type Option = { type: string; quote: FareQuote | null };
 
@@ -48,6 +49,9 @@ export function RideChoose() {
   const [askPhone, setAskPhone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 13 Nov: a city that has not launched yet: fares show, Book offers "Tell me when we launch".
+  const [launch, setLaunch] = useState<string | null>(null);
+  const [launchSaved, setLaunchSaved] = useState(false);
   const sock = useRef<RideSocket | null>(null);
   const [attempt, setAttempt] = useState(0);
 
@@ -82,6 +86,7 @@ export function RideChoose() {
         if (!live) return;
         clearTimeout(timer);
         setOptions(quotes);
+        setLaunch(quotes.map((x) => x.quote?.launching?.message).find(Boolean) ?? null);
         setExtra(opts);
         setPay((p) => p ?? opts?.payment.default ?? 'cash');
         const bookable = (o: Option) => o.quote && o.quote.drivers_nearby !== false;
@@ -123,6 +128,10 @@ export function RideChoose() {
         setOptions((all) => all?.map((o) => (o.type === chosen.type ? { ...o, quote: fresh } : o)) ?? all);
         setBusy(false);
         setError(tr('The fare changed. Book again at the new fare.'));
+      } else if (e.type === 'error' && e.code === 'CITY_NOT_LIVE') {
+        s.close();
+        setBusy(false);
+        setLaunch((e.message as string) || tr('SaaradhiGo is not available in this area yet.'));
       } else if (e.type === 'dispatch_failed' || e.type === 'error') {
         setBusy(false);
         setError((e.message as string) || tr('The server refused the request.'));
@@ -220,10 +229,26 @@ export function RideChoose() {
         </div>
         {chosen?.quote ? <FareWorkings quote={chosen.quote} /> : null}
         {error && <p className="a14 ared" role="alert">{error}</p>}
-        <button type="button" className="abtn abtn--pri abtn--block" style={{ marginTop: 'auto' }}
-          disabled={!chosenFare || busy} onClick={() => book()} data-testid="book">
-          {busy ? tr('Booking…') : chosenFare ? `${tr('Book')} ${className(chosen?.type)} · ${chosenFare}` : tr('Book')}
-        </button>
+        {launch ? (
+          <div className="acol" style={{ gap: 8, marginTop: 'auto' }} data-testid="launching">
+            <p className="ab" role="status">{launch}</p>
+            {launchSaved
+              ? <p className="a14 agrn" role="status">{tr("We'll tell you when we launch.")}</p>
+              : (
+                <button type="button" className="abtn abtn--pri abtn--block" data-testid="tell-me"
+                  onClick={() => from && tellMeAtLaunch({ lat: from.lat, lng: from.lng })
+                    .then(() => setLaunchSaved(true))
+                    .catch(() => setError(tr('We could not save that. Please try again.')))}>
+                  {tr('Tell me when we launch')}
+                </button>
+              )}
+          </div>
+        ) : (
+          <button type="button" className="abtn abtn--pri abtn--block" style={{ marginTop: 'auto' }}
+            disabled={!chosenFare || busy} onClick={() => book()} data-testid="book">
+            {busy ? tr('Booking…') : chosenFare ? `${tr('Book')} ${className(chosen?.type)} · ${chosenFare}` : tr('Book')}
+          </button>
+        )}
       </aside>
       <div className="ar-map">
         <MapSurface pickup={from} destination={to} routePolyline={route?.points ?? null} />
