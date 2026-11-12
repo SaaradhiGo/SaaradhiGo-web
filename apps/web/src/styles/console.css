@@ -917,6 +917,13 @@ a.ops-alert:hover { background: var(--ops-wash); }
 /* 13 Nov: a document's expiry under its name; the chip turns amber within 30 days. */
 .ops-doc__expiry { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; font: 500 12.5px/1.4 var(--font-sans); color: var(--ops-ink-2); }
 .ops-doc__text span { font: 500 11.5px/1.45 var(--font-sans); color: var(--ops-ink-5); }
+/* 13 Nov: a pill or chip inside a document row keeps its own size and colour (the rule above is more specific than .ops-pill--*, which left "Not recorded" grey on red). */
+.ops-doc__text span.ops-pill { font: 700 10.5px/1.6 var(--font-sans); color: var(--ops-ink-2); }
+.ops-doc__text span.ops-pill--good { color: var(--ops-success); }
+.ops-doc__text span.ops-pill--bad { color: var(--ops-danger); }
+.ops-doc__text span.ops-pill--wait, .ops-doc__text span.ops-pill--caution { color: var(--ops-caution); }
+.ops-doc__text span.ops-pill--info { color: var(--ops-info); }
+.ops-doc__text span.ops-doc__expiry { display: inline-flex; color: var(--ops-ink-2); font: 500 12px/1.45 var(--font-sans); }
 .ops-doc__open { font: 700 11.5px/1 var(--font-sans); color: var(--gold-text); text-decoration: none; border: 1px solid var(--ops-gold-edge); border-radius: 8px; padding: 7px 11px; white-space: nowrap; }
 .ops-doc__open:hover { background: var(--ops-gold-wash); }
 .ops-doc__missing { font: 600 11.5px/1 var(--font-sans); color: var(--ops-ink-6); white-space: nowrap; }
