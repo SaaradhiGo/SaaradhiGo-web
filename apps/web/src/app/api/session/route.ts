@@ -24,7 +24,7 @@ const API = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_BASE_URL
 type Profile = { id?: number | string; role?: string | null; roles?: string[] | null; country?: string | null };
 
 /** 13 Nov: the account's market, which the footer and legal pages fall back to (lib/legal.ts). */
-export const ACCOUNT_MARKET_COOKIE = 'sg-account-market';
+const ACCOUNT_MARKET_COOKIE = 'sg-account-market';
 
 function rolesOf(p: Profile): Role[] {
   const all = [...(p.roles ?? []), p.role ?? ''];
