@@ -46,7 +46,7 @@ describe('the fare lines', () => {
 
 describe('confirm your email', () => {
   it('without mail it does not say a link was sent, and says so when Send link fails', async () => {
-    profile.mockResolvedValue({ email: 'asha@example.com', email_verified: false, email_mail_available: false });
+    profile.mockResolvedValue({ email: 'asha@example.com', email_verified: false, email_mail_configured: false });
     requestEmailConfirmation.mockRejectedValue(new ApiError(503, 'EMAIL_NOT_SENT', 'x', true));
     const { ConfirmEmail } = await import('./ConfirmEmail');
     render(<LocaleProvider><ConfirmEmail /></LocaleProvider>);

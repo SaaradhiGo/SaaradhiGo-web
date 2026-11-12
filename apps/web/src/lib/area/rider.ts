@@ -92,7 +92,7 @@ export type Profile = {
   phone_verified?: boolean;
   email_verified?: boolean;
   /** 12 Nov: present while the email is unconfirmed: whether a link can be emailed here at all. */
-  email_mail_available?: boolean;
+  email_mail_configured?: boolean;
 };
 
 type Page<T> = { results?: T[] } | T[];

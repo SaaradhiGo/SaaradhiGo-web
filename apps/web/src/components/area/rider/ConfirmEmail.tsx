@@ -40,7 +40,7 @@ export function ConfirmEmail() {
     profile().then((p) => {
       if (!live || p.email_verified !== false || !p.email) return;
       setEmail(p.email);
-      setMailOk(p.email_mail_available !== false);
+      setMailOk(p.email_mail_configured !== false);
     }).catch(() => {});
     return () => { live = false; };
   }, []);
