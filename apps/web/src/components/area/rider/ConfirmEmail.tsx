@@ -25,7 +25,7 @@ export function ConfirmEmail() {
     try { await requestEmailConfirmation(); setSent('sent'); } catch { setSent('failed'); }
   }
   return (
-    <div className="ar-note" role="status" data-testid="confirm-email">
+    <div className="ar-note a14" role="status" data-testid="confirm-email">
       <span>{tr('Confirm your email. We sent a link to {email}.').replace('{email}', email)}</span>
       {sent === 'sent' ? <span className="amut">{tr('Sent again.')}</span> : (
         <button type="button" className="a14 ab aacc" onClick={again} disabled={sent === 'busy'}
