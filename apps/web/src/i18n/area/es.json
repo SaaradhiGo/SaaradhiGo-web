@@ -797,5 +797,6 @@
   "Fee {fee} on your next ride": "Cargo de {fee} en tu próximo viaje",
   "Pay {fare} in cash to your driver.": "Paga {fare} en efectivo a tu conductor.",
   "Choose a reason.": "Elige un motivo.",
-  "We will also open the safety options: SOS, share your trip and call support.": "También abriremos las opciones de seguridad: SOS, compartir el viaje y llamar a soporte."
+  "We will also open the safety options: SOS, share your trip and call support.": "También abriremos las opciones de seguridad: SOS, compartir el viaje y llamar a soporte.",
+  "This number cannot get a code here. Use an approved test number.": "Este número no puede recibir un código aquí. Usa un número de prueba aprobado."
 }

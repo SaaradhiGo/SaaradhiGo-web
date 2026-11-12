@@ -797,5 +797,6 @@
   "Fee {fee} on your next ride": "తదుపరి రైడ్‌లో {fee} రుసుము",
   "Pay {fare} in cash to your driver.": "{fare} మీ డ్రైవర్‌కు నగదుగా ఇవ్వండి.",
   "Choose a reason.": "ఒక కారణం ఎంచుకోండి.",
-  "We will also open the safety options: SOS, share your trip and call support.": "భద్రతా ఎంపికలు కూడా తెరుస్తాం: SOS, ట్రిప్ షేర్, సపోర్ట్‌కు కాల్."
+  "We will also open the safety options: SOS, share your trip and call support.": "భద్రతా ఎంపికలు కూడా తెరుస్తాం: SOS, ట్రిప్ షేర్, సపోర్ట్‌కు కాల్.",
+  "This number cannot get a code here. Use an approved test number.": "ఈ నంబర్‌కు ఇక్కడ కోడ్ రాదు. ఆమోదించిన టెస్ట్ నంబర్ వాడండి."
 }
