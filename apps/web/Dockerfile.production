@@ -1,3 +1,5 @@
+# Named Dockerfile.production on purpose: a file called Dockerfile makes Railway (QA) build with it
+# instead of its own builder, and the QA start command then gets an unexpanded $PORT (13 Nov).
 # The production web image (13 Nov): built ONLY by .github/workflows/production.yml on main, with
 # the production NEXT_PUBLIC_* values baked in (Next.js inlines them at build time). Runtime
 # secrets (WEB_SESSION_SECRET) come from SSM Parameter Store on the instance, never the image.
