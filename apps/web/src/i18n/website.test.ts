@@ -27,6 +27,16 @@ const MISSING = [
   // 13 Nov apps follow-up: trip summary and owing on closure.
   'Closing: waiting for what you owe to be settled.', 'Paid {fare} in cash', 'Paid {fare} online',
   'Your driver', '{n} stars',
+  // 13 Nov, public-site UX: role gate, account switch, globe panel, example request
+  'Driver home', 'Example ride request', 'That did not work. Try again.', 'Back to driver home', 'Back to booking',
+  'Sign in to drive', 'Sign in to ride', 'This page needs you to be signed in.', 'Sign in',
+  'This page is for driving', 'This page is for riding',
+  'You are using SaaradhiGo as a rider right now. Switch to driving to open it. Nothing about your rides changes.',
+  'You are using SaaradhiGo as a driver right now. Switch to riding to open it. Nothing about your driving changes.',
+  'Switch to driving', 'Switch to riding', 'Ride with your SaaradhiGo account',
+  'Book rides with the account you drive with: same name, same mobile number, no new sign-up. Your driving is not affected.',
+  'Ride with this account', 'Driver pages need a driver account. See what you need and how to apply.',
+  'Example from the Hyderabad rate card', 'Example', 'Language and country', 'Country sets the company, currency and policies.',
 ];
 
 /** Class names the rider app shows in Latin script in every language. */

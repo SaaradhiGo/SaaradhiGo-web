@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button, ButtonLink } from '@/components/sg/Button';
-import { clearRiderTokens, establishServerSession, readRiderToken, sessionRoles } from '@/lib/publicAuth';
+import { Button } from '@/components/sg/Button';
+import { clearRiderTokens, establishServerSession, readRiderToken, sessionRoles, switchRole, type PublicRole } from '@/lib/publicAuth';
 import { useSession } from '@/lib/useSession';
 import { useT } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
@@ -22,9 +22,14 @@ import { useTr } from '@/i18n/website';
  *
  * Three signed-in shapes, because there are three kinds of account:
  *
- *   rider   -> My trips, and the account menu
- *   driver  -> Driver, and the account menu
+ *   rider   -> the account menu: Profile (/account), My trips
+ *   driver  -> the account menu: Profile (/driver/profile), Driver home
  *   admin   -> Operations console (a separate session; see below)
+ *
+ * 13 Nov (owner): one account, two roles. The role shown is the ACTIVE one from the server's
+ * session (GET /api/session), not the account's original `role`, so an account that rides and
+ * drives gets "Switch to riding" / "Switch to driving". The grey "Driver" and "My trips" buttons
+ * beside the chip are gone: they looked disabled, and the menu holds the same link.
  *
  * An operator signing in here is a wrong turn rather than an error: the
  * console holds its own session under its own keys. The menu says so and
@@ -110,11 +115,15 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
 
   // A browser signed in before the server knew roles (2026-11-08) has a
   // token but no role cookie: hand it over once, so the areas open.
+  const [area, setArea] = useState<{ role: PublicRole; roles: PublicRole[] } | null>(null);
   useEffect(() => {
     if (session.status !== 'in') return;
     const token = readRiderToken();
     if (!token) return;
-    sessionRoles().then((s) => { if (!s) establishServerSession(token); });
+    sessionRoles().then((s) => {
+      if (s) setArea(s);
+      else establishServerSession(token).then((e) => e && setArea(e));
+    });
   }, [session.status]);
 
   // Rendered as a spacer until the session is known, because localStorage is
@@ -137,7 +146,10 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
     );
   }
 
-  const { user, role } = session;
+  const { user } = session;
+  const role: string = session.role === 'admin' ? 'admin' : (area?.role ?? session.role);
+  const other: PublicRole | null = area && area.roles.length > 1 ? (role === 'driver' ? 'rider' : 'driver') : null;
+  const profileHref = role === 'driver' ? '/driver/profile' : '/account';
   const name = user?.full_name?.trim() || null;
   const contact = user?.email || user?.phone_number || null;
   const shownName = displayNameFor(user);
@@ -145,22 +157,20 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
   function signOut() {
     clearRiderTokens();
     setOpen(false);
-    router.replace('/');
+    // The server's role cookie goes too, or the areas would still open for this browser.
+    fetch('/api/session', { method: 'DELETE' }).catch(() => {}).finally(() => { router.replace('/'); router.refresh(); });
+  }
+
+  async function switchTo(r: PublicRole) {
+    setOpen(false);
+    if (await switchRole(r)) {
+      router.push(r === 'driver' ? '/driver' : '/ride');
+      router.refresh();
+    }
   }
 
   return (
     <>
-      {role === 'driver' && (
-        <ButtonLink href="/driver" variant="ghost" size="sm">
-          Driver
-        </ButtonLink>
-      )}
-      {role === 'rider' && (
-        <ButtonLink href="/trips" variant="ghost" size="sm">
-          My trips
-        </ButtonLink>
-      )}
-
       <div className="sg-account" ref={wrap}>
         <button
           type="button"
@@ -187,7 +197,7 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
                 than being labelled by its category forever. */}
             {!name && role !== 'admin' && (
               <p className="sg-account__note">
-                <Link href="/account" onClick={() => setOpen(false)}>
+                <Link href={profileHref} onClick={() => setOpen(false)}>
                   Add your name
                 </Link>{' '}
                 so your driver knows who to look for.
@@ -206,7 +216,7 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
               </>
             ) : (
               <>
-                <Link href="/account" role="menuitem" onClick={() => setOpen(false)}>
+                <Link href={profileHref} role="menuitem" onClick={() => setOpen(false)}>
                   Profile and details
                 </Link>
                 {role === 'driver' ? (
@@ -217,6 +227,11 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
                   <Link href="/trips" role="menuitem" onClick={() => setOpen(false)}>
                     My trips
                   </Link>
+                )}
+                {other && (
+                  <button type="button" role="menuitem" className="sg-account__switch" onClick={() => switchTo(other)}>
+                    {other === 'rider' ? 'Switch to riding' : 'Switch to driving'}
+                  </button>
                 )}
               </>
             )}
