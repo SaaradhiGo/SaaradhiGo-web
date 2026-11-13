@@ -16,7 +16,7 @@ const push = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace: vi.fn(), prefetch: vi.fn() }),
-  usePathname: () => '/dashboard',
+  usePathname: () => '/ops/dashboard',
 }));
 
 type Reply = { status: number; body: unknown };
@@ -237,7 +237,7 @@ describe('keyboard', () => {
     fireEvent.keyDown(box, { key: 'ArrowDown' });
     fireEvent.keyDown(box, { key: 'ArrowDown' });
     fireEvent.keyDown(box, { key: 'Enter' });
-    expect(push).toHaveBeenCalledWith('/drivers/5');
+    expect(push).toHaveBeenCalledWith('/ops/drivers/5');
     expect(box.value).toBe('');
     expect(box.getAttribute('aria-expanded')).toBe('false');
 
@@ -246,14 +246,14 @@ describe('keyboard', () => {
     await act(settle);
     await screen.findByRole('listbox');
     fireEvent.keyDown(box, { key: 'Enter' });
-    expect(push).toHaveBeenCalledWith('/trips/42');
+    expect(push).toHaveBeenCalledWith('/ops/trips/42');
   });
 
   it('a vehicle opens its driver', async () => {
     const box = await openWithThree();
     fireEvent.keyDown(box, { key: 'End' });
     fireEvent.keyDown(box, { key: 'Enter' });
-    expect(push).toHaveBeenCalledWith('/drivers/5');
+    expect(push).toHaveBeenCalledWith('/ops/drivers/5');
   });
 
   it('Escape closes the list and keeps the text; a second Escape clears it', async () => {
@@ -271,7 +271,7 @@ describe('keyboard', () => {
   it('a click on an option opens it', async () => {
     await openWithThree();
     fireEvent.click(screen.getByRole('option', { name: /^Ravi K\./ }));
-    expect(push).toHaveBeenCalledWith('/drivers/5');
+    expect(push).toHaveBeenCalledWith('/ops/drivers/5');
   });
 
   it('a stale answer does not overwrite a newer one', async () => {

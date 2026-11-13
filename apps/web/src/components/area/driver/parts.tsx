@@ -101,7 +101,7 @@ export function WeekChart({ load, currency }: { load: Load<Day[]>; currency: str
         const h = top > 0 ? Math.max(4, Math.round((v / top) * 100)) : 4;
         return (
           <div key={d.date}>
-            <span className="a14 ab">{money(d.net, currency, locale) ?? ''}</span>
+            <span className="a14 ab dr-chart__amt">{money(d.net, currency, locale) ?? ''}</span>
             <div className="dr-chart__well">
               <div className={`dr-chart__bar${i === days.length - 1 ? ' dr-chart__bar--today' : ''}`} style={{ height: h }} />
             </div>

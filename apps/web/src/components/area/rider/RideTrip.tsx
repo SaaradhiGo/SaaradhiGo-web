@@ -18,6 +18,7 @@ import {
   rateTrip, saveDraft, trip as loadTrip, tripDriver, tripEta, tripShare,
 } from '@/lib/area/rider';
 import { PayOnline } from './PayOnline';
+import { NotYourTrip, Skel, isNotFound } from '../states';
 import { ILock, IPhone, IShare, IShield, IUser } from '../icons';
 
 const OVER = ['completed', 'cancelled'];
@@ -54,6 +55,9 @@ export function RideTrip({ id }: { id: string }) {
   const router = useRouter();
   const [t, setT] = useState<Trip | null>(null);
   const [state, setState] = useState<string>('requested');
+  // 13 Nov: nothing is said about the trip until the server has answered; a 404 is not yours.
+  const [loaded, setLoaded] = useState(false);
+  const [missing, setMissing] = useState(false);
   const [rating, setRating] = useState<string | null>(null);
   const [code, setCode] = useState<string | null>(null);
   const [shown, setShown] = useState(false);
@@ -80,8 +84,9 @@ export function RideTrip({ id }: { id: string }) {
   const sock = useRef<RideSocket | null>(null);
 
   const refresh = useCallback(async () => {
-    const d = await loadTrip(id).catch(() => null);
+    const d = await loadTrip(id).catch((e) => { if (isNotFound(e)) setMissing(true); return null; });
     if (!d) return;
+    setLoaded(true);
     setT(d);
     if (d.status) setState(d.status);
     if (d.otp !== null && d.otp !== undefined && `${d.otp}` !== '') setCode(`${d.otp}`);
@@ -117,6 +122,9 @@ export function RideTrip({ id }: { id: string }) {
     s.open();
     return () => s.close();
   }, [id, refresh]);
+
+  // Someone else's trip: drop the live connection to it at once.
+  useEffect(() => { if (missing) sock.current?.close(); }, [missing]);
 
   const searching = ['requested', 'pending', 'searching'].includes(state);
   useEffect(() => {
@@ -216,6 +224,9 @@ export function RideTrip({ id }: { id: string }) {
       setNote(tr('We could not cancel this ride. Try again.'));
     }
   }
+
+  if (missing) return <NotYourTrip />;
+  if (!loaded) return <div className="ar-page" aria-busy="true"><Skel h={28} w="40%" /><Skel lines={3} style={{ marginTop: 16 }} /></div>;
 
   return (
     <div className="ar-split">

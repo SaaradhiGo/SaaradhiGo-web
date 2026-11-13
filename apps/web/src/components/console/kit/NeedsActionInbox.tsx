@@ -10,7 +10,7 @@ import { SeverityChip } from '@/components/console/kit/StatusChip';
 type Tab = 'all' | 'mine' | 'nobody';
 
 
-/** The incident id an SOS item links to (`/safety-ops/incidents/<id>`), or null. */
+/** The incident id an SOS item links to (`/ops/safety-ops/incidents/<id>`), or null. */
 function incidentId(item: NeedsItem): number | null {
   const m = /^\/safety-ops\/incidents\/(\d+)/.exec(item.link);
   return m ? Number(m[1]) : null;

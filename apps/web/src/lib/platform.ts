@@ -25,16 +25,16 @@ export const canCheck = (a: AdminAccess | null) => can(a, 'approval.check');
 export type PlatformTab = 'markets' | 'driverRequirements' | 'flags' | 'versions' | 'notices' | 'settings' | 'integrations' | 'audit' | 'staff' | 'dataRequests';
 
 export const TABS: { key: PlatformTab; href: string; label: string; open: (a: AdminAccess | null) => boolean }[] = [
-  { key: 'markets', href: '/settings', label: 'Markets', open: canReadPlatform },
-  { key: 'driverRequirements', href: '/settings/driver-requirements', label: 'Driver requirements', open: canReadPlatform },
-  { key: 'flags', href: '/settings/flags', label: 'Feature flags', open: canReadPlatform },
-  { key: 'versions', href: '/settings/app-versions', label: 'App versions', open: canReadPlatform },
-  { key: 'notices', href: '/settings/notices', label: 'Notices', open: canReadPlatform },
-  { key: 'settings', href: '/settings/platform', label: 'Platform settings', open: canWritePlatform },
-  { key: 'integrations', href: '/settings/integrations', label: 'Integrations', open: canReadIntegrations },
-  { key: 'audit', href: '/settings/audit', label: 'Audit log', open: canReadAudit },
-  { key: 'staff', href: '/settings/staff', label: 'Staff and roles', open: (a) => can(a, 'admin.manage') },
-  { key: 'dataRequests', href: '/settings/data-requests', label: 'Data requests', open: (a) => can(a, 'privacy.manage') },
+  { key: 'markets', href: '/ops/settings', label: 'Markets', open: canReadPlatform },
+  { key: 'driverRequirements', href: '/ops/settings/driver-requirements', label: 'Driver requirements', open: canReadPlatform },
+  { key: 'flags', href: '/ops/settings/flags', label: 'Feature flags', open: canReadPlatform },
+  { key: 'versions', href: '/ops/settings/app-versions', label: 'App versions', open: canReadPlatform },
+  { key: 'notices', href: '/ops/settings/notices', label: 'Notices', open: canReadPlatform },
+  { key: 'settings', href: '/ops/settings/platform', label: 'Platform settings', open: canWritePlatform },
+  { key: 'integrations', href: '/ops/settings/integrations', label: 'Integrations', open: canReadIntegrations },
+  { key: 'audit', href: '/ops/settings/audit', label: 'Audit log', open: canReadAudit },
+  { key: 'staff', href: '/ops/settings/staff', label: 'Staff and roles', open: (a) => can(a, 'admin.manage') },
+  { key: 'dataRequests', href: '/ops/settings/data-requests', label: 'Data requests', open: (a) => can(a, 'privacy.manage') },
 ];
 
 /** The tabs this operator may open, in order. Empty when none: the page says so. */

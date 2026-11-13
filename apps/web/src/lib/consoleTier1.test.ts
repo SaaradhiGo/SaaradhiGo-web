@@ -14,28 +14,28 @@ const access = (roles: string[], permissions: string[]): AdminAccess => ({
 
 describe('Ctrl K', () => {
   it('reads every readable ID', () => {
-    expect(parseRef('SOS-1042')?.spec.href(1042)).toBe('/safety-ops/incidents/1042');
-    expect(parseRef('t 881230')?.spec.href(881230)).toBe('/trips/881230');
-    expect(parseRef('APR-5')?.spec.href(5)).toBe('/approvals?id=5');
+    expect(parseRef('SOS-1042')?.spec.href(1042)).toBe('/ops/safety-ops/incidents/1042');
+    expect(parseRef('t 881230')?.spec.href(881230)).toBe('/ops/trips/881230');
+    expect(parseRef('APR-5')?.spec.href(5)).toBe('/ops/approvals?id=5');
     expect(parseRef('Hyderabad')).toBeNull();
   });
   it('offers only what the operator can open', () => {
     const safety = access(['safety_officer'], ['safety.respond', 'trip.read']);
-    expect(commandsFor('SOS-9', safety).map((c) => c.href)).toEqual(['/safety-ops/incidents/9']);
+    expect(commandsFor('SOS-9', safety).map((c) => c.href)).toEqual(['/ops/safety-ops/incidents/9']);
     expect(commandsFor('APR-5', safety)).toEqual([]);
     expect(commandsFor('appro', safety)).toEqual([]);
     const finance = access(['finance'], ['finance.read', 'finance.payout']);
-    expect(commandsFor('appro', finance).map((c) => c.href)).toEqual(['/approvals']);
+    expect(commandsFor('appro', finance).map((c) => c.href)).toEqual(['/ops/approvals']);
   });
 });
 
 describe('role landing', () => {
   it('sends each role to its own place', () => {
-    expect(landingFor(access(['safety_officer'], ['safety.respond', 'trip.read']))).toBe('/safety-ops');
-    expect(landingFor(access(['kyc_verifier'], ['driver.read']))).toBe('/kyc');
-    expect(landingFor(access(['finance'], ['finance.read', 'report.read']))).toBe('/finance');
-    expect(landingFor(access(['analyst'], ['report.read']))).toBe('/reports');
-    expect(landingFor(access(['city_ops_manager'], ['trip.read', 'report.read']))).toBe('/dashboard');
+    expect(landingFor(access(['safety_officer'], ['safety.respond', 'trip.read']))).toBe('/ops/safety-ops');
+    expect(landingFor(access(['kyc_verifier'], ['driver.read']))).toBe('/ops/kyc');
+    expect(landingFor(access(['finance'], ['finance.read', 'report.read']))).toBe('/ops/finance');
+    expect(landingFor(access(['analyst'], ['report.read']))).toBe('/ops/reports');
+    expect(landingFor(access(['city_ops_manager'], ['trip.read', 'report.read']))).toBe('/ops/dashboard');
   });
 });
 

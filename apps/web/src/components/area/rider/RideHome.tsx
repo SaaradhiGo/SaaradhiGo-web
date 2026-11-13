@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import MapSurface from '@/components/MapSurface';
 import { useTr } from '@/i18n/website';
 import { type LatLng, type Place, placeToPoint, searchPlaces } from '@/lib/booking';
+import { fetchServiceAreas, primaryArea } from '@/lib/serviceAreas';
+import { useLegal } from '@/components/sg/LegalProvider';
 import { savedPlaces, saveDraft, streetAddress, trips, type PlaceLabel, type SavedPlace, type Trip } from '@/lib/area/rider';
 import { type PlaceDraft, PlaceSheet } from './PlaceSheet';
 import { IBriefcase, IClock, IHome, IPlus, ITarget } from '../icons';
@@ -180,7 +182,19 @@ export function RideHome() {
   const order = { home: 0, work: 1, other: 2 } as const;
   const chips = places.map(placeSpot).filter((s): s is Spot => s !== null)
     .sort((a, b) => order[a.kind ?? 'other'] - order[b.kind ?? 'other']);
-  const cityCentre = useMemo(() => recent[0]?.point ?? chips[0]?.point ?? null, [recent, chips]);
+  // 13 Nov (owner): with no location the map shows the rider's city, never the world: their last
+  // trip, else a saved place, else the market's launch city (Hyderabad in India).
+  const { market } = useLegal();
+  const [launchCity, setLaunchCity] = useState<LatLng | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetchServiceAreas().then((areas) => {
+      const mine = areas.filter((a) => (a.zone as { country?: string }).country === market);
+      if (live) setLaunchCity((primaryArea(mine.length ? mine : areas) ?? null)?.centre ?? null);
+    }).catch(() => {});
+    return () => { live = false; };
+  }, [market]);
+  const cityCentre = useMemo(() => recent[0]?.point ?? chips[0]?.point ?? launchCity, [recent, chips, launchCity]);
   const target = active === 'pickup' ? tr('pickup') : tr('destination');
 
   return (

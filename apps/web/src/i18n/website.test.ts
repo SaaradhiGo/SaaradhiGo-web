@@ -37,6 +37,8 @@ const MISSING = [
   'Book rides with the account you drive with: same name, same mobile number, no new sign-up. Your driving is not affected.',
   'Ride with this account', 'Driver pages need a driver account. See what you need and how to apply.',
   'Example from the Hyderabad rate card', 'Example', 'Language and country', 'Country sets the company, currency and policies.',
+  // 13 Nov, review fixes: the payout card on phones
+  'Provider fee', 'You received',
 ];
 
 /** Class names the rider app shows in Latin script in every language. */

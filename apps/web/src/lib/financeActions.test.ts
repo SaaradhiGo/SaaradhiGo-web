@@ -214,7 +214,7 @@ describe('Command Centre finance tiles', () => {
   });
 
   it('links to reconciliation only for a finance.read holder', () => {
-    expect(reconciliationHref({ reconciliation_link: true }, READER)).toBe('/finance/reconciliation');
+    expect(reconciliationHref({ reconciliation_link: true }, READER)).toBe('/ops/finance/reconciliation');
     expect(reconciliationHref({ reconciliation_link: false }, READER)).toBeUndefined();
     expect(reconciliationHref({ reconciliation_link: true }, access(['finance.aggregate']))).toBeUndefined();
   });

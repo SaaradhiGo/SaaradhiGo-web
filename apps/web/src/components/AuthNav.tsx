@@ -217,7 +217,7 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
                   Operator accounts sign in to the operations console, which
                   keeps its own session.
                 </p>
-                <Link href="/login" role="menuitem" onClick={() => setOpen(false)}>
+                <Link href="/ops/login" role="menuitem" onClick={() => setOpen(false)}>
                   Open the console
                 </Link>
               </>
@@ -231,7 +231,7 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
                     Driver home
                   </Link>
                 ) : (
-                  <Link href="/trips" role="menuitem" onClick={() => setOpen(false)}>
+                  <Link href="/ops/trips" role="menuitem" onClick={() => setOpen(false)}>
                     My trips
                   </Link>
                 )}

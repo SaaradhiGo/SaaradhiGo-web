@@ -112,14 +112,14 @@ export function CityBoard({
 
       <TileGrid>
         {countTile('Requested', row.trips.requested, country, w, {
-          href: to(links.trips, `/trips?scope=${row.code}`), note: noRequests ? emptyNote : undefined,
+          href: to(links.trips, `/ops/trips?scope=${row.code}`), note: noRequests ? emptyNote : undefined,
         })}
         {countTile('Accepted', row.trips.accepted, country, w, { direction: 'up' })}
         {countTile('Completed', row.trips.completed, country, w, {
-          direction: 'up', tone: 'good', href: to(links.trips, `/trips?status=completed&scope=${row.code}`),
+          direction: 'up', tone: 'good', href: to(links.trips, `/ops/trips?status=completed&scope=${row.code}`),
         })}
         {countTile('Cancelled', row.trips.cancelled, country, w, {
-          direction: 'down', href: to(links.trips, `/trips?status=cancelled&scope=${row.code}`),
+          direction: 'down', href: to(links.trips, `/ops/trips?status=cancelled&scope=${row.code}`),
         })}
         {countTile('Unfulfilled', row.trips.unfulfilled, country, w, {
           direction: 'down',
@@ -149,7 +149,7 @@ export function CityBoard({
           label="Drivers online"
           value={formatCount(row.drivers.online_now.now, country)}
           note={`${formatCount(row.drivers.active.now, country) ?? '—'} active in window`}
-          href={to(links.drivers, `/drivers?status=online&scope=${row.code}`)}
+          href={to(links.drivers, `/ops/drivers?status=online&scope=${row.code}`)}
         />
         {countTile('Riders active', row.riders.active_24h, country, w, {
           direction: 'up', note: 'last 24 h',
@@ -162,7 +162,7 @@ export function CityBoard({
             tone="money"
             delta={tileDelta(t.delta, country, w)}
             note={`${formatCount(row.trips.completed.now, country) ?? '—'} completed trips`}
-            href={to(links.trips, `/trips?status=completed&scope=${row.code}`)}
+            href={to(links.trips, `/ops/trips?status=completed&scope=${row.code}`)}
           />
         ))}
         {row.money && collected.length === 0 ? (
@@ -171,7 +171,7 @@ export function CityBoard({
         {pendingSums.map((t) => (
           <MetricTile key={`pending-${t.currency}`} label={t.label} value={t.value} tone="money"
             note={`${formatCount(q.withdrawals_pending?.now ?? 0, country)} waiting`}
-            href={to(links.withdrawals, '/finance/payouts')} />
+            href={to(links.withdrawals, '/ops/finance/payouts')} />
         ))}
       </TileGrid>
 
@@ -187,7 +187,7 @@ export function CityBoard({
             detail={sosOpen > 0
               ? `Oldest ${formatAge(q.sos_oldest_open_minutes)} unacknowledged`
               : 'None open'}
-            href={`/safety-ops?scope=${row.code}`}
+            href={`/ops/safety-ops?scope=${row.code}`}
             urgent
           />
         )}
@@ -198,7 +198,7 @@ export function CityBoard({
             detail={(q.withdrawals_pending.now ?? 0) > 0
               ? `Oldest waiting ${new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(q.withdrawals_oldest_pending_hours ?? 0)} h`
               : 'Nobody waiting to be paid'}
-            href={`/finance/payouts?scope=${row.code}`}
+            href={`/ops/finance/payouts?scope=${row.code}`}
           />
         )}
         {links.support && (
@@ -206,7 +206,7 @@ export function CityBoard({
             count={q.tickets_open.now}
             title="Tickets open"
             detail={`${formatCount(q.tickets_raised.now, country) ?? '—'} raised in window`}
-            href={`/support?scope=${row.code}`}
+            href={`/ops/support?scope=${row.code}`}
           />
         )}
         {links.drivers && (
@@ -214,7 +214,7 @@ export function CityBoard({
             count={q.kyc_awaiting.now}
             title="KYC awaiting review"
             detail="Drivers with documents to check"
-            href={`/drivers?approved=false&scope=${row.code}`}
+            href={`/ops/drivers?approved=false&scope=${row.code}`}
           />
         )}
       </div>

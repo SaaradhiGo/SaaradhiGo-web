@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { placeLabel } from '@/lib/area/places';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { listWhen, money } from '@/lib/area/format';
-import { className, paidFare, trips as loadTrips } from '@/lib/area/rider';
+import { type Trip, className, paidFare, trips as loadTrips } from '@/lib/area/rider';
 import { useLoad } from '@/lib/area/useLoad';
 import { localDay, useRiderPeriod } from '@/lib/area/riderPeriod';
 import { PeriodSwitcher, SearchBox, periodLabel } from '../driver/PeriodSwitcher';
@@ -41,6 +42,19 @@ export function RiderTrips() {
 
   const words = { today: tr('Today'), yesterday: tr('Yesterday') };
 
+  // One trip as both the table row and the phone card show it.
+  function view(t: Trip) {
+    const when = listWhen(t.completed_at ?? t.cancelled_at ?? t.requested_at, locale, t.timezone, words);
+    const done = t.status === 'completed';
+    const cancelled = t.status === 'cancelled';
+    const paid = paidFare(t);
+    const fare = cancelled && (!paid || Number(paid) === 0) ? tr('No charge') : money(paid ?? t.estimated_fare, t.currency, locale);
+    const from = placeLabel(t.pickup_label, t.pickup_address);
+    const to = placeLabel(t.destination_label, t.destination_address);
+    const href = done || cancelled ? `/trips/${t.id}` : `/ride/trip/${t.id}`;
+    return { when, done, cancelled, fare, from, to, href };
+  }
+
   return (
     <div className="ar-page" style={{ maxWidth: 1200 }}>
       <div className="arow" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
@@ -59,7 +73,8 @@ export function RiderTrips() {
       </div>
       <PeriodSwitcher s={s} />
       <SearchBox label={tr('Search by place or trip number')} onSearch={setQ} />
-      <div className="acard" style={{ overflowX: 'auto' }} tabIndex={0} role="region" aria-label={tr('Your trips')}>
+      {/* 13 Nov: on phones, one card per trip (below); the table is for wider screens. */}
+      <div className={`acard${rows?.length ? ' a-wide' : ''}`} style={{ overflowX: 'auto' }} tabIndex={0} role="region" aria-label={tr('Your trips')}>
         <table className="atable">
           <thead>
             <tr className="albl">
@@ -86,19 +101,15 @@ export function RiderTrips() {
               </td></tr>
             )}
             {rows?.map((t) => {
-              const when = listWhen(t.completed_at ?? t.cancelled_at ?? t.requested_at, locale, t.timezone, words);
-              const done = t.status === 'completed';
-              const cancelled = t.status === 'cancelled';
-              const paid = paidFare(t);
-              const fare = cancelled && (!paid || Number(paid) === 0) ? tr('No charge') : money(paid ?? t.estimated_fare, t.currency, locale);
+              const { when, done, cancelled, fare, from, to, href } = view(t);
               return (
                 <tr key={t.id}>
                   <td>
                     {when && <div className="ab">{when.first}<div className="a14 amut" style={{ fontWeight: 400 }}>{when.second}</div></div>}
                   </td>
                   <td>
-                    <Link href={done || cancelled ? `/trips/${t.id}` : `/ride/trip/${t.id}`} className="ab" style={{ color: "inherit", display: "block" }}>{t.destination_address}</Link>
-                    {t.pickup_address && <div className="a14 amut">{tr('from')} {t.pickup_address}</div>}
+                    <Link href={href} className="ab" style={{ color: "inherit", display: "block" }}>{to}</Link>
+                    {from && <div className="a14 amut">{tr('from')} {from}</div>}
                   </td>
                   <td>{className(t.vehicle_info?.type ?? t.requested_vehicle_type)}</td>
                   <td>
@@ -106,9 +117,9 @@ export function RiderTrips() {
                       {tr(done ? 'Completed' : cancelled ? 'Cancelled' : 'In progress')}
                     </span>
                   </td>
-                  <td className="ab">{fare}</td>
+                  <td className="ab amoney">{fare}</td>
                   <td>
-                    <Link href={done || cancelled ? `/trips/${t.id}` : `/ride/trip/${t.id}`} className="aacc ab a14">
+                    <Link href={href} className="aacc ab a14">
                       {tr(done ? 'Receipt' : cancelled ? 'Details' : 'Open')}
                     </Link>
                   </td>
@@ -118,7 +129,29 @@ export function RiderTrips() {
           </tbody>
         </table>
       </div>
-      <div className="acard arow" style={{ padding: 20, gap: 16, flexWrap: 'wrap' }}>
+      {rows?.length ? (
+        <ul className="acards a-phone" aria-label={tr('Your trips')} data-testid="trip-cards">
+          {rows.map((t) => {
+            const { when, done, cancelled, fare, from, to, href } = view(t);
+            return (
+              <li key={t.id}>
+                <div className="arow a14 amut">
+                  <span>{when ? `${when.first} · ${when.second}` : ''}</span>
+                  <span className={`apill ${done ? 'apill--ok' : cancelled ? 'apill--neu' : 'apill--warn'}`}>
+                    {tr(done ? 'Completed' : cancelled ? 'Cancelled' : 'In progress')}
+                  </span>
+                </div>
+                <Link href={href} className="ab" style={{ color: 'inherit' }}>{from ? `${from} → ${to}` : to}</Link>
+                <div className="arow a14">
+                  <span className="amut">{className(t.vehicle_info?.type ?? t.requested_vehicle_type)}</span>
+                  <span className="ab amoney">{fare}</span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+      <div className="acard arow astack-phone" style={{ padding: 20, gap: 16, flexWrap: 'wrap' }}>
         <span className="aico" style={{ background: 'var(--c-gold-bg)', color: 'var(--c-accent)' }}><IHelp /></span>
         <div className="agrow">
           <div className="ab">{tr('Something wrong with a trip?')}</div>

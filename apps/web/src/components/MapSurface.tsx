@@ -369,6 +369,13 @@ export default function MapSurface({
       }
     }
 
+    // 13 Nov: nothing on the map yet, but the rider's city became known after the map was made
+    // (their trips load after it): show the city, not the world view it opened on.
+    if (!anything && !pickup && !destination && cityCentre) {
+      m.setCenter(cityCentre);
+      if ((m.getZoom() ?? 0) < 12) m.setZoom(12);
+    }
+
     if (anything && !bounds.isEmpty()) {
       if (pickup && !destination && !driver && !routePolyline) {
         m.setCenter(pickup);

@@ -26,10 +26,10 @@ export function ActionTiles({ access }: { access: AdminAccess | null }) {
   const show = (page: Parameters<typeof canOpen>[1], key: keyof typeof QUEUE_PERMISSION) =>
     canOpen(access, page) && canAny(access, QUEUE_PERMISSION[key]);
   const tiles = [
-    show('safety', 'sosOpen') && <MetricTile key="sos" label="Open SOS" value={c.sosOpen} tone={tone(c.sosOpen, true)} href="/safety-ops" />,
-    show('approvals', 'approvalsWaiting') && <MetricTile key="appr" label="Approvals waiting for you" value={c.approvalsWaiting} tone={tone(c.approvalsWaiting)} href="/approvals" />,
-    show('withdrawals', 'withdrawalsPending') && <MetricTile key="pay" label="Payouts waiting" value={c.withdrawalsPending} tone={tone(c.withdrawalsPending)} href="/finance/payouts?status=pending" />,
-    show('drivers', 'driversAwaiting') && <MetricTile key="kyc" label="KYC queue" value={c.driversAwaiting} tone={tone(c.driversAwaiting)} href="/kyc" />,
+    show('safety', 'sosOpen') && <MetricTile key="sos" label="Open SOS" value={c.sosOpen} tone={tone(c.sosOpen, true)} href="/ops/safety-ops" />,
+    show('approvals', 'approvalsWaiting') && <MetricTile key="appr" label="Approvals waiting for you" value={c.approvalsWaiting} tone={tone(c.approvalsWaiting)} href="/ops/approvals" />,
+    show('withdrawals', 'withdrawalsPending') && <MetricTile key="pay" label="Payouts waiting" value={c.withdrawalsPending} tone={tone(c.withdrawalsPending)} href="/ops/finance/payouts?status=pending" />,
+    show('drivers', 'driversAwaiting') && <MetricTile key="kyc" label="KYC queue" value={c.driversAwaiting} tone={tone(c.driversAwaiting)} href="/ops/kyc" />,
   ].filter(Boolean);
   if (!tiles.length) return null;
   return <TileGrid variant="lead">{tiles}</TileGrid>;

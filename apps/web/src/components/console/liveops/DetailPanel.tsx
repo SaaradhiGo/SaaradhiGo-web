@@ -72,7 +72,7 @@ export function DetailPanel({
               {busy ? 'Working…' : 'Acknowledge'}
             </button>
           ) : null}
-          {a.incident_id ? <Link href={`/safety-ops/incidents/${a.incident_id}`} className="sg-btn sg-btn--secondary sg-btn--sm">Open case</Link> : null}
+          {a.incident_id ? <Link href={`/ops/safety-ops/incidents/${a.incident_id}`} className="sg-btn sg-btn--secondary sg-btn--sm">Open case</Link> : null}
         </div>
       </>
     );

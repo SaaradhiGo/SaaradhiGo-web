@@ -5,7 +5,7 @@ import type { FlagDetail } from '@/lib/fraud';
 import { FlagDecisionDrawer } from '@/components/console/fraud/FlagDecisionDrawer';
 import { FraudNav } from '@/components/console/fraud/parts';
 
-vi.mock('next/navigation', () => ({ usePathname: () => '/fraud', useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('next/navigation', () => ({ usePathname: () => '/ops/fraud', useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('next/link', () => ({
   default: function LinkStub({ href, children, ...rest }: React.ComponentProps<'a'> & { href: string }) {
     return <a href={href} {...rest}>{children}</a>;
@@ -28,15 +28,15 @@ const access = (permissions: string[]) => ({ permissions } as unknown as AdminAc
 
 const flag = (): FlagDetail => ({
   id: 7, kind: 'multi_accounting', status: 'open', severity: 'high', score: 82, rule_key: 'multi_accounting',
-  rule_version: 1, hit_count: 1, subject: { ref: 'rider #12', role: 'rider', user_id: 12, href: '/riders/12' },
+  rule_version: 1, hit_count: 1, subject: { ref: 'rider #12', role: 'rider', user_id: 12, href: '/ops/riders/12' },
   evidence: { signals: ['same_device'], refs: { counterpart_user_ids: [3, 4] } }, source_ref: '', scope: 'IN-TG-HYD',
   scope_name: 'Hyderabad', assigned_to: null, assigned_at: null, decision_reason: '', decision_note: '', decided_by: null,
   decided_at: null, created_at: '2026-11-01T10:00:00Z', last_seen_at: null, age_hours: 3, may_review: true,
   linked: { accounts: [], outside_scope: 0, outside_scope_label: null },
   related: { trips: [], trip_count: 0, campaigns: [] }, timeline: [],
   handoffs: [
-    { kind: 'rider_block', label: 'Suspend the rider', capability: 'rider.block', href: '/riders/12', available: false, taken_at: null },
-    { kind: 'finance_adjustment', label: 'Request a Finance adjustment', capability: 'finance.adjust', href: '/riders/12', available: false, taken_at: null },
+    { kind: 'rider_block', label: 'Suspend the rider', capability: 'rider.block', href: '/ops/riders/12', available: false, taken_at: null },
+    { kind: 'finance_adjustment', label: 'Request a Finance adjustment', capability: 'finance.adjust', href: '/ops/riders/12', available: false, taken_at: null },
   ],
   handoffs_taken: [],
 });
@@ -87,7 +87,7 @@ describe('the Fraud tabs (the link rule)', () => {
   it('draws Queue and Rules for fraud.read and nothing otherwise', () => {
     current = access(['fraud.read']);
     const { container, rerender } = render(<FraudNav />);
-    expect([...container.querySelectorAll('a')].map((a) => a.getAttribute('href'))).toEqual(['/fraud', '/fraud/rules']);
+    expect([...container.querySelectorAll('a')].map((a) => a.getAttribute('href'))).toEqual(['/ops/fraud', '/ops/fraud/rules']);
     current = access(['promo.read']);
     rerender(<FraudNav />);
     expect(container.querySelectorAll('a').length).toBe(0);

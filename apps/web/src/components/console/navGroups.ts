@@ -29,69 +29,69 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Operate',
     items: [
-      { href: '/dashboard', label: 'Overview', Icon: Gauge, need: PAGE_NEEDS.dashboard },
+      { href: '/ops/dashboard', label: 'Overview', Icon: Gauge, need: PAGE_NEEDS.dashboard },
       // Dots for liveops.read, the heatmap alone for liveops.aggregate.
-      { href: '/live-ops', label: 'Live map', Icon: Radar, need: PAGE_NEEDS.liveops },
-      { href: '/trips', label: 'Trips', Icon: Route, need: PAGE_NEEDS.trips },
+      { href: '/ops/live-ops', label: 'Live map', Icon: Radar, need: PAGE_NEEDS.liveops },
+      { href: '/ops/trips', label: 'Trips', Icon: Route, need: PAGE_NEEDS.trips },
       // Open to the read-only `safety.read` as well as `safety.respond`.
-      { href: '/safety-ops', label: 'Safety', Icon: Siren, need: PAGE_NEEDS.safety, countKey: 'sos', urgent: true },
-      { href: '/support', label: 'Support', Icon: LifeBuoy, need: PAGE_NEEDS.support, countKey: 'support' },
+      { href: '/ops/safety-ops', label: 'Safety', Icon: Siren, need: PAGE_NEEDS.safety, countKey: 'sos', urgent: true },
+      { href: '/ops/support', label: 'Support', Icon: LifeBuoy, need: PAGE_NEEDS.support, countKey: 'support' },
     ],
   },
   {
     label: 'People',
     items: [
-      { href: '/drivers', label: 'Drivers', Icon: Users, need: PAGE_NEEDS.drivers },
+      { href: '/ops/drivers', label: 'Drivers', Icon: Users, need: PAGE_NEEDS.drivers },
       // The KYC review queue (board E); its count is the queue's own, so the badge matches the page.
-      { href: '/kyc', label: 'Onboarding and KYC', Icon: Shield, need: PAGE_NEEDS.drivers, countKey: 'drivers' },
-      { href: '/riders', label: 'Riders', Icon: UserRound, need: PAGE_NEEDS.riders },
+      { href: '/ops/kyc', label: 'Onboarding and KYC', Icon: Shield, need: PAGE_NEEDS.drivers, countKey: 'drivers' },
+      { href: '/ops/riders', label: 'Riders', Icon: UserRound, need: PAGE_NEEDS.riders },
     ],
   },
   {
     label: 'Money',
     items: [
-      { href: '/finance', label: 'Money overview', Icon: TrendUp, need: PAGE_NEEDS.finance },
-      { href: '/finance/payments', label: 'Payments', Icon: Wallet, need: PAGE_NEEDS.finance },
-      { href: '/finance/payouts', label: 'Payouts', Icon: Wallet, need: PAGE_NEEDS.withdrawals, countKey: 'withdrawals' },
-      { href: '/finance/reconciliation', label: 'Reconciliation', Icon: BarChart, need: PAGE_NEEDS.finance },
+      { href: '/ops/finance', label: 'Money overview', Icon: TrendUp, need: PAGE_NEEDS.finance },
+      { href: '/ops/finance/payments', label: 'Payments', Icon: Wallet, need: PAGE_NEEDS.finance },
+      { href: '/ops/finance/payouts', label: 'Payouts', Icon: Wallet, need: PAGE_NEEDS.withdrawals, countKey: 'withdrawals' },
+      { href: '/ops/finance/reconciliation', label: 'Reconciliation', Icon: BarChart, need: PAGE_NEEDS.finance },
     ],
   },
   {
     label: 'Grow',
     items: [
       // Rider promos, driver incentives, referrals (module 12): `promo.read`.
-      { href: '/promotions', label: 'Promotions', Icon: Gift, need: PAGE_NEEDS.promotions },
-      { href: '/promotions/incentives', label: 'Driver incentives', Icon: Gift, need: PAGE_NEEDS.promotions },
-      { href: '/promotions/referrals', label: 'Referrals', Icon: Gift, need: PAGE_NEEDS.promotions },
+      { href: '/ops/promotions', label: 'Promotions', Icon: Gift, need: PAGE_NEEDS.promotions },
+      { href: '/ops/promotions/incentives', label: 'Driver incentives', Icon: Gift, need: PAGE_NEEDS.promotions },
+      { href: '/ops/promotions/referrals', label: 'Referrals', Icon: Gift, need: PAGE_NEEDS.promotions },
       // Templates, campaigns, the delivery log and the providers (module 11): `notify.read`.
-      { href: '/notifications', label: 'Messages', Icon: Megaphone, need: PAGE_NEEDS.notifications },
+      { href: '/ops/notifications', label: 'Messages', Icon: Megaphone, need: PAGE_NEEDS.notifications },
     ],
   },
   {
     label: 'Configure',
     items: [
       // Markets, flags, app versions, notices, settings and integrations (module 15).
-      { href: '/settings', label: 'Countries and cities', Icon: Cog, need: PAGE_NEEDS.platform },
-      { href: '/zones', label: 'Zones', Icon: MapPin, need: PAGE_NEEDS.zones },
+      { href: '/ops/settings', label: 'Countries and cities', Icon: Cog, need: PAGE_NEEDS.platform },
+      { href: '/ops/zones', label: 'Zones', Icon: MapPin, need: PAGE_NEEDS.zones },
       // Commission and fare cards (module 8). Readable with `zone.read`.
-      { href: '/pricing', label: 'Pricing and commission', Icon: Percent, need: PAGE_NEEDS.pricing },
-      { href: '/settings/integrations', label: 'Integrations and apps', Icon: Cog, need: ['platform.integrations.read', 'platform.read'] },
+      { href: '/ops/pricing', label: 'Pricing and commission', Icon: Percent, need: PAGE_NEEDS.pricing },
+      { href: '/ops/settings/integrations', label: 'Integrations and apps', Icon: Cog, need: ['platform.integrations.read', 'platform.read'] },
     ],
   },
   {
     label: 'Govern',
     items: [
       // Everything waiting for a second person, with the checker's count.
-      { href: '/approvals', label: 'Approvals', Icon: Check, need: PAGE_NEEDS.approvals, countKey: 'approvals' },
+      { href: '/ops/approvals', label: 'Approvals', Icon: Check, need: PAGE_NEEDS.approvals, countKey: 'approvals' },
       // The fraud review queue and the detection rules (module 13): `fraud.read`.
-      { href: '/fraud', label: 'Fraud and risk', Icon: Flag, need: PAGE_NEEDS.fraud },
-      { href: '/settings/audit', label: 'Audit log', Icon: Shield, need: ['audit.read'] },
-      { href: '/settings/staff', label: 'Staff and roles', Icon: Users, need: PAGE_NEEDS.staff },
-      { href: '/settings/data-requests', label: 'Data requests', Icon: Lock, need: PAGE_NEEDS.dataRequests },
+      { href: '/ops/fraud', label: 'Fraud and risk', Icon: Flag, need: PAGE_NEEDS.fraud },
+      { href: '/ops/settings/audit', label: 'Audit log', Icon: Shield, need: ['audit.read'] },
+      { href: '/ops/settings/staff', label: 'Staff and roles', Icon: Users, need: PAGE_NEEDS.staff },
+      { href: '/ops/settings/data-requests', label: 'Data requests', Icon: Lock, need: PAGE_NEEDS.dataRequests },
       // Reports & Analytics (module 14): `report.read`.
-      { href: '/reports', label: 'Reports', Icon: BarChart, need: PAGE_NEEDS.reports },
+      { href: '/ops/reports', label: 'Reports', Icon: BarChart, need: PAGE_NEEDS.reports },
       // No `need`: the operator's OWN authenticator and recovery codes.
-      { href: '/settings/security', label: 'My security', Icon: Lock },
+      { href: '/ops/settings/security', label: 'My security', Icon: Lock },
     ],
   },
 ];
@@ -110,5 +110,5 @@ export function visibleGroups(access: AdminAccess | null, groups: NavGroup[] = N
 
 /** The first page they can open: where the brand mark goes. */
 export function homeFor(groups: NavGroup[]): string {
-  return groups[0]?.items[0]?.href ?? '/settings/security';
+  return groups[0]?.items[0]?.href ?? '/ops/settings/security';
 }

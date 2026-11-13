@@ -115,9 +115,15 @@ export function FaresContent() {
         </div>
         {cities === null && <p className="sg-legal-doc__updated">Loading rates…</p>}
         {cities?.length === 0 && <p>Rates for {india ? 'India' : 'the United States'} are published here when a city opens.</p>}
-        {cities?.map((c) => (
-          <div className="sg-legal-doc__block" key={c.zone}>
-            <h2>{c.city}{c.city_status === 'soon' ? ' (launching soon)' : ''}</h2>
+        {cities?.map((c) => (c.city_status !== 'live' ? (
+          // 13 Nov (owner): a city not yet open in the launch gate shows no rates.
+          <div className="sg-legal-doc__block" key={c.zone} data-testid="fares-soon">
+            <h2>{c.city}</h2>
+            <p>Coming soon.</p>
+          </div>
+        ) : (
+          <div className="sg-legal-doc__block" key={c.zone} data-testid="fares-city">
+            <h2>{c.city}</h2>
             <div className="sg-legal-doc__table">
               <table>
                 <caption className="sr-only">Rates in {c.city}</caption>
@@ -145,7 +151,7 @@ export function FaresContent() {
             )}
             <p>{content.cancellationLine(c.cancellation, c.currency) ?? 'Cancelling is free.'}</p>
           </div>
-        ))}
+        )))}
       </section>
     </>
   );

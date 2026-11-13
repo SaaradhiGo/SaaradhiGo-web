@@ -15,12 +15,12 @@ import { TOKEN_KEY } from '@/lib/api';
 import type { AdminAccess } from '@/lib/adminScope';
 import { resetRevealStatsForTests } from '@/lib/reveal';
 import { Revealable } from './Revealable';
-import SecurityPage from '@/app/(console)/settings/security/page';
+import SecurityPage from '@/app/(console)/ops/settings/security/page';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(''),
-  usePathname: () => '/trips/42',
+  usePathname: () => '/ops/trips/42',
 }));
 
 let access: AdminAccess | null = null;

@@ -29,7 +29,7 @@ const LINKS = [
   { label: 'Help', href: '/help' },
 ] as const;
 
-const QUIET_PATHS = ['/', '/book', '/ride', '/drive', '/help', '/contact', '/sign-in', '/sign-up', '/driver', '/role-gate', '/forgot-password', '/reset-password'];
+const QUIET_PATHS = ['/', '/ride', '/drive', '/help', '/contact', '/sign-in', '/sign-up', '/driver', '/role-gate', '/forgot-password', '/reset-password'];
 
 export function NavBar({ quiet }: { quiet?: boolean }) {
   const pathname = usePathname();

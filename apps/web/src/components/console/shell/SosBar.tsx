@@ -43,7 +43,7 @@ export function SosBar({ access }: { access: AdminAccess | null }) {
   const oldest = items.reduce((a, b) => (b.age_seconds > a.age_seconds ? b : a));
   const age = oldest.age_seconds + Math.round((now - fetchedAt) / 1000);
   const places = Array.from(new Set(items.map((i) => i.where?.name).filter(Boolean))).slice(0, 3);
-  const href = items.length === 1 ? items[0].link : '/safety-ops';
+  const href = items.length === 1 ? items[0].link : '/ops/safety-ops';
   return (
     <div role="alert">
     <Link href={href} className="ops-sosbar">

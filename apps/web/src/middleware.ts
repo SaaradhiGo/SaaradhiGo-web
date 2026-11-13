@@ -17,6 +17,11 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     '/ride', '/ride/:path*', '/trips', '/trips/:path*', '/account', '/my-trips',
-    '/driver', '/driver/:path*', '/rider', '/rider/:path*', '/sign-in',
+    '/driver', '/driver/:path*', '/rider', '/rider/:path*', '/sign-in', '/book',
+    // The console's old paths (13 Nov: it moved under /ops); each redirects to its /ops twin.
+    '/approvals/:path*', '/dashboard/:path*', '/drivers/:path*', '/finance/:path*', '/fraud/:path*', '/kyc/:path*',
+    '/live-ops/:path*', '/notifications/:path*', '/pricing/:path*', '/promotions/:path*', '/reports/:path*',
+    '/riders/:path*', '/safety-ops/:path*', '/settings/:path*', '/sos/:path*', '/start/:path*', '/support/:path*',
+    '/withdrawals/:path*', '/zones/:path*', '/login/:path*',
   ],
 };

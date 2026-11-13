@@ -45,7 +45,7 @@ export function Sidebar({
   collapsed,
   onToggle,
   isCurrent,
-  home = '/settings/security',
+  home = '/ops/settings/security',
 }: {
   groups: NavGroup[];
   counts: Record<string, number | undefined>;

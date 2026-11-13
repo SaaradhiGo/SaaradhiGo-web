@@ -260,7 +260,7 @@ function ReportInner() {
   }, [key, query, fallback]);
   useEffect(() => { void load(); }, [load]);
 
-  const go = (f: ReportFilters) => router.push(`/reports/${key}?${filtersToQuery(f)}`);
+  const go = (f: ReportFilters) => router.push(`/ops/reports/${key}?${filtersToQuery(f)}`);
 
   const columns: Column<Row>[] = useMemo(() => {
     if (!body) return [];
@@ -290,7 +290,7 @@ function ReportInner() {
     const next = v === 'place' ? 'place' : 'period';
     setTableView(next);
     // A place breakdown needs the rows split by city; ask the server for them.
-    if (next === 'place' && filters.group !== 'city') router.push(`/reports/${key}?${filtersToQuery({ ...filters, group: 'city' })}&table=place`);
+    if (next === 'place' && filters.group !== 'city') router.push(`/ops/reports/${key}?${filtersToQuery({ ...filters, group: 'city' })}&table=place`);
   };
   const listColumns: ListColumn<Row>[] = columns.map((c) => ({ key: c.key, label: String(c.label), num: c.num, render: c.render }));
   const periodRows = useMemo(() => [...(body?.rows ?? [])].sort((a, b) => (a.period < b.period ? 1 : a.period > b.period ? -1 : 0)), [body]);
@@ -315,14 +315,14 @@ function ReportInner() {
         <PageHead title="Report" />
         <Empty title={error.status === 403 ? 'You cannot open this report' : 'Nothing here'}
           detail={error.status === 403 ? 'Your role does not include it. The catalogue lists the reports you can open.' : error.message} />
-        <p><Link href="/reports">Back to the catalogue</Link></p>
+        <p><Link href="/ops/reports">Back to the catalogue</Link></p>
       </>
     );
   }
 
   return (
     <>
-      <p className="ops-record-page__back"><Link href="/reports">All reports</Link></p>
+      <p className="ops-record-page__back"><Link href="/ops/reports">All reports</Link></p>
       <PageHead title={title} summary={card?.description ?? body?.report.description}
         actions={body ? <ExportButton path={exportPath(key, filters)} /> : undefined} />
       <Panel flush>
