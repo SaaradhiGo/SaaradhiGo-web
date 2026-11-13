@@ -65,7 +65,12 @@ export async function POST(req: NextRequest) {
   const roles = rolesOf(profile);
   if (!roles.length || profile.id == null) return NextResponse.json({ error: 'NOT_RIDER_OR_DRIVER' }, { status: 403 });
 
-  const role = roles.includes(wanted as Role) ? (wanted as Role) : roles[0];
+  // No role asked for (a browser handing its token over again): keep the area this browser is
+  // using -- its live session, else the last area it signed in to -- rather than the first role.
+  const current = await verifySession(req.cookies.get(SESSION_COOKIE)?.value, secret);
+  const hint = req.cookies.get(AREA_COOKIE)?.value;
+  const kept = [current?.uid === String(profile.id) ? current?.role : undefined, hint].find((r) => roles.includes(r as Role)) as Role | undefined;
+  const role = roles.includes(wanted as Role) ? (wanted as Role) : (kept ?? roles[0]);
   const session: Session = { uid: String(profile.id), roles, role, exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE };
   const out = cookieFor(NextResponse.json({ role, roles }), await signSession(session, secret), SESSION_MAX_AGE, role);
   const country = String(profile.country ?? '').toUpperCase();
