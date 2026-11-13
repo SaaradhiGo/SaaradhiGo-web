@@ -152,7 +152,10 @@ const measure = (page) => page.evaluate(({ phone }) => {
     for (const a of ['aria-label', 'placeholder', 'title']) if (el.getAttribute(a)) strings.add(el.getAttribute(a).trim());
   }
   const leaks = (window.LEAKS_ || []).filter((k) => strings.has(k));
-  const text = document.body.innerText.replace(/©\s*\d{4}/g, '');
+  // 13 Nov (owner): the request mock-ups show example numbers from the Hyderabad rate card,
+  // marked "Example" (data-example). Those, and only those, may hold a number or the city.
+  let text = document.body.innerText.replace(/©\s*\d{4}/g, '');
+  for (const ex of document.querySelectorAll('[data-example]')) text = text.split(ex.innerText).join(' ');
   return {
     sizes: sizes.slice(0, 6), weights: weights.slice(0, 6),
     logo: !!brand && vis(brand) && !!name && vis(name) && r.top >= 0 && r.bottom <= innerHeight,
@@ -291,8 +294,26 @@ for (const { p, w, h, lang } of RUNS) {
     // the page still is.
     emblems.push(await page.evaluate(() => {
       const r = document.querySelector('footer.s-footer').getBoundingClientRect();
-      return [0, Math.floor(r.top + scrollY), Math.ceil(document.documentElement.scrollWidth), 100000];
+      // 13 Nov: 16px above it too, where a column the brief lengthened moves the footer down.
+      return [0, Math.floor(r.top + scrollY) - 16, Math.ceil(document.documentElement.scrollWidth), 100000];
     }));
+    // 13 Nov (owner): one gold button per screen, so the nav's "Sign up" is quiet on pages with
+    // their own primary; the 7 Nov references show it gold. The Log in / Sign up pair is not compared.
+    for (const box of await page.evaluate(() => [...document.querySelectorAll('.s-header__login, .s-header__signup')].map((e) => {
+      const r = e.getBoundingClientRect();
+      return [Math.floor(r.left), Math.floor(r.top + scrollY), Math.ceil(r.width), Math.ceil(r.height)];
+    }))) emblems.push(box);
+    // 13 Nov (owner): the Drive page's request card no longer floats over a photo placeholder
+    // (a design note that shipped live); it stands on a plain panel with example numbers. The
+    // 7 Nov reference predates that, so that column is not compared; the rest of the page is.
+    // Likewise /ride's fare ticket gained the example amount (owner, 13 Nov), which lengthens the
+    // ticket column; that column is not compared, the steps and "Book a ride" still are.
+    if (p === '/drive' || p === '/ride') {
+      emblems.push(await page.evaluate((sel) => {
+        const r = document.querySelector(sel).getBoundingClientRect();
+        return [Math.floor(r.left), Math.floor(r.top + scrollY), Math.ceil(r.width), Math.ceil(r.height)];
+      }, p === '/drive' ? '.s-request-wrap' : '.s-stack'));
+    }
     if (p === '/' && process.env.BASELINE) {
       mkdirSync(BASE, { recursive: true });
       writeFileSync(path.join(BASE, 'Home.png'), shot);

@@ -7,9 +7,12 @@ import type { Session } from './cookie';
  *   rider   /ride, /ride/choose, /ride/trip/[id], /trips, /trips/[id], /account
  *   driver  /driver, /driver/earnings, /trips, /documents, /payouts, /profile, /support
  *
- * A rider who opens a driver URL goes to /ride, a driver who opens a rider URL
- * goes to /driver, and a visitor who is not signed in is sent to the right
- * sign-in. The rider pages are served from /rider/* by rewrite, because two of
+ * One person, one account, two roles (owner, 13 Nov): the same mobile can ride
+ * and drive. A page of the other area is never a silent redirect any more: it
+ * is served the role gate (/role-gate), which says the page is for riding or
+ * driving and offers the switch, or for a driver with no rider role, "Ride with
+ * your SaaradhiGo account". A visitor who is not signed in is sent to the right
+ * sign-in. /ride stays the public explainer for anyone not riding right now. The rider pages are served from /rider/* by rewrite, because two of
  * their public URLs are already taken by other pages: /ride is the marketing
  * page a guest sees, and /trips is the operations console's trip list, which
  * operators (who have no rider/driver session) keep reaching.
@@ -46,6 +49,13 @@ export const DRIVER_ROUTES = [
 
 const DRIVER_GUEST = ['/driver/sign-in', '/driver/sign-up'];
 
+/** The page that says "this is for riding/driving" and offers the switch (app/(public)/role-gate). */
+export const ROLE_GATE = '/role-gate';
+
+function gate(need: 'rider' | 'driver', path: string, search: string): Decision {
+  return { kind: 'rewrite', to: `${ROLE_GATE}?need=${need}&next=${encodeURIComponent(path + search)}` };
+}
+
 function isRiderPath(p: string) {
   return p === '/ride' || p === '/ride/choose' || p.startsWith('/ride/trip/')
     || p === '/trips' || p.startsWith('/trips/') || p === '/account' || p === '/my-trips';
@@ -68,7 +78,7 @@ export function decide(pathname: string, search: string, session: Session | null
 
   if (isDriverPath(p)) {
     if (!session) return { kind: 'redirect', to: signIn(p, search, true) };
-    if (session.role !== 'driver') return { kind: 'redirect', to: RIDER_HOME };
+    if (session.role !== 'driver') return gate('driver', p, search);
     // The old driver home and the one-page account moved into the area.
     if (p === '/driver/home') return { kind: 'redirect', to: DRIVER_HOME };
     return { kind: 'next' };
@@ -85,14 +95,22 @@ export function decide(pathname: string, search: string, session: Session | null
       if (p === '/my-trips') return { kind: 'redirect', to: signIn('/trips', '', false) };
       return { kind: 'redirect', to: signIn(p, search, false) };
     }
-    if (session.role !== 'rider') return { kind: 'redirect', to: DRIVER_HOME };
+    if (session.role !== 'rider') {
+      // Driving right now: the public explainer at /ride, and the gate on every rider page.
+      if (p === '/ride') return { kind: 'next' };
+      return gate('rider', p === '/my-trips' ? '/trips' : p, p === '/my-trips' ? '' : search);
+    }
     if (p === '/my-trips') return { kind: 'redirect', to: '/trips' };
     return { kind: 'rewrite', to: `/rider${p}${search}` };
   }
 
   // Signed in already: the sign-in pages lead to the visitor's own area.
-  if (session && (p === '/sign-in' || p === '/driver/sign-in')) {
+  if (session && p === '/sign-in') {
     return { kind: 'redirect', to: session.role === 'driver' ? DRIVER_HOME : RIDER_HOME };
+  }
+  // "Driver sign in" while riding: the driver area if this is a driver now, else the gate (switch or apply).
+  if (session && p === '/driver/sign-in') {
+    return session.role === 'driver' ? { kind: 'redirect', to: DRIVER_HOME } : gate('driver', DRIVER_HOME, '');
   }
   return { kind: 'next' };
 }

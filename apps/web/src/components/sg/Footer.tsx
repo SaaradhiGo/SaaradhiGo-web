@@ -1,19 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { useLocale } from '@/i18n/LocaleProvider';
-import { MARKET_INFO, MARKETS, type Market } from '@/i18n/locales';
-import { LanguagePicker } from './LanguagePicker';
+import { type Market } from '@/i18n/locales';
 import { useTr } from '@/i18n/website';
 import { useSite } from '@/i18n/site';
 import { copyrightLine, POLICY_PAGES as P } from '@/lib/legal';
 import { useLegal } from './LegalProvider';
 
 /**
- * The public footer (13 Nov, launch approvals): three columns of links as reviewers expect them
- * (Product, Resources, Company), then the operating company for the market on screen, the
- * country and language selectors side by side, and for India the registered office, CIN, phone
- * and email -- each only when it is configured.
+ * The public footer (13 Nov, launch approvals; reworked 13 Nov, public-site UX): text and links
+ * only, no dropdowns or buttons. Brand and tagline top-left, three columns of links (Product,
+ * Resources, Company) aligned to the top, a rule, then the copyright row for the market chosen
+ * in the header's globe panel or detected, and for India the registered office, CIN, phone and
+ * email -- each only when it is configured.
  */
 type Item = { label: string; href: string; only?: Market };
 const COLUMNS: { title: string; items: Item[] }[] = [
@@ -37,13 +36,7 @@ const COLUMNS: { title: string; items: Item[] }[] = [
 export function Footer() {
   const tr = useTr();
   const s = useSite();
-  const { market, entity, choose } = useLegal();
-  const { setMarket } = useLocale();
-
-  const onCountry = (m: Market) => {
-    choose(m);
-    setMarket(m);
-  };
+  const { market, entity } = useLegal();
 
   const details = (market === 'IN'
     ? [entity.registered_address && `${tr('Registered office')}: ${entity.registered_address}`,
@@ -58,12 +51,12 @@ export function Footer() {
     <footer className="s-footer s-cb">
       <div className="s-wrap s-footer__top">
         <div className="s-footer__brand">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="s-footer__mark" src="/brand/emblem-gold.svg" alt={tr('SaaradhiGo logo')} width={52} height={46} />
-          <span className="s-footer__line">
-            <span className="s-only-desk">{s.footer.line}</span>
-            <span className="s-only-phone">{s.footer.lineShort}</span>
+          <span className="s-footer__name">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="s-footer__mark" src="/brand/emblem-gold.svg" alt="" width={28} height={25} />
+            SaaradhiGo
           </span>
+          <span className="s-footer__line">{s.footer.line}</span>
         </div>
         <nav className="s-footer__cols" aria-label="Footer">
           {COLUMNS.map((col) => (
@@ -79,22 +72,14 @@ export function Footer() {
         </nav>
       </div>
 
-      <div className="s-wrap s-footer__base">
-        <div className="s-footer__entity">
-          <span data-testid="footer-operated-by">{copyrightLine(entity)}</span>
-          {details.length > 0 && (
-            <span className="s-footer__details" data-testid="footer-details">{details.join(' · ')}</span>
-          )}
-        </div>
-        <div className="s-footer__pickers">
-          <label className="s-footer__pick">
-            <span>{tr('Country')}</span>
-            <select value={market} onChange={(e) => onCountry(e.target.value as Market)} data-testid="footer-country">
-              {MARKETS.map((m) => <option key={m} value={m}>{MARKET_INFO[m].label}</option>)}
-            </select>
-          </label>
-          {/* The same globe as the header: the languages are listed only when it is opened. */}
-          <LanguagePicker />
+      <div className="s-wrap">
+        <div className="s-footer__base">
+          <div className="s-footer__entity">
+            <span data-testid="footer-operated-by">{copyrightLine(entity)}</span>
+            {details.length > 0 && (
+              <span className="s-footer__details" data-testid="footer-details">{details.join(' · ')}</span>
+            )}
+          </div>
         </div>
       </div>
     </footer>

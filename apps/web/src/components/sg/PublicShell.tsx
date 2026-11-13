@@ -30,7 +30,8 @@ export async function PublicShell({ children }: { children: React.ReactNode }) {
         <NavBar />
         <TranslationNotice />
 
-        <main id="main" className="w-full">
+        {/* Grows to fill the window, so the footer sits at the bottom of a short page (13 Nov). */}
+        <main id="main" className="w-full flex-1">
           {children}
         </main>
 

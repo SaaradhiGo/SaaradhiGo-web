@@ -29,13 +29,17 @@ const LINKS = [
   { label: 'Help', href: '/help' },
 ] as const;
 
+const QUIET_PATHS = ['/', '/book', '/ride', '/drive', '/help', '/contact', '/sign-in', '/sign-up', '/driver', '/role-gate', '/forgot-password', '/reset-password'];
+
 export function NavBar({ quiet }: { quiet?: boolean }) {
   const pathname = usePathname();
   const tr = useTr();
   const [open, setOpen] = useState(false);
 
-  // `/book` owns the page's gold button in every one of its states.
-  const quietHere = quiet ?? pathname.startsWith('/book');
+  // One gold button per screen (owner, 13 Nov): the nav's "Sign up" steps back to the quiet style
+  // on every page that has its own gold primary (`/book` in every one of its states, "See fares",
+  // "Book a ride", "Start driving", "Contact support", the sign-in and sign-up forms, the gate).
+  const quietHere = quiet ?? QUIET_PATHS.some((q) => (q === '/' ? pathname === '/' : pathname === q || pathname.startsWith(`${q}/`)));
 
   // A route change must close the drawer, or it stays over the new page.
   useEffect(() => {

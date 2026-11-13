@@ -3,19 +3,31 @@
 import Link from 'next/link';
 import { CardIcon, EyeIcon, ListIcon } from '@/components/sg/SiteIcons';
 import { useSite } from '@/i18n/site';
+import { ExampleLines, ExampleTag } from '@/components/sg/ExampleRequest';
+import { useSession } from '@/lib/useSession';
+import { sessionRoles } from '@/lib/publicAuth';
+import { useEffect, useState } from 'react';
+import { useTr } from '@/i18n/website';
 
 /**
  * /drive (approved design, 2026-11-07; Drive.html): what a driver sees
- * before accepting, what they need to apply, and the request card beside a
- * photo spot. The request shows its fare, commission and earning as bars,
- * never numbers.
+ * before accepting, what they need to apply, and the request card.
  *
- * PHOTO: a neutral placeholder of the design's size and radius until a real
- * driver is photographed with their consent. No stock faces, no generated
- * people (AUDIT TODO(photo)).
+ * 13 Nov (owner): the request shows example numbers that add up, marked "Example", from the
+ * Hyderabad rate card (lib/exampleFare.ts), never grey bars. No photo spot and no design note
+ * until a real driver is photographed with their consent: the card stands on a plain panel.
+ * Signed in, the actions follow the account: a driver goes to the driver home (or switches),
+ * nobody signed in sees "Start driving" and "Driver sign in".
  */
 export function DriveContent() {
   const d = useSite().drive;
+  const tr = useTr();
+  const session = useSession();
+  const [roles, setRoles] = useState<string[] | null>(null);
+  useEffect(() => {
+    if (session.status === 'in') sessionRoles().then((r) => setRoles(r?.roles ?? null));
+  }, [session.status]);
+  const drives = roles?.includes('driver');
   const icons = [<EyeIcon key="e" />, <ListIcon key="l" />, <CardIcon key="c" />];
 
   return (
@@ -42,22 +54,26 @@ export function DriveContent() {
           <p>{d.needNote}</p>
         </div>
         <div className="s-actions">
-          <Link href="/driver/sign-up" className="s-btn s-btn--primary s-btn--lg">{d.start}</Link>
-          <Link href="/driver/sign-in" className="s-btn s-btn--outline s-btn--lg">{d.signIn}</Link>
+          {drives ? (
+            <Link href="/driver" className="s-btn s-btn--primary s-btn--lg">{tr('Driver home')}</Link>
+          ) : (
+            <>
+              <Link href="/driver/sign-up" className="s-btn s-btn--primary s-btn--lg">{d.start}</Link>
+              {session.status !== 'in' && (
+                <Link href="/driver/sign-in" className="s-btn s-btn--outline s-btn--lg">{d.signIn}</Link>
+              )}
+            </>
+          )}
         </div>
       </div>
 
-      <div className="s-photo-wrap">
-        <div className="s-photo" role="img" aria-label="Photo placeholder">
-          <span><b>{d.photoLabel.toUpperCase()}</b>{d.photoNote}</span>
-        </div>
-        <div className="s-request" aria-hidden="true">
-          <div className="t-label">{d.requestLabel}</div>
-          <div className="s-bars">
-            <div className="s-bar"><span>{d.fare}</span><i style={{ width: 56 }} /></div>
-            <div className="s-bar"><span>{d.commission}</span><i style={{ width: 36 }} /></div>
-            <div className="s-bar s-bar--earn"><span>{d.earn}</span><i style={{ width: 48 }} /></div>
+      <div className="s-request-wrap">
+        <div className="s-request" aria-label={tr('Example ride request')} role="img">
+          <div className="s-request__head">
+            <div className="t-label">{d.requestLabel}</div>
+            <ExampleTag />
           </div>
+          <ExampleLines fare={d.fare} commission={d.commission} earn={d.earn} />
           <div className="s-request__accept">{d.accept}</div>
           <div className="s-request__note">{d.requestNote}</div>
         </div>

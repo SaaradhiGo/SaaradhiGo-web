@@ -4,14 +4,18 @@ import Link from 'next/link';
 import { DropMark, PickupMark } from '@/components/art/MiniMaps';
 import { LockIcon } from '@/components/sg/SiteIcons';
 import { useSite } from '@/i18n/site';
+import { ExampleTag } from '@/components/sg/ExampleRequest';
+import { EXAMPLE_FARE, rupees } from '@/lib/exampleFare';
+import { useSession } from '@/lib/useSession';
 
 /**
  * /ride (approved design, 2026-11-07; Ride.html): the five steps of a ride
  * and "Book a ride" on the left; the fare ticket and what "locked" means on
- * the right. The ticket names no amount. Fits 1366x768 and 1440x900.
+ * the right. The ticket shows an example amount, marked Example (13 Nov). Fits 1366x768 and 1440x900.
  */
 export function RideContent() {
   const r = useSite().ride;
+  const session = useSession();
 
   return (
     <section className="s-wrap s-page s-two s-cb">
@@ -29,7 +33,9 @@ export function RideContent() {
             </li>
           ))}
         </ol>
-        <Link href="/book" className="s-btn s-btn--primary s-btn--lg s-cta-top">{r.cta}</Link>
+        {/* Signed in: the rider area's booking, or for a driver the role gate (13 Nov). A guest keeps
+            the fare quote on /book. */}
+        <Link href={session.status === 'in' ? '/ride/choose' : '/book'} className="s-btn s-btn--primary s-btn--lg s-cta-top">{r.cta}</Link>
       </div>
 
       <div className="s-stack">
@@ -46,6 +52,11 @@ export function RideContent() {
           <div className="s-ticket__stops">
             <span><PickupMark />{r.ticketPickup}</span>
             <span><DropMark />{r.ticketDest}</span>
+          </div>
+          <hr />
+          <div className="s-ticket__fare" data-testid="example-fare" data-example="">
+            <ExampleTag />
+            <b>{rupees(EXAMPLE_FARE.fareMinor)}</b>
           </div>
         </div>
         <div className="s-note">

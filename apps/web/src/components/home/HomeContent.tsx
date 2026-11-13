@@ -1,5 +1,7 @@
 'use client';
 
+import { ExampleLines, ExampleTag } from '@/components/sg/ExampleRequest';
+
 import Link from 'next/link';
 import { HeroBooking } from '@/components/home/HeroBooking';
 import { HeroMapArt } from '@/components/art/HeroMapArt';
@@ -213,12 +215,11 @@ function DriverMock() {
           <span className="s-mock-avatar" />
         </div>
         <div className="s-mock-card">
-          <div className="t-label">{h.mockRequest}</div>
-          <div className="s-bars">
-            <div className="s-bar"><span>{h.mockFare}</span><i style={{ width: 44 }} /></div>
-            <div className="s-bar"><span>{h.mockCommission}</span><i style={{ width: 26 }} /></div>
-            <div className="s-bar s-bar--earn"><span>{h.mockEarn}</span><i style={{ width: 38 }} /></div>
+          <div className="s-request__head">
+            <div className="t-label">{h.mockRequest}</div>
+            <ExampleTag />
           </div>
+          <ExampleLines fare={h.mockFare} commission={h.mockCommission} earn={h.mockEarn} />
           <div className="s-mock-actions">
             <span>{h.mockDecline}</span>
             <span>{h.mockAccept}</span>
