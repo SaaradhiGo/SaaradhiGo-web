@@ -294,8 +294,15 @@ for (const { p, w, h, lang } of RUNS) {
     // the page still is.
     emblems.push(await page.evaluate(() => {
       const r = document.querySelector('footer.s-footer').getBoundingClientRect();
-      return [0, Math.floor(r.top + scrollY), Math.ceil(document.documentElement.scrollWidth), 100000];
+      // 13 Nov: 16px above it too, where a column the brief lengthened moves the footer down.
+      return [0, Math.floor(r.top + scrollY) - 16, Math.ceil(document.documentElement.scrollWidth), 100000];
     }));
+    // 13 Nov (owner): one gold button per screen, so the nav's "Sign up" is quiet on pages with
+    // their own primary; the 7 Nov references show it gold. The Log in / Sign up pair is not compared.
+    for (const box of await page.evaluate(() => [...document.querySelectorAll('.s-header__login, .s-header__signup')].map((e) => {
+      const r = e.getBoundingClientRect();
+      return [Math.floor(r.left), Math.floor(r.top + scrollY), Math.ceil(r.width), Math.ceil(r.height)];
+    }))) emblems.push(box);
     // 13 Nov (owner): the Drive page's request card no longer floats over a photo placeholder
     // (a design note that shipped live); it stands on a plain panel with example numbers. The
     // 7 Nov reference predates that, so that column is not compared; the rest of the page is.
