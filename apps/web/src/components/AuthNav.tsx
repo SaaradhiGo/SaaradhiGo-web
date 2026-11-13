@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/sg/Button';
 import { clearRiderTokens, establishServerSession, readRiderToken, sessionRoles, switchRole, type PublicRole } from '@/lib/publicAuth';
 import { useSession } from '@/lib/useSession';
@@ -89,6 +89,7 @@ const ROLE_LABEL: Record<string, string> = {
 
 export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
   const router = useRouter();
+  const pathname = usePathname() ?? '/';
   const t = useT();
   const tr = useTr();
   const session = useSession();
@@ -120,10 +121,16 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
     if (session.status !== 'in') return;
     const token = readRiderToken();
     if (!token) return;
+    // 13 Nov: never on a sign-in or sign-up page. There the form is signing the session with the
+    // role chosen (driver sign-in -> driver); handing the token over here as well raced it, and
+    // whichever answered last won, so an account that rides and drives could land on /driver
+    // signed in as a rider.
+    if (/^\/(driver\/)?sign-(in|up)$/.test(pathname)) return;
     sessionRoles().then((s) => {
       if (s) setArea(s);
-      else establishServerSession(token).then((e) => e && setArea(e));
+      else establishServerSession(token, pathname.startsWith('/driver') ? 'driver' : undefined).then((e) => e && setArea(e));
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.status]);
 
   // Rendered as a spacer until the session is known, because localStorage is
