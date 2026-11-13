@@ -61,7 +61,8 @@ function Chart({ h, locale, label }: { h: History; locale: string; label: string
     <div className={h.chart.unit === 'month' ? 'er-scrollx' : undefined} onMouseLeave={() => setTip(null)}>
       <div className={`er-bars${empty ? ' er-bars--empty' : ''}${across ? ' er-bars--amts' : ''}`}
         role="list" aria-label={tr('Earnings by day')} data-empty={empty || undefined}>
-        {empty && <div className="a14 amut er-empty" role="status">{tr('No trips in {period} yet').replace('{period}', label)}</div>}
+        {/* A list may only hold list items (axe aria-required-children, 13 Nov): the empty line is one. */}
+        {empty && <div className="a14 amut er-empty" role="listitem"><span role="status">{tr('No trips in {period} yet').replace('{period}', label)}</span></div>}
         {bars.map((b, i) => {
           const v = Number(b.earned);
           const px = top > 0 && v > 0 ? Math.max(4, Math.round((v / top) * 120)) : 0;
