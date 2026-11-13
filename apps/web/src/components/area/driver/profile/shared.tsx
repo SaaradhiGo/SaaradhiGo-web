@@ -3,7 +3,7 @@
 import { createContext, useContext, useRef, useState } from 'react';
 import { useTr } from '@/i18n/website';
 import {
-  type ChecklistItem, type Requirements, STATUS_LABEL, STATUS_TONE, requirements as loadRequirements,
+  type ChecklistItem, type Requirements, itemLabel, itemTone, requirements as loadRequirements,
 } from '@/lib/area/requirements';
 import { type Load, useLoad } from '@/lib/area/useLoad';
 import { messageFor } from '@/lib/publicAuth';
@@ -34,8 +34,8 @@ export function StatusPill({ it }: { it?: ChecklistItem }) {
   const tr = useTr();
   if (!it) return null;
   const label = it.status === 'expiring' && it.expires
-    ? tr('Expiring {date}').replace('{date}', it.expires) : tr(STATUS_LABEL[it.status]);
-  return <span className={`apill ${STATUS_TONE[it.status]}`} data-status={it.status}>{label}</span>;
+    ? tr('Expiring {date}').replace('{date}', it.expires) : tr(itemLabel(it));
+  return <span className={`apill ${itemTone(it)}`} data-status={it.status}>{label}</span>;
 }
 
 export function Reason({ it }: { it?: ChecklistItem }) {

@@ -1,5 +1,6 @@
 'use client';
 
+import { OPTIONAL_NOT_ADDED, isOptionalNotAdded } from '@/lib/area/requirements';
 import { useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { Panel } from '@/components/console/ui';
@@ -57,9 +58,11 @@ export function RequirementsPanel({ driverId, req, may, onDone }: { driverId: nu
       <div className="grid gap-2" data-testid="console-requirements">
         {req.items.map((i) => (
           <div key={i.key} className="flex justify-between gap-2 flex-wrap">
-            <span>{i.label}{i.need === 'optional' ? <span className="muted"> · optional</span> : null}{i.blocks_online ? <span className="muted"> · keeps offline</span> : null}</span>
+            <span>{i.label}{i.need === 'optional' && i.status !== 'missing' ? <span className="muted"> · optional</span> : null}{i.blocks_online ? <span className="muted"> · keeps offline</span> : null}</span>
             <span>
-              <StatusChip tone={TONE[i.status] ?? 'info'}>{i.status === 'expiring' && i.expires ? `Expiring ${i.expires}` : i.status.replace('_', ' ')}</StatusChip>
+              {isOptionalNotAdded(i)
+                ? <StatusChip tone="neutral">{OPTIONAL_NOT_ADDED}</StatusChip>
+                : <StatusChip tone={TONE[i.status] ?? 'info'}>{i.status === 'expiring' && i.expires ? `Expiring ${i.expires}` : i.status.replace('_', ' ')}</StatusChip>}
               {i.reason ? <span className="muted"> {i.reason}</span> : null}
             </span>
           </div>
