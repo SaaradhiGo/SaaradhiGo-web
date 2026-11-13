@@ -231,7 +231,7 @@ export default function AuthNav({ quiet = false }: { quiet?: boolean }) {
                     Driver home
                   </Link>
                 ) : (
-                  <Link href="/ops/trips" role="menuitem" onClick={() => setOpen(false)}>
+                  <Link href="/trips" role="menuitem" onClick={() => setOpen(false)}>
                     My trips
                   </Link>
                 )}
