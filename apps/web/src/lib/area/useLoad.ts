@@ -13,11 +13,17 @@ import { reportLoadError } from '@/lib/report';
 export const LOAD_TIMEOUT_MS = 10_000;
 
 /** `refresh` reloads in place: the data on screen stays until the new data arrives (after a save). */
-export type Load<T> = { state: 'loading' | 'ok' | 'error'; data: T | null; retry: () => void; refresh?: () => void };
+export type Load<T> = {
+  state: 'loading' | 'ok' | 'error'; data: T | null; retry: () => void; refresh?: () => void;
+  /** 13 Nov: the server said 404 (not there, or not this account's). Shown without Try again. */
+  notFound?: boolean;
+};
+
+const is404 = (e: unknown) => typeof e === 'object' && e !== null && (e as { status?: number }).status === 404;
 
 export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = []): Load<T> {
   const [attempt, setAttempt] = useState(0);
-  const [s, setS] = useState<{ state: Load<T>['state']; data: T | null }>({ state: 'loading', data: null });
+  const [s, setS] = useState<{ state: Load<T>['state']; data: T | null; notFound?: boolean }>({ state: 'loading', data: null });
   const soft = useRef(false);
 
   useEffect(() => {
@@ -25,13 +31,14 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = []): Load<T> 
     const inPlace = soft.current;
     soft.current = false;
     if (!inPlace) setS({ state: 'loading', data: null });
-    const settle = (next: { state: Load<T>['state']; data: T | null }) => {
+    const settle = (next: { state: Load<T>['state']; data: T | null; notFound?: boolean }) => {
       if (!live) return;
       live = false;
       clearTimeout(timer);
       setS(next);
     };
     const fail = (e: unknown) => {
+      if (is404(e)) { settle({ state: 'error', data: null, notFound: true }); return; }
       if (live) reportLoadError(e);
       // A failed refresh leaves what is on screen; a failed load shows the error.
       if (inPlace) { live = false; clearTimeout(timer); return; }
@@ -43,7 +50,7 @@ export function useLoad<T>(fn: () => Promise<T>, deps: unknown[] = []): Load<T> 
     let tries = 0;
     function again(e: unknown) {
       if (!live) return;
-      if (tries > 0 || inPlace) { fail(e); return; }
+      if (tries > 0 || inPlace || is404(e)) { fail(e); return; }
       tries += 1;
       clearTimeout(timer);
       timer = setTimeout(() => fail('timeout'), LOAD_TIMEOUT_MS);

@@ -613,3 +613,20 @@ button.er-bar { cursor: pointer; }
 .sg-legal-line { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; padding: 14px 16px 20px; font-size: var(--text-small); line-height: var(--leading-small); color: var(--c-text-2); border-top: 1px solid var(--c-border); margin-top: 24px; }
 .sg-legal-line__links { display: inline-flex; gap: 14px; }
 .sg-legal-line a { color: inherit; text-decoration: underline; }
+
+/* 13 Nov: tables become one card per row on phones (rider trips, driver earnings and payouts). */
+.a-phone { display: none; }
+@media (max-width: 767px) {
+  .a-wide { display: none !important; }
+  .a-phone { display: block; }
+  .astack-phone { flex-direction: column; align-items: stretch !important; }
+  .astack-phone > .abtn { align-self: flex-start; }
+}
+.acards { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.acards > li { display: grid; gap: 6px; padding: 14px 16px; border: 1px solid var(--c-border); border-radius: 14px; background: var(--c-surface); }
+.acards .arow { justify-content: space-between; gap: 12px; }
+.acards .amoney { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.amoney { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* 13 Nov: seven amounts do not fit over seven bars on a phone; the cards above give the totals. */
+@media (max-width: 767px) { .dr-chart__amt { display: none; } }

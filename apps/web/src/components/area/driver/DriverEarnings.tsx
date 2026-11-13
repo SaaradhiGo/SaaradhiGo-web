@@ -224,7 +224,8 @@ export function DriverEarnings() {
             <h2 className="a20">{tr('All months')}</h2>
             {all.data && <span className="a14 amut">{tr('Since you joined in {m} · statements are ready on the 1st of each month').replace('{m}', ymLabel(all.data.joined, locale))}</span>}
           </div>
-          <div className="er-scroll">
+          {/* 13 Nov: on phones, one card per month (below); money is never clipped. */}
+          <div className={`er-scroll${all.data?.months.length ? ' a-wide' : ''}`}>
             <div className="er-grid albl er-ghead"><span>{tr('Month')}</span><span>{tr('Trips')}</span><span>{tr('Fares')}</span><span>{tr('Platform fee')}</span><span>{tr('Tips')}</span><span>{tr('You earned')}</span><span>{tr('Statement')}</span></div>
             {all.state === 'error' && <div style={{ padding: '0 20px' }}><LoadError what="earnings" retry={all.retry} /></div>}
             {!all.data && all.state !== 'error' && <div style={{ padding: '14px 20px' }}><Skel h={18} lines={2} gap={18} /></div>}
@@ -244,6 +245,30 @@ export function DriverEarnings() {
               </div>
             ))}
           </div>
+          {all.data?.months.length ? (
+            <ul className="acards a-phone" style={{ padding: '0 16px 12px' }} data-testid="month-cards">
+              {all.data.months.map((row) => {
+                const f = deduction(row.platform_fee, cur, locale);
+                return (
+                  <li key={row.month} data-card-month={row.month}>
+                    <div className="arow">
+                      <span className="ab">{ymLabel(row.month, locale)}{row.so_far ? ` ${tr('(so far)')}` : ''}</span>
+                      <span className="a14 amut">{tr('{n} trips').replace('{n}', String(row.trips))}</span>
+                    </div>
+                    <div className="arow a14"><span className="amut">{tr('Fares')}</span><span className="amoney">{m(row.fares)}</span></div>
+                    <div className="arow a14"><span className="amut">{tr('Platform fee')}</span><span className={`amoney${f.red ? ' ared' : ''}`}>{f.text}</span></div>
+                    <div className="arow a14"><span className="amut">{tr('Tips')}</span><span className="amoney">{addition(row.tips, cur, locale)}</span></div>
+                    <div className="arow"><span className="ab">{tr('You earned')}</span><span className="ab agrn amoney">{m(row.earned)}</span></div>
+                    <div className="arow" style={{ justifyContent: 'flex-start', gap: 16 }}>
+                      <button type="button" className="su-link a14" onClick={() => setViewing(row.month)}>{tr('View')}</button>
+                      <button type="button" className="su-link a14" onClick={() => void file(row.month, 'pdf')}>PDF</button>
+                      <button type="button" className="su-link a14" onClick={() => void file(row.month, 'csv')}>CSV</button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
           <div className="a14 amut er-note">{tr('Every trip and payout is listed under Trips and Payouts, filterable by any date range. Yearly tax summary available from April.')}</div>
         </section>
         {viewing && <StatementSheet month={viewing} onClose={() => setViewing(null)} />}

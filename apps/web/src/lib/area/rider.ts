@@ -27,6 +27,9 @@ export type Trip = {
   id: number;
   pickup_address?: string | null;
   destination_address?: string | null;
+  /** 13 Nov: "Charminar, Ghansi Bazaar", for lists and cards (lib/area/places.ts). */
+  pickup_label?: string | null;
+  destination_label?: string | null;
   pickup_lat?: string | number | null;
   pickup_long?: string | number | null;
   destination_lat?: string | number | null;

@@ -44,3 +44,27 @@ export function LoadError({ what, retry, ink }: { what: What; retry: () => void;
     </div>
   );
 }
+
+
+/**
+ * A trip that is not on this account (13 Nov): the server answers 404 for it, exactly as for a
+ * trip that does not exist. Never another trip's live state, and never Try again -- trying again
+ * cannot make someone else's trip yours.
+ */
+export function NotYourTrip() {
+  const tr = useTr();
+  return (
+    <div className="ar-page" data-testid="not-your-trip">
+      <div className="acard" style={{ display: 'grid', gap: 12, maxWidth: 520 }}>
+        <h1 className="a20">{tr("This trip isn't on your account")}</h1>
+        <p className="a16 amut">{tr("It may be someone else's trip, or the link is wrong.")}</p>
+        <a className="abtn abtn--pri a16" href="/trips" style={{ justifySelf: 'start' }}>{tr('Your trips')}</a>
+      </div>
+    </div>
+  );
+}
+
+/** Whether a load failed because the server says the thing is not there (or not yours): 404. */
+export function isNotFound(e: unknown) {
+  return typeof e === 'object' && e !== null && (e as { status?: number }).status === 404;
+}

@@ -16,10 +16,10 @@ import { Empty, Pill } from '@/components/console/ui';
  * its page would open (the link rule): an operator without the capability never sees a dead end.
  */
 const TABS = [
-  { href: '/promotions', label: 'Rider promos', fraud: false },
-  { href: '/promotions/incentives', label: 'Driver incentives', fraud: false },
-  { href: '/promotions/referrals', label: 'Referrals', fraud: false },
-  { href: '/promotions/fraud', label: 'Fraud flags', fraud: true },
+  { href: '/ops/promotions', label: 'Rider promos', fraud: false },
+  { href: '/ops/promotions/incentives', label: 'Driver incentives', fraud: false },
+  { href: '/ops/promotions/referrals', label: 'Referrals', fraud: false },
+  { href: '/ops/promotions/fraud', label: 'Fraud flags', fraud: true },
 ] as const;
 
 export function PromotionsNav() {
@@ -27,7 +27,7 @@ export function PromotionsNav() {
   const access = useAdminAccess();
   if (!canOpen(access, 'promotions')) return null;
   const tabs = TABS.filter((t) => !t.fraud || canReadFraud(access));
-  const current = tabs.find((t) => (t.href === '/promotions'
+  const current = tabs.find((t) => (t.href === '/ops/promotions'
     ? pathname === t.href
     : pathname === t.href || pathname.startsWith(`${t.href}/`)))?.href;
   return (

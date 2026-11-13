@@ -48,7 +48,7 @@ export function SelfApprovalNotice() {
     <div className="ops-banner ops-banner--row" role="status">
       <b>
         Self-approval is on:{' '}
-        <PageLink page="approvals" href="/approvals?view=self">
+        <PageLink page="approvals" href="/ops/approvals?view=self">
           {state.count} decision{state.count === 1 ? '' : 's'} self-approved
         </PageLink>
       </b>

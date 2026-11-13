@@ -56,7 +56,7 @@ export function TopBar({
         <EnvBadge />
         {inbox && (
           <Link
-            href="/support/inbox"
+            href="/ops/support/inbox"
             className={`ops__bell ${badge ? 'ops__bell--note' : ''}`}
             aria-label={inboxLabel(inboxUnread)}
             title={inboxLabel(inboxUnread)}
@@ -67,7 +67,7 @@ export function TopBar({
         )}
         {safety && (
           <Link
-            href="/safety-ops"
+            href="/ops/safety-ops"
             className={`ops__bell ${open ? 'ops__bell--live' : ''}`}
             aria-label={open === null
               ? 'SOS alerts'

@@ -3,6 +3,7 @@
 //   frame      a driver page without the sidebar and DRIVER badge (under 768 wide, 11 Nov:
 //              without the bottom bar), or a rider page with either
 //   sideways   horizontal scroll at 360, 390, 768, 1024 or 1440 wide
+//   clipped    on phones (13 Nov): an amount cut off, or a table column under 120 px with text in it
 //   type       a size other than 14/16/20/28/40 (22 and 32 only on phone
 //              headings), a weight other than 400/600, text under 14px
 //   dates      a trip or payout row without a date and a time
@@ -237,6 +238,26 @@ const measure = (page) => page.evaluate(({ sizes, phone }) => {
     rows: [...document.querySelectorAll('.atable tbody tr, [data-row="dated"]')].map((r) => (r.querySelector('td') ?? r).innerText.trim()).filter(Boolean),
     payoutRows: [...document.querySelectorAll('main .acard .arow')].filter((r) => /\d/.test(r.innerText) && r.querySelector('.apill')).map((r) => r.innerText.trim()),
     text: document.body.innerText,
+    // 13 Nov: on phones no amount is clipped and no table column is too narrow to read.
+    clipped: innerWidth >= 768 ? [] : (() => {
+      const out = [];
+      const shown = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
+      for (const el of document.querySelectorAll('main *')) {
+        const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('');
+        if (!/[₹$]\s?\d/.test(own) || !shown(el)) continue;
+        const r = el.getBoundingClientRect();
+        let bad = r.right > innerWidth + 1 || r.left < -1 || el.scrollWidth > el.clientWidth + 1;
+        for (let a = el.parentElement; a && !bad; a = a.parentElement) {
+          const o = getComputedStyle(a);
+          if (/(hidden|clip|auto|scroll)/.test(o.overflowX)) { const ar = a.getBoundingClientRect(); if (r.right > ar.right + 1 || r.left < ar.left - 1) bad = true; }
+        }
+        if (bad) out.push(own.trim().slice(0, 30));
+      }
+      return out.slice(0, 5);
+    })(),
+    narrow: innerWidth >= 768 ? [] : [...document.querySelectorAll('main th, main td, main .er-grid > span')]
+      .filter((c) => { const r = c.getBoundingClientRect(); return r.width > 0 && r.height > 0 && c.innerText.trim().length > 2 && r.width < 120 && !c.hasAttribute('colspan'); })
+      .map((c) => `${Math.round(c.getBoundingClientRect().width)}px "${c.innerText.trim().replace(/\s+/g, ' ').slice(0, 24)}"`).slice(0, 5),
   };
 }, { sizes: [...SIZES], phone: [...PHONE_ONLY] });
 
@@ -274,6 +295,8 @@ for (const [role, pages] of process.env.STATES_ONLY === '1' ? [] : [['rider', RI
       const m = await measure(page);
       if (new URL(page.url()).pathname !== p.split('?')[0]) fail(`${at}: landed on ${new URL(page.url()).pathname}`);
       if (m.sideways) fail(`${at}: scrolls sideways`);
+      if (m.clipped.length) fail(`${at}: money clipped: ${m.clipped.join('; ')}`);
+      if (m.narrow.length) fail(`${at}: a column narrower than 120 px: ${m.narrow.join('; ')}`);
       if (m.type.length) fail(`${at}: type off the scale: ${m.type.join('; ')}`);
       if (role === 'driver' && (w < 768 ? !m.tabbar : (!m.badge || (w >= 1024 && !m.side)))) fail(`${at}: no driver sidebar and DRIVER badge (or, on a phone, the bottom bar)`);
       if (role === 'rider' && m.anyBadge) fail(`${at}: a rider page shows driver chrome`);

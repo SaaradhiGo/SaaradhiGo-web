@@ -1,6 +1,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
+import { shortPlace } from '@/lib/area/places';
 import { useEffect, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
@@ -14,7 +15,8 @@ import { TripDetail } from './TripDetail';
 import { DriverTop, useDriver } from './parts';
 
 /** First part of an address, for "Pickup → Drop". */
-const short = (a: string | null | undefined) => (a ?? '').split(',')[0].trim();
+// 13 Nov: the place name plus its area, as the rider's trips show it (lib/area/places.ts).
+const short = (a: string | null | undefined) => shortPlace(a);
 
 /**
  * /driver/trips (driver-web-trips.html): every settled trip in the period with its fare, the
@@ -58,7 +60,8 @@ export function DriverTrips() {
           )}
         </div>
         <div className="acard" style={{ overflowX: 'auto' }}>
-          <table className="atable" data-testid="trips-table">
+          {/* 13 Nov: on phones, one card per trip (below the table); the table is for wider screens. */}
+          <table className={`atable${list?.length ? ' a-wide' : ''}`} data-testid="trips-table">
             <thead>
               <tr className="albl">
                 <th>{tr('Date and time')}</th><th>{tr('Trip')}</th><th>{tr('Ride')}</th>
@@ -110,6 +113,32 @@ export function DriverTrips() {
               })}
             </tbody>
           </table>
+          {list?.length ? (
+            <ul className="acards a-phone" style={{ padding: 12 }} data-testid="driver-trip-cards">
+              {list.map((r) => {
+                const when = listWhen(r.created_at, locale, h?.timezone, words);
+                const places = r.pickup_address || r.destination_address ? `${short(r.pickup_address)} → ${short(r.destination_address)}` : '';
+                const fee = deduction(r.commission, cur, locale);
+                const tid = r.trip_id_val ?? null;
+                return (
+                  <li key={r.id}>
+                    <div className="arow a14 amut">
+                      <span>{when ? `${when.first} · ${when.second}` : ''}</span>
+                      <span className="apill apill--neu">{tr(r.method === 'cash' ? 'Cash' : 'Online')}</span>
+                    </div>
+                    {tid ? (
+                      <button type="button" className="tr-open__btn ab" style={{ textAlign: 'left' }} onClick={() => setOpen(tid)}>{places || `#${tid}`}</button>
+                    ) : <span className="ab">{places}</span>}
+                    <div className="arow a14"><span className="amut">{className(r.ride_class) ?? ''}{tid ? ` · #${tid}` : ''}</span><span className="amoney">{money(r.amount, cur, locale)}</span></div>
+                    {r.commission != null && (
+                      <div className="arow a14"><span className="amut">{tr('Platform fee')}</span><span className={`amoney${fee.red ? ' ared' : ''}`}>{fee.text}</span></div>
+                    )}
+                    <div className="arow"><span className="ab">{tr('You earned')}</span><span className="ab agrn amoney">{money(r.net_amount, cur, locale)}</span></div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
           <Pager page={page} count={count} size={PAGE_SIZE} noun={tr('{n} trips').replace('{n}', String(count))} onPage={setPage} />
         </div>
         {open !== null && <TripDetail id={open} onClose={() => setOpen(null)} />}

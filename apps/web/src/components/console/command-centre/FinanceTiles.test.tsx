@@ -47,9 +47,9 @@ describe('FinanceTiles', () => {
   it('links the reconciliation tile only for a finance.read holder', () => {
     const { container, rerender } = render(
       <FinanceTiles finance={block()} access={access(['finance.aggregate'])} city={null} />);
-    expect(container.querySelector('a[href="/finance/reconciliation"]')).toBeNull();
+    expect(container.querySelector('a[href="/ops/finance/reconciliation"]')).toBeNull();
     rerender(<FinanceTiles finance={block()} access={access(['finance.aggregate', 'finance.read'])} city={null} />);
-    expect(container.querySelector('a[href="/finance/reconciliation"]')).not.toBeNull();
+    expect(container.querySelector('a[href="/ops/finance/reconciliation"]')).not.toBeNull();
   });
 
   it('a take rate with nothing settled reads as unavailable, never zero', () => {

@@ -85,17 +85,30 @@ export function DriverPayouts() {
               {list?.map((w) => {
                 const when = listWhen(w.processed_at ?? w.requested_at, locale, tz, words);
                 const [cls, label] = STATUS[(w.status ?? '').toLowerCase()] ?? ['apill--neu', w.status ?? ''];
+                const cur = w.currency ?? bal?.currency;
+                const fee = (w.fee_minor ?? 0) / 100;
+                const instant = w.origin === 'instant';
                 return (
-                  <div key={w.id} className="arow" style={{ padding: '14px 0', borderTop: '1px solid var(--c-border)' }}>
+                  <div key={w.id}>
+                  {/* 13 Nov: on phones, one card per payout with each amount on its own line. */}
+                  <div className="acards a-phone" style={{ padding: '10px 0', borderTop: '1px solid var(--c-border)' }} data-testid="payout-card">
+                    <div className="arow"><span className="a14 amut">{when ? `${when.first} · ${when.second}` : ''}</span><span className={`apill ${cls}`}>{tr(label)}</span></div>
+                    <div className="a20 amoney">{money(w.amount, cur, locale)}</div>
+                    {instant && (
+                      <>
+                        <div className="arow a14"><span className="amut">{tr('Provider fee')}</span><span className="amoney">−{money(fee, cur, locale)}</span></div>
+                        <div className="arow a14"><span className="amut">{tr('You received')}</span><span className="ab amoney">{money(Math.max(0, Number(w.amount ?? 0) - fee), cur, locale)}</span></div>
+                      </>
+                    )}
+                  </div>
+                  <div className="arow a-wide" style={{ padding: '14px 0', borderTop: '1px solid var(--c-border)' }}>
                     <div className="ab" style={{ width: 180 }}>
                       {when?.first}<div className="a14 amut" style={{ fontWeight: 400 }}>{when?.second}</div>
                     </div>
                     <span className="ab agrow">
                       {money(w.amount, w.currency ?? bal?.currency, locale)}
-                      {w.origin === 'instant' ? (() => {
+                      {instant ? (() => {
                         // Withdraw now (10 Nov): the provider fee on the statement line.
-                        const cur = w.currency ?? bal?.currency;
-                        const fee = (w.fee_minor ?? 0) / 100;
                         return (
                           <div className="a14 amut" style={{ fontWeight: 400 }} data-testid="instant-fee-line">
                             {tr('Withdrawn {amount} · provider fee {fee} · received {received}')
@@ -107,6 +120,7 @@ export function DriverPayouts() {
                       })() : null}
                     </span>
                     <span className={`apill ${cls}`}>{tr(label)}</span>
+                  </div>
                   </div>
                 );
               })}

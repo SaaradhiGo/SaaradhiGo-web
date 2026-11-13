@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { saveDraft } from '@/lib/area/rider';
 import { DropMark, PickupMark } from '@/components/art/MiniMaps';
 import { LocateIcon } from '@/components/sg/SiteIcons';
 import { LatLng, Place, placeToPoint, searchPlaces, serviceabilityAt } from '@/lib/booking';
@@ -174,39 +175,27 @@ export function HeroBooking() {
     if (Object.keys(next).length > 0) return;
 
     setBusy(true);
-    const params = new URLSearchParams();
-
-    // A chosen place resolves to coordinates, which is what `/book` prefers.
-    // If resolution fails the text still travels: the booking page can search
-    // for it again, and nothing here pretends it was pinned.
+    // 13 Nov (owner): /book is gone. The places go to the rider's booking as a draft in this tab:
+    // /ride/choose shows the fares (a visitor signs in first and comes back to them). Without both
+    // places resolved there is nothing to price yet, so the booking page opens to finish them.
+    let from: LatLng | null = pickupPoint ?? null;
+    let to: LatLng | null = null;
     try {
-      if (pickupPoint) {
-        params.set('pickup', `${pickupPoint.lat},${pickupPoint.lng}`);
-      } else if (pickupPlace) {
-        const p = resolved.pickup ?? await placeToPoint(pickupPlace.place_id);
-        if (p) params.set('pickup', `${p.lat},${p.lng}`);
-      }
-      if (destPlace) {
-        const d = resolved.dest ?? await placeToPoint(destPlace.place_id, 'drop');
-        if (d) params.set('dest', `${d.lat},${d.lng}`);
-      }
+      if (!from && pickupPlace) from = resolved.pickup ?? await placeToPoint(pickupPlace.place_id);
+      if (destPlace) to = resolved.dest ?? await placeToPoint(destPlace.place_id, 'drop');
     } catch {
-      // Fall through to the text handoff below.
+      // Unresolved: the booking page asks again.
     }
-
-    if (!params.has('dest') && destText.trim()) params.set('q', destText.trim());
-
-    // THE WORDS TRAVEL, NOT JUST THE COORDINATES. `/book` used to receive
-    // only lat/lng, so it showed a rider "17.38500, 78.48670" where they had
-    // typed "Banjara Hills". Sending the label they actually chose lets the
-    // next screen repeat their trip back to them in their own words, which
-    // matters most to a signed-out visitor who has to sign in before going
-    // any further.
-    if (pickupText.trim()) params.set('pickup_label', pickupText.trim());
-    if (destText.trim()) params.set('dest_label', destText.trim());
-
     setBusy(false);
-    router.push(params.toString() ? `/book?${params.toString()}` : '/book');
+    if (from && to) {
+      const id = saveDraft({
+        from: { lat: from.lat, lng: from.lng, label: pickupText.trim() },
+        to: { lat: to.lat, lng: to.lng, label: destText.trim() },
+      });
+      router.push(`/ride/choose?d=${id}`);
+      return;
+    }
+    router.push('/ride');
   }
 
   /** Browser geolocation, only on an explicit click, with a usable error. */

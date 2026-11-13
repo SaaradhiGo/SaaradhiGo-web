@@ -64,12 +64,12 @@ describe('role routing', () => {
     expect(r.rewrite).toBeNull();
   });
 
-  it('a guest is asked to sign in for the areas, but keeps /ride and the console /trips', async () => {
+  it('a guest is asked to sign in for the areas, but keeps /ride', async () => {
     expect((await visit('/driver/earnings')).redirect).toBe('/driver/sign-in');
     expect((await visit('/account')).redirect).toBe('/sign-in');
     expect((await visit('/ride/choose')).redirect).toBe('/sign-in');
     expect((await visit('/ride')).redirect).toBeNull();
-    expect((await visit('/trips')).rewrite).toBeNull();
+    expect((await visit('/trips')).redirect).toBe('/sign-in');
     expect((await visit('/driver/sign-in')).redirect).toBeNull();
   });
 
@@ -122,22 +122,45 @@ describe('role routing', () => {
   });
 });
 
-describe('an ended session goes to its own sign-in (12 Nov)', () => {
-  it('a rider on /trips/207 goes to the rider sign-in and keeps the page', async () => {
-    const r = await visit('/trips/207', undefined, 'rider');
-    expect(r.redirect).toBe('/sign-in');
-    expect(r.next).toBe('/trips/207');
+describe('the console lives under /ops, and riders own /trips (13 Nov)', () => {
+  const PUBLIC = ['/', '/ride', '/drive', '/safety', '/about', '/help', '/contact', '/fares', '/terms', '/driver-terms',
+    '/privacy', '/refunds', '/text-messages', '/cookies', '/delete-account', '/grievance', '/sign-in', '/sign-up',
+    '/driver/sign-in', '/driver/sign-up', '/book', '/my-trips'];
+  const PERSONAS: [string, Session | undefined][] = [['guest', undefined], ['rider', rider], ['driver', driver],
+    ['both, riding', { uid: '3', roles: ['rider', 'driver'], role: 'rider', exp: exp() }]];
+  const STAFF = /^\/(ops\/)?login(\/|$)/;
+
+  it.each(PERSONAS)('no public or rider path ever sends a %s to the staff login', async (_name, who) => {
+    for (const p of [...PUBLIC, ...RIDER_ROUTES, '/trips/207', '/ride/trip/207']) {
+      const r = await visit(p, who);
+      expect(r.redirect ?? '').not.toMatch(STAFF);
+      expect(r.rewrite ?? '').not.toMatch(/^\/ops/);
+    }
   });
-  it('a driver on a driver page goes to the driver sign-in and keeps the page', async () => {
-    const r = await visit('/driver/earnings?period=week', { ...driver, exp: 10 }, 'driver');
-    expect(r.redirect).toBe('/driver/sign-in');
-    expect(r.next).toBe('/driver/earnings?period=week');
+
+  it.each(['/trips', '/trips/207', '/ride/trip/207', '/account'])('a guest on %s gets the rider sign-in, keeping the page', async (p) => {
+    for (const area of [undefined, 'rider', 'driver', 'console']) {
+      const r = await visit(p, undefined, area);
+      expect(r.redirect).toBe('/sign-in');
+      expect(r.next).toBe(p);
+    }
   });
-  it('a driver on /trips/5 goes to the driver sign-in', async () => {
-    expect((await visit('/trips/5', undefined, 'driver')).redirect).toBe('/driver/sign-in');
+
+  it.each(['/approvals', '/drivers/18', '/finance/payouts', '/live-ops', '/login', '/settings/security', '/support/12'])(
+    'the old console path %s redirects to its /ops twin', async (p) => {
+      expect((await visit(`${p}?x=1`)).redirect).toBe(`/ops${p}`);
+    });
+
+  it('/book redirects to /ride', async () => {
+    expect((await visit('/book?class=sedan')).redirect).toBe('/ride');
   });
-  it('only the console routes are left to the staff login', async () => {
-    expect((await visit('/trips/207', undefined, 'console')).redirect).toBeNull();
-    expect((await visit('/trips/207')).redirect).toBeNull();
+
+  it('the staff login exists only at /ops/login', () => {
+    const fs = require('node:fs') as typeof import('node:fs');
+    const path = require('node:path') as typeof import('node:path');
+    const app = path.resolve(__dirname, '../../app');
+    expect(fs.existsSync(path.join(app, '(staff)/ops/login/page.tsx'))).toBe(true);
+    expect(fs.existsSync(path.join(app, 'login'))).toBe(false);
+    expect(fs.existsSync(path.join(app, '(console)/ops/trips/page.tsx'))).toBe(true);
   });
 });

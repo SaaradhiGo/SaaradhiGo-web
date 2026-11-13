@@ -43,7 +43,7 @@ const RANK: Record<Health, number> = { critical: 0, watch: 1, normal: 2, quiet: 
 
 export function goToPlace(code: string | null) {
   writeSelectedScope(code);
-  window.location.assign('/dashboard');
+  window.location.assign('/ops/dashboard');
 }
 
 function usePlaces() {
@@ -225,7 +225,7 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
         {money ? (
           <section className="ops-card" aria-label="Money today">
             <header className="ops-card__head"><div><h2>Money today</h2><p>Fares from trips completed today, per currency. Nothing adds two currencies.</p></div>
-              {canOpen(access, 'finance') ? <Link href="/finance" className="sg-btn sg-btn--ghost sg-btn--sm">Money overview</Link> : null}</header>
+              {canOpen(access, 'finance') ? <Link href="/ops/finance" className="sg-btn sg-btn--ghost sg-btn--sm">Money overview</Link> : null}</header>
             <dl className="ops-money">
               {money.length === 0 ? <p className="muted">No completed trips yet today.</p> : money.map(([cur, minor]) => (
                 <div key={cur}><dt>{cur}</dt><dd className="sg-num">{formatWhole(minor, cur)}</dd></div>
@@ -247,7 +247,7 @@ function PlatformHealth() {
   return (
     <section className="ops-card" aria-label="Platform health">
       <header className="ops-card__head"><div><h2>Platform health</h2><p>What each provider is set to, and when it last worked.</p></div>
-        <Link href="/settings/integrations" className="sg-btn sg-btn--ghost sg-btn--sm">Integrations</Link></header>
+        <Link href="/ops/settings/integrations" className="sg-btn sg-btn--ghost sg-btn--sm">Integrations</Link></header>
       <ul className="ops-health">
         {rows.map((r) => (
           <li key={`${r.type}-${r.country}`}>
@@ -371,8 +371,8 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
                 hour on the last {usual!.fulfilment_rate!.weeks} weeks&apos; same weekday. The shortest area: {cellSentence(short[0], 15)}
               </p>
               <div className="ops-why__acts">
-                {canOpen(access, 'liveops') ? <Link href="/live-ops" className="sg-btn sg-btn--secondary sg-btn--sm">Open the live map</Link> : null}
-                {canOpen(access, 'promotions') ? <Link href="/promotions/incentives" className="sg-btn sg-btn--ghost sg-btn--sm">Propose a peak incentive</Link> : null}
+                {canOpen(access, 'liveops') ? <Link href="/ops/live-ops" className="sg-btn sg-btn--secondary sg-btn--sm">Open the live map</Link> : null}
+                {canOpen(access, 'promotions') ? <Link href="/ops/promotions/incentives" className="sg-btn sg-btn--ghost sg-btn--sm">Propose a peak incentive</Link> : null}
               </div>
               <p className="ops-why__note">Suggestions only: nothing happens until a person acts, and an incentive needs a second approver.</p>
             </section>
@@ -383,7 +383,7 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
               <LiveMap zones={live.snapshot?.zones ?? []} dots={full ? dots : []} trips={full ? trips : []}
                 alerts={full ? alerts : []} cells={cells}
                 layers={{ drivers: full, trips: full, alerts: full, heatmap: true }}
-                driverHref={(id) => (canOpen(access, 'drivers') ? `/drivers/${id}` : null)}
+                driverHref={(id) => (canOpen(access, 'drivers') ? `/ops/drivers/${id}` : null)}
                 windowMinutes={15} focus={[city.code]}
                 caption={`${city.name}: drivers against riders in the last 15 minutes`} />
               <div className="ops-legend ops-legend--map">

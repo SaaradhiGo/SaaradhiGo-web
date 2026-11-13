@@ -10,7 +10,7 @@ import { type Trip, className, lockedFare, paidFare, rateTrip, receiptPdf, trip 
 import { useLoad } from '@/lib/area/useLoad';
 import { readSessionUser } from '@/lib/publicAuth';
 import { IBack, IDownload, IHelp, IUser } from '../icons';
-import { LoadError, Skel } from '../states';
+import { LoadError, NotYourTrip, Skel } from '../states';
 import { useOnScreenMarket } from '@/components/sg/LegalProvider';
 import { FareLinesList } from './FareLinesList';
 
@@ -38,6 +38,7 @@ export function RiderReceipt({ id }: { id: string }) {
     if (mine?.score) setStars(mine.score);
   }, [t]);
 
+  if (load.notFound) return <NotYourTrip />;
   if (load.state === 'error') return <div className="ar-page"><LoadError what="receipt" retry={load.retry} /></div>;
   if (!t) return <div className="ar-page" style={{ maxWidth: 1200 }}><Skel h={28} w={260} /><Skel h={18} lines={6} gap={18} style={{ marginTop: 24 }} /></div>;
 

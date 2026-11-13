@@ -8,7 +8,7 @@ import type { AdminAccess } from '@/lib/adminScope';
 import type { Pending } from '@/lib/platform';
 import { MapsCallsPanel, PendingRequests, PlatformNav, outcomeNotice } from '@/components/console/platform';
 
-vi.mock('next/navigation', () => ({ usePathname: () => '/settings/flags' }));
+vi.mock('next/navigation', () => ({ usePathname: () => '/ops/settings/flags' }));
 vi.mock('next/link', () => ({
   default: function LinkStub({ href, children, ...rest }: React.ComponentProps<'a'> & { href: string }) {
     return <a href={href} {...rest}>{children}</a>;
@@ -46,7 +46,7 @@ describe('the tabs', () => {
     current = access(['platform.read', 'platform.city_pause', 'audit.read']);
     render(<PlatformNav />);
     const links = screen.getAllByRole('link').map((a) => a.getAttribute('href'));
-    expect(links).toEqual(['/settings', '/settings/driver-requirements', '/settings/flags', '/settings/app-versions', '/settings/notices', '/settings/audit']);
+    expect(links).toEqual(['/ops/settings', '/ops/settings/driver-requirements', '/ops/settings/flags', '/ops/settings/app-versions', '/ops/settings/notices', '/ops/settings/audit']);
     expect(screen.getByRole('link', { name: 'Feature flags' }).getAttribute('aria-current')).toBe('page');
     expect(screen.getByRole('link', { name: 'Markets' }).getAttribute('aria-current')).toBeNull();
   });
@@ -54,7 +54,7 @@ describe('the tabs', () => {
   it('draws Staff and roles for admin.manage only', () => {
     current = access(['admin.manage']);
     const { unmount } = render(<PlatformNav />);
-    expect(screen.getAllByRole('link').map((x) => x.getAttribute('href'))).toEqual(['/settings/staff']);
+    expect(screen.getAllByRole('link').map((x) => x.getAttribute('href'))).toEqual(['/ops/settings/staff']);
     unmount();
     current = access(['platform.read', 'audit.read']);
     const again = render(<PlatformNav />);
@@ -63,7 +63,7 @@ describe('the tabs', () => {
     again.unmount();
     current = access(['privacy.manage']);
     render(<PlatformNav />);
-    expect(screen.getAllByRole('link').map((x) => x.getAttribute('href'))).toEqual(['/settings/data-requests']);
+    expect(screen.getAllByRole('link').map((x) => x.getAttribute('href'))).toEqual(['/ops/settings/data-requests']);
   });
 
   it('draws nothing for an operator with none of the capabilities', () => {

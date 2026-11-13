@@ -45,7 +45,7 @@ export function RecoveryLowBanner() {
         {n === 0
           ? 'If you lose your authenticator now there is no way back in without an administrator. '
           : 'Regenerate them before the last one is spent. '}
-        <Link href="/settings/security" className="ops-banner__link" onClick={dismiss}>
+        <Link href="/ops/settings/security" className="ops-banner__link" onClick={dismiss}>
           Regenerate them in Security
         </Link>
       </span>

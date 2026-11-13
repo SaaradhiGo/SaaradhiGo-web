@@ -79,7 +79,7 @@ export function LiveTrips({ city, timeZone }: { city: string | null; timeZone?: 
   }
 
   const columns: Column<Trip>[] = [
-    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <PageLink page="trips" href={`/trips/${t.id}`}>#{t.id}</PageLink> },
+    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <PageLink page="trips" href={`/ops/trips/${t.id}`}>#{t.id}</PageLink> },
     {
       key: 'status', label: 'Status', width: '8rem',
       render: (t) => {
@@ -104,7 +104,7 @@ export function LiveTrips({ city, timeZone }: { city: string | null; timeZone?: 
   return (
     <Panel
       title="Latest trips"
-      action={<PageLink page="trips" href={city ? `/trips?scope=${city}` : '/trips'} className="sg-link text-sm">All trips</PageLink>}
+      action={<PageLink page="trips" href={city ? `/ops/trips?scope=${city}` : '/ops/trips'} className="sg-link text-sm">All trips</PageLink>}
       flush
     >
       {error ? (
@@ -122,7 +122,7 @@ export function LiveTrips({ city, timeZone }: { city: string | null; timeZone?: 
           rows={trips}
           columns={columns}
           rowKey={(t) => t.id}
-          onRow={mayOpen ? (t) => router.push(`/trips/${t.id}`) : undefined}
+          onRow={mayOpen ? (t) => router.push(`/ops/trips/${t.id}`) : undefined}
           density="compact"
           maxHeight={false}
         />

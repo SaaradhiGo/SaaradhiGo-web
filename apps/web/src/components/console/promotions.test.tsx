@@ -4,7 +4,7 @@ import type { AdminAccess } from '@/lib/adminScope';
 import type { BudgetView } from '@/lib/promotions';
 import { BudgetBar, PromotionsNav } from '@/components/console/promotions';
 
-vi.mock('next/navigation', () => ({ usePathname: () => '/promotions' }));
+vi.mock('next/navigation', () => ({ usePathname: () => '/ops/promotions' }));
 vi.mock('next/link', () => ({
   default: function LinkStub({ href, children, ...rest }: React.ComponentProps<'a'> & { href: string }) {
     return <a href={href} {...rest}>{children}</a>;
@@ -31,14 +31,14 @@ describe('the Promotions tabs (the link rule)', () => {
     current = access(['promo.read']);
     const { container } = render(<PromotionsNav />);
     const links = [...container.querySelectorAll('a')].map((a) => a.getAttribute('href'));
-    expect(links).toEqual(['/promotions', '/promotions/incentives', '/promotions/referrals']);
+    expect(links).toEqual(['/ops/promotions', '/ops/promotions/incentives', '/ops/promotions/referrals']);
   });
 
   it('adds the fraud tab for fraud.read', () => {
     current = access(['promo.read', 'fraud.read']);
     const { container } = render(<PromotionsNav />);
     expect([...container.querySelectorAll('a')].map((a) => a.getAttribute('href')))
-      .toContain('/promotions/fraud');
+      .toContain('/ops/promotions/fraud');
   });
 
   it('draws nothing for an operator who cannot read promotions', () => {

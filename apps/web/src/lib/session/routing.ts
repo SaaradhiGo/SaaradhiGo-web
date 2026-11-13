@@ -12,10 +12,13 @@ import type { Session } from './cookie';
  * is served the role gate (/role-gate), which says the page is for riding or
  * driving and offers the switch, or for a driver with no rider role, "Ride with
  * your SaaradhiGo account". A visitor who is not signed in is sent to the right
- * sign-in. /ride stays the public explainer for anyone not riding right now. The rider pages are served from /rider/* by rewrite, because two of
- * their public URLs are already taken by other pages: /ride is the marketing
- * page a guest sees, and /trips is the operations console's trip list, which
- * operators (who have no rider/driver session) keep reaching.
+ * sign-in. /ride stays the public explainer for anyone not riding right now. The rider pages are served from /rider/* by rewrite, because
+ * /ride is also the marketing page a guest sees.
+ *
+ * The operations console lives under /ops (owner, 13 Nov). It used to share /trips with the
+ * riders, so a guest opening their trip landed on the staff login. Every old console path
+ * redirects to its /ops twin (bookmarks, emails, links the backend sends); /trips is now the
+ * riders' only. /book, a second stripped-down booking page, redirects to /ride.
  */
 export type Decision =
   | { kind: 'next' }
@@ -49,6 +52,12 @@ export const DRIVER_ROUTES = [
 
 const DRIVER_GUEST = ['/driver/sign-in', '/driver/sign-up'];
 
+/** Console roots that moved under /ops (13 Nov). /trips is not here: it belongs to riders now. */
+export const OLD_CONSOLE_ROOTS = ['/approvals', '/dashboard', '/drivers', '/finance', '/fraud', '/kyc', '/live-ops',
+  '/notifications', '/pricing', '/promotions', '/reports', '/riders', '/safety-ops', '/settings', '/sos', '/start',
+  '/support', '/withdrawals', '/zones', '/login'];
+export const OPS = '/ops';
+
 /** The page that says "this is for riding/driving" and offers the switch (app/(public)/role-gate). */
 export const ROLE_GATE = '/role-gate';
 
@@ -70,8 +79,11 @@ function signIn(path: string, search: string, driver: boolean) {
   return `${driver ? '/driver/sign-in' : '/sign-in'}?next=${next}`;
 }
 
-export function decide(pathname: string, search: string, session: Session | null, area: AreaHint = null): Decision {
+export function decide(pathname: string, search: string, session: Session | null, _area: AreaHint = null): Decision {
   const p = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+
+  if (OLD_CONSOLE_ROOTS.some((r) => p === r || p.startsWith(`${r}/`))) return { kind: 'redirect', to: `${OPS}${p}${search}` };
+  if (p === '/book') return { kind: 'redirect', to: RIDER_HOME };
 
   // The internal rider paths are never addressed directly.
   if (p === '/rider' || p.startsWith('/rider/')) return { kind: 'redirect', to: RIDER_HOME };
@@ -86,14 +98,10 @@ export function decide(pathname: string, search: string, session: Session | null
 
   if (isRiderPath(p)) {
     if (!session) {
-      // A guest keeps the marketing /ride and the console's /trips -- unless this browser last signed
-      // in as a rider or driver: then their session ended here, and they sign in again and come back.
-      if ((p === '/trips' || p.startsWith('/trips/')) && (area === 'rider' || area === 'driver')) {
-        return { kind: 'redirect', to: signIn(p, search, area === 'driver') };
-      }
-      if (p === '/ride' || p === '/trips' || p.startsWith('/trips/')) return { kind: 'next' };
-      if (p === '/my-trips') return { kind: 'redirect', to: signIn('/trips', '', false) };
-      return { kind: 'redirect', to: signIn(p, search, false) };
+      // A guest keeps the marketing /ride; every other rider page asks them to sign in as a rider
+      // and comes back (13 Nov: never the staff login, never the console).
+      if (p === '/ride') return { kind: 'next' };
+      return { kind: 'redirect', to: signIn(p === '/my-trips' ? '/trips' : p, p === '/my-trips' ? '' : search, false) };
     }
     if (session.role !== 'rider') {
       // Driving right now: the public explainer at /ride, and the gate on every rider page.

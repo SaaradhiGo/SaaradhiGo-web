@@ -48,9 +48,9 @@ describe('readiness wording', () => {
 
   it('a warning never blocks a launch', () => {
     const items = [
-      { key: 'zone', ok: true, status: 'ok' as const, blocking: false, label: 'Zone', detail: '', href: '/zones' },
+      { key: 'zone', ok: true, status: 'ok' as const, blocking: false, label: 'Zone', detail: '', href: '/ops/zones' },
       { key: 'tax', ok: true, status: 'warning' as const, blocking: false, label: 'Tax', detail: '', href: '' },
-      { key: 'fare_card', ok: false, status: 'missing' as const, blocking: true, label: 'Fare cards', detail: '', href: '/pricing' },
+      { key: 'fare_card', ok: false, status: 'missing' as const, blocking: true, label: 'Fare cards', detail: '', href: '/ops/pricing' },
     ];
     expect(launchBlockedBy(items).map((i) => i.key)).toEqual(['fare_card']);
     expect(launchBlockedBy(null)).toEqual([]);

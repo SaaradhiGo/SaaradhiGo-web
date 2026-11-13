@@ -50,7 +50,7 @@ export function SuperAdminBanner({ access }: { access: AdminAccess | null | unde
 export function SuperAdminChip({ access }: { access: AdminAccess | null | undefined }) {
   const pathname = usePathname();
   const shortfall = access?.super_admin_shortfall ?? 0;
-  if (shortfall <= 0 || pathname === '/dashboard') return null;
+  if (shortfall <= 0 || pathname === '/ops/dashboard') return null;
   const text = `${shortfall} more Super Admin${shortfall === 1 ? '' : 's'} needed`;
   return <span className="ops-quiet-chip" role="status" title="The platform should have two named Super Admins.">{text}</span>;
 }

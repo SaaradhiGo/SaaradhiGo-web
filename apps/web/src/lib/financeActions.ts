@@ -353,5 +353,5 @@ export function perCurrency(values: Record<string, number> | undefined): Array<[
  */
 export function reconciliationHref(block: Pick<FinanceBlock, 'reconciliation_link'>,
   access: AdminAccess | null): string | undefined {
-  return block.reconciliation_link && can(access, 'finance.read') ? '/finance/reconciliation' : undefined;
+  return block.reconciliation_link && can(access, 'finance.read') ? '/ops/finance/reconciliation' : undefined;
 }
