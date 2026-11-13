@@ -1,0 +1,78 @@
+{
+  "profile_photo": {
+    "status_label": "Approved",
+    "expiry_text": ""
+  },
+  "legal_name": {
+    "status_label": "Done",
+    "expiry_text": ""
+  },
+  "date_of_birth": {
+    "status_label": "Done",
+    "expiry_text": ""
+  },
+  "address": {
+    "status_label": "Done",
+    "expiry_text": ""
+  },
+  "permanent_address": {
+    "status_label": "Missing",
+    "expiry_text": ""
+  },
+  "address_proof": {
+    "status_label": "Approved",
+    "expiry_text": ""
+  },
+  "emergency_contact": {
+    "status_label": "Done",
+    "expiry_text": ""
+  },
+  "driving_licence": {
+    "status_label": "Approved",
+    "expiry_text": "31/10/2028"
+  },
+  "aadhaar": {
+    "status_label": "Approved",
+    "expiry_text": ""
+  },
+  "pan": {
+    "status_label": "Approved",
+    "expiry_text": ""
+  },
+  "police_verification": {
+    "status_label": "Approved",
+    "expiry_text": ""
+  },
+  "vehicle": {
+    "status_label": "Done",
+    "expiry_text": ""
+  },
+  "vehicle_photos": {
+    "status_label": "Approved",
+    "expiry_text": ""
+  },
+  "rc": {
+    "status_label": "Approved",
+    "expiry_text": ""
+  },
+  "insurance": {
+    "status_label": "Approved",
+    "expiry_text": "30/06/2027"
+  },
+  "permit": {
+    "status_label": "Approved",
+    "expiry_text": "31/03/2028"
+  },
+  "fitness": {
+    "status_label": "Approved",
+    "expiry_text": "30/09/2027"
+  },
+  "puc": {
+    "status_label": "Approved",
+    "expiry_text": "15/05/2027"
+  },
+  "payout_method": {
+    "status_label": "Done",
+    "expiry_text": ""
+  }
+}

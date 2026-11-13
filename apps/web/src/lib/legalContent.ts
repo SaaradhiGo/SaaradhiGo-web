@@ -6,6 +6,9 @@
  * market on screen and its operating company. A line whose value is not configured (an address, a
  * CIN, a grievance officer) is left out: `null` lines are dropped. Nothing here is a placeholder.
  * The legal-review status lives in the internal docs, never on the page.
+ *
+ * Links: write `[label](/path)` inside a line; the page renders it as a link (`linkParts`). A bare
+ * path in the text is not allowed (legalContent.test.ts checks every page in both markets).
  */
 import type { Market } from '@/i18n/locales';
 import type { LegalEntity } from './legal';
@@ -70,7 +73,7 @@ export function riderTerms(c: Ctx): Doc {
       ] },
       { h: 'Law and contact', p: [
         india ? 'These terms are governed by the laws of India.' : 'These terms are governed by the laws of the state where your trip takes place and the federal laws of the United States.',
-        india ? `Complaints follow the process on the Grievance redressal page (${P.grievance}).` : null,
+        india ? `Complaints follow the process on the [Grievance redressal page](${P.grievance}).` : null,
         contactLine(c),
       ] },
     ],
@@ -172,7 +175,7 @@ export function privacy(c: Ctx): Doc {
           'You can correct, complete or update it; most of it you can edit in the app.',
           'You can ask us to erase it, by deleting your account in the app or writing to us.',
           'You can nominate someone to exercise these rights if you die or cannot act.',
-          `You can raise a grievance with our Grievance Officer (see ${P.grievance}), and if you are not satisfied, complain to the Data Protection Board of India.`,
+          `You can raise a grievance with our [Grievance Officer](${P.grievance}), and if you are not satisfied, complain to the Data Protection Board of India.`,
         ] },
         security,
         { h: 'Children', p: ['SaaradhiGo is not for anyone under 18.'] },
@@ -283,7 +286,7 @@ export function textMessages(c: Ctx): Doc {
       ] },
       { h: 'Your number', p: [
         'We never sell or share mobile numbers with anyone for their marketing. Numbers are passed only to the messaging provider that delivers our own messages.',
-        `See the privacy policy (${P.privacy}) for how we handle personal data.`,
+        `See the [privacy policy](${P.privacy}) for how we handle personal data.`,
       ] },
       { h: 'Help', p: [contactLine(c)] },
     ],
@@ -344,6 +347,61 @@ export function cookies(c: Ctx): Doc {
         'You can delete cookies in your browser settings; the site still works, but you will be signed out and your choices forgotten.',
       ] },
       { h: 'Contact', p: [contactLine(c)] },
+    ],
+  };
+}
+
+/** A line split into text and `[label](/path)` links, in order. */
+export function linkParts(line: string): ({ text: string } | { label: string; href: string })[] {
+  const out: ({ text: string } | { label: string; href: string })[] = [];
+  const re = /\[([^\]]+)\]\((\/[^)\s]*)\)/g;
+  let at = 0;
+  for (let m = re.exec(line); m; m = re.exec(line)) {
+    if (m.index > at) out.push({ text: line.slice(at, m.index) });
+    out.push({ label: m[1], href: m[2] });
+    at = m.index + m[0].length;
+  }
+  if (at < line.length) out.push({ text: line.slice(at) });
+  return out;
+}
+
+// --------------------------------------------------------------------------------- delete account
+
+/** /delete-account (13 Nov): how to delete an account with or without the app (Play policy). */
+export function deleteAccount(c: Ctx): Doc {
+  const email = c.entity.support_email || c.supportEmail;
+  return {
+    title: 'Delete your account',
+    lead: 'How to delete your SaaradhiGo account, what is deleted and what we must keep.',
+    updated: updatedOn(c.market),
+    sections: [
+      { h: 'In the app', p: [
+        'Rider app: Account, then Delete account.',
+        'Driver app: Profile, then Delete account.',
+        'Both show what is deleted and kept before you confirm.',
+      ] },
+      { h: 'On this website, without the app', p: [
+        'Riders: [sign in](/sign-in), open Account, then Delete account.',
+        'Drivers: [sign in as a driver](/driver/sign-in), open Profile, choose Edit under Language and preferences, then Delete account.',
+        `Or write to ${email} from the email address or phone number on your account, with "Delete my account" in the subject. We confirm it is you, then delete the account.`,
+      ] },
+      { h: 'What we delete', p: [
+        'Your name, phone number, email, date of birth and address.',
+        'Your profile photo, emergency contact and saved places.',
+        'For drivers: licence and vehicle document images, and your payout account details.',
+        'Your sign-in: every app and website session is signed out.',
+      ] },
+      { h: 'What we must keep', p: [
+        'Trip records (route, times, fare) for safety and disputes, without your name or number.',
+        'Payments, payouts and tax records, for the periods tax and accounting law requires.',
+        'Anything we must keep to answer a legal request or a safety investigation already open.',
+      ] },
+      { h: 'Drivers with earnings still to be paid', p: [
+        'If you are still owed earnings, or a payout is on its way, your account closes after it is paid: the next payout pays your whole balance, with no minimum. Until then you stay signed in and cannot go online.',
+      ] },
+      { h: 'Your data', p: [
+        'Before deleting, you can download a copy of your data from Account (riders) or Profile (drivers). See the [privacy policy](/privacy).',
+      ] },
     ],
   };
 }

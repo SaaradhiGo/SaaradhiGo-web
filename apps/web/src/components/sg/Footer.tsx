@@ -25,6 +25,7 @@ const COLUMNS: { title: string; items: Item[] }[] = [
     { label: 'Help', href: '/help' }, { label: 'Contact', href: P.contact },
     { label: 'Text messages', href: P.textMessages }, { label: 'Cookie notice', href: P.cookies },
     { label: 'Refunds and cancellations', href: P.refunds },
+    { label: 'Delete your account', href: P.deleteAccount },
   ] },
   { title: 'Company', items: [
     { label: 'About', href: P.about }, { label: 'Rider terms', href: P.riderTerms },
