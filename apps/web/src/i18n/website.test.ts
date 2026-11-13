@@ -24,6 +24,9 @@ const MISSING = [
   'Closing: waiting for your earnings to be paid.', 'What we delete', 'What we must keep',
   'You are still owed {amount}. Your account closes after it is paid; until then you stay signed in and cannot go online.',
   'Type DELETE to confirm', 'Keep my account',
+  // 13 Nov apps follow-up: trip summary and owing on closure.
+  'Closing: waiting for what you owe to be settled.', 'Paid {fare} in cash', 'Paid {fare} online',
+  'Your driver', '{n} stars',
 ];
 
 /** Class names the rider app shows in Latin script in every language. */

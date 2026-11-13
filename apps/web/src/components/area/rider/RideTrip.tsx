@@ -15,7 +15,7 @@ import { money } from '@/lib/area/format';
 import { AREA_FLAGS } from '@/lib/area/flags';
 import {
   type Call, type Eta, type Share, type Trip, className, endCall, lockedFare, startCall, startShare, stopShare,
-  saveDraft, trip as loadTrip, tripDriver, tripEta, tripShare,
+  rateTrip, saveDraft, trip as loadTrip, tripDriver, tripEta, tripShare,
 } from '@/lib/area/rider';
 import { PayOnline } from './PayOnline';
 import { ILock, IPhone, IShare, IShield, IUser } from '../icons';
@@ -330,10 +330,8 @@ export function RideTrip({ id }: { id: string }) {
         {state === 'completed' && t && fare && !paid && ['upi', 'card'].includes(t.payment_method ?? '') && t.payment_status !== 'completed' ? (
           <PayOnline tripId={id} fare={fare} method={t.payment_method ?? 'upi'} onPaid={(how) => { setPaid(how); refresh(); }} />
         ) : state === 'completed' ? (
-          <>
-            {paid === 'cash' && <p className="a14 amut">{tr('Pay {fare} in cash to your driver.').replace('{fare}', fare ?? '')}</p>}
-            <Link href={`/trips/${id}`} className="abtn abtn--pri abtn--block">{tr('See your receipt')}</Link>
-          </>
+          <TripSummary id={id} fare={fare} cash={paid === 'cash' || t?.payment_method === 'cash'}
+            driver={t?.driver_name ?? null} onDone={() => router.push('/ride')} />
         ) : null}
         {noDriver ? (
           <div className="arow" style={{ gap: 8 }}>
@@ -389,5 +387,38 @@ export function RideTrip({ id }: { id: string }) {
         </MapSurface>
       </div>
     </div>
+  );
+}
+
+
+/**
+ * 13 Nov: the trip summary before going home, as in the rider app: what was paid and how, the
+ * driver, the same receipt as Your trips, and a rating.
+ */
+function TripSummary({ id, fare, cash, driver, onDone }: {
+  id: string; fare: string | null; cash: boolean; driver: string | null; onDone: () => void;
+}) {
+  const tr = useTr();
+  const [stars, setStars] = useState(0);
+  const [note, setNote] = useState<string | null>(null);
+  async function rate(n: number) {
+    try { await rateTrip(id, n); setStars(n); setNote(tr('Thanks for rating your trip.')); }
+    catch { setNote(tr('We could not save your rating.')); }
+  }
+  return (
+    <section className="acard acol" style={{ padding: 16, gap: 10 }} data-testid="trip-summary" aria-labelledby="sum-title">
+      <h2 className="a20" id="sum-title">{tr('Trip complete')}</h2>
+      {fare && <div className="ab">{(cash ? tr('Paid {fare} in cash') : tr('Paid {fare} online')).replace('{fare}', fare)}</div>}
+      {driver && <div className="a14 amut">{tr('Your driver')}: {driver}</div>}
+      <div className="arow" style={{ gap: 4 }} role="group" aria-label={tr('Rate your trip')}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button key={n} type="button" className={`achip${n <= stars ? ' achip--on' : ''}`} aria-pressed={n <= stars}
+            aria-label={tr('{n} stars').replace('{n}', String(n))} onClick={() => rate(n)}>★</button>
+        ))}
+      </div>
+      {note && <p className="a14 amut" role="status">{note}</p>}
+      <Link href={`/trips/${id}`} className="abtn abtn--ghost abtn--block">{tr('See your receipt')}</Link>
+      <button type="button" className="abtn abtn--pri abtn--block" onClick={onDone}>{tr('Done')}</button>
+    </section>
   );
 }

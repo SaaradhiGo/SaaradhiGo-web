@@ -190,13 +190,15 @@ export async function deleteAccount() {
 export type AccountClosure = {
   deleted: string[]; kept: string[];
   pending_payouts: { balance: string; currency: string; in_flight: number } | null;
+  /** 13 Nov: a driver who owes SaaradhiGo (negative balance); the account closes once settled. */
+  owed_to_saaradhigo?: { amount: string; currency: string; message: string } | null;
   closure: { status: string; requested_at: string } | null; web_url: string;
 };
 export async function accountClosure() {
   return areaGet<AccountClosure>('/auth/me/delete/');
 }
 export async function closeAccount() {
-  return areaPost<{ status: 'closed' | 'waiting_payouts'; message?: string }>('/auth/me/delete/', { confirm: 'DELETE' });
+  return areaPost<{ status: 'closed' | 'waiting_payouts' | 'waiting_settlement'; message?: string }>('/auth/me/delete/', { confirm: 'DELETE' });
 }
 
 /** The fare the rider booked: the locked estimate the trip carries. */

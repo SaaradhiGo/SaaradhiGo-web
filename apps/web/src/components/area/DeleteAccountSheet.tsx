@@ -39,13 +39,20 @@ export function DeleteAccountSheet({ onClose, onClosed }: { onClose: () => void;
     <Sheet label={tr('Delete account')} onClose={onClose} testid="delete-account">
       <h2 className="a20">{tr('Delete your account')}</h2>
       {info?.closure ? (
-        <p className="a14" role="status" style={{ marginTop: 8 }}>{tr('Closing: waiting for your earnings to be paid.')}</p>
+        <p className="a14" role="status" style={{ marginTop: 8 }}>
+          {info.closure.status === 'waiting_settlement'
+            ? tr('Closing: waiting for what you owe to be settled.')
+            : tr('Closing: waiting for your earnings to be paid.')}
+        </p>
       ) : (
         <>
           <h3 className="a14 ab" style={{ marginTop: 12 }}>{tr('What we delete')}</h3>
           <ul className="a14 amut" style={{ paddingLeft: 18, margin: '4px 0' }}>{(info?.deleted ?? []).map((x) => <li key={x}>{x}</li>)}</ul>
           <h3 className="a14 ab" style={{ marginTop: 12 }}>{tr('What we must keep')}</h3>
           <ul className="a14 amut" style={{ paddingLeft: 18, margin: '4px 0' }}>{(info?.kept ?? []).map((x) => <li key={x}>{x}</li>)}</ul>
+          {info?.owed_to_saaradhigo && (
+            <p className="a14 ab" style={{ marginTop: 12 }} role="note" data-testid="owes">{info.owed_to_saaradhigo.message}</p>
+          )}
           {owed && (
             <p className="a14" style={{ marginTop: 12 }} data-testid="owed">
               {tr('You are still owed {amount}. Your account closes after it is paid; until then you stay signed in and cannot go online.')

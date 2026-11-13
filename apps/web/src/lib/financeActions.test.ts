@@ -99,7 +99,7 @@ describe('driver balance adjustment', () => {
     expect(adjustProblem({ ...ok, reasonCode: 'vibes' })).toMatch(/reason/i);
     expect(adjustProblem({ ...ok, note: '  ' })).toMatch(/note/i);
     expect(Object.keys(ADJUST_REASONS)).toEqual(
-      ['correction', 'goodwill', 'chargeback', 'damage_recovery', 'other']);
+      ['correction', 'goodwill', 'chargeback', 'damage_recovery', 'closure_write_off', 'other']);
   });
 
   it('works in a two-decimal currency that is not rupees', () => {

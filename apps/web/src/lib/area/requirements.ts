@@ -93,6 +93,21 @@ export const STATUS_LABEL: Record<ItemStatus, string> = {
   missing: 'Missing', in_review: 'In review', approved: 'Approved', rejected: 'Rejected',
   expiring: 'Expiring', done: 'Done',
 };
+/**
+ * 13 Nov: an optional item nobody added is not "Missing": it reads "Optional · not added", in
+ * grey, and never counts toward the total (the server's done/total already leaves it out). The
+ * driver app and the console use the same words.
+ */
+export const OPTIONAL_NOT_ADDED = 'Optional · not added';
+export function isOptionalNotAdded(it: { need?: string; status: string }) {
+  return it.need === 'optional' && it.status === 'missing';
+}
+export function itemLabel(it: { need?: string; status: ItemStatus }) {
+  return isOptionalNotAdded(it) ? OPTIONAL_NOT_ADDED : STATUS_LABEL[it.status];
+}
+export function itemTone(it: { need?: string; status: ItemStatus }) {
+  return isOptionalNotAdded(it) ? 'apill--neu' : STATUS_TONE[it.status];
+}
 export const STATUS_TONE: Record<ItemStatus, string> = {
   missing: 'apill--neu', in_review: 'apill--warn', approved: 'apill--ok', rejected: 'apill--err',
   expiring: 'apill--warn', done: 'apill--ok',
