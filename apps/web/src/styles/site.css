@@ -418,7 +418,10 @@
 .s-request__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 10px; }
 .s-request .s-bars { margin-top: 14px; gap: 10px; font-size: var(--text-body); line-height: var(--leading-body); }
 .s-request .s-bar { padding: 12px 14px; border-radius: 12px; }
-.s-bar b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.s-bar b { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* In the home page's narrow phone the example tag wraps rather than being cut off (13 Nov). */
+.s-mock-card .s-example { white-space: normal; }
+.s-mock-card .s-bar { gap: 8px; }
 .s-request__accept { margin-top: 14px; height: 52px; border-radius: 14px; background: var(--d-amber); display: flex; align-items: center; justify-content: center; font-weight: 600; }
 .s-request__note { margin-top: 10px; text-align: center; color: var(--d-slate); font-size: var(--text-small); line-height: var(--leading-small); }
 /* 13 Nov: every example amount carries this tag. */
