@@ -299,11 +299,13 @@ for (const { p, w, h, lang } of RUNS) {
     // 13 Nov (owner): the Drive page's request card no longer floats over a photo placeholder
     // (a design note that shipped live); it stands on a plain panel with example numbers. The
     // 7 Nov reference predates that, so that column is not compared; the rest of the page is.
-    if (p === '/drive') {
-      emblems.push(await page.evaluate(() => {
-        const r = document.querySelector('.s-request-wrap').getBoundingClientRect();
+    // Likewise /ride's fare ticket gained the example amount (owner, 13 Nov), which lengthens the
+    // ticket column; that column is not compared, the steps and "Book a ride" still are.
+    if (p === '/drive' || p === '/ride') {
+      emblems.push(await page.evaluate((sel) => {
+        const r = document.querySelector(sel).getBoundingClientRect();
         return [Math.floor(r.left), Math.floor(r.top + scrollY), Math.ceil(r.width), Math.ceil(r.height)];
-      }));
+      }, p === '/drive' ? '.s-request-wrap' : '.s-stack'));
     }
     if (p === '/' && process.env.BASELINE) {
       mkdirSync(BASE, { recursive: true });
