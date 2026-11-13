@@ -214,7 +214,8 @@
   height: 80px; padding: 0 32px; display: flex; align-items: center; gap: 16px;
   border-bottom: 1px solid var(--c-border); background: var(--c-page);
 }
-.dr-main { padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; }
+/* 13 Nov: grows, so the legal line sits at the bottom of the window, not mid-screen. */
+.dr-main { flex: 1 0 auto; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; }
 .dr-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .dr-grid2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; align-items: start; }
 .dr-grid2 > *, .dr-grid3 > * { min-width: 0; }
