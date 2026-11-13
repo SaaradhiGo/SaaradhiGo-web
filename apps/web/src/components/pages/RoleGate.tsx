@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { areaPost } from '@/lib/area/api';
 import { establishServerSession, readRiderToken, sessionRoles, switchRole, type PublicRole } from '@/lib/publicAuth';
 import { useTr } from '@/i18n/website';
@@ -26,12 +26,10 @@ export function safeNext(next: string | null, need: PublicRole) {
   return next;
 }
 
-export function RoleGate() {
+export function RoleGate({ need, next: asked }: { need: PublicRole; next: string | null }) {
   const tr = useTr();
   const router = useRouter();
-  const params = useSearchParams();
-  const need: PublicRole = params.get('need') === 'driver' ? 'driver' : 'rider';
-  const next = safeNext(params.get('next'), need);
+  const next = safeNext(asked, need);
   const [state, setState] = useState<State>('loading');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
