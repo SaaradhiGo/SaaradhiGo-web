@@ -20,6 +20,7 @@ import {
 } from '@/lib/area/rider';
 import { PayOnline } from './PayOnline';
 import { ReportImpairment, TipCard } from './UsTrip';
+import { useOnScreenMarket } from '@/components/sg/LegalProvider';
 import { NotYourTrip, Skel, isNotFound } from '../states';
 import { ILock, IPhone, IShare, IShield, IUser } from '../icons';
 
@@ -56,6 +57,8 @@ export function RideTrip({ id }: { id: string }) {
   const { locale } = useLocale();
   const router = useRouter();
   const [t, setT] = useState<Trip | null>(null);
+  // 14 Nov: the trip's market (its pickup's) names the company in the footer.
+  useOnScreenMarket(t ? (t.currency === 'USD' ? 'US' : 'IN') : null);
   const [state, setState] = useState<string>('requested');
   // 13 Nov: nothing is said about the trip until the server has answered; a 404 is not yours.
   const [loaded, setLoaded] = useState(false);

@@ -171,6 +171,8 @@ export async function searchPlaces(
   field: SearchField = 'pickup',
   /** A service-zone code: suggestions are then restricted to that zone. */
   zone?: string | null,
+  /** 14 Nov: the country chosen in the header; ranks the results when there is no location. */
+  market?: string | null,
 ): Promise<Place[]> {
   // BIAS THE SEARCH, OR GET THE WRONG HEMISPHERE. Unbiased, the autocomplete
   // is worldwide: "Banjara" typed by a rider in Hyderabad returned
@@ -185,6 +187,7 @@ export async function searchPlaces(
       session_token: sessionToken(field),
       ...(near ? { location: `${near.lat},${near.lng}` } : {}),
       ...(zone ? { zone } : {}),
+      ...(market ? { market } : {}),
     },
     readRiderToken(),
   );

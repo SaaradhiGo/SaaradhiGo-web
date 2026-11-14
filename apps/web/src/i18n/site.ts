@@ -1,6 +1,8 @@
 import { useLocale } from './LocaleProvider';
 import type { Language } from './locales';
 import { translateCopy } from './website';
+import { useLegal } from '@/components/sg/LegalProvider';
+import { usEnglishDeep } from './usEnglish';
 
 /**
  * Copy for the public pages, word for word from the approved design
@@ -387,5 +389,8 @@ export const SITE: Record<Language, SiteCopy> = {
 
 export function useSite(): SiteCopy {
   const { language } = useLocale();
-  return SITE[language] ?? en;
+  const { market } = useLegal();
+  const copy = SITE[language] ?? en;
+  // 14 Nov (owner): US English for the USA, UK English for India.
+  return language === 'en' && market === 'US' ? usEnglishDeep(copy) : copy;
 }

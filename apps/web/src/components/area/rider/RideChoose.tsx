@@ -22,6 +22,7 @@ import { IBack, ICar, ICheck, ILock, IUser } from '../icons';
 import { Skel } from '../states';
 import { FareWorkings } from './FareWorkings';
 import { PhoneStep } from './PhoneStep';
+import { useOnScreenMarket } from '@/components/sg/LegalProvider';
 
 /** Seats per class, as the rider app shows them (lib/booking.ts). */
 const SEATS: Record<string, number> = { auto: 3, mini: 4, hatchback: 4, sedan: 4, suv: 6, bike: 1 };
@@ -96,7 +97,7 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
         if (!live) return;
         setRoute(line);
         if (area.zone?.country) setCountry(area.zone.country);
-        if (!area.serviceable) { setOptions([]); setError(tr('Rides are not available at this pickup yet.')); return; }
+        if (!area.serviceable) { setOptions([]); setError(tr("We're not in this area yet.")); return; }
         const km = line ? line.distanceMeters / 1000 : 0;
         const min = line ? Math.max(1, Math.round(line.durationSeconds / 60)) : 0;
         const types = area.vehicle_types.map((v: VehicleCategory) => v.type);
@@ -172,6 +173,8 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
   const distance = route ? (miles ? `${(route.distanceMeters / MILE_M).toFixed(1)} mi` : route.distanceText) : null;
   const tripLine = route ? [distance, route.durationText].filter(Boolean).join(' · ') : null;
   const us = country === 'US';
+  // 14 Nov: the pickup's market names the company in the footer (DeepTrics LLC from Boise).
+  useOnScreenMarket(country);
 
   /** The card hold for the locked fare (USA): its id, or null when the rider stopped. */
   async function holdForBooking(): Promise<number | null> {
