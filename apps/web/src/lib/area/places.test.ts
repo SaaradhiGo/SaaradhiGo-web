@@ -25,6 +25,10 @@ describe('place suggestions as two lines (14 Nov)', () => {
       structured_formatting: { main_text: 'Cyber Towers', secondary_text: 'HITEC City, Hyderabad, Telangana, India' } };
     expect(suggestionLines(p)).toEqual({ name: 'Cyber Towers', area: 'HITEC City, Hyderabad', short: 'Cyber Towers, HITEC City' });
   });
+  it('a name with its area after " - " (QA, 14 Nov)', () => {
+    expect(suggestionLines({ description: 'x', structured_formatting: { main_text: 'Cyber Towers - HITEC City', secondary_text: 'Hitech City Road, HITEC City, Hyderabad, Telangana, India' } }))
+      .toEqual({ name: 'Cyber Towers', area: 'HITEC City, Hitech City Road', short: 'Cyber Towers, HITEC City' });
+  });
   it('works from the description alone', () => {
     expect(suggestionLines({ description: 'Charminar, Ghansi Bazaar, Hyderabad, Telangana 500002, India' }))
       .toEqual({ name: 'Charminar', area: 'Ghansi Bazaar, Hyderabad', short: 'Charminar, Ghansi Bazaar' });

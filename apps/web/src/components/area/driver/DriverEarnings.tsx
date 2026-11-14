@@ -59,7 +59,7 @@ function Chart({ h, locale, label }: { h: History; locale: string; label: string
   const m = (v: string | number | undefined) => money(v ?? 0, h.currency, locale) ?? '';
   return (
     <div className={h.chart.unit === 'month' ? 'er-scrollx' : 'er-chart'} onMouseLeave={() => setTip(null)}
-      style={{ '--n': bars.length } as React.CSSProperties}>
+      style={{ '--n': bars.length } as React.CSSProperties} tabIndex={0} role="group" aria-label={tr('Earnings by day')}>
       <div className={`er-bars${empty ? ' er-bars--empty' : ''}${across ? ' er-bars--amts' : ''}`}
         role="list" aria-label={tr('Earnings by day')} data-empty={empty || undefined}>
         {/* A list may only hold list items (axe aria-required-children, 13 Nov): the empty line is one. */}

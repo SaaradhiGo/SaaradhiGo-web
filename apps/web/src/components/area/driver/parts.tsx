@@ -97,7 +97,8 @@ export function WeekChart({ load, currency }: { load: Load<Day[]>; currency: str
   const top = Math.max(...days.map((d) => Number(d.net)), 0);
   const empty = days.every((d) => d.trips === 0 && Number(d.net) === 0);
   return (
-    <div className={`dr-chart${empty ? ' dr-chart--empty' : ''}`} role="img" aria-label={tr('Last 7 days')} data-empty={empty || undefined}>
+    <div className={`dr-chart${empty ? ' dr-chart--empty' : ''}`} role="img" aria-label={tr('Last 7 days')} data-empty={empty || undefined}
+      tabIndex={0} /* it scrolls sideways on a phone: reachable by keyboard (axe, 14 Nov) */>
       {empty && <div className="a14 amut er-empty">{tr('No trips in {period} yet').replace('{period}', tr('the last 7 days'))}</div>}
       {days.map((d, i) => {
         const v = Number(d.net);
