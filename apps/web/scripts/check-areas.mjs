@@ -4,8 +4,11 @@
 //              without the bottom bar), or a rider page with either
 //   sideways   horizontal scroll at 360, 390, 768, 1024 or 1440 wide
 //   clipped    on phones (13 Nov): an amount cut off, or a table column under 120 px with text in it
-//   type       a size other than 14/16/20/28/40 (22 and 32 only on phone
-//              headings), a weight other than 400/600, text under 14px
+//   type       a size other than 14/16/20/28/40 (14 Nov: no 22 or 32 on phones
+//              either), a weight other than 400/600, text under 14px
+//   taps       on phones (14 Nov): anything tappable with a hit area under 44x44,
+//              measured by hit-testing (padding added for touch counts); the footer's
+//              text links and links inside a sentence are exempt
 //   dates      a trip or payout row without a date and a time
 //   visual     more than 3% of pixels off screenshots/<page>.png at 1440x900,
 //              the map, logo and value regions masked (diffs in DIFFS)
@@ -56,12 +59,16 @@ const MAX_DIFF = 0.03;
 // 11 Nov (owner): every screen at 3%. The driver Trips, Documents and Payouts references were
 // replaced with the approved 10-11 Nov screens (header profile button, period switcher and search,
 // one-source Documents), so no allowance is left.
+// 14 Nov (owner): rider-web-choose.png is the choose screen with a glyph per class and the selected
+// tick the owner asked for, taken from this build; the layout around them is the 8 Nov design.
 const ALLOW = {};
 // Redesigned on 10 Nov (design/driver-v2-2026-11-10): compared with those screenshots by
 // check-driver-v2.mjs, in the design's own state, not here.
 const V2 = new Set(['driver-web-dashboard', 'driver-web-earnings', 'driver-web-profile', 'driver-v2-setup']);
-const SIZES = new Set([14, 16, 20, 22, 28, 32, 40]);
-const PHONE_ONLY = new Set([22, 32]);
+// 14 Nov (owner): the scale is 14/16/20/28/40 everywhere; phones step display and heading down a
+// level (40 -> 28, 28 -> 20) instead of the 32 and 22 they used to use.
+const SIZES = new Set([14, 16, 20, 28, 40]);
+const PHONE_ONLY = new Set([]);
 const WIDTHS = [[360, 740], [390, 844], [768, 1024], [1024, 768], [1440, 900]];
 // English everywhere; the other languages at the phone and desktop extremes,
 // where longer strings break a layout first (no visual diff: the reference is English).
@@ -261,6 +268,50 @@ const measure = (page) => page.evaluate(({ sizes, phone }) => {
   };
 }, { sizes: [...SIZES], phone: [...PHONE_ONLY] });
 
+// 14 Nov (owner): on a phone everything tappable is at least 44x44. Measured by hit-testing, so
+// padding or a pseudo-element added for touch counts: from the centre of each target, the points
+// 21px left, right, up and down must still land on it. The footer's text links and links inside a
+// sentence (WCAG 2.5.8's inline exception) are exempt.
+const TAP_SELECTOR = 'a[href], button, [role="button"], [role="switch"], [role="tab"], [role="radio"], [role="menuitem"], input[type="checkbox"], input[type="radio"], select, summary';
+const taps = (page) => page.evaluate(async (sel) => {
+  const out = [];
+  const inline = (el) => {
+    if (el.tagName !== 'A') return false;
+    const p = el.parentElement;
+    if (!p || !/^(P|LI|SPAN|SMALL|LABEL)$/.test(p.tagName)) return false;
+    const own = [...p.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim();
+    return own.length > 0;
+  };
+  const els = [...document.querySelectorAll(sel)].filter((el) => {
+    const s = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    if (s.visibility === 'hidden' || s.display === 'none' || r.width === 0 || r.height === 0) return false;
+    if (el.disabled || el.closest('[aria-hidden="true"], .ar-map, .sg-legal-line, footer, [inert]')) return false;
+    return !inline(el);
+  });
+  for (const el of els) {
+    // A checkbox or radio inside a label: the whole label row is what is tapped.
+    const target = el.matches('input') && el.closest('label') ? el.closest('label') : el;
+    target.scrollIntoView({ block: 'center', inline: 'center' });
+    await new Promise((r) => requestAnimationFrame(r));
+    const r = target.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    let other = '';
+    const hits = [[cx - 21, cy], [cx + 21, cy], [cx, cy - 21], [cx, cy + 21]].map(([x, y]) => {
+      if (x < 0 || y < 0 || x > innerWidth || y > innerHeight) return true; // off screen: cannot judge
+      const at = document.elementFromPoint(x, y);
+      if (at && !(at === target || target.contains(at))) other ||= `${at.tagName.toLowerCase()}${at.className && typeof at.className === 'string' ? '.' + at.className.trim().split(/\s+/)[0] : ''}`;
+      // Landing on itself, inside itself, or on the label that wraps it.
+      return !!at && (at === target || target.contains(at) || (at.closest('label') && at.closest('label') === target.closest('label')));
+    });
+    if (hits.every(Boolean)) continue;
+    const name = (el.getAttribute('aria-label') || el.innerText || el.getAttribute('title') || el.tagName).trim().replace(/\s+/g, ' ').slice(0, 24);
+    out.push(`"${name}" ${Math.round(r.width)}x${Math.round(r.height)}${other ? ` (hits ${other})` : ''}`);
+  }
+  window.scrollTo(0, 0);
+  return [...new Set(out)].slice(0, 8);
+}, TAP_SELECTOR);
+
 function diff(shot, refFile, mask) {
   const a = PNG.sync.read(readFileSync(refFile));
   const b = PNG.sync.read(shot);
@@ -298,6 +349,7 @@ for (const [role, pages] of process.env.STATES_ONLY === '1' ? [] : [['rider', RI
       if (m.clipped.length) fail(`${at}: money clipped: ${m.clipped.join('; ')}`);
       if (m.narrow.length) fail(`${at}: a column narrower than 120 px: ${m.narrow.join('; ')}`);
       if (m.type.length) fail(`${at}: type off the scale: ${m.type.join('; ')}`);
+      if (w < 768) { const t = await taps(page); if (t.length) fail(`${at}: tap targets under 44x44: ${t.join('; ')}`); }
       if (role === 'driver' && (w < 768 ? !m.tabbar : (!m.badge || (w >= 1024 && !m.side)))) fail(`${at}: no driver sidebar and DRIVER badge (or, on a phone, the bottom bar)`);
       if (role === 'rider' && m.anyBadge) fail(`${at}: a rider page shows driver chrome`);
       if (w === 1440 && lang === 'en' && DATED.includes(p)) {

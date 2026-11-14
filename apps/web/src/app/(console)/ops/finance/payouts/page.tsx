@@ -320,7 +320,7 @@ function PayoutsInner() {
           <span>
             {bulk === 'approve'
               ? 'This raises ONE request for the whole batch. Nothing is released until a different finance admin approves it. A country with no approval policy is blocked.'
-              : 'Each amount goes back to its driver\'s balance. The reason is kept in the audit log.'}
+              : 'Each amount goes back to its driver\'s balance. The driver reads the reason in Payouts; it is also kept in the audit log.'}
           </span>
           {bulk === 'approve' && mixProblem ? <span className="ops-confirm__warn">{mixProblem}</span> : null}
           <ul className="ops-reclist">
@@ -328,7 +328,7 @@ function PayoutsInner() {
               <li key={r.id}><span className="sg-num">PO-{r.id}</span> {whoOf(r)} <b className="sg-num">{exact(r)}</b></li>
             ))}
           </ul>
-          <label className="sr-only" htmlFor="bulk-note">{bulk === 'reject' ? 'Reason for rejecting' : 'Note for the audit log'}</label>
+          <label className="sr-only" htmlFor="bulk-note">{bulk === 'reject' ? 'Reason for rejecting (the driver reads it)' : 'Note for the audit log'}</label>
           <textarea id="bulk-note" className="input" rows={2} value={bulkNote} onChange={(e) => setBulkNote(e.target.value)}
             placeholder={bulk === 'reject' ? 'Why are these being rejected? (required)' : 'Note for the audit log (optional)'} />
           {bulkError && <div className="alert-error" role="alert">{bulkError}</div>}
@@ -628,7 +628,7 @@ function PayoutRecord({ row, onClose, onChanged }: {
                     {acting === 'approve'
                       ? 'This raises a request. A different finance admin decides it; only then is the payout dispatched for real. A country with no approval policy is blocked.'
                       : acting === 'reject'
-                        ? 'The amount goes back to the driver\'s balance, once. The reason is kept in the audit log.'
+                        ? 'The amount goes back to the driver\'s balance, once. The driver reads the reason in Payouts; it is also kept in the audit log.'
                         : acting === 'retry'
                           ? RETRY_NOTE
                           : 'A note and a flag for the team. No money moves and the payout is not stopped.'}

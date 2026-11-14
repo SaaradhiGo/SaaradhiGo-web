@@ -29,3 +29,23 @@ export function shortPlace(address: string | null | undefined): string {
 export function placeLabel(label: string | null | undefined, address: string | null | undefined): string {
   return (label ?? '').trim() || shortPlace(address);
 }
+
+/**
+ * A place suggestion as two lines (14 Nov): the name ("Cyber Towers") and where it is, without
+ * state, PIN or country ("HITEC City, Hyderabad"); and the short text the field shows once chosen
+ * ("Cyber Towers, HITEC City").
+ */
+export function suggestionLines(p: { description: string; structured_formatting?: { main_text?: string; secondary_text?: string } }): {
+  name: string; area: string; short: string;
+} {
+  const main = p.structured_formatting?.main_text?.trim();
+  const rest = p.structured_formatting?.secondary_text?.trim();
+  const name = main || p.description.split(/[,]| - /)[0].trim();
+  let areaParts = (rest ?? p.description.split(',').slice(1).join(',')).split(',').map((x) => x.trim()).filter(Boolean);
+  while (areaParts.length > 1 && isRegion(areaParts[areaParts.length - 1])) areaParts.pop();
+  if (areaParts.length === 1 && isRegion(areaParts[0])) areaParts = [];
+  areaParts = areaParts.filter((x) => x.toLowerCase() !== name.toLowerCase());
+  const area = areaParts.slice(0, 2).join(', ');
+  const short = (areaParts[0] ? `${name}, ${areaParts[0]}` : name).slice(0, 80);
+  return { name, area, short };
+}

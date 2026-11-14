@@ -100,7 +100,8 @@ export function decide(pathname: string, search: string, session: Session | null
     if (!session) {
       // A guest keeps the marketing /ride; every other rider page asks them to sign in as a rider
       // and comes back (13 Nov: never the staff login, never the console).
-      if (p === '/ride') return { kind: 'next' };
+      // 14 Nov: a guest also sees the fares for their trip (app/(public)/ride/choose); sign-in is asked at Book.
+      if (p === '/ride' || p === '/ride/choose') return { kind: 'next' };
       return { kind: 'redirect', to: signIn(p === '/my-trips' ? '/trips' : p, p === '/my-trips' ? '' : search, false) };
     }
     if (session.role !== 'rider') {

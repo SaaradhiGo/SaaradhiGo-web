@@ -148,8 +148,8 @@ export function RiderReceipt({ id }: { id: string }) {
               <span className="a14 amut">{tr('Rate your trip')}</span>
               <span className="arow" style={{ gap: 4 }} role="radiogroup" aria-label={tr('Rate your trip')}>
                 {[1, 2, 3, 4, 5].map((n) => (
-                  <button key={n} type="button" role="radio" aria-checked={stars === n} aria-label={`${n}`}
-                    onClick={() => rate(n)} style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', color: 'var(--c-primary)' }}>
+                  <button key={n} type="button" role="radio" aria-checked={stars === n} aria-label={`${n}`} className="astar"
+                    onClick={() => rate(n)} style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--c-primary)' }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill={n <= stars ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} strokeLinejoin="round" aria-hidden="true"><path d={STAR} /></svg>
                   </button>
                 ))}

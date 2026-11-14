@@ -76,7 +76,7 @@ describe('driver header', () => {
     expect(screen.getByTestId('profile-button').textContent).not.toContain('Mekala');
   });
 
-  it('opens a menu: name and masked mobile, the four links, a divider, Sign out', async () => {
+  it('opens a menu: name and masked mobile, the account links (14 Nov: Documents and Support are in More), a divider, Sign out', async () => {
     const { DriverTop } = await import('./driver/parts');
     const { container } = wrap(<DriverTop title="Dashboard" me={{}} />);
     await waitFor(() => expect(screen.getByTestId('profile-button').textContent).toContain('Srinu'));
@@ -86,7 +86,7 @@ describe('driver header', () => {
     expect(menu.textContent).toContain('168');
     expect(menu.textContent).not.toContain('9876543');
     const items = Array.from(menu.querySelectorAll('[role="menuitem"]')).map((e) => e.textContent);
-    expect(items).toEqual(['Your profile', 'Documents', 'Support', 'Language', 'Sign out']);
+    expect(items).toEqual(['Your profile', 'Language', 'Sign out']);
     expect(menu.querySelector('hr')!.nextElementSibling!.textContent).toBe('Sign out');
   });
 
@@ -128,7 +128,8 @@ describe('rider header', () => {
     await waitFor(() => expect(screen.getByTestId('profile-button').textContent).toContain('Srinu'));
     fireEvent.click(screen.getByTestId('profile-button'));
     const items = Array.from(container.querySelectorAll('[role="menuitem"]')).map((e) => e.textContent);
-    expect(items).toEqual(['Your profile', 'Trips', 'Saved places', 'Safety', 'Language', 'Sign out']);
+    // 14 Nov: Help and the theme are in the menu for phones (hidden by CSS on wider screens).
+    expect(items).toEqual(['Your profile', 'Trips', 'Saved places', 'Safety', 'Language', 'Help', 'Dark theme', 'Sign out']);
     fireEvent.click(screen.getByTestId('menu-sign-out'));
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/sign-in?signed_out=1'));
   });

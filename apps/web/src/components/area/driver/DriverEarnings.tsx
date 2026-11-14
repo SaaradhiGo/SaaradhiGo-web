@@ -58,7 +58,8 @@ function Chart({ h, locale, label }: { h: History; locale: string; label: string
   const across = !empty && h.chart.unit !== 'hour' && bars.length <= 12;
   const m = (v: string | number | undefined) => money(v ?? 0, h.currency, locale) ?? '';
   return (
-    <div className={h.chart.unit === 'month' ? 'er-scrollx' : undefined} onMouseLeave={() => setTip(null)}>
+    <div className={h.chart.unit === 'month' ? 'er-scrollx' : 'er-chart'} onMouseLeave={() => setTip(null)}
+      style={{ '--n': bars.length } as React.CSSProperties}>
       <div className={`er-bars${empty ? ' er-bars--empty' : ''}${across ? ' er-bars--amts' : ''}`}
         role="list" aria-label={tr('Earnings by day')} data-empty={empty || undefined}>
         {/* A list may only hold list items (axe aria-required-children, 13 Nov): the empty line is one. */}
@@ -237,7 +238,7 @@ export function DriverEarnings() {
                 {(() => { const f = deduction(row.platform_fee, cur, locale); return <span className={f.red ? 'ared' : undefined}>{f.text}</span>; })()}
                 <span>{addition(row.tips, cur, locale)}</span>
                 <span className="ab agrn" data-earned={row.earned}>{m(row.earned)}</span>
-                <span className="arow" style={{ gap: 12 }}>
+                <span className="arow er-files" style={{ gap: 12 }}>
                   <button type="button" className="su-link a14" onClick={() => setViewing(row.month)}>{tr('View')}</button>
                   <button type="button" className="su-link a14" data-testid={`pdf-${row.month}`} onClick={() => void file(row.month, 'pdf')}>PDF</button>
                   <button type="button" className="su-link a14" data-testid={`csv-${row.month}`} onClick={() => void file(row.month, 'csv')}>CSV</button>
@@ -259,7 +260,7 @@ export function DriverEarnings() {
                     <div className="arow a14"><span className="amut">{tr('Platform fee')}</span><span className={`amoney${f.red ? ' ared' : ''}`}>{f.text}</span></div>
                     <div className="arow a14"><span className="amut">{tr('Tips')}</span><span className="amoney">{addition(row.tips, cur, locale)}</span></div>
                     <div className="arow"><span className="ab">{tr('You earned')}</span><span className="ab agrn amoney">{m(row.earned)}</span></div>
-                    <div className="arow" style={{ justifyContent: 'flex-start', gap: 16 }}>
+                    <div className="arow er-files" style={{ justifyContent: 'flex-start', gap: 16 }}>
                       <button type="button" className="su-link a14" onClick={() => setViewing(row.month)}>{tr('View')}</button>
                       <button type="button" className="su-link a14" onClick={() => void file(row.month, 'pdf')}>PDF</button>
                       <button type="button" className="su-link a14" onClick={() => void file(row.month, 'csv')}>CSV</button>

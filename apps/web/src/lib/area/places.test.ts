@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { placeLabel, shortPlace } from './places';
+import { placeLabel, shortPlace, suggestionLines } from './places';
 
 describe('short place labels (13 Nov), the same rule as the server', () => {
   it.each([
@@ -13,5 +13,18 @@ describe('short place labels (13 Nov), the same rule as the server', () => {
   it('prefers the label the server stored', () => {
     expect(placeLabel('Charminar, Ghansi Bazaar', 'anything')).toBe('Charminar, Ghansi Bazaar');
     expect(placeLabel('', 'Kothaguda Junction, Kondapur, Hyderabad')).toBe('Kothaguda Junction, Kondapur');
+  });
+});
+
+describe('place suggestions as two lines (14 Nov)', () => {
+  it('name, then the area without state or country; the field keeps the short text', () => {
+    const p = { description: 'Cyber Towers - HITEC City, Hyderabad, Telangana, India', place_id: 'x',
+      structured_formatting: { main_text: 'Cyber Towers', secondary_text: 'HITEC City, Hyderabad, Telangana, India' } };
+    expect(suggestionLines(p)).toEqual({ name: 'Cyber Towers', area: 'HITEC City, Hyderabad', short: 'Cyber Towers, HITEC City' });
+  });
+  it('works from the description alone', () => {
+    expect(suggestionLines({ description: 'Charminar, Ghansi Bazaar, Hyderabad, Telangana 500002, India' }))
+      .toEqual({ name: 'Charminar', area: 'Ghansi Bazaar, Hyderabad', short: 'Charminar, Ghansi Bazaar' });
+    expect(suggestionLines({ description: 'Hyderabad' })).toEqual({ name: 'Hyderabad', area: '', short: 'Hyderabad' });
   });
 });

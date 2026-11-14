@@ -341,12 +341,20 @@ export async function streetAddress(p: { lat: number; lng: number }): Promise<st
  * The trip being planned, kept in this tab rather than the URL (11 Nov): coordinates in a URL
  * end up in logs and analytics. The URL carries only a random id.
  */
-export type RideDraft = { from: { lat: number; lng: number; label: string }; to: { lat: number; lng: number; label: string } };
+/** `label` is the full address the trip is booked with; `short` is what the screens show (14 Nov). */
+export type DraftPlace = { lat: number; lng: number; label: string; short?: string };
+/** `pick` and `pay` keep the rider's choice across sign-in (14 Nov: a guest signs in only at Book). */
+export type RideDraft = { from: DraftPlace; to: DraftPlace; pick?: string | null; pay?: PayMethod | null };
 const DRAFT_KEY = 'sg-ride-draft:';
 export function saveDraft(d: RideDraft): string {
   const id = Math.random().toString(36).slice(2, 10);
   try { sessionStorage.setItem(DRAFT_KEY + id, JSON.stringify(d)); } catch { /* the page still has it */ }
   return id;
+}
+export function updateDraft(id: string, patch: Partial<RideDraft>) {
+  const d = readDraft(id);
+  if (!d) return;
+  try { sessionStorage.setItem(DRAFT_KEY + id, JSON.stringify({ ...d, ...patch })); } catch { /* best effort */ }
 }
 export function readDraft(id: string | null): RideDraft | null {
   if (!id) return null;

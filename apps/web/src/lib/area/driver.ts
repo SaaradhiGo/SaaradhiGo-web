@@ -48,6 +48,8 @@ export type Withdrawal = {
   /** Withdraw now (10 Nov): `instant`, with the provider fee it cost (minor units). */
   origin?: string | null;
   fee_minor?: number | null;
+  /** 14 Nov: a rejected or failed payout's one-line reason, and whether the money is back. */
+  outcome?: { reason: string | null; money: 'returned' | 'held' } | null;
 };
 
 /** One settled trip from the ledger (GET /driver/earnings/). */

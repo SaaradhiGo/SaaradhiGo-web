@@ -67,7 +67,9 @@ describe('role routing', () => {
   it('a guest is asked to sign in for the areas, but keeps /ride', async () => {
     expect((await visit('/driver/earnings')).redirect).toBe('/driver/sign-in');
     expect((await visit('/account')).redirect).toBe('/sign-in');
-    expect((await visit('/ride/choose')).redirect).toBe('/sign-in');
+    // 14 Nov: a guest sees the fares; sign-in is asked at Book.
+    expect((await visit('/ride/choose')).redirect).toBeNull();
+    expect((await visit('/ride/choose')).rewrite).toBeNull();
     expect((await visit('/ride')).redirect).toBeNull();
     expect((await visit('/trips')).redirect).toBe('/sign-in');
     expect((await visit('/driver/sign-in')).redirect).toBeNull();
@@ -105,7 +107,7 @@ describe('role routing', () => {
     });
   });
 
-  it.each(['/ride/choose', '/ride/trip/1', '/account', '/driver', '/driver/profile'])('a guest on %s is asked to sign in', async (p) => {
+  it.each(['/ride/trip/1', '/account', '/driver', '/driver/profile'])('a guest on %s is asked to sign in', async (p) => {
     const r = await visit(p);
     expect(r.redirect).toBe(p.startsWith('/driver') ? '/driver/sign-in' : '/sign-in');
     expect(r.next).toBe(p);

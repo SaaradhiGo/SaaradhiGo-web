@@ -121,6 +121,34 @@
   line-height: var(--leading-title); letter-spacing: 0.05em; color: var(--c-gold);
 }
 
+/* The choose screen (14 Nov): one-line route, choice rows with a selected border and tick, and
+   Book kept in reach at the bottom of a phone. */
+.achoose__route { overflow-wrap: anywhere; }
+.achoice {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 12px 14px; border-radius: 14px;
+  border: 1px solid var(--c-border); background: var(--c-surface); font: inherit; color: inherit; text-align: left; cursor: pointer;
+}
+.achoice[data-on="true"] { border: 2px solid var(--c-text); padding: 11px 13px; }
+.achoice:disabled { cursor: default; opacity: 0.6; }
+.achoice__glyph { width: 48px; height: 48px; color: var(--c-text); }
+.achoice__glyph svg { width: 36px; height: 24px; }
+/* The tick is a badge on the selected row's corner, so nothing else moves. */
+.achoice { position: relative; }
+.achoice__tick {
+  position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; border-radius: 11px; display: flex;
+  align-items: center; justify-content: center; background: var(--c-text); color: var(--c-page); pointer-events: none;
+}
+.achoice--pay { min-height: 52px; }
+.achoose__go { margin-top: auto; }
+
+/* A place suggestion (14 Nov): two lines, the name then where it is; never a 3-line address. */
+.asuggest {
+  display: flex; flex-direction: column; gap: 2px; width: 100%; min-height: 48px; padding: 10px 14px; border: 0;
+  background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer;
+}
+.asuggest:hover { background: var(--c-muted); }
+.asuggest__line { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ---- Rider area: white top bar, content below. */
 .ar-top {
   height: 72px; background: var(--c-surface); border-bottom: 1px solid var(--c-border);
@@ -287,7 +315,14 @@
   .ar-split { flex-direction: column-reverse; height: auto; }
   .ar-panel { width: 100%; border-right: 0; padding: 20px 16px; }
   .ar-map { min-height: 320px; }
+  .ar-split--choose .ar-map { min-height: 180px; height: 180px; flex: none; }
+  /* The panel must not be its own scroller on a phone, or Book would stick inside it. */
+  .ar-split--choose .ar-panel { overflow: visible; }
   .ar-page { padding: 20px 16px; }
+  .achoose__go {
+    position: sticky; bottom: 0; z-index: 5; margin: 0 -16px -20px; background: var(--c-surface);
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--c-border);
+  }
 }
 @media (max-width: 767px) {
   .ar-top { gap: 8px; padding: 0 12px; }
@@ -522,7 +557,7 @@ button.er-bar { cursor: pointer; }
   .ar .dr-tab--on { color: var(--c-gold-2); background: var(--c-side-active); }
   .dr-tab__dots { font-size: var(--text-body); line-height: 22px; letter-spacing: 1px; }
   .dr-more { flex: 1 1 0; min-width: 0; display: flex; position: relative; }
-  .dr-more > summary { width: 100%; }
+  .dr-more > button { width: 100%; border: 0; background: transparent; font-family: inherit; }
   .dr-more__menu {
     position: absolute; right: 0; bottom: calc(100% + 8px); min-width: 200px; background: var(--c-surface);
     border: 1px solid var(--c-border); border-radius: 14px; padding: 6px; display: flex; flex-direction: column;
@@ -564,7 +599,7 @@ button.er-bar { cursor: pointer; }
 /* Trips: a row opens its trip. */
 .atable tr.tr-open { cursor: pointer; }
 .atable tr.tr-open:hover td { background: var(--c-muted); }
-.tr-open__btn { all: unset; cursor: pointer; font-weight: 600; }
+.tr-open__btn { all: unset; position: relative; cursor: pointer; font-weight: 600; }
 .tr-open__btn:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; border-radius: 4px; }
 .td-lines { display: grid; gap: 8px; }
 .td-line { display: flex; justify-content: space-between; gap: 12px; }
@@ -630,3 +665,45 @@ button.er-bar { cursor: pointer; }
 
 /* 13 Nov: seven amounts do not fit over seven bars on a phone; the cards above give the totals. */
 @media (max-width: 767px) { .dr-chart__amt { display: none; } }
+
+/* Phone-only menu items (14 Nov): Help and the theme, which the phone header has no room for. */
+@media (min-width: 768px) { .apm-phone { display: none !important; } }
+/* Period switcher on a phone (14 Nov): one row, Day · Week · Month · Year · the calendar, 44px tall. */
+@media (max-width: 767px) {
+  .er-tabs { flex-wrap: nowrap; width: 100%; }
+  .er-tabs .achip { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 0 6px; justify-content: center; }
+  .er-tabs .achip[data-period="custom"] { flex: 0 0 48px; }
+  .er-tab__word { display: inline; }
+  .er-tabs [data-period="custom"] .er-tab__word { display: none; }
+}
+
+/* Tap targets (14 Nov): at least 44x44 on every tappable item, by widening the hit area, not the
+   look. ::before because ::after is the switch's knob. */
+.ahit, .aswitch { position: relative; }
+.ahit::before, .aswitch::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+.aemail { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+/* 14 Nov: on a phone every tappable thing in the areas has a 44x44 hit area. Zero specificity, so
+   any element that already sets its position keeps it; the pseudo-element widens what a finger hits
+   without changing what is drawn. */
+@media (max-width: 767px) {
+  :where(.ar) :where(a[href], button, summary, [role="switch"], [role="tab"], [role="radio"], [role="menuitem"]) { position: relative; }
+  :where(.ar) :where(a[href], button, summary, [role="switch"], [role="tab"], [role="radio"], [role="menuitem"])::before {
+    content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+  .ar select.achip, .ar .ainput select { min-height: 44px; }
+  /* The earnings chart: a column per day at least 44px wide, scrolling inside its card. */
+  .er-chart { overflow-x: auto; }
+  .er-chart > * { min-width: calc(44px * var(--n, 7) + 6px * (var(--n, 7) - 1)); }
+}
+/* Stars and the rider header on a phone (14 Nov): real 44px targets, side by side. */
+.astar { padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+@media (max-width: 767px) {
+  .astar { width: 44px; height: 44px; margin: -12px -2px; }
+  .ar-nav a { min-width: 46px; min-height: 44px; justify-content: center; }
+  .er-files .su-link { min-width: 44px; min-height: 44px; }
+  .ar-top > a:first-child { min-width: 44px; min-height: 44px; }
+}
