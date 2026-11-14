@@ -157,11 +157,13 @@ export async function bffFetch(
   { body, type, signal }: { body?: BodyInit; type?: string; signal?: AbortSignal } = {},
 ): Promise<Response> {
   await adoptLegacySession(who);
-  // The backend path rides as-is after `?to=` (the server reads the raw query, never decodes it).
+  // The path goes exactly in `x-sg-path`, which the server reads; the `?to=` copy is for logs only
+  // (Next re-encodes a route's query string, so the server never reads it).
   const resp = await fetch(`/api/${who}?to=${path}`, {
     method,
     headers: {
       'x-sg-bff': '1',
+      'x-sg-path': path,
       // Maps cost (9 Nov): the backend counts each Google call against the surface that asked.
       'x-sg-surface': 'rider_web',
       ...(type ? { 'Content-Type': type } : {}),
