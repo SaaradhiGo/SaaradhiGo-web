@@ -44,8 +44,11 @@ export function suggestionLines(p: { description: string; structured_formatting?
 } {
   const main = p.structured_formatting?.main_text?.trim();
   const rest = p.structured_formatting?.secondary_text?.trim();
-  const name = main || p.description.split(/[,]| - /)[0].trim();
-  let areaParts = (rest ?? p.description.split(',').slice(1).join(',')).split(',').map((x) => x.trim()).filter(Boolean);
+  // Google's name can carry its area after " - " ("Cyber Towers - HITEC City"): that part is area.
+  const [name, ...inName] = (main || p.description.split(',')[0]).split(' - ').map((x) => x.trim()).filter(Boolean);
+  let areaParts = [...inName, ...(rest ?? p.description.split(',').slice(1).join(',')).split(',')]
+    .map((x) => x.trim()).filter(Boolean);
+  areaParts = areaParts.filter((x, i) => areaParts.findIndex((y) => y.toLowerCase() === x.toLowerCase()) === i);
   while (areaParts.length > 1 && isRegion(areaParts[areaParts.length - 1])) areaParts.pop();
   if (areaParts.length === 1 && isRegion(areaParts[0])) areaParts = [];
   areaParts = areaParts.filter((x) => x.toLowerCase() !== name.toLowerCase());
