@@ -16,9 +16,13 @@ function isRegion(part: string) {
     || /^([a-z .]+ )?\d{5,6}(-\d{4})?$/.test(p) || /^[a-z]{2} \d{5}(-\d{4})?$/.test(p);
 }
 
+/** A leading house, plot or door number is not a place name (14 Nov: "10, HITEC City"). */
+const NUMBER = /^((plot|flat|door|h|house)\s*(no\.?|number)?\s*|no\.?\s*|#\s*)?\d[\d\-/]*[a-z]?$/i;
+
 export function shortPlace(address: string | null | undefined): string {
   const parts = (address ?? '').split(',').map((p) => p.trim()).filter(Boolean);
   if (!parts.length) return '';
+  while (parts.length > 1 && NUMBER.test(parts[0])) parts.shift();
   while (parts.length > 1 && isRegion(parts[parts.length - 1])) parts.pop();
   const name = parts[0];
   const area = parts.length >= 3 ? parts[parts.length - 2] : parts.length === 2 ? parts[1] : '';

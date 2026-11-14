@@ -8,6 +8,9 @@ describe('short place labels (13 Nov), the same rule as the server', () => {
     ['Kothaguda Junction, Kondapur, Hyderabad', 'Kothaguda Junction, Kondapur'],
     ['1600 Broadway, New York, NY 10019, USA', '1600 Broadway, New York'],
     ['', ''],
+    // 14 Nov: a house number is not the place name.
+    ['10, Hitech City Rd, HITEC City, Hyderabad, Telangana 500081, India', 'Hitech City Rd, HITEC City'],
+    ['7-1-28, Ameerpet, Hyderabad, Telangana 500016, India', 'Ameerpet, Hyderabad'],
   ])('%s', (address, label) => expect(shortPlace(address)).toBe(label));
 
   it('prefers the label the server stored', () => {
