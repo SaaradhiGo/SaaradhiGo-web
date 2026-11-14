@@ -46,6 +46,8 @@ export function DriverPayouts() {
 
   const words = { today: tr('Today'), yesterday: tr('Yesterday') };
   const tz = today?.timezone ?? null;
+  // Idaho bans cash (49-3712): no cash wording where the market says so.
+  const cashOk = today?.cash_allowed !== false;
 
   return (
     <>
@@ -59,7 +61,7 @@ export function DriverPayouts() {
             ) : <Skel h={40} w={140} />}
             {today && (
               <div className="a14">
-                {tr('You earned {earned} today and collected {cash} in cash.')
+                {(cashOk ? tr('You earned {earned} today and collected {cash} in cash.') : tr('You earned {earned} today.'))
                   .replace('{earned}', money(today.net, today.currency, locale) ?? '—')
                   .replace('{cash}', money(today.cash_collected, today.currency, locale) ?? '—')}
               </div>
@@ -128,9 +130,11 @@ export function DriverPayouts() {
               })}
             </div>
             <Pager page={page} count={count} size={PAGE_SIZE} noun={tr(count === 1 ? '{n} payout' : '{n} payouts').replace('{n}', String(count))} onPage={setPage} />
-            <p className="a14 amut" style={{ marginTop: 12 }}>
-              {tr('If you collected more cash than you earned, the commission you owe is taken from your next payout. It is never charged twice.')}
-            </p>
+            {cashOk && (
+              <p className="a14 amut" style={{ marginTop: 12 }}>
+                {tr('If you collected more cash than you earned, the commission you owe is taken from your next payout. It is never charged twice.')}
+              </p>
+            )}
           </section>
         </div>
         <PayoutMethodCard />
