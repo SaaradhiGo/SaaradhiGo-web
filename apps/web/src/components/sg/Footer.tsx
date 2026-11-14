@@ -30,6 +30,9 @@ const COLUMNS: { title: string; items: Item[] }[] = [
     { label: 'About', href: P.about }, { label: 'Rider terms', href: P.riderTerms },
     { label: 'Driver terms', href: P.driverTerms }, { label: 'Privacy policy', href: P.privacy },
     { label: 'Grievance redressal', href: P.grievance, only: 'IN' },
+    // 14 Nov (USA): Idaho's policy pages (Idaho Code 49-3709, 49-3713).
+    { label: 'Zero tolerance', href: P.zeroTolerance, only: 'US' },
+    { label: 'Accessibility', href: P.accessibility, only: 'US' },
   ] },
 ];
 

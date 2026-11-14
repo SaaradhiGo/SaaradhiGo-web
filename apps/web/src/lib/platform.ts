@@ -22,11 +22,13 @@ export const canReadIntegrations = (a: AdminAccess | null) => can(a, 'platform.i
 export const canReadAudit = (a: AdminAccess | null) => can(a, 'audit.read');
 export const canCheck = (a: AdminAccess | null) => can(a, 'approval.check');
 
-export type PlatformTab = 'markets' | 'driverRequirements' | 'flags' | 'versions' | 'notices' | 'settings' | 'integrations' | 'audit' | 'staff' | 'dataRequests';
+export type PlatformTab = 'markets' | 'marketRules' | 'driverRequirements' | 'flags' | 'versions' | 'notices' | 'settings' | 'integrations' | 'audit' | 'staff' | 'dataRequests';
 
 export const TABS: { key: PlatformTab; href: string; label: string; open: (a: AdminAccess | null) => boolean }[] = [
   { key: 'markets', href: '/ops/settings', label: 'Markets', open: canReadPlatform },
   { key: 'driverRequirements', href: '/ops/settings/driver-requirements', label: 'Driver requirements', open: canReadPlatform },
+  // 14 Nov (USA): per-state operating rules (cash, tips, insurance, the Idaho agent, retention).
+  { key: 'marketRules', href: '/ops/settings/market-rules', label: 'Market rules', open: canReadPlatform },
   { key: 'flags', href: '/ops/settings/flags', label: 'Feature flags', open: canReadPlatform },
   { key: 'versions', href: '/ops/settings/app-versions', label: 'App versions', open: canReadPlatform },
   { key: 'notices', href: '/ops/settings/notices', label: 'Notices', open: canReadPlatform },

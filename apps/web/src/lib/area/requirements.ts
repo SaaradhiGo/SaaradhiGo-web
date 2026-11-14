@@ -48,7 +48,8 @@ export type PayoutMethod = {
 };
 export type Requirements = {
   config: { country: string; state: string; items: Record<string, { need: Need; blocks_online: boolean }>;
-    min_driver_age: number | null; max_vehicle_age_years: number | null; languages: string[] };
+    min_driver_age: number | null; max_vehicle_age_years: number | null; languages: string[];
+    min_vehicle_year?: number | null; vehicle_min_doors?: number | null };
   checklist: Checklist; personal: Personal; identity: Identity; payout_method: PayoutMethod;
   states: { code: string; name: string }[]; relationships: { code: string; label: string }[];
   vehicle_types: string[]; vehicle_years: number[]; upload_kinds: Record<string, string>;

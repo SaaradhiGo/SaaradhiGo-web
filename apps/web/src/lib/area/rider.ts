@@ -63,6 +63,10 @@ export type Trip = {
   cancellation_message?: string | null;
   search_expires_at?: string | null;
   vehicle_line?: string | null;
+  /** 14 Nov (USA): a card held at booking (captured at the end: never "pay again"). */
+  card_held?: { status: string } | null;
+  market_rules?: { cash_allowed: boolean; tips_enabled: boolean; tip_presets: number[]; zero_tolerance: boolean } | null;
+  tip?: { amount: string; currency: string } | null;
   invoice?: { number: string; issued_at?: string | null; rider_name: string; tax_label?: string; tax_amount?: string;
     total?: string; currency?: string; company: { name: string; address?: string; gstin?: string; cin?: string };
     /** 13 Nov: 'Receipt' while the market's entity is not GST-registered, else 'Tax invoice'. */
@@ -384,3 +388,13 @@ export async function verifyStripePayment(orderId: string) {
 export async function payByCash(tripId: string | number) {
   return areaPost('/payments/switch/', { trip_id: Number(tripId), new_method: 'cash' });
 }
+
+/** A card held at booking for the locked fare (14 Nov, USA; servers/payments/card_hold.py). */
+export type CardHold = { hold_id: number; client_secret: string | null; publishable_key: string; amount: string;
+  currency: string; status: string; test_mode: boolean };
+export const holdCard = (quoteId: string) => areaPost<CardHold>('/payments/card/hold/', { quote_id: quoteId });
+export const holdStatus = (id: number) => areaGet<{ hold_id: number; status: string }>(`/payments/card/hold/${id}/`);
+export const tipTrip = (id: string, body: { percent: number } | { amount: string }) =>
+  areaPost<{ tip_id: number; amount: string; currency: string }>(`/ride/trips/${id}/tip/`, body);
+export const reportImpairment = (id: string, description: string) =>
+  areaPost<{ ticket_id: number; driver_paused: boolean; message: string }>(`/ride/trips/${id}/report-impairment/`, { description });
