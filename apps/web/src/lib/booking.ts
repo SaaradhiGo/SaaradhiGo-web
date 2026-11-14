@@ -34,6 +34,8 @@ export type Zone = {
   currency: string;
   distance_unit: 'km' | 'mi';
   timezone?: string;
+  /** 14 Nov: what a visitor may pay with at this pickup (Idaho: card only); absent on old servers. */
+  payment_methods?: string[];
 };
 
 /** `min_fare` is optional: the public endpoint may not carry a price yet. */

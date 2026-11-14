@@ -64,6 +64,8 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
   const [country, setCountry] = useState('IN');
   const [picked, setPicked] = useState<string | null>(null);
   const [pay, setPay] = useState<PayMethod | null>(null);
+  /** A visitor's methods: the pickup's own (14 Nov), not cash everywhere. */
+  const [visitorPay, setVisitorPay] = useState<PayMethod[] | null>(null);
   const [askPhone, setAskPhone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,8 +115,10 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
         setOptions(quotes);
         setLaunch(quotes.map((x) => x.quote?.launching?.message).find(Boolean) ?? null);
         setExtra(opts);
-        const methods = opts?.payment?.methods ?? ['cash'];
-        setPay((p) => p ?? (draft?.pay && methods.includes(draft.pay) ? draft.pay : opts?.payment?.default ?? 'cash'));
+        const fromZone = (area.zone?.payment_methods ?? null) as PayMethod[] | null;
+        if (guest) setVisitorPay(fromZone);
+        const methods = opts?.payment?.methods ?? (guest && fromZone?.length ? fromZone : ['cash']);
+        setPay((p) => p ?? (draft?.pay && methods.includes(draft.pay) ? draft.pay : opts?.payment?.default ?? methods[0] ?? 'cash'));
         const bookable = (o: Option) => o.quote && o.quote.drivers_nearby !== false;
         // The class chosen before signing in comes back chosen.
         const kept = quotes.find((o) => o.type === draft?.pick && bookable(o))?.type;
@@ -266,7 +270,7 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
   }
 
   if (!draft) return null;
-  const methods = extra?.payment?.methods ?? ['cash'];
+  const methods = extra?.payment?.methods ?? (guest && visitorPay?.length ? visitorPay : ['cash']);
   const fromShort = draft.from.short || shortPlace(draft.from.label);
   const toShort = draft.to.short || shortPlace(draft.to.label);
   return (
