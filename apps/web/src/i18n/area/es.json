@@ -23,7 +23,7 @@
   "We could not save that place.": "No pudimos guardar ese lugar.",
   "Choose a ride": "Elige un viaje",
   "Back": "Atrás",
-  "Rides are not available at this pickup yet.": "Todavía no hay viajes en este punto de recogida.",
+  "We're not in this area yet.": "Todavía no estamos en esta zona.",
   "We could not load fares. Try again.": "No pudimos cargar las tarifas. Inténtalo de nuevo.",
   "The server refused the request.": "El servidor rechazó la solicitud.",
   "We could not reach the dispatch service. Please try again.": "No pudimos conectar con el servicio de asignación. Inténtalo de nuevo.",

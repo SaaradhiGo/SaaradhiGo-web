@@ -56,6 +56,7 @@ function PlaceField({ field, label, value, query, onQuery, onPick, onFocus, erro
   error: string | null; near: LatLng | null; inputRef: React.RefObject<HTMLInputElement | null>; dot: React.ReactNode;
 }) {
   const tr = useTr();
+  const { market } = useLegal();
   const id = useId();
   const [found, setFound] = useState<Place[]>([]);
   const [note, setNote] = useState<string | null>(null);
@@ -66,9 +67,10 @@ function PlaceField({ field, label, value, query, onQuery, onPick, onFocus, erro
     const q = query.trim();
     if (q.length < 3 || (value && shown(value) === query)) { setFound([]); return; }
     timer.current = window.setTimeout(() => {
-      searchPlaces(q, near, field).then(setFound).catch(() => setFound([]));
+      // 14 Nov: every country we operate in, ranked from `near`, else the header's market.
+      searchPlaces(q, near, field, null, market).then(setFound).catch(() => setFound([]));
     }, 300); // 300 ms after the last keystroke (maps cost, 9 Nov)
-  }, [query, near, value, field]);
+  }, [query, near, value, field, market]);
 
   async function pick(p: Place) {
     const point = await placeToPoint(p.place_id, field).catch(() => null);
