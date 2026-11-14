@@ -11,6 +11,7 @@ import {
   type Profile, exportData, maskPhone, profile as loadProfile, updateName,
 } from '@/lib/area/rider';
 import { useLoad } from '@/lib/area/useLoad';
+import { areaGet, areaPatch } from '@/lib/area/api';
 import { ICard, IChevron, IUser } from '../icons';
 import { LoadError, Skel } from '../states';
 import { SafetyCard, SavedPlacesCard } from './AccountCards';
@@ -169,14 +170,25 @@ export function RiderAccount() {
           <h2 className="a20">{tr('Payment')}</h2>
           <div className="arow" style={{ marginTop: 12, padding: 14, borderRadius: 12, background: 'var(--c-muted)' }}>
             <span className="aico" style={{ background: 'var(--c-surface)' }}><ICard /></span>
-            <div className="agrow">
-              <div className="ab">{tr('Cash')}</div>
-              <div className="a14 amut">{tr('Pay your driver the locked fare at the end.')}</div>
-            </div>
+            {me?.market_country === 'US' ? (
+              <div className="agrow" data-testid="us-payment">
+                <div className="ab">{tr('Card, Apple Pay or Google Pay')}</div>
+                <div className="a14 amut">{tr('Held for the locked fare when you book, charged when the trip ends.')}</div>
+              </div>
+            ) : (
+              <div className="agrow">
+                <div className="ab">{tr('Cash')}</div>
+                <div className="a14 amut">{tr('Pay your driver the locked fare at the end.')}</div>
+              </div>
+            )}
             <span className="apill apill--ok">{tr('Default')}</span>
           </div>
-          <p className="a14 amut" style={{ marginTop: 12 }}>{tr('Other ways to pay will appear here when they are available in your city.')}</p>
+          <p className="a14 amut" style={{ marginTop: 12 }}>{me?.market_country === 'US'
+            ? tr('Cash is not accepted in the USA. You choose your card when you book.')
+            : tr('Other ways to pay will appear here when they are available in your city.')}</p>
         </section>
+
+        {me?.market_country === 'US' && <AccessibilityCard />}
 
         {AREA_FLAGS.trustedContacts && <SafetyCard />}
 
@@ -216,5 +228,32 @@ export function RiderAccount() {
         </section>
       </div>
     </div>
+  );
+}
+
+/** 14 Nov (USA; Idaho 49-3713): what your driver should know, e.g. "I use a folding wheelchair". */
+function AccessibilityCard() {
+  const tr = useTr();
+  const [note, setNote] = useState('');
+  const [saved, setSaved] = useState<string | null>(null);
+  useEffect(() => {
+    areaGet<{ note: string }>('/rider/accessibility/').then((r) => { setNote(r.note); setSaved(r.note); }).catch(() => {});
+  }, []);
+  async function save() {
+    const r = await areaPatch<{ note: string }>('/rider/accessibility/', { note });
+    setNote(r.note);
+    setSaved(r.note);
+  }
+  return (
+    <section className="acard acol" style={{ padding: 20, gap: 10 }} data-testid="accessibility-note">
+      <h2 className="a20">{tr('Accessibility needs')}</h2>
+      <p className="a14 amut">{tr('Your driver sees this when they accept your trip. Service animals are always welcome.')}</p>
+      <label className="acol a14" style={{ gap: 4 }}>
+        <span className="ab">{tr('Note for your driver')}</span>
+        <span className="ainput"><input value={note} maxLength={200} placeholder={tr('For example: I use a folding wheelchair')}
+          onChange={(e) => setNote(e.target.value)} aria-label={tr('Note for your driver')} /></span>
+      </label>
+      <button type="button" className="abtn abtn--ghost" onClick={save} disabled={note === (saved ?? '')}>{tr('Save')}</button>
+    </section>
   );
 }

@@ -19,6 +19,7 @@ import {
   rateTrip, saveDraft, trip as loadTrip, tripDriver, tripEta, tripShare,
 } from '@/lib/area/rider';
 import { PayOnline } from './PayOnline';
+import { ReportImpairment, TipCard } from './UsTrip';
 import { NotYourTrip, Skel, isNotFound } from '../states';
 import { ILock, IPhone, IShare, IShield, IUser } from '../icons';
 
@@ -339,12 +340,21 @@ export function RideTrip({ id }: { id: string }) {
         )}
         {note && <p className="a14 amut" role="status">{note}</p>}
 
-        {state === 'completed' && t && fare && !paid && ['upi', 'card'].includes(t.payment_method ?? '') && t.payment_status !== 'completed' ? (
-          <PayOnline tripId={id} fare={fare} method={t.payment_method ?? 'upi'} onPaid={(how) => { setPaid(how); refresh(); }} />
+        {/* 14 Nov (USA): a card held at booking is charged by us at the end: never "pay again". */}
+        {state === 'completed' && t && fare && !paid && !t.card_held && ['upi', 'card'].includes(t.payment_method ?? '') && t.payment_status !== 'completed' ? (
+          <PayOnline tripId={id} fare={fare} method={t.payment_method ?? 'upi'} cashAllowed={t.market_rules?.cash_allowed !== false}
+            onPaid={(how) => { setPaid(how); refresh(); }} />
         ) : state === 'completed' ? (
-          <TripSummary id={id} fare={fare} cash={paid === 'cash' || t?.payment_method === 'cash'}
-            driver={t?.driver_name ?? null} onDone={() => router.push('/ride')} />
+          <>
+            {t?.market_rules?.tips_enabled && t.driver_name && (
+              <TipCard tripId={id} fare={Number(t.rider_payable ?? t.final_fare ?? t.estimated_fare ?? 0)}
+                currency={t.currency ?? 'USD'} presets={t.market_rules.tip_presets} given={t.tip?.amount ?? null} />
+            )}
+            <TripSummary id={id} fare={fare} cash={paid === 'cash' || t?.payment_method === 'cash'}
+              driver={t?.driver_name ?? null} onDone={() => router.push('/ride')} />
+          </>
         ) : null}
+        {t?.market_rules?.zero_tolerance && t.driver_name && state !== 'cancelled' && <ReportImpairment tripId={id} />}
         {noDriver ? (
           <div className="arow" style={{ gap: 8 }}>
             <button type="button" className="abtn abtn--ghost" onClick={() => router.push('/ride')}>{tr('Back')}</button>

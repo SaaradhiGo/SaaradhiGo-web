@@ -45,7 +45,8 @@ function loadStripe(): Promise<boolean> {
  * through Razorpay Checkout (India), or by card through Stripe (the USA, 13 Nov). A failure offers
  * Try again and, as the fallback, paying the driver in cash.
  */
-export function PayOnline({ tripId, fare, method, onPaid }: { tripId: string; fare: string; method: string; onPaid: (how: 'online' | 'cash') => void }) {
+export function PayOnline({ tripId, fare, method, onPaid, cashAllowed = true }: { tripId: string; fare: string; method: string; onPaid: (how: 'online' | 'cash') => void;
+  /** 14 Nov: no cash fallback where the market forbids cash (Idaho 49-3712). */ cashAllowed?: boolean }) {
   const tr = useTr();
   const [state, setState] = useState<'idle' | 'busy' | 'failed'>('idle');
   const [note, setNote] = useState<string | null>(null);
@@ -117,7 +118,7 @@ export function PayOnline({ tripId, fare, method, onPaid }: { tripId: string; fa
         <button type="button" className="abtn abtn--pri agrow" onClick={stripe ? confirmStripe : pay} disabled={state === 'busy'}>
           {state === 'failed' ? tr('Try again') : state === 'busy' ? tr('Please wait…') : tr('Pay {fare}').replace('{fare}', fare)}
         </button>
-        {state === 'failed' && <button type="button" className="abtn abtn--ghost" onClick={cash}>{tr('Pay cash instead')}</button>}
+        {state === 'failed' && cashAllowed && <button type="button" className="abtn abtn--ghost" onClick={cash}>{tr('Pay cash instead')}</button>}
       </div>
     </div>
   );

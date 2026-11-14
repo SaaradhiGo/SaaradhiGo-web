@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { SearchIcon } from '@/components/sg/SiteIcons';
 import { SITE, useSite } from '@/i18n/site';
+import { useLegal } from '@/components/sg/LegalProvider';
+import { POLICY_PAGES } from '@/lib/legal';
 
 /**
  * /help (approved design, 2026-11-07; Help.html): a search that filters the
@@ -13,6 +15,7 @@ import { SITE, useSite } from '@/i18n/site';
 export function HelpContent({ topic }: { topic?: 'driving' } = {}) {
   const h = useSite().help;
   const en = SITE.en.help;
+  const { market } = useLegal();
   const [q, setQ] = useState('');
   const needle = q.trim().toLowerCase();
   // The driver area's Support opens on the Driving topic (owner, 2026-11-08):
@@ -40,6 +43,19 @@ export function HelpContent({ topic }: { topic?: 'driving' } = {}) {
           />
         </label>
       </div>
+
+      {/* 14 Nov (USA): reporting an impaired driver (Idaho Code 49-3709). */}
+      {market === 'US' && !topic && (
+        <div style={{ marginTop: 24, padding: 20, border: '1px solid var(--c-border)', borderRadius: 16, background: 'var(--c-surface)' }} data-testid="help-impairment">
+          <h2 className="t-title">Report driver impairment</h2>
+          <p style={{ marginTop: 8 }}>
+            If your driver seemed affected by drugs or alcohol, open the trip in{' '}
+            <Link href="/trips">Your trips</Link> and choose Report driver impairment. The driver is paused at once
+            while we investigate. If you are in danger, call 911 first.{' '}
+            <Link href={POLICY_PAGES.zeroTolerance}>Our zero tolerance policy</Link>.
+          </p>
+        </div>
+      )}
 
       <div className="s-topics">
         {h.topics.map((t) => (

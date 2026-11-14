@@ -108,4 +108,23 @@ export const POLICY_PAGES = {
   cookies: '/cookies',
   safety: '/safety',
   deleteAccount: '/delete-account',
+  // 14 Nov (USA): Idaho policies.
+  zeroTolerance: '/zero-tolerance',
+  accessibility: '/accessibility',
 } as const;
+
+/** Per-state rules the public pages show (14 Nov, USA; `GET /config/` -> `markets`). */
+export type StateRules = { cash_allowed: boolean; tips_enabled: boolean; tip_presets: number[];
+  service_agent?: { name?: string; address?: string; phone?: string } };
+
+/** Client-side: `{ "US-ID": {...} }`, or {} when the API cannot be reached. */
+export async function fetchStateRules(): Promise<Record<string, StateRules>> {
+  try {
+    const r = await fetch(`${API}/config/`);
+    if (!r.ok) return {};
+    const body = await r.json();
+    return (body?.data?.markets ?? body?.markets ?? {}) as Record<string, StateRules>;
+  } catch {
+    return {};
+  }
+}

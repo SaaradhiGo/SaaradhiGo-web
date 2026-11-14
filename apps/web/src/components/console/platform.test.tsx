@@ -46,7 +46,7 @@ describe('the tabs', () => {
     current = access(['platform.read', 'platform.city_pause', 'audit.read']);
     render(<PlatformNav />);
     const links = screen.getAllByRole('link').map((a) => a.getAttribute('href'));
-    expect(links).toEqual(['/ops/settings', '/ops/settings/driver-requirements', '/ops/settings/flags', '/ops/settings/app-versions', '/ops/settings/notices', '/ops/settings/audit']);
+    expect(links).toEqual(['/ops/settings', '/ops/settings/driver-requirements', '/ops/settings/market-rules', '/ops/settings/flags', '/ops/settings/app-versions', '/ops/settings/notices', '/ops/settings/audit']);
     expect(screen.getByRole('link', { name: 'Feature flags' }).getAttribute('aria-current')).toBe('page');
     expect(screen.getByRole('link', { name: 'Markets' }).getAttribute('aria-current')).toBeNull();
   });

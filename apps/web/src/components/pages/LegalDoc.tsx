@@ -10,7 +10,8 @@ import { Masthead } from './PageShell';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
-export type DocKind = 'riderTerms' | 'driverTerms' | 'privacy' | 'refunds' | 'textMessages' | 'grievance' | 'cookies' | 'deleteAccount';
+export type DocKind = 'riderTerms' | 'driverTerms' | 'privacy' | 'refunds' | 'textMessages' | 'grievance' | 'cookies' | 'deleteAccount'
+  | 'zeroTolerance' | 'accessibility';
 
 type FareCity = {
   zone: string; city: string; city_status: string; country: string; currency: string;
@@ -79,6 +80,8 @@ export function LegalDoc({ kind }: { kind: DocKind }) {
     case 'grievance': doc = content.grievance(ctx); break;
     case 'cookies': doc = content.cookies(ctx); break;
     case 'deleteAccount': doc = content.deleteAccount(ctx); break;
+    case 'zeroTolerance': doc = content.zeroTolerance(ctx); break;
+    case 'accessibility': doc = content.accessibility(ctx); break;
     default: {
       const city = (fares ?? []).find((c) => c.cancellation);
       doc = content.refunds(ctx, city ? content.cancellationLine(city.cancellation, city.currency) : null);

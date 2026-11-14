@@ -95,6 +95,7 @@ export type Onboarding = {
 };
 export type Vehicle = {
   id: number; insurance_expiry?: string | null; permit_expiry?: string | null; fitness_expiry?: string | null; puc_expiry?: string | null;
+  registration_expiry?: string | null; doors?: number | null;
   vehicle_number?: string | null; brand?: string | null; model?: string | null; color?: string | null;
   vehicle_type?: { type?: string | null } | string | null;
 };
