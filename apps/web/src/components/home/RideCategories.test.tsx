@@ -3,13 +3,13 @@
  * while the list loads, then the real classes in their class colours, and no
  * class at all when the list cannot be fetched.
  */
-import { render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 let resolve: ((v: unknown) => void) | null = null;
 let reject: ((e: unknown) => void) | null = null;
 vi.mock('@/lib/serviceAreas', () => ({
-  fetchServiceAreas: async () => [],
+  fetchServiceAreas: async () => [{ zone: { code: 'IN-TG-HYD', country: 'IN' }, centre: { lat: 17.385, lng: 78.4867 } }],
   primaryArea: () => ({ centre: { lat: 17.385, lng: 78.4867 } }),
 }));
 vi.mock('@/lib/booking', () => ({
@@ -17,7 +17,10 @@ vi.mock('@/lib/booking', () => ({
 }));
 
 import { LocaleProvider } from '@/i18n/LocaleProvider';
+import { LegalProvider } from '@/components/sg/LegalProvider';
 import { RideCategories } from './RideCategories';
+
+afterEach(cleanup);
 
 describe('RideCategories', () => {
   it('names no class before the API answers, then shows only what it returns', async () => {
@@ -48,5 +51,16 @@ describe('RideCategories', () => {
     reject!(new Error('offline'));
     await waitFor(() => expect(container.querySelector('.hp-ride--placeholder')).toBeNull());
     expect(container.querySelectorAll('.hp-ride').length).toBe(0);
+  });
+
+  it('USA with no open area yet: no class at all, never the classes of another country (no Auto) (14 Nov)', async () => {
+    resolve = null;
+    const { container } = render(
+      <LocaleProvider><LegalProvider initialMarket="US" decided><RideCategories /></LegalProvider></LocaleProvider>,
+    );
+    await waitFor(() => expect(container.querySelector('.hp-ride--placeholder')).toBeNull());
+    expect(container.querySelectorAll('.hp-ride').length).toBe(0);
+    expect(screen.queryByText('Auto')).toBeNull();
+    expect(resolve).toBeNull();
   });
 });

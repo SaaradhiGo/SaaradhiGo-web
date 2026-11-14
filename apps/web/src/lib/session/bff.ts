@@ -125,9 +125,10 @@ const PASS_HEADERS = ['content-type', 'content-disposition', 'cache-control', 'r
 /** Forward one request to the backend as this principal. */
 export async function proxy(req: NextRequest, who: Principal): Promise<NextResponse> {
   if (req.headers.get('x-sg-bff') !== '1') return NextResponse.json({ error: { code: 'BFF_HEADER_REQUIRED' } }, { status: 403 });
-  // `/api/staff?to=/admin/kyc/?status=pending`: everything after `?to=`, raw, is the backend path.
-  const search = new URL(req.url).search;
-  const path = safePath(search.startsWith('?to=') ? search.slice(4) : null);
+  // The backend path, exactly as the page wrote it, is in `x-sg-path`. The `?to=` copy in the URL is
+  // for people reading logs only: Next re-encodes the query string before a route sees it (seen on
+  // QA, 14 Nov: `?to=/a/?b=1&c=2` arrives as `?to=%2Fa%2F%3Fb%3D1&c=2`), so it cannot be trusted.
+  const path = safePath(req.headers.get('x-sg-path'));
   if (!path) return NextResponse.json({ error: { code: 'BAD_PATH' } }, { status: 400 });
   const c = COOKIES[who];
   const anonymous = NO_SESSION.test(path);

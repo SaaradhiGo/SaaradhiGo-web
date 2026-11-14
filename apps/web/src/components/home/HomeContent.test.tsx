@@ -1,5 +1,5 @@
 /** Homepage render (design of 2026-11-07): the design copy, no numbers or city outside the marked example (13 Nov), no "Coming soon", no app band without store links, no Schedule switch. */
-import { render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -27,7 +27,7 @@ import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { HomeContent } from './HomeContent';
 
 describe('HomeContent', () => {
-  it('renders the design copy with no numbers, no city and no app band', () => {
+  it('renders the design copy with no numbers, no city and no app band', async () => {
     render(
       <LocaleProvider>
         <HomeContent />
@@ -53,5 +53,9 @@ describe('HomeContent', () => {
     // Scheduled rides do not exist yet: no Ride now / Schedule switch.
     expect(screen.queryByText('Schedule')).toBeNull();
     expect(screen.queryByRole('group', { name: 'Trip type' })).toBeNull();
+    // The page's lookups (service areas, classes, market) answer after the first render; let them
+    // finish before the test ends, or React works on after the test environment is gone (14 Nov).
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+    cleanup();
   });
 });

@@ -27,7 +27,7 @@ const json = (status: number, body: unknown) => new Response(JSON.stringify(body
 
 function req(path: string, { method = 'GET', body, cookies = {}, bff = true }: { method?: string; body?: string; cookies?: Record<string, string>; bff?: boolean } = {}) {
   const r = new NextRequest(new URL(`/api/rider?to=${path}`, 'https://qa.example'), {
-    method, body, headers: { ...(bff ? { 'x-sg-bff': '1' } : {}), ...(body ? { 'content-type': 'application/json' } : {}) },
+    method, body, headers: { ...(bff ? { 'x-sg-bff': '1' } : {}), 'x-sg-path': path, ...(body ? { 'content-type': 'application/json' } : {}) },
   });
   for (const [k, v] of Object.entries(cookies)) r.cookies.set(k, v);
   return r;
@@ -116,7 +116,7 @@ describe('signing in', () => {
 
   it('staff cookies are Strict and sent only to /api/staff', async () => {
     backend(() => json(200, { data: { token: jwt(900), refresh_token: 's1' } }));
-    const r = new NextRequest(new URL('/api/staff?to=/auth/admin/login/', 'https://qa.example'), { method: 'POST', body: '{}', headers: { 'x-sg-bff': '1' } });
+    const r = new NextRequest(new URL('/api/staff?to=/auth/admin/login/', 'https://qa.example'), { method: 'POST', body: '{}', headers: { 'x-sg-bff': '1', 'x-sg-path': '/auth/admin/login/' } });
     const res = await proxy(r, 'staff');
     const c = res.cookies.get(COOKIES.staff.at);
     expect(c?.path).toBe('/api/staff');
@@ -173,7 +173,7 @@ describe('the visitor address (rate limits and the login lockout key on it)', ()
     vi.stubGlobal('fetch', vi.fn(async (_u: string, init: RequestInit) => { seen.push(init.headers as Record<string, string>); return json(200, { data: {} }); }));
     const mk = () => {
       const r = new NextRequest(new URL('/api/rider?to=/auth/email/login/', 'https://qa.example'), {
-        method: 'POST', body: '{}', headers: { 'x-sg-bff': '1', 'x-forwarded-for': '6.6.6.6, 81.2.69.142, 10.0.0.7' },
+        method: 'POST', body: '{}', headers: { 'x-sg-bff': '1', 'x-sg-path': '/auth/email/login/', 'x-forwarded-for': '6.6.6.6, 81.2.69.142, 10.0.0.7' },
       });
       return r;
     };
@@ -184,5 +184,23 @@ describe('the visitor address (rate limits and the login lockout key on it)', ()
     delete process.env.BFF_CLIENT_IP_SECRET;
     await proxy(mk(), 'rider');
     expect(seen[1]['X-SG-Client-IP']).toBeUndefined();
+  });
+});
+
+describe('the path comes from x-sg-path, never the re-encoded query (QA, 14 Nov)', () => {
+  it('reads the header even when the URL query was re-encoded', async () => {
+    const seen = backend(() => json(200, { data: {} }));
+    const r = new NextRequest(new URL('/api/rider?to=%2Fpricing%2Ffares%2F%3Fcountry%3DUS&x=1', 'https://qa.example'), {
+      headers: { 'x-sg-bff': '1', 'x-sg-path': '/pricing/fares/?country=US&x=1' },
+    });
+    await proxy(r, 'rider');
+    expect(seen[0].url).toBe('/pricing/fares/?country=US&x=1');
+  });
+
+  it('no header: refused', async () => {
+    const seen = backend(() => json(200, {}));
+    const r = new NextRequest(new URL('/api/rider?to=/auth/profile/', 'https://qa.example'), { headers: { 'x-sg-bff': '1' } });
+    expect((await proxy(r, 'rider')).status).toBe(400);
+    expect(seen).toHaveLength(0);
   });
 });
