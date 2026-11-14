@@ -697,6 +697,7 @@ button.er-bar { cursor: pointer; }
   .ar select.achip, .ar .ainput select { min-height: 44px; }
   /* The earnings chart: a column per day at least 44px wide, scrolling inside its card. */
   .er-chart { overflow-x: auto; }
+  .er-chart:not([style]) { --n: 7; }
   .er-chart > * { min-width: calc(44px * var(--n, 7) + 6px * (var(--n, 7) - 1)); }
 }
 /* Stars and the rider header on a phone (14 Nov): real 44px targets, side by side. */
