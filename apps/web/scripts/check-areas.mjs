@@ -122,6 +122,13 @@ async function signed(session) {
   const body = b64(enc.encode(JSON.stringify(session)));
   return `${body}.${b64(new Uint8Array(await webcrypto.subtle.sign('HMAC', key, enc.encode(body))))}`;
 }
+// 14 Nov: signed-in calls go through this site's session server, `/api/rider?to=<backend path>`
+// (lib/session/bff.ts), and the login keys are HttpOnly cookies the page never sees. The gate signs
+// in with the readable marker cookie and answers those calls from the same fixtures.
+const API_RE = /\/api\/v1\/|\/api\/(rider|staff)\?to=/;
+const viaBff = (u) => /\/api\/(rider|staff)\?to=/.test(u);
+const apiUrl = (u) => (viaBff(u) ? `http://api.gate/api/v1${u.slice(u.indexOf('?to=') + 4)}` : u);
+const signedInCookie = (ctx, site) => ctx.addCookies([{ name: 'sg-rider-in', value: '1', url: site }]);
 const fakeJwt = () => `${b64(enc.encode('{"alg":"none"}'))}.${b64(enc.encode(JSON.stringify({ exp: 4102444800, user_id: 7 })))}.x`;
 
 async function context(browser, role, width, height, lang = 'en') {
@@ -146,17 +153,17 @@ async function context(browser, role, width, height, lang = 'en') {
   }
   const exp = Math.floor(Date.now() / 1000) + 3600;
   await ctx.addCookies([{ name: 'sg-session', value: await signed({ uid: '7', roles: [role], role, exp }), url: SITE }]);
-  await ctx.addInitScript((t) => { try { localStorage.setItem('saaradhi_rider_access_token', t); } catch {} }, fakeJwt());
+  await signedInCookie(ctx, SITE);
   await fixtures(ctx);
   return ctx;
 }
 
 function fixtures(ctx) {
-  return ctx.route(/\/api\/v1\//, async (route) => {
+  return ctx.route(API_RE, async (route) => {
     const req = route.request();
     let body = null;
     try { body = req.postDataJSON(); } catch {}
-    const data = fixture(req.method(), req.url(), body);
+    const data = fixture(req.method(), apiUrl(req.url()), body);
     await route.fulfill(data === null ? { status: 404, json: { error: 'no fixture' } } : { json: data });
   });
 }
@@ -434,16 +441,12 @@ async function stateContext(role, how, failing = null) {
   const cookie = await signed({ uid: '7', roles: [role], role, exp });
   // A cookie signed before the last deploy no longer verifies.
   await ctx.addCookies([{ name: 'sg-session', value: how === 'stale-cookie' ? `${cookie.slice(0, -4)}AAAA` : cookie, url: SITE }]);
-  await ctx.addInitScript((t) => {
-    if (sessionStorage.getItem('seeded')) return;
-    localStorage.setItem('saaradhi_rider_access_token', t);
-    localStorage.setItem('saaradhi_rider_refresh_token', 'gate-refresh');
-    sessionStorage.setItem('seeded', '1');
-  }, fakeJwt());
-  await ctx.route(/\/api\/v1\//, async (route) => {
+  await signedInCookie(ctx, SITE);
+  await ctx.route(API_RE, async (route) => {
     const req = route.request();
-    const url = req.url();
-    if (how === 'expired') return route.fulfill(url.includes('/auth/refresh/') ? { status: 400, json: {} } : { status: 401, json: {} });
+    const url = apiUrl(req.url());
+    // Expired: the session server could not renew, so it answers 401 and says the session ended.
+    if (how === 'expired') return route.fulfill({ status: 401, json: {}, headers: { 'x-sg-session': 'ended' } });
     if (failing && fail500.on && failing.test(url)) return route.fulfill({ status: 500, json: { error: 'gate' } });
     let body = null;
     try { body = req.postDataJSON(); } catch {}

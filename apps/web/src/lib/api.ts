@@ -1,45 +1,94 @@
 // Thin REST client for the backend API.
 //
-// Token persistence lives in localStorage (NOT cookies) so we can run
-// the console as a static SPA bundled by Next.js. If we later need
-// CSRF-protected mutations from a server component, we'll migrate to
-// httpOnly cookies + a /api/auth proxy on the Next side.
+// 14 Nov (owner): login keys are kept in Secure, HttpOnly cookies, never in browser storage.
+// A signed-in call goes to this site (`/api/staff` for the console, `/api/rider` for riders and
+// drivers) with the backend path after `?to=`; the server adds the token, renews it, and hands
+// the answer back (lib/session/bff.ts). A public call (no session) still goes straight to the API.
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
 /** Fired on `window` after every successful console GET (the shell's freshness line). */
 export const CONSOLE_DATA_LOADED = 'sg:console-data-loaded';
 
+/** Where sessions were kept before 14 Nov; read once to hand them to the server, then deleted. */
 export const TOKEN_KEY = 'saaradhi_admin_access_token';
 export const REFRESH_KEY = 'saaradhi_admin_refresh_token';
+const LEGACY = {
+  staff: [TOKEN_KEY, REFRESH_KEY],
+  rider: ['saaradhi_rider_access_token', 'saaradhi_rider_refresh_token'],
+} as const;
 
-export function readToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem(TOKEN_KEY);
+/** Pass as the token argument to send a call as the rider/driver session (the cookie on the server). */
+export const RIDER_SESSION = 'sg:rider-session';
+
+export type Who = 'staff' | 'rider';
+const MARKER: Record<Who, string> = { staff: 'sg-staff-in', rider: 'sg-rider-in' };
+
+function hasCookie(name: string): boolean {
+  if (typeof document === 'undefined') return false;
+  try {
+    return document.cookie.split(';').some((c) => c.trim().startsWith(`${name}=1`));
+  } catch {
+    return false;
+  }
 }
 
+function legacyTokens(who: Who): { access: string | null; refresh: string | null } {
+  try {
+    const [a, r] = LEGACY[who];
+    return { access: window.localStorage.getItem(a), refresh: window.localStorage.getItem(r) };
+  } catch {
+    return { access: null, refresh: null };
+  }
+}
+
+const adopting: Partial<Record<Who, Promise<boolean>>> = {};
+
 /**
- * The console stays signed in until the operator signs out (owner, 2026-11-03).
- *
- * Before, only the 15-minute access token was kept and the console never
- * renewed it (AUDIT 27.78, M4), so an operator was sent back to the password
- * and authenticator code every quarter of an hour. Now the refresh token is
- * kept too and the access token is renewed silently (`renewConsoleSession`).
- *
- * What still bounds the session:
- *   * every renewal ROTATES the refresh token and blacklists the old one, so a
- *     copied token is single-use;
- *   * "Sign out" revokes the refresh token on the server before clearing this
- *     browser (`signOutConsole`), so it is dead after sign-out, not 14 days later;
- *   * a deactivated account gets no new tokens (`/auth/refresh/`, AUDIT 27.78 Low 3);
- *   * a password or authenticator change revokes every refresh token the
- *     account holds (`session_revocation.revoke_all_refresh_tokens`);
- *   * 14 days without opening the console ends the session (REFRESH_TOKEN_LIFETIME).
+ * A session saved in localStorage before 14 Nov: handed to the server once, which turns it into
+ * cookies, and deleted from storage whatever the answer. Refused, the session ends cleanly.
  */
-export function writeTokens({ access, refresh }: { access: string; refresh?: string }) {
-  window.localStorage.setItem(TOKEN_KEY, access);
-  if (refresh) window.localStorage.setItem(REFRESH_KEY, refresh);
-  // 12 Nov: this browser now signs in to the console; an ended session on /trips goes to /login.
+export function adoptLegacySession(who: Who): Promise<boolean> {
+  if (typeof window === 'undefined') return Promise.resolve(false);
+  if (adopting[who]) return adopting[who]!;
+  const { access, refresh } = legacyTokens(who);
+  if (!access && !refresh) return Promise.resolve(false);
+  try {
+    for (const k of LEGACY[who]) window.localStorage.removeItem(k);
+  } catch {
+    /* nothing to remove */
+  }
+  adopting[who] = fetch(`/api/${who}/adopt`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-sg-bff': '1' },
+    body: JSON.stringify({ access, refresh }),
+    credentials: 'same-origin',
+  }).then((r) => {
+    if (!r.ok) sessionEnded(who);
+    return r.ok;
+  }).catch(() => false).finally(() => { delete adopting[who]; });
+  return adopting[who]!;
+}
+
+/** Whether a session exists for `who`: the server's readable marker, or one still to be handed over. */
+export function signedIn(who: Who): boolean {
+  if (typeof window === 'undefined') return false;
+  if (hasCookie(MARKER[who])) return true;
+  const legacy = legacyTokens(who);
+  if (legacy.access || legacy.refresh) {
+    void adoptLegacySession(who);
+    return true;
+  }
+  return Boolean(adopting[who]);
+}
+
+/** A truthy value while the console is signed in (no token is readable any more). */
+export function readToken(): string | null {
+  return signedIn('staff') ? 'staff-session' : null;
+}
+
+/** This browser now signs in to the console: an ended session on /trips goes to /login (12 Nov). */
+export function writeTokens(_ignored?: unknown) {
   try {
     document.cookie = 'sg-area=console; path=/; max-age=31536000; samesite=lax';
   } catch {
@@ -47,122 +96,82 @@ export function writeTokens({ access, refresh }: { access: string; refresh?: str
   }
 }
 
-/** Seconds since the epoch at which a JWT expires, or null if it cannot be read. */
-function tokenExpiry(token: string): number | null {
+/** The session has ended (refused and not renewable): forget everything this browser shows of it. */
+function sessionEnded(who: Who) {
+  if (typeof window === 'undefined') return;
   try {
-    const part = token.split('.')[1];
-    if (!part) return null;
-    const json = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')));
-    return typeof json.exp === 'number' ? json.exp : null;
+    document.cookie = `${MARKER[who]}=; path=/; max-age=0`;
+    for (const k of LEGACY[who]) window.localStorage.removeItem(k);
+    window.localStorage.removeItem(who === 'staff' ? 'saaradhi_admin_user' : 'saaradhi_rider_user');
   } catch {
-    return null;
+    /* nothing to clear */
   }
-}
-
-/** Renew this long before the access token runs out, so a request never races it. */
-const RENEW_BEFORE_S = 60;
-
-let renewing: Promise<boolean> | null = null;
-
-/**
- * Swap the stored refresh token for a new access + refresh pair.
- *
- * Single-flight: the Command Centre fires several requests at once, and two
- * renewals with the same refresh token would have the second refused (the
- * first blacklisted it) and sign the operator out. They all wait on one.
- *
- * Sent WITHOUT the Authorization header: the access token is expired by now,
- * and the server's JWT authentication would refuse the request before the
- * refresh view ever saw it.
- *
- * Returns true when renewed. A refusal (expired, revoked, deactivated) clears
- * the session; a network failure leaves it alone, so being offline for a
- * moment never signs anyone out.
- */
-export function renewConsoleSession(): Promise<boolean> {
-  if (typeof window === 'undefined') return Promise.resolve(false);
-  if (renewing) return renewing;
-  const refresh = window.localStorage.getItem(REFRESH_KEY);
-  if (!refresh) return Promise.resolve(false);
-  renewing = (async () => {
-    try {
-      const resp = await fetch(`${BASE}/auth/refresh/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: refresh }),
-      });
-      let json: any = null;
-      try { json = await resp.json(); } catch { /* empty */ }
-      const data = json?.data ?? json;
-      if (resp.ok && data?.token) {
-        writeTokens({ access: data.token, refresh: data.refresh_token });
-        return true;
-      }
-      if (resp.status === 400 || resp.status === 401) clearTokens();
-      return false;
-    } catch {
-      return false;
-    } finally {
-      renewing = null;
-    }
-  })();
-  return renewing;
-}
-
-/** Renew first if the stored access token is about to expire (or has). */
-async function freshConsoleToken(): Promise<string | null> {
-  const token = readToken();
-  if (!token || typeof window === 'undefined') return token;
-  if (!window.localStorage.getItem(REFRESH_KEY)) return token;
-  const exp = tokenExpiry(token);
-  if (exp !== null && exp - Date.now() / 1000 <= RENEW_BEFORE_S) {
-    await renewConsoleSession();
-    return readToken();
-  }
-  return token;
+  window.dispatchEvent(new Event(who === 'staff' ? CONSOLE_SESSION_ENDED : 'saaradhi:session'));
 }
 
 export function clearTokens() {
-  window.localStorage.removeItem(TOKEN_KEY);
-  window.localStorage.removeItem(REFRESH_KEY);
-  // The operator's own record goes with the session it belonged to. Leaving
-  // it behind would have the console greeting the previous operator by name
-  // on the sign-in screen.
-  window.localStorage.removeItem('saaradhi_admin_user');
+  if (typeof window === 'undefined') return;
+  try {
+    for (const k of LEGACY.staff) window.localStorage.removeItem(k);
+    // The operator's own record goes with the session it belonged to. Leaving it behind would
+    // have the console greeting the previous operator by name on the sign-in screen.
+    window.localStorage.removeItem('saaradhi_admin_user');
+    document.cookie = `${MARKER.staff}=; path=/; max-age=0`;
+  } catch {
+    /* nothing to clear */
+  }
 }
 
 /**
- * Sign the console out: revoke the stored refresh token on the server, then
- * clear this browser (AUDIT 27.78, M4).
- *
- * The refresh token is POSTed to `/auth/logout/`,
- * which blacklists it, BEFORE storage is cleared -- clearing first would lose
- * the only copy and leave it valid. Best effort and bounded: a sign-out must
- * never hang on the network, and the local session is cleared either way.
+ * Sign the console out: the server revokes the refresh token held in its cookie (AUDIT 27.78, M4)
+ * and clears the cookies; then this browser forgets the operator. Bounded: never hangs.
  */
 export async function signOutConsole(): Promise<void> {
   if (typeof window === 'undefined') return;
-  // `/auth/logout/` needs a live access token. After a night away the stored
-  // one has expired, so renew first; the token revoked is then the new one.
-  const access = await freshConsoleToken();
-  const refresh = window.localStorage.getItem(REFRESH_KEY);
-  if (access && refresh) {
-    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    const timer = controller ? setTimeout(() => controller.abort(), 4000) : null;
-    try {
-      await fetch(`${BASE}/auth/logout/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${access}` },
-        body: JSON.stringify({ refresh_token: refresh }),
-        signal: controller?.signal,
-      });
-    } catch {
-      /* offline or refused: the token still goes from this browser */
-    } finally {
-      if (timer) clearTimeout(timer);
-    }
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), 4000) : null;
+  try {
+    await bffFetch('staff', 'POST', '/auth/logout/', { body: '{}', type: 'application/json', signal: controller?.signal });
+  } catch {
+    /* offline or refused: the session still goes from this browser */
+  } finally {
+    if (timer) clearTimeout(timer);
   }
   clearTokens();
+}
+
+/** Sign a rider or driver out on the server: refresh token revoked, cookies cleared. */
+export async function signOutRider(): Promise<void> {
+  try {
+    await bffFetch('rider', 'POST', '/auth/logout/', { body: '{}', type: 'application/json' });
+  } catch {
+    /* offline: /api/session DELETE clears the cookies as well */
+  }
+}
+
+/** One call through this site's server as `who`; tells the page when the session has ended. */
+export async function bffFetch(
+  who: Who,
+  method: string,
+  path: string,
+  { body, type, signal }: { body?: BodyInit; type?: string; signal?: AbortSignal } = {},
+): Promise<Response> {
+  await adoptLegacySession(who);
+  // The backend path rides as-is after `?to=` (the server reads the raw query, never decodes it).
+  const resp = await fetch(`/api/${who}?to=${path}`, {
+    method,
+    headers: {
+      'x-sg-bff': '1',
+      // Maps cost (9 Nov): the backend counts each Google call against the surface that asked.
+      'x-sg-surface': 'rider_web',
+      ...(type ? { 'Content-Type': type } : {}),
+    },
+    body,
+    credentials: 'same-origin',
+    signal,
+  });
+  if (resp.headers?.get?.('x-sg-session') === 'ended') sessionEnded(who);
+  return resp;
 }
 
 export class ApiError extends Error {
@@ -214,25 +223,20 @@ async function call<T>(
   body?: unknown,
   authToken?: string | null,
 ): Promise<T> {
-  const consoleSession = authToken === undefined;
-  let token = consoleSession ? await freshConsoleToken() : authToken;
-  const send = (bearer: string | null) => fetch(`${BASE}${path}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      // Maps cost (9 Nov): the backend counts each Google call against the surface that asked.
-      'X-SG-Surface': 'rider_web',
-      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  let resp = await send(token);
-  // The token was refused (expired while the laptop slept, say): renew once
-  // and send the same request again before treating the session as ended.
-  if (resp.status === 401 && consoleSession && token && await renewConsoleSession()) {
-    token = readToken();
-    resp = await send(token);
-  }
+  // undefined: the console's session. RIDER_SESSION: the rider/driver session. null: no session.
+  const who: Who | null = authToken === undefined ? 'staff' : authToken === RIDER_SESSION ? 'rider' : null;
+  const payload = body ? JSON.stringify(body) : undefined;
+  const resp = who
+    ? await bffFetch(who, method, path, { body: payload, type: 'application/json' })
+    : await fetch(`${BASE}${path}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-SG-Surface': 'rider_web',
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      body: payload,
+    });
   let json: any = null;
   try {
     json = await resp.json();
@@ -242,7 +246,7 @@ async function call<T>(
   if (!resp.ok) {
     const err = json?.error ?? {};
     const authored = typeof err.message === 'string' && err.message.trim() !== '';
-    noteSessionEnd(resp.status, authToken, token);
+    noteSessionEnd(resp.status, who);
     throw new ApiError(
       resp.status,
       err.code ?? 'UNKNOWN_ERROR',
@@ -254,7 +258,7 @@ async function call<T>(
   // Standard backend envelope: {status, data} for success
   // or DRF pagination response (results / next / previous).
   // The console's "Updated N s ago": the last time any console read came back.
-  if (method === 'GET' && authToken === undefined && typeof window !== 'undefined') {
+  if (method === 'GET' && who === 'staff' && typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(CONSOLE_DATA_LOADED, { detail: Date.now() }));
   }
   return (json?.data ?? json) as T;
@@ -268,12 +272,11 @@ async function call<T>(
  */
 export const CONSOLE_SESSION_ENDED = 'saaradhi:console-session-ended';
 
-function noteSessionEnd(status: number, authToken: string | null | undefined, sent: string | null) {
-  // Only the console's own session: a caller that passed its token
-  // explicitly (the public site) handles its own sign-out, and a request
-  // that carried no token at all was never a session.
-  if (status !== 401 || authToken !== undefined || !sent) return;
-  if (typeof window === 'undefined') return;
+function noteSessionEnd(status: number, who: Who | null) {
+  // Only the console's own session, and only once the server could not renew it (it renews and
+  // retries before answering 401, and then clears the marker). The rider areas end their own.
+  if (status !== 401 || who !== 'staff' || typeof window === 'undefined') return;
+  if (hasCookie(MARKER.staff)) return;
   clearTokens();
   window.dispatchEvent(new Event(CONSOLE_SESSION_ENDED));
 }
@@ -310,12 +313,11 @@ async function callForm<T>(
   form: FormData,
   authToken?: string | null,
 ): Promise<T> {
-  const token = authToken !== undefined ? authToken : await freshConsoleToken();
-  const resp = await fetch(`${BASE}${path}`, {
-    method,
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: form,
-  });
+  const who: Who | null = authToken === undefined ? 'staff' : authToken === RIDER_SESSION ? 'rider' : null;
+  // No Content-Type by hand: the browser writes the multipart boundary itself.
+  const resp = who
+    ? await bffFetch(who, method, path, { body: form })
+    : await fetch(`${BASE}${path}`, { method, headers: { ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) }, body: form });
   let json: any = null;
   try {
     json = await resp.json();
@@ -337,19 +339,11 @@ async function callForm<T>(
 }
 
 /**
- * Fetch a file (a CSV export) with the operator's token.
- *
- * A plain link cannot carry the Authorization header, so the export is
- * fetched here and handed to the browser as a Blob. A refusal comes back as
- * the server's own JSON error (a row cap, a missing capability), raised as an
- * ApiError like any other call.
+ * Fetch a file (a CSV export, a statement) through the session; a plain link cannot carry it.
+ * A refusal comes back as the server's own JSON error, raised as an ApiError like any other call.
  */
-export async function apiDownload(path: string): Promise<{ blob: Blob; filename: string }> {
-  const token = await freshConsoleToken();
-  const resp = await fetch(`${BASE}${path}`, {
-    method: 'GET',
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-  });
+export async function apiDownload(path: string, who: Who = 'staff'): Promise<{ blob: Blob; filename: string }> {
+  const resp = await bffFetch(who, 'GET', path);
   if (!resp.ok) {
     let json: any = null;
     try {
@@ -359,7 +353,7 @@ export async function apiDownload(path: string): Promise<{ blob: Blob; filename:
     }
     const err = json?.error ?? {};
     const authored = typeof err.message === 'string' && err.message.trim() !== '';
-    noteSessionEnd(resp.status, undefined, token);
+    noteSessionEnd(resp.status, who);
     throw new ApiError(
       resp.status,
       err.code ?? 'UNKNOWN_ERROR',
@@ -412,13 +406,14 @@ export async function loginWithOtp(phone: string, otp: string) {
   // `writeTokens` never fired: the login appeared to succeed, stored nothing, and
   // the console layout bounced straight back to /login. A silent sign-in loop,
   // and the reason nobody could get into this console.
-  type LoginResp = { token?: string; refresh_token?: string; user?: unknown };
+  type LoginResp = { session?: boolean; user?: unknown };
+  // Through the console's session route: the server keeps the tokens as cookies (14 Nov).
   const data = await api.post<LoginResp>('/auth/login/', {
     phone_number: phone,
     otp,
   });
-  if (data?.token) {
-    writeTokens({ access: data.token, refresh: data.refresh_token });
+  if (data?.session) {
+    writeTokens();
   } else {
     throw new ApiError(
       200,
@@ -499,8 +494,8 @@ export type AdminLoginExtra = {
  * an account allowed to operate the platform.
  */
 export type AdminLoginResult = {
-  token?: string;
-  refresh_token?: string;
+  /** The server kept the tokens as HttpOnly cookies (14 Nov); none reach this page. */
+  session?: boolean;
   user?: OperatorUser;
   /**
    * Present on exactly ONE sign-in: the first token after the
@@ -532,18 +527,17 @@ export async function adminLoginWithPassword(
       ...(reason ? { reason } : {}),
       ...(newPassword ? { new_password: newPassword } : {}),
     },
-    // Explicitly no token: a stale, expired console session in localStorage
-    // would otherwise be sent on the request that is meant to replace it.
-    null,
+    // Through the console's session route (undefined), which keeps the tokens as cookies.
+    undefined,
   );
-  if (!data?.token) {
+  if (!data?.session) {
     throw new ApiError(
       200,
       'AUTH_NO_TOKEN',
       'Signed in but the server returned no token.',
     );
   }
-  writeTokens({ access: data.token, refresh: data.refresh_token });
+  writeTokens();
   try {
     if (data.user) {
       window.localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(data.user));

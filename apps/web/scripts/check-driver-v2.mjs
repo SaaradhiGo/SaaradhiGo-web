@@ -98,6 +98,10 @@ async function signed(session) {
   const body = b64(enc.encode(JSON.stringify(session)));
   return `${body}.${b64(new Uint8Array(await webcrypto.subtle.sign('HMAC', key, enc.encode(body))))}`;
 }
+// 14 Nov: signed-in calls go through /api/rider?to=<backend path> (lib/session/bff.ts); the gate
+// signs in with the readable marker cookie and answers those calls from the same fixtures.
+const API_RE = /\/api\/v1\/|\/api\/(rider|staff)\?to=/;
+const apiUrl = (u) => (/\/api\/(rider|staff)\?to=/.test(u) ? `http://api.gate/api/v1${u.slice(u.indexOf('?to=') + 4)}` : u);
 const fakeJwt = () => `${b64(enc.encode('{"alg":"none"}'))}.${b64(enc.encode(JSON.stringify({ exp: 4102444800, user_id: 7 })))}.x`;
 
 async function open(browser, role, p, { theme = 'light', answer = null, label = null } = {}) {
@@ -114,13 +118,13 @@ async function open(browser, role, p, { theme = 'light', answer = null, label = 
   } else {
     const exp = Math.floor(Date.now() / 1000) + 3600;
     await ctx.addCookies([{ name: 'sg-session', value: await signed({ uid: '7', roles: [role], role, exp }), url: SITE }]);
-    await ctx.addInitScript((t) => { try { localStorage.setItem('saaradhi_rider_access_token', t); } catch {} }, fakeJwt());
+    await ctx.addCookies([{ name: 'sg-rider-in', value: '1', url: SITE }]);
     const answerer = answer ?? route(p, OVERRIDES[p]);
-    await ctx.route(/\/api\/v1\//, async (r) => {
+    await ctx.route(API_RE, async (r) => {
       const req = r.request();
       let body = null;
       try { body = req.postDataJSON(); } catch {}
-      const data = answerer(req.method(), req.url(), body);
+      const data = answerer(req.method(), apiUrl(req.url()), body);
       await r.fulfill(data === null || data === undefined ? { status: 404, json: { error: 'no fixture' } } : { json: data });
     });
   }

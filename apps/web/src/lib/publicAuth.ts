@@ -21,11 +21,13 @@
 //    it stops the form being used to discover who holds an account -- so the
 //    UI must not claim "account created!" either. It says to check the inbox.
 //
-// SEPARATE TOKENS FROM THE OPS CONSOLE
-// A rider's session is stored under its own keys, never the console's
-// `saaradhi_admin_*`, so a rider session can never be read as an operator's.
+// SEPARATE SESSIONS FROM THE OPS CONSOLE
+// A rider's session has its own cookies, never the console's, so a rider session can never be
+// read as an operator's. 14 Nov (owner): the tokens are in Secure, HttpOnly cookies held by this
+// site's server (lib/session/bff.ts); page script never sees them and nothing is written to
+// localStorage or sessionStorage but the account's display copy (name, role).
 
-import { ApiError, api } from './api';
+import { ApiError, RIDER_SESSION, api, signOutRider, signedIn } from './api';
 
 export const RIDER_TOKEN_KEY = 'saaradhi_rider_access_token';
 export const RIDER_REFRESH_KEY = 'saaradhi_rider_refresh_token';
@@ -132,13 +134,12 @@ export function looksLikeEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
+/**
+ * The rider/driver session to send a call with (RIDER_SESSION), or null when signed out. It is
+ * not a token: the token stays in an HttpOnly cookie and the server adds it (14 Nov).
+ */
 export function readRiderToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    return window.localStorage.getItem(RIDER_TOKEN_KEY);
-  } catch {
-    return null;
-  }
+  return signedIn('rider') ? RIDER_SESSION : null;
 }
 
 /**
@@ -157,26 +158,25 @@ function announceSession() {
   window.dispatchEvent(new Event(SESSION_EVENT));
 }
 
-export function writeRiderTokens(
-  access: string,
-  refresh?: string,
-  user?: SessionUser | null,
-) {
-  try {
-    window.localStorage.setItem(RIDER_TOKEN_KEY, access);
-    if (refresh) window.localStorage.setItem(RIDER_REFRESH_KEY, refresh);
-  } catch {
-    /* private mode: the session simply does not persist */
-  }
+/** A sign-in has happened (its tokens are already cookies): keep the account's display copy. */
+export function writeRiderTokens(user?: SessionUser | null) {
   if (user !== undefined) writeSessionUser(user);
   announceSession();
 }
 
 export function clearRiderTokens() {
   // The server's copy of the role goes too, or the middleware would keep
-  // routing this browser into an area it can no longer load data for.
+  // routing this browser into an area it can no longer load data for; and the
+  // refresh token is revoked and the session cookies cleared.
   if (typeof fetch === 'function' && typeof window !== 'undefined') {
-    fetch('/api/session', { method: 'DELETE', keepalive: true }).catch(() => {});
+    void signOutRider().finally(() => {
+      fetch('/api/session', { method: 'DELETE', keepalive: true }).catch(() => {});
+    });
+    try {
+      document.cookie = 'sg-rider-in=; path=/; max-age=0';
+    } catch {
+      /* no cookie access */
+    }
   }
   try {
     window.localStorage.removeItem(RIDER_TOKEN_KEY);
@@ -213,6 +213,7 @@ export async function registerAccount(input: RegisterInput) {
     role: input.role,
     phone_proof: input.phoneProof,
     },
+    null,
   );
 }
 
@@ -230,18 +231,18 @@ export async function verifyPhoneForSignup(phone: string, otp: string) {
   return api.post<{ phone_proof: string; expires_in?: number }>('/auth/otp/verify/', {
     phone_number: normalisePhone(phone),
     otp: otp.trim(),
-  });
+  }, null);
 }
 
 // ---------------------------------------------------------------------------
 // Sign in
 // ---------------------------------------------------------------------------
 
-type LoginResp = { token?: string; refresh_token?: string; user?: SessionUser };
+/** `session: true`: the server kept the tokens as cookies and took them out of the answer. */
+type LoginResp = { session?: boolean; user?: SessionUser };
 
-/** The envelope really is `token` / `refresh_token`, not `access` / `refresh`. */
 function storeSession(data: LoginResp) {
-  if (!data?.token) {
+  if (!data?.session) {
     throw new ApiError(
       200,
       'AUTH_NO_TOKEN',
@@ -251,7 +252,7 @@ function storeSession(data: LoginResp) {
   // The account travels WITH the token. Every signed-in screen then knows
   // whose session this is without a second request -- which is what lets the
   // header greet a driver as a driver instead of showing them a rider's nav.
-  writeRiderTokens(data.token, data.refresh_token, data.user ?? null);
+  writeRiderTokens(data.user ?? null);
   return data;
 }
 
@@ -259,11 +260,13 @@ function storeSession(data: LoginResp) {
  * Give the server the signed role cookie it routes by (owner, 2026-11-08).
  * Resolves with the area to open; null where the server could not set it.
  */
-export async function establishServerSession(token: string, role?: PublicRole) {
+export async function establishServerSession(_session?: string | null, role?: PublicRole) {
+  // The server reads the token from its own cookie; none is sent from here (14 Nov).
   const res = await fetch('/api/session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, role }),
+    body: JSON.stringify({ role }),
+    credentials: 'same-origin',
   }).catch(() => null);
   if (!res?.ok) return null;
   return (await res.json()) as { role: PublicRole; roles: PublicRole[] };
@@ -327,10 +330,10 @@ export async function signInWithEmail(
   const data = await api.post<LoginResp>('/auth/email/login/', {
     email: email.trim(),
     password,
-  });
+  }, RIDER_SESSION);
   const session = storeSession(data);
   if (expectedRole) requireRole(session, expectedRole);
-  const area = await establishServerSession(session.token as string, expectedRole);
+  const area = await establishServerSession(null, expectedRole);
   return { ...session, area: area?.role ?? null };
 }
 
@@ -344,9 +347,9 @@ export async function registerRider(input: { fullName: string; email: string; pa
     email: input.email.trim(),
     password: input.password,
     role: 'rider',
-  });
+  }, RIDER_SESSION);
   const session = storeSession(data);
-  await establishServerSession(session.token as string, 'rider');
+  await establishServerSession(null, 'rider');
   return session;
 }
 
@@ -384,7 +387,7 @@ export async function sendPublicOtp(phone: string, role: PublicRole) {
   return api.post<{ message?: string }>('/auth/otp/', {
     phone_number: normalisePhone(phone),
     role,
-  });
+  }, null);
 }
 
 export async function verifyPublicOtp(
@@ -395,10 +398,10 @@ export async function verifyPublicOtp(
   const data = await api.post<LoginResp>('/auth/login/', {
     phone_number: normalisePhone(phone),
     otp: otp.trim(),
-  });
+  }, RIDER_SESSION);
   const session = storeSession(data);
   if (expectedRole) requireRole(session, expectedRole);
-  const area = await establishServerSession(session.token as string, expectedRole);
+  const area = await establishServerSession(null, expectedRole);
   return { ...session, area: area?.role ?? null };
 }
 
@@ -409,7 +412,7 @@ export async function verifyPublicOtp(
 export async function requestPasswordReset(email: string) {
   return api.post<{ message?: string }>('/auth/password/forgot/', {
     email: email.trim(),
-  });
+  }, null);
 }
 
 export async function resetPassword(
@@ -421,14 +424,14 @@ export async function resetPassword(
     uid,
     token,
     new_password: newPassword,
-  });
+  }, null);
 }
 
 export async function confirmEmailVerification(uid: string, token: string) {
   return api.post<{ message?: string }>('/auth/email/verify/confirm/', {
     uid,
     token,
-  });
+  }, null);
 }
 
 /** Turn a server error into something the person can act on. */

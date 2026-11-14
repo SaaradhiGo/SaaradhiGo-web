@@ -41,7 +41,7 @@ beforeEach(() => {
   query = '';
   router.push.mockClear();
   window.localStorage.clear();
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
 });
 afterEach(() => cleanup());
 

@@ -813,5 +813,11 @@
   "Taxable value": "Base imponible",
   "We could not send the email right now. Try again later.": "No pudimos enviar el correo ahora. Inténtalo más tarde.",
   "You can go online once every step is approved. We usually review within {n} working days.": "Podrás conectarte cuando se aprueben todos los pasos. Normalmente revisamos en {n} días laborables.",
-  "Usually {n} working days. Each document shows its own state; a rejected one says why.": "Normalmente {n} días laborables. Cada documento muestra su estado; uno rechazado dice por qué."
+  "Usually {n} working days. Each document shows its own state; a rejected one says why.": "Normalmente {n} días laborables. Cada documento muestra su estado; uno rechazado dice por qué.",
+  "Searching…": "Buscando…",
+  "Can't search right now.": "No se puede buscar ahora.",
+  "Choose a place from the list": "Elige un lugar de la lista",
+  "Example from the Treasure Valley test rate card": "Ejemplo de la tarifa de prueba de Treasure Valley",
+  "Standard": "Estándar",
+  "XL": "XL"
 }

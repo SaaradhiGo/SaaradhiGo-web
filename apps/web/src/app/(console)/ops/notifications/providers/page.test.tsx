@@ -31,7 +31,7 @@ describe('notification providers page', () => {
 });
 
 beforeEach(() => {
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
   const data = { live_send: true, production: false, allowlist_size: 0, allowlist_applies: false, quiet_hours: {}, providers: [] };
   vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ status: 'success', data }) })));
 });

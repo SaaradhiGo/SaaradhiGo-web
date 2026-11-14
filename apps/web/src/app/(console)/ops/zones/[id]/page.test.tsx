@@ -47,7 +47,7 @@ describe('zone record page', () => {
 
 beforeEach(() => {
   window.localStorage.clear();
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
   vi.stubGlobal('fetch', vi.fn(async (url: string) => {
     const u = String(url);
     const data = /history/.test(u) ? { zone: 'Z-12', version: 3, revisions: [], pending_requests: [] }

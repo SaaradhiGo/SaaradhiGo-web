@@ -34,7 +34,7 @@ function respond(url: string) {
 
 beforeEach(() => {
   calls = [];
-  window.localStorage.setItem(RIDER_TOKEN_KEY, 'test-token');
+  document.cookie = 'sg-rider-in=1; path=/';
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {

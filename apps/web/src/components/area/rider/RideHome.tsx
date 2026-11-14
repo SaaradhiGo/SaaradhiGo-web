@@ -4,7 +4,8 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MapSurface from '@/components/MapSurface';
 import { useTr } from '@/i18n/website';
-import { type LatLng, type Place, placeToPoint, searchPlaces } from '@/lib/booking';
+import { type LatLng, type Place, placeToPoint } from '@/lib/booking';
+import { SearchStatus, usePlaceSearch } from '@/lib/usePlaceSearch';
 import { fetchServiceAreas, primaryArea } from '@/lib/serviceAreas';
 import { useLegal } from '@/components/sg/LegalProvider';
 import { shortPlace, suggestionLines } from '@/lib/area/places';
@@ -58,19 +59,12 @@ function PlaceField({ field, label, value, query, onQuery, onPick, onFocus, erro
   const tr = useTr();
   const { market } = useLegal();
   const id = useId();
-  const [found, setFound] = useState<Place[]>([]);
   const [note, setNote] = useState<string | null>(null);
-  const timer = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (timer.current) window.clearTimeout(timer.current);
-    const q = query.trim();
-    if (q.length < 3 || (value && shown(value) === query)) { setFound([]); return; }
-    timer.current = window.setTimeout(() => {
-      // 14 Nov: every country we operate in, ranked from `near`, else the header's market.
-      searchPlaces(q, near, field, null, market).then(setFound).catch(() => setFound([]));
-    }, 300); // 300 ms after the last keystroke (maps cost, 9 Nov)
-  }, [query, near, value, field, market]);
+  // 14 Nov: every country we operate in, ranked from `near`, else the header's market; with
+  // "Searching…" and "Can't search right now" said, never an empty silence (lib/usePlaceSearch).
+  const search = usePlaceSearch(query, { near, field, market, skip: Boolean(value && shown(value) === query) });
+  const found = search.found;
+  const setFound = (_: Place[]) => search.clear();
 
   async function pick(p: Place) {
     const point = await placeToPoint(p.place_id, field).catch(() => null);
@@ -93,6 +87,7 @@ function PlaceField({ field, label, value, query, onQuery, onPick, onFocus, erro
       </label>
       {error && <p id={errId} className="a14 ared" data-testid={`${field}-error`}>{error}</p>}
       {note && <p className="a14 ared" role="status">{note}</p>}
+      <SearchStatus state={search.state} onRetry={search.retry} className="a14 amut" />
       <div id={listId} role="listbox" aria-label={tr('Places')} className={found.length ? 'acard acol asep' : undefined} hidden={!found.length}>
         {found.slice(0, 5).map((p) => {
           const l = suggestionLines(p);
