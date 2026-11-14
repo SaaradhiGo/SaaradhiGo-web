@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { canAny, useAdminAccess } from '@/lib/adminScope';
+import { canAny, useAdminAccess, withScope } from '@/lib/adminScope';
 import { canOpen } from '@/lib/consoleLinks';
 import { stamp } from '@/lib/consoleTime';
 import { messageOf } from '@/components/console/notifications';
@@ -271,18 +271,27 @@ export default function StaffPage() {
     if (role) s.set('role', role);
     if (q) s.set('q', q);
     setLoading(true);
-    api.get<{ count: number; results: Person[]; super_admins: number }>(`/admin-access/staff/?${s}`)
+    api.get<{ count: number; results: Person[]; super_admins: number }>(withScope(`/admin-access/staff/?${s}`))
       .then((r) => { setRows(r.results); setTotal(r.count); setSupers(r.super_admins); setError(null); })
       .catch((err) => setError(messageOf(err, 'The staff list could not be loaded.')))
       .finally(() => setLoading(false));
   }, [allowed, view, role, q, page, tick]);
 
   const columns = useMemo<ListColumn<Person>[]>(() => [
-    { key: 'name', label: 'Name', primary: true, render: (p) => <span>{p.name} <span className="ops-ref sg-num">{p.ref}</span></span> },
+    // The whole row opens the record; the name reads as a link so that is visible.
+    { key: 'name', label: 'Name', primary: true, render: (p) => <span><span className="st-name">{p.name}</span> <span className="ops-ref sg-num">{p.ref}</span></span> },
     { key: 'roles', label: 'Roles', render: (p) => rolesText(p) },
     { key: 'status', label: 'Status', render: statusOf },
     { key: 'mfa', label: 'Two-step sign-in', render: (p) => (p.mfa_enrolled ? 'Set up' : 'Not set up') },
     { key: 'last', label: 'Last sign-in', render: (p) => stamp(p.last_login) },
+    {
+      key: 'manage', label: 'Manage',
+      render: (p) => (
+        <button type="button" className="st-manage" aria-label={`Manage ${p.name || p.ref}`} onClick={() => setOpenId(p.id)}>
+          Manage <span className="st-chevron" aria-hidden="true">›</span>
+        </button>
+      ),
+    },
   ], []);
 
   if (!allowed) return <p className="alert-error" role="alert">Staff and roles is for Super Admins.</p>;

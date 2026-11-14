@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TOKEN_KEY } from '@/lib/api';
+import { SCOPE_KEY } from '@/lib/adminScope';
 import Page from './page';
 
 vi.mock('next/navigation', () => ({
@@ -98,5 +99,26 @@ describe('Staff and roles page', () => {
     expect(screen.queryByRole('button', { name: 'Take away…' })).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'Account' }));
     expect(screen.queryByRole('button', { name: 'Deactivate…' })).toBeNull();
+  });
+
+  it('rows look clickable: the name reads as a link and each row has a Manage button', async () => {
+    render(<Page />);
+    const name = await screen.findByText('Asha Rao');
+    expect(name.className).toContain('st-name');
+    expect(name.closest('tr')?.className).toContain('is-link');
+    const manage = screen.getByRole('button', { name: 'Manage Asha Rao' });
+    expect(manage.className).toContain('st-manage');
+    expect(manage.textContent).toContain('›');
+    fireEvent.click(manage);
+    await screen.findByRole('form', { name: 'Give a role' });
+    expect(calls.some((c) => c.url.includes('/admin-access/staff/2/'))).toBe(true);
+  });
+
+  it('asks only for the selected market when the switch is on United States', async () => {
+    window.localStorage.setItem(SCOPE_KEY, 'US');
+    render(<Page />);
+    await screen.findByText('Asha Rao');
+    const list = calls.find((c) => c.url.includes('/admin-access/staff/?'))!;
+    expect(list.url).toContain('scope=US');
   });
 });

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
+import { withScope } from '@/lib/adminScope';
 import { stamp } from '@/lib/consoleTime';
 import type { Catalogue } from '@/lib/reports';
 import { Empty, ErrorState, Skeleton } from '@/components/console/ui';
@@ -23,7 +24,7 @@ export default function ReportsPage() {
     setData(null);
     setError(null);
     try {
-      setData(await api.get<Catalogue>('/reports/admin/catalogue/'));
+      setData(await api.get<Catalogue>(withScope('/reports/admin/catalogue/')));
     } catch (err) {
       setError(err instanceof ApiError && err.fromServer ? err.message : 'We could not load the report catalogue.');
     }

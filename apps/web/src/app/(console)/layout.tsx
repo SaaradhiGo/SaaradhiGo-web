@@ -1,7 +1,6 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { LegalLine } from '@/components/sg/Footer';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CONSOLE_SESSION_ENDED, readOperator, readToken, signOutConsole,
@@ -19,6 +18,7 @@ import { landingFor } from '@/lib/landing';
 import { SosBar } from '@/components/console/shell/SosBar';
 import { TopBar } from '@/components/console/TopBar';
 import { RecoveryLowBanner } from '@/components/console/RecoveryLowBanner';
+import { ConsoleLegalLine } from '@/components/console/shell/ConsoleLegalLine';
 import '@/styles/console.css';
 
 /**
@@ -204,7 +204,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
               </span>
             </div>
           ) : children}
-          <LegalLine />
+          <ConsoleLegalLine access={access ?? null} />
         </main>
       </div>
     </div>

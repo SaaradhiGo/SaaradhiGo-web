@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ApiError, api } from '@/lib/api';
+import { withScope } from '@/lib/adminScope';
 import {
   CLOSE_NO_CAPABILITY, FrameBuffer, applyFrames, dotsFrom, heatmapUrl, snapshotUrl, socketUrl,
   TICKET_PATH, type CityStatus, type DotMap, type Frame, type Heatmap, type Link, type Snapshot, type Ticket,
@@ -67,7 +68,7 @@ export function useLiveOps(city: string | null, enabled: boolean): LiveOps {
   // --- the REST snapshot ------------------------------------------------------
   const load = useCallback(async (opts: { keepDots?: boolean } = {}) => {
     try {
-      const snap = await api.get<Snapshot>(snapshotUrl(cityRef.current));
+      const snap = await api.get<Snapshot>(inMarket(snapshotUrl(cityRef.current), cityRef.current));
       if (!alive.current) return;
       setSnapshot(snap);
       // While the socket is live it owns the dots; the snapshot still refreshes
@@ -206,6 +207,14 @@ export function useLiveOps(city: string | null, enabled: boolean): LiveOps {
 }
 
 /**
+ * The console's market switch narrows the map to its cities. A city picked on
+ * the page is already inside it, so the switch is only sent when none is.
+ */
+function inMarket(path: string, city: string | null): string {
+  return city ? path : withScope(path);
+}
+
+/**
  * The demand and supply cells. Polled: a cell is a count over a window, so the
  * socket has nothing to add. A reload keeps the last good cells on screen.
  */
@@ -218,7 +227,7 @@ export function useHeatmap(city: string | null, windowMinutes: number, enabled: 
   useEffect(() => {
     if (!enabled) return;
     let cancelled = false;
-    api.get<Heatmap>(heatmapUrl(city, windowMinutes)).then((result) => {
+    api.get<Heatmap>(inMarket(heatmapUrl(city, windowMinutes), city)).then((result) => {
       if (cancelled) return;
       setData(result);
       setError(null);
