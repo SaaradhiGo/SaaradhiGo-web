@@ -62,7 +62,8 @@ export function Sidebar({
     <aside className="ops__side sg-on-noir" aria-label="Sidebar">
       {/* Named by its own text while that text is visible; only the
           collapsed rail, where the words are hidden, needs a label. */}
-      <Link href={home} className="ops__brand" aria-label={collapsed ? 'Saaradhi Go Admin, home' : undefined}>
+      {/* 14 Nov: named at every width; at phone width the CSS hides the words (axe link-name). */}
+      <Link href={home} className="ops__brand" aria-label="Saaradhi Go Admin, home">
         <Logo variant="badge" />
         <span className="ops__wordmark">
           Saaradhi Go
@@ -84,7 +85,7 @@ export function Sidebar({
                   href={item.href}
                   className="ops__link"
                   aria-current={isCurrent(item.href) ? 'page' : undefined}
-                  aria-label={collapsed ? name : undefined}
+                  aria-label={name}
                   title={collapsed ? name : undefined}
                 >
                   <item.Icon />

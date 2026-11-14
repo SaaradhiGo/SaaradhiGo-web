@@ -202,7 +202,8 @@ function RiderMock() {
               <LockIcon />
             </div>
           ))}
-          <div className="s-mock-btn" style={{ marginTop: 4 }}>{h.mockBook}</div>
+          {/* The button books the market's first class (USA: Book Standard, never Auto). */}
+          <div className="s-mock-btn" style={{ marginTop: 4 }}>{h.mockBook.replace(h.mockClasses[0], classes[0])}</div>
         </div>
       </div>
     </div>

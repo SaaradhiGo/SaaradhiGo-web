@@ -90,7 +90,8 @@ export function SafetyBoard({ access }: { access: AdminAccess | null }) {
       {notice ? <p className="alert-success" role="status">{notice}</p> : null}
 
       <div className="ops-board">
-        <div className="ops-board__lanes">
+        {/* 14 Nov: the lanes scroll sideways at phone width; keyboard users can reach and scroll them. */}
+        <div className="ops-board__lanes" role="region" aria-label="Safety queues" tabIndex={0}>
           {LANES.map((lane) => {
             const rows = (board?.lanes[lane.key] ?? []).filter(keep);
             const hot = lane.key === 'not_acknowledged';
