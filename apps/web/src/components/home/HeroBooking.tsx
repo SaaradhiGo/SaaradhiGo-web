@@ -10,6 +10,7 @@ import { LatLng, Place, placeToPoint, searchPlaces, serviceabilityAt } from '@/l
 import { fetchServiceAreas, primaryArea } from '@/lib/serviceAreas';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useSite } from '@/i18n/site';
+import { useLegal } from '@/components/sg/LegalProvider';
 import { SITE_FLAGS } from '@/lib/siteFlags';
 
 /**
@@ -69,8 +70,12 @@ export function HeroBooking() {
   // Where to bias the place search. Starts as the first live service area
   // and is replaced by the rider's own position the moment they share it.
   const [searchNear, setSearchNear] = useState<LatLng | null>(null);
-  // The active city: suggestions are RESTRICTED to its zone (owner, 2026-11-06).
-  const [area, setArea] = useState<{ code: string; name: string } | null>(null);
+  // 14 Nov (owner): the pickup point decides the market. Suggestions come from every country we
+  // operate in (IN, US), ranked nearest the visitor: their location, else the country chosen in
+  // the header, else their account's market. No longer restricted to one city's zone.
+  const { market } = useLegal();
+  /** The chosen market's launch city: the bias until the visitor shares their location. */
+  const [marketCentre, setMarketCentre] = useState<LatLng | null>(null);
   /** Coordinates of the chosen places, resolved once on choosing. */
   const [resolved, setResolved] = useState<{ pickup?: LatLng; dest?: LatLng }>({});
   const { t } = useLocale();
@@ -79,11 +84,11 @@ export function HeroBooking() {
     let cancelled = false;
     fetchServiceAreas()
       .then((areas) => {
-        const area = primaryArea(areas);
-        if (!cancelled && area) setArea({ code: area.zone.code, name: area.zone.city || area.zone.name });
+        const mine = areas.filter((a) => (a.zone as { country?: string }).country === market);
+        const area = primaryArea(mine.length ? mine : areas);
         if (!cancelled && area?.centre) {
           // Only as a default: an explicit location wins, and is set below.
-          setSearchNear((current) => current ?? area.centre);
+          setMarketCentre(area.centre);
         }
       })
       .catch(() => {
@@ -92,7 +97,7 @@ export function HeroBooking() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [market]);
 
   // Debounced lookup, and only for the field being typed in.
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -105,7 +110,7 @@ export function HeroBooking() {
     }
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      searchPlaces(text, searchNear, active === 'pickup' ? 'pickup' : 'drop', area?.code)
+      searchPlaces(text, searchNear ?? marketCentre, active === 'pickup' ? 'pickup' : 'drop', null, market)
         .then((places) => {
           setSuggestions(places);
           setSearchNote(null);
@@ -129,7 +134,7 @@ export function HeroBooking() {
     // language's message on screen. `searchNear` is here so that sharing a
     // location re-runs the search around the rider rather than leaving the
     // city-centre results on screen.
-  }, [active, pickupText, destText, searchNear, area?.code, t.validation.searchThrottled]);
+  }, [active, pickupText, destText, searchNear, marketCentre, market, t.validation.searchThrottled]);
 
   function choose(place: Place) {
     const which = active === 'pickup' ? 'pickup' : 'dest';
@@ -148,8 +153,9 @@ export function HeroBooking() {
         if (!point) return;
         setResolved((r) => ({ ...r, [which]: point }));
         const where = await serviceabilityAt(point).catch(() => null);
-        if (where && !where.serviceable && area) {
-          setErrors((p) => ({ ...p, [which]: t.validation.notInArea.replace('{area}', area.name) }));
+        // Outside every zone: "We're not in this area yet" (14 Nov).
+        if (where && !where.serviceable) {
+          setErrors((p) => ({ ...p, [which]: t.validation.notInArea }));
         }
       })
       .catch(() => { /* resolved again at submit */ });
@@ -204,13 +210,13 @@ export function HeroBooking() {
         setPickupText(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
         setPickupPlace(null);
         setPickupPoint({ lat: latitude, lng: longitude });
-        // From here on, search around the rider, inside their own zone.
+        // From here on, suggestions are ranked from where the rider is.
         setSearchNear({ lat: latitude, lng: longitude });
         serviceabilityAt({ lat: latitude, lng: longitude })
           .then((where) => {
-            if (where.zone) setArea({ code: where.zone.code, name: where.zone.name });
+            if (!where.serviceable) setErrors((p) => ({ ...p, pickup: t.validation.notInArea }));
           })
-          .catch(() => { /* keep the launch city */ });
+          .catch(() => { /* checked again on the fares page */ });
         setErrors((p) => ({ ...p, pickup: undefined }));
         setLocating(false);
       },
