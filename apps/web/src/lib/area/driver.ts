@@ -13,6 +13,8 @@ export type Period = 'today' | 'week' | 'month';
 
 export type PeriodTotals = {
   period: Period;
+  /** 14 Nov: false where the market bans cash (Idaho); absent means cash is allowed. */
+  cash_allowed?: boolean;
   start: string;
   end: string;
   timezone: string;

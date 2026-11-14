@@ -12,7 +12,7 @@ export type HistoryPeriod = 'day' | 'week' | 'month' | 'year' | 'taxyear' | 'cus
 export type HistorySummary = {
   trips: number; days_driven: number; fares: string; avg_fare: string; commission: string; daily_fee: string;
   platform_fee: string; tips: string; tip_riders: number; earned: string; paid_to_bank: string; payouts: number;
-  cash_collected: string; unresolved_trips: number; fee_note: string; tips_enabled: boolean;
+  cash_collected: string; unresolved_trips: number; fee_note: string; tips_enabled: boolean; cash_allowed?: boolean;
 };
 export type History = {
   period: HistoryPeriod; start: string; end: string; timezone: string; currency: string; today: string;

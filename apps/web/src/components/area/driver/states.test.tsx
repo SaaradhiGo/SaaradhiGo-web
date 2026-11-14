@@ -101,6 +101,16 @@ describe('a brand-new driver sees zeros, not dots', () => {
     expect(container.textContent).toContain('₹0.00');
     expect(container.textContent).toContain('No payouts yet');
     expect(container.textContent).not.toMatch(PLACEHOLDER);
+    expect(container.textContent).toContain('in cash');
+  });
+
+  it('payouts in Idaho (cash banned, 49-3712): no cash wording', async () => {
+    api.get.mockImplementation(async (p: string) => (p.startsWith('/driver/earnings/period/')
+      ? { ...ZERO('today'), timezone: 'America/Boise', currency: 'USD', cash_allowed: false } : newDriver(p)));
+    const { container } = page(<DriverPayouts />);
+    await settle();
+    expect(container.textContent).toContain('You earned');
+    expect(container.textContent).not.toContain('cash');
   });
 });
 

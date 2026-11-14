@@ -13,6 +13,8 @@ import { WEBSITE, translate } from './website';
 
 /** Shown on the public pages, not in the translation files: stays English. */
 const MISSING = [
+  // 14 Nov, USA: the driver's Payouts line where cash is banned (Idaho). English only until translated.
+  'You earned {earned} today.',
   // SiteCopy
   'Ride now', 'Schedule', 'Trip type', // the hidden Schedule switch
   'Mobile number · we text a code', 'Confirm', // unused phone variants
