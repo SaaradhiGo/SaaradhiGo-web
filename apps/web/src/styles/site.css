@@ -256,6 +256,9 @@
 .s-book__locate[data-text="on"] { width: auto; gap: 6px; padding: 0 12px; font: inherit; font-size: var(--text-small);
   line-height: var(--leading-small); font-weight: 600; white-space: nowrap; }
 .s-book__error { margin: 6px 0 0; color: var(--c-red); font-size: var(--text-small); line-height: var(--leading-small); }
+.s-book__note { margin: 6px 0 0; color: var(--c-muted); font-size: var(--text-small); line-height: var(--leading-small); display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+/* 14 Nov: the search status line's retry; a 44x44 target like every control. */
+.sg-search-retry { min-height: 44px; min-width: 44px; padding: 0 8px; border: 0; background: transparent; color: var(--c-ink); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
 .s-book__suggest {
   position: absolute; left: 0; right: 0; top: 56px; z-index: 30; background: var(--c-surface); border: 1px solid var(--c-border);
   border-radius: 12px; box-shadow: 0 20px 48px var(--c-shadow); padding: 6px; display: flex; flex-direction: column;

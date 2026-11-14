@@ -142,8 +142,7 @@ export async function addPlace(p: { address_text: string; latitude: number; long
 }
 
 export async function removePlace(id: number) {
-  const token = await areaToken();
-  return api.delete(`/rider/locations/${id}/delete/`, token ?? undefined);
+  return areaDelete(`/rider/locations/${id}/delete/`);
 }
 
 export async function trips(status?: 'completed' | 'cancelled'): Promise<Trip[]> {
@@ -181,8 +180,7 @@ export async function changePhone(phone: string, otp: string): Promise<Profile> 
 }
 
 export async function updateName(patch: { full_name?: string; email?: string }) {
-  const token = await areaToken();
-  return api.patch<Profile>('/auth/update/', patch, token ?? undefined);
+  return areaPatch<Profile>('/auth/update/', patch);
 }
 
 export async function exportData() {

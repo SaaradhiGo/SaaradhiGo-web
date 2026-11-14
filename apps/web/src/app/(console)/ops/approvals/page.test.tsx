@@ -37,7 +37,7 @@ const REQUEST = {
 
 function routeFetch(detail: Record<string, unknown> = {}) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
-    const u = new URL(url, 'http://x');
+    const u = new URL(String(url).split('?to=').pop()!, 'http://x');
     let data: unknown;
     if (init?.method === 'POST') data = { ...REQUEST, ...detail, status: 'executed' };
     else if (u.pathname.endsWith('/approvals/admin/requests/7/')) data = { ...REQUEST, ...detail };
@@ -51,7 +51,7 @@ function routeFetch(detail: Record<string, unknown> = {}) {
 beforeEach(() => {
   query = 'id=7';
   window.localStorage.clear();
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
 });
 afterEach(() => cleanup());
 

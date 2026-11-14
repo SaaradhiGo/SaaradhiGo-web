@@ -10,10 +10,13 @@ import {
   verifySession,
 } from '@/lib/session/cookie';
 import { AREA_COOKIE } from '@/lib/session/routing';
+import { COOKIES, clearSession } from '@/lib/session/bff';
 
 /**
- * Turns the browser's rider/driver token into the signed role cookie the
- * middleware reads. POST { token } after sign-in; PATCH { role } to switch
+ * Turns the rider/driver session into the signed role cookie the middleware
+ * reads. POST after sign-in (14 Nov: the token is read from the HttpOnly
+ * session cookie, never sent by the page; a `token` in the body is still
+ * accepted for tests and old tabs); PATCH { role } to switch
  * area on an account that holds both; DELETE on sign-out.
  *
  * The role is never taken from the request: the backend is asked who the
@@ -51,7 +54,8 @@ function cookieFor(res: NextResponse, value: string, maxAge = SESSION_MAX_AGE, a
 export async function POST(req: NextRequest) {
   const secret = sessionSecret();
   if (!secret) return NextResponse.json({ error: 'SESSION_UNCONFIGURED' }, { status: 503 });
-  const { token, role: wanted } = (await req.json().catch(() => ({}))) as { token?: string; role?: string };
+  const { token: sent, role: wanted } = (await req.json().catch(() => ({}))) as { token?: string; role?: string };
+  const token = sent || req.cookies.get(COOKIES.rider.at)?.value;
   if (!token) return NextResponse.json({ error: 'NO_TOKEN' }, { status: 400 });
 
   const res = await fetch(`${API}/auth/profile/`, {
@@ -101,5 +105,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function DELETE() {
-  return cookieFor(NextResponse.json({ ok: true }), '', 0);
+  const res = cookieFor(NextResponse.json({ ok: true }), '', 0);
+  clearSession(res, 'rider');
+  return res;
 }

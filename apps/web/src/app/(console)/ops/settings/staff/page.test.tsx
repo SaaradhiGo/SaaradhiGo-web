@@ -38,7 +38,7 @@ let deactivateStatus = 200;
 beforeEach(() => {
   isSelf = false; deactivateStatus = 200; calls.length = 0;
   window.localStorage.clear();
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
   vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
     const u = String(url);
     calls.push({ url: u, method: init?.method ?? 'GET', body: init?.body as string | undefined });

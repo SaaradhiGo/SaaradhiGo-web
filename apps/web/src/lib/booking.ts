@@ -330,18 +330,27 @@ export class RideSocket {
   ) {}
 
   open() {
-    const token = readRiderToken();
+    const session = readRiderToken();
     const base = wsBase();
-    if (!token || !base) {
+    if (!session || !base) {
       this.onState('closed');
       return;
     }
     this.closedByUs = false;
     this.onState('connecting');
+    // 14 Nov: the page holds no token, so the socket opens with a single-use, 30-second ticket
+    // issued to the session (POST /auth/ws-ticket/), never a token in the URL.
+    void api.post<{ ticket?: string }>('/auth/ws-ticket/', {}, session)
+      .then((r) => {
+        if (this.closedByUs) return;
+        if (!r?.ticket) { this.onState('closed'); return; }
+        this.connect(`${base}${this.path}${this.path.includes('?') ? '&' : '?'}ticket=${encodeURIComponent(r.ticket)}`);
+      })
+      .catch(() => this.onState('closed'));
+  }
 
-    const ws = new WebSocket(
-      `${base}${this.path}${this.path.includes('?') ? '&' : '?'}token=${token}`,
-    );
+  private connect(url: string) {
+    const ws = new WebSocket(url);
     this.ws = ws;
 
     ws.onopen = () => this.onState('open');

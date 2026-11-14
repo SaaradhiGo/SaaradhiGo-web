@@ -52,7 +52,7 @@ const refused: Reply = {
 };
 const signedIn = (extra: Record<string, unknown> = {}): Reply => ({
   status: 200,
-  body: { status: 'success', data: { token: 'access-1', refresh_token: 'refresh-1', user: { email: EMAIL }, ...extra } },
+  body: { status: 'success', data: { session: true, user: { email: EMAIL }, ...extra } },
 });
 
 function serverAnswers(...queue: Reply[]) {
@@ -129,7 +129,7 @@ describe('signing in with a recovery code', () => {
     expect(second.url.endsWith('/auth/admin/login/')).toBe(true);
     expect(second.body).toEqual({ email: EMAIL, password: PASSWORD, recovery_code: 'K3Q7-M2X9' });
     expect('mfa_code' in second.body).toBe(false);
-    expect(window.localStorage.getItem(TOKEN_KEY)).toBe('access-1');
+    expect(window.localStorage.getItem(TOKEN_KEY)).toBeNull(); // 14 Nov: the token is an HttpOnly cookie now
     // Seven left is not low: nothing noted for the console.
     expect(window.sessionStorage.getItem(RECOVERY_LOW_KEY)).toBeNull();
   });
@@ -220,7 +220,7 @@ describe('the recovery codes, shown once at the first sign-in', () => {
     expect(screen.getByRole('button', { name: 'Copy all' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Download .txt' })).toBeTruthy();
     // Signed in -- the token is stored -- but the console waits.
-    expect(window.localStorage.getItem(TOKEN_KEY)).toBe('access-1');
+    expect(window.localStorage.getItem(TOKEN_KEY)).toBeNull(); // 14 Nov: the token is an HttpOnly cookie now
     expect(replace).not.toHaveBeenCalled();
   });
 

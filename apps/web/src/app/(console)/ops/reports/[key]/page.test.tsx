@@ -41,7 +41,7 @@ describe('report view', () => {
 
 beforeEach(() => {
   push.mockClear();
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
   vi.stubGlobal('fetch', vi.fn(async (url: string) => ({
     ok: true, status: 200,
     json: async () => ({ status: 'success', data: /catalogue/.test(String(url)) ? CATALOGUE : BODY }),

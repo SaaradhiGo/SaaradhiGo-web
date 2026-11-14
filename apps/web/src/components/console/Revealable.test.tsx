@@ -92,7 +92,7 @@ async function openPopover() {
 beforeEach(() => {
   window.localStorage.clear();
   window.sessionStorage.clear();
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
   access = holder;
   resetRevealStatsForTests();
 });
@@ -154,7 +154,7 @@ describe('confirming', () => {
     const r = request(fetchMock, 0);
     expect(r.method).toBe('POST');
     expect(r.url.endsWith('/admin-access/reveal/')).toBe(true);
-    expect(r.headers.Authorization).toBe('Bearer access-1');
+    expect(r.headers['x-sg-bff']).toBe('1'); expect(r.headers.Authorization).toBeUndefined();
     expect(r.body).toEqual({
       target_type: 'trip', target_id: 42, fields: ['rider_phone'], reason: 'payout dispute, ticket 881',
     });
@@ -326,8 +326,8 @@ describe('refusals', () => {
       expect(screen.queryByText('revealed · logged')).toBeNull();
       const live = document.querySelector('[aria-live="polite"]');
       expect(live?.textContent).toBe(message);
-      // 403/404/429/503 are not the session ending: the token stays.
-      expect(window.localStorage.getItem(TOKEN_KEY)).toBe('access-1');
+      // 403/404/429/503 are not the session ending: the session stays.
+      expect(document.cookie).toContain('sg-staff-in=1');
     });
   }
 });

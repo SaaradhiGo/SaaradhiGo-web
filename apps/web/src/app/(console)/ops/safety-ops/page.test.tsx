@@ -40,7 +40,7 @@ async function flush() {
 
 beforeEach(() => {
   window.localStorage.clear();
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
   fetchMock = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ status: 'success', data: PAGE }) }));
   vi.stubGlobal('fetch', fetchMock);
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });

@@ -55,7 +55,7 @@ const DETAIL = {
 
 function routeFetch() {
   const fetchMock = vi.fn(async (url: string) => {
-    const u = new URL(url, "http://x");
+    const u = new URL(String(url).split('?to=').pop()!, 'http://x');
     let data: unknown;
     if (u.pathname.endsWith('/driver/admin/2231/full/')) data = DETAIL;
     else if (u.searchParams.get('page_size') === '1') {
@@ -70,7 +70,7 @@ function routeFetch() {
 beforeEach(() => {
   query = '';
   window.localStorage.clear();
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
 });
 afterEach(() => cleanup());
 

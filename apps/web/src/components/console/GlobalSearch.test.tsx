@@ -55,7 +55,7 @@ function type(text: string) {
 const settle = () => new Promise((r) => setTimeout(r, 320));
 
 beforeEach(() => {
-  window.localStorage.setItem(TOKEN_KEY, 'operator-token');
+  document.cookie = 'sg-staff-in=1; path=/';
   push.mockReset();
 });
 
@@ -78,14 +78,14 @@ describe('debounce and fan-out', () => {
     await act(settle);
 
     expect(calls).toHaveLength(4);
-    const paths = calls.map((c) => new URL(c.url).pathname).sort();
+    const paths = calls.map((c) => new URL(String(c.url).split('?to=').pop()!, 'http://x').pathname).sort();
     expect(paths).toEqual([
-      '/api/v1/search/admin/drivers/', '/api/v1/search/admin/riders/',
-      '/api/v1/search/admin/trips/', '/api/v1/search/admin/vehicles/',
+      '/search/admin/drivers/', '/search/admin/riders/',
+      '/search/admin/trips/', '/search/admin/vehicles/',
     ]);
     for (const c of calls) {
-      expect(new URL(c.url).searchParams.get('q')).toBe('ravi');
-      expect(c.auth).toBe('Bearer operator-token');
+      expect(new URL(String(c.url).split('?to=').pop()!, 'http://x').searchParams.get('q')).toBe('ravi');
+      expect(c.auth).toBeUndefined();
     }
   });
 
@@ -114,8 +114,8 @@ describe('debounce and fan-out', () => {
     type('ravi');
     await act(settle);
 
-    const paths = calls.map((c) => new URL(c.url).pathname).sort();
-    expect(paths).toEqual(['/api/v1/search/admin/drivers/', '/api/v1/search/admin/vehicles/']);
+    const paths = calls.map((c) => new URL(String(c.url).split('?to=').pop()!, 'http://x').pathname).sort();
+    expect(paths).toEqual(['/search/admin/drivers/', '/search/admin/vehicles/']);
   });
 });
 
@@ -277,7 +277,7 @@ describe('keyboard', () => {
   it('a stale answer does not overwrite a newer one', async () => {
     const answers: Record<string, () => void> = {};
     vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => new Promise<Response>((resolve) => {
-      const url = new URL(String(input));
+      const url = new URL(String(input).split('?to=').pop()!, 'http://x');
       const q = url.searchParams.get('q')!;
       const key = (['trips', 'drivers', 'riders', 'vehicles'] as const).find((k) => url.pathname.includes(k))!;
       const body = key === 'drivers' && q === 'old'

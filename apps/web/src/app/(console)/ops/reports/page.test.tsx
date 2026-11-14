@@ -20,7 +20,7 @@ describe('reports catalogue', () => {
 });
 
 beforeEach(() => {
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
   const data = {
     areas: [{ area: 'Operations', reports: [{ key: 'trips', area: 'Operations', title: 'Trips', description: 'Requested and completed', money: false, groups: [], default_group: '' }] }],
     cities: [{ code: 'HYD', name: 'Hyderabad', currency: 'INR', timezone: 'Asia/Kolkata' }],

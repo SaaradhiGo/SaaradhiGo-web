@@ -57,7 +57,7 @@ describe('incident record page', () => {
 
 beforeEach(() => {
   window.localStorage.clear();
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
   vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ status: 'success', data: DETAIL }) })));
 });
 afterEach(() => cleanup());
