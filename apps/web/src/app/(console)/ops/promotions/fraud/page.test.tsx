@@ -35,7 +35,7 @@ describe('promotions fraud page', () => {
 });
 
 beforeEach(() => {
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
   const data = { results: [], facets: { status: {} } };
   vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ status: 'success', data }) })));
 });

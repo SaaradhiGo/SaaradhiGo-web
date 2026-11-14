@@ -39,7 +39,7 @@ const ROW = {
 
 function routeFetch(request: Record<string, unknown>, detail: Record<string, unknown> = {}) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
-    const path = new URL(url, 'http://x').pathname;
+    const path = new URL(String(url).split('?to=').pop()!, 'http://x').pathname;
     let data: unknown = { count: 0, results: [] };
     if (init?.method === 'POST' && path.endsWith('/payouts/31/approve/')) {
       data = { approval_request: { id: 9, status: 'requested' } };
@@ -69,7 +69,7 @@ async function askToRelease() {
 
 beforeEach(() => {
   window.localStorage.clear();
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 

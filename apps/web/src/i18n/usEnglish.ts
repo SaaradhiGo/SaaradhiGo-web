@@ -39,7 +39,7 @@ const WORDS: Record<string, string> = {
 const ISE_STEMS = [
   'authoris', 'recognis', 'organis', 'apologis', 'realis', 'customis', 'personalis', 'prioritis',
   'summaris', 'finalis', 'minimis', 'maximis', 'optimis', 'utilis', 'itemis', 'emphasis',
-  'standardis', 'visualis', 'categoris', 'memoris', 'specialis', 'capitalis', 'normalis',
+  'standardis', 'visualis', 'anonymis', 'categoris', 'memoris', 'specialis', 'capitalis', 'normalis',
 ];
 for (const stem of ISE_STEMS) {
   const us = `${stem.slice(0, -1)}z`;

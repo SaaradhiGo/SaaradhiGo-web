@@ -5,7 +5,8 @@ import { DropMark, PickupMark } from '@/components/art/MiniMaps';
 import { LockIcon } from '@/components/sg/SiteIcons';
 import { useSite } from '@/i18n/site';
 import { ExampleTag } from '@/components/sg/ExampleRequest';
-import { EXAMPLE_FARE, rupees } from '@/lib/exampleFare';
+import { exampleFor, moneyOf } from '@/lib/exampleFare';
+import { useLegal } from '@/components/sg/LegalProvider';
 
 /**
  * /ride (approved design, 2026-11-07; Ride.html): the five steps of a ride
@@ -14,6 +15,8 @@ import { EXAMPLE_FARE, rupees } from '@/lib/exampleFare';
  */
 export function RideContent() {
   const r = useSite().ride;
+  // 14 Nov: the example fare is the market's own (USA: USD, Treasure Valley).
+  const ex = exampleFor(useLegal().market);
 
   return (
     <section className="s-wrap s-page s-two s-cb">
@@ -54,7 +57,7 @@ export function RideContent() {
           <hr />
           <div className="s-ticket__fare" data-testid="example-fare" data-example="">
             <ExampleTag />
-            <b>{rupees(EXAMPLE_FARE.fareMinor)}</b>
+            <b>{moneyOf(ex.fareMinor, ex.currency)}</b>
           </div>
         </div>
         <div className="s-note">

@@ -58,7 +58,7 @@ const refusedReply: Reply = {
 };
 const signedIn: Reply = {
   status: 200,
-  body: { status: 'success', data: { token: 'access-1', refresh_token: 'refresh-1', user: { email: EMAIL, role: 'ops' } } },
+  body: { status: 'success', data: { session: true, user: { email: EMAIL, role: 'ops' } } },
 };
 
 /** Answers requests in order; a request past the end of the queue fails the test. */
@@ -144,7 +144,7 @@ describe('forced password change at sign-in', () => {
     expect(second.body).toEqual({ email: EMAIL, password: TEMP_PASSWORD, new_password: CHOSEN });
 
     // The normal sign-in path: the session is stored exactly as a plain 200 would store it.
-    expect(window.localStorage.getItem(TOKEN_KEY)).toBe('access-1');
+    expect(window.localStorage.getItem(TOKEN_KEY)).toBeNull(); // 14 Nov: the token is an HttpOnly cookie now
     expect(JSON.parse(window.localStorage.getItem(ADMIN_USER_KEY) ?? 'null')).toMatchObject({ email: EMAIL });
   });
 
@@ -200,7 +200,7 @@ describe('forced password change at sign-in', () => {
     expect(request(fetchMock, 2).body).toEqual({
       email: EMAIL, password: TEMP_PASSWORD, mfa_code: '123456', new_password: CHOSEN,
     });
-    expect(window.localStorage.getItem(TOKEN_KEY)).toBe('access-1');
+    expect(window.localStorage.getItem(TOKEN_KEY)).toBeNull(); // 14 Nov: the token is an HttpOnly cookie now
   });
 
   it('asked for a code again at the password step, it shows the code field and resends both', async () => {

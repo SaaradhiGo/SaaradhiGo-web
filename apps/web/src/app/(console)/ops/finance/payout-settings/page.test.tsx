@@ -31,7 +31,7 @@ describe('payout settings page', () => {
 });
 
 beforeEach(() => {
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
   const data = { editable: true, fee_warning: '', countries: [{ country: 'IN', name: 'India', currency: 'INR', configured: false, message: null, config: null, history: [], pending_changes: [], recent_runs: [], editable: true, change_blocked: false, change_blocked_reason: null, payout_approval_blocked: false, payout_approval_blocked_reason: null }] };
   vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ status: 'success', data }) })));
 });

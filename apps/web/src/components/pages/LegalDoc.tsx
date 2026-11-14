@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useLegal } from '@/components/sg/LegalProvider';
 import { SUPPORT_EMAIL } from '@/lib/support';
+import { usEnglish, usEnglishDeep } from '@/i18n/usEnglish';
 import * as content from '@/lib/legalContent';
 import type { Ctx, Doc } from '@/lib/legalContent';
 import { Masthead } from './PageShell';
@@ -87,7 +88,8 @@ export function LegalDoc({ kind }: { kind: DocKind }) {
       doc = content.refunds(ctx, city ? content.cancellationLine(city.cancellation, city.currency) : null);
     }
   }
-  return <DocBody doc={doc} />;
+  // 14 Nov (owner): US spelling for US visitors only; spelling, never meaning. India keeps UK English.
+  return <DocBody doc={ctx.market === 'US' ? usEnglishDeep(doc) : doc} />;
 }
 
 function money(v: string, currency: string) {
@@ -101,6 +103,7 @@ export function FaresContent() {
   const { market } = useLegal();
   const cities = useFares(market);
   const india = market === 'IN';
+  const say = (t: string) => (india ? t : usEnglish(t));
   return (
     <>
       <Masthead title="Fares" lead="How SaaradhiGo works out a fare, and the rates in each city." />
@@ -152,7 +155,7 @@ export function FaresContent() {
             {c.vehicles[0] && (
               <p>Demand pricing stays between {Number(c.vehicles[0].demand_band.min_dynamic_multiplier ?? 1)}× and {Number(c.vehicles[0].demand_band.max_dynamic_multiplier)}× the normal fare.</p>
             )}
-            <p>{content.cancellationLine(c.cancellation, c.currency) ?? 'Cancelling is free.'}</p>
+            <p>{say(content.cancellationLine(c.cancellation, c.currency) ?? 'Cancelling is free.')}</p>
           </div>
         )))}
       </section>

@@ -84,7 +84,7 @@ async function startRegenerate() {
 beforeEach(() => {
   window.localStorage.clear();
   window.sessionStorage.clear();
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
 });
 
 afterEach(() => {
@@ -101,7 +101,7 @@ describe('status', () => {
     expect(screen.queryByText('Low')).toBeNull();
     const r = request(fetchMock, 0);
     expect(r.url.endsWith('/auth/admin/mfa/status/')).toBe(true);
-    expect(r.headers.Authorization).toBe('Bearer access-1');
+    expect(r.headers['x-sg-bff']).toBe('1'); expect(r.headers.Authorization).toBeUndefined();
     expect(screen.getByRole('button', { name: 'Regenerate recovery codes' })).toBeTruthy();
   });
 
@@ -162,7 +162,7 @@ describe('regenerating', () => {
     const r = request(fetchMock, 1);
     expect(r.method).toBe('POST');
     expect(r.url.endsWith('/auth/admin/mfa/recovery-codes/regenerate/')).toBe(true);
-    expect(r.headers.Authorization).toBe('Bearer access-1');
+    expect(r.headers['x-sg-bff']).toBe('1'); expect(r.headers.Authorization).toBeUndefined();
     expect(r.body).toEqual({ mfa_code: '123456' });
 
     expect(screen.getByRole('heading', { name: 'Your new recovery codes' })).toBeTruthy();
@@ -209,7 +209,7 @@ describe('regenerating', () => {
     expect((screen.getByLabelText('Authenticator code') as HTMLInputElement).value).toBe('');
     expect(screen.getByLabelText('Authenticator code').getAttribute('aria-invalid')).toBe('true');
     // 403, not 401: the token is still there.
-    expect(window.localStorage.getItem(TOKEN_KEY)).toBe('access-1');
+    expect(document.cookie).toContain('sg-staff-in=1');
   });
 
   it('a server refusal with its own words shows those words', async () => {

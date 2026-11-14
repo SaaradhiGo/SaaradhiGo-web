@@ -6,7 +6,9 @@ import { saveDraft } from '@/lib/area/rider';
 import { suggestionLines } from '@/lib/area/places';
 import { DropMark, PickupMark } from '@/components/art/MiniMaps';
 import { LocateIcon } from '@/components/sg/SiteIcons';
-import { LatLng, Place, placeToPoint, searchPlaces, serviceabilityAt } from '@/lib/booking';
+import { LatLng, Place, placeToPoint, serviceabilityAt } from '@/lib/booking';
+import { SearchStatus, usePlaceSearch } from '@/lib/usePlaceSearch';
+import { useTr } from '@/i18n/website';
 import { fetchServiceAreas, primaryArea } from '@/lib/serviceAreas';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useSite } from '@/i18n/site';
@@ -61,12 +63,9 @@ export function HeroBooking() {
   const [pickupPoint, setPickupPoint] = useState<{ lat: number; lng: number } | null>(null);
 
   const [active, setActive] = useState<'pickup' | 'dest' | null>(null);
-  const [suggestions, setSuggestions] = useState<Place[]>([]);
   const [errors, setErrors] = useState<{ pickup?: string; dest?: string }>({});
   const [busy, setBusy] = useState(false);
   const [locating, setLocating] = useState(false);
-  /** A reason the suggestion list is empty, when there is one worth saying. */
-  const [searchNote, setSearchNote] = useState<string | null>(null);
   // Where to bias the place search. Starts as the first live service area
   // and is replaced by the rider's own position the moment they share it.
   const [searchNear, setSearchNear] = useState<LatLng | null>(null);
@@ -99,42 +98,16 @@ export function HeroBooking() {
     };
   }, [market]);
 
-  // Debounced lookup, and only for the field being typed in.
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (!active) return;
-    const text = active === 'pickup' ? pickupText : destText;
-    if (text.trim().length < 3) {
-      setSuggestions([]);
-      return;
-    }
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      searchPlaces(text, searchNear ?? marketCentre, active === 'pickup' ? 'pickup' : 'drop', null, market)
-        .then((places) => {
-          setSuggestions(places);
-          setSearchNote(null);
-        })
-        .catch((err) => {
-          setSuggestions([]);
-          // A rate limit is a REASON, not an empty result. The guest cap is
-          // shared across anonymous callers, so a visitor can hit it through
-          // no fault of their own; showing nothing leaves them retyping into
-          // a box that will never answer. 429 says wait, or sign in -- a
-          // signed-in rider bypasses the cap entirely.
-          const status = (err as { status?: number } | null)?.status;
-          setSearchNote(status === 429 ? t.validation.searchThrottled : null);
-        });
-    }, 300); // 300 ms after the last keystroke (maps cost, 9 Nov)
-    return () => {
-      if (timer.current) clearTimeout(timer.current);
-    };
-    // `t` is in the deps because the throttle note is a translated string:
-    // without it, switching language mid-search would leave the previous
-    // language's message on screen. `searchNear` is here so that sharing a
-    // location re-runs the search around the rider rather than leaving the
-    // city-centre results on screen.
-  }, [active, pickupText, destText, searchNear, marketCentre, market, t.validation.searchThrottled]);
+  // 14 Nov: one lookup for every search box (lib/usePlaceSearch): "Searching…" while it waits,
+  // "Can't search right now" when it could not, and a later answer always wins.
+  const search = usePlaceSearch(active === 'pickup' ? pickupText : active === 'dest' ? destText : '', {
+    near: searchNear ?? marketCentre,
+    field: active === 'pickup' ? 'pickup' : 'drop',
+    market,
+    skip: !active || (active === 'pickup' ? Boolean(pickupPlace) : Boolean(destPlace)),
+  });
+  const suggestions = search.found;
+  const tr = useTr();
 
   function choose(place: Place) {
     const which = active === 'pickup' ? 'pickup' : 'dest';
@@ -145,7 +118,7 @@ export function HeroBooking() {
       setDestPlace(place);
       setDestText(suggestionLines(place).short);
     }
-    setSuggestions([]);
+    search.clear();
     setActive(null);
     // A place outside every service area says so at once, not at booking.
     void placeToPoint(place.place_id, which === 'pickup' ? 'pickup' : 'drop')
@@ -167,8 +140,15 @@ export function HeroBooking() {
     const next: { pickup?: string; dest?: string } = {};
     if (!pickupText.trim()) next.pickup = t.validation.pickupRequired;
     if (!destText.trim()) next.dest = t.validation.destRequired;
+    // 14 Nov (owner): text typed but not chosen from the list is not a place. Stay, and say so
+    // under that field, instead of going to the booking page with nothing to price.
+    if (!next.pickup && !pickupPlace && !pickupPoint) next.pickup = tr('Choose a place from the list');
+    if (!next.dest && !destPlace) next.dest = tr('Choose a place from the list');
     setErrors(next);
-    if (Object.keys(next).length > 0) return;
+    if (Object.keys(next).length > 0) {
+      setActive(next.pickup ? 'pickup' : 'dest');
+      return;
+    }
 
     setBusy(true);
     // 13 Nov (owner): /book is gone. The places go to the rider's booking as a draft in this tab:
@@ -192,7 +172,8 @@ export function HeroBooking() {
       router.push(`/ride/choose?d=${id}`);
       return;
     }
-    router.push('/ride');
+    // Chosen but not resolved (the place lookup failed): say so, never navigate away silently.
+    setErrors({ [from ? 'dest' : 'pickup']: tr('We could not find that place. Try another.') });
   }
 
   /** Browser geolocation, only on an explicit click, with a usable error. */
@@ -256,7 +237,7 @@ export function HeroBooking() {
           }}
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
-              setSuggestions([]);
+              search.clear();
               setActive(null);
             }
             if (e.key === 'Enter') {
@@ -285,6 +266,10 @@ export function HeroBooking() {
         <p className="s-book__error" id={`hp-${which}-error`} role="alert">
           {errors[which]}
         </p>
+      )}
+      {active === which && (
+        <SearchStatus state={search.state} onRetry={search.retry} className="s-book__note"
+          throttledText={t.validation.searchThrottled} />
       )}
       {active === which && suggestions.length > 0 && (
         <div className="s-book__suggest" role="group" aria-label={`${label} suggestions`}>
@@ -333,12 +318,6 @@ export function HeroBooking() {
         })}
         {field('dest', h.dest, h.destPlaceholder, destText, setDestText, () => setDestPlace(null))}
       </div>
-
-      {searchNote && (
-        <p className="s-book__error" role="status">
-          {searchNote}
-        </p>
-      )}
 
       <button type="submit" className="s-btn s-btn--primary s-book__go" disabled={busy}>
         {h.seeFares}

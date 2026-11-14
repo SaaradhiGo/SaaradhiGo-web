@@ -19,7 +19,7 @@ const fetchMock = vi.fn();
 
 beforeEach(() => {
   canEdit = true;
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
   fetchMock.mockReset();
   fetchMock.mockImplementation(async (_url: string, init?: RequestInit) => ({
     ok: true, status: init?.method === 'POST' ? 201 : 200,

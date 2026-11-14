@@ -1,6 +1,8 @@
 'use client';
 
 import { ExampleLines, ExampleTag } from '@/components/sg/ExampleRequest';
+import { mockClassesFor } from '@/lib/exampleFare';
+import { useLegal } from '@/components/sg/LegalProvider';
 
 import Link from 'next/link';
 import { HeroBooking } from '@/components/home/HeroBooking';
@@ -183,6 +185,8 @@ export function HomeContent() {
 
 function RiderMock() {
   const h = useSite().home;
+  // 14 Nov: the market's own classes (USA: Standard and XL; no Auto).
+  const classes = mockClassesFor(useLegal().market, h.mockClasses);
   return (
     <div className="s-phone" aria-hidden="true">
       <div className="s-phone__screen">
@@ -191,7 +195,7 @@ function RiderMock() {
         </div>
         <div className="s-phone__body">
           <div className="t-small t-strong">{h.mockChoose}</div>
-          {h.mockClasses.map((c, i) => (
+          {classes.map((c, i) => (
             <div key={c} className={`s-mock-row${i === 0 ? ' s-mock-row--on' : ''}`}>
               <span className={`s-mock-row__swatch s-mock-row__swatch--${i}`} />
               <span className="s-mock-row__name">{c}</span>

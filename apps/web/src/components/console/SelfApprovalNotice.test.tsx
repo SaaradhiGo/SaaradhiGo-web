@@ -25,7 +25,7 @@ function answer(data: unknown, ok = true) {
   return fetchMock;
 }
 
-beforeEach(() => { window.localStorage.clear(); window.localStorage.setItem(TOKEN_KEY, 'access-1'); });
+beforeEach(() => { window.localStorage.clear(); document.cookie = 'sg-staff-in=1; path=/'; });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('SelfApprovalNotice', () => {

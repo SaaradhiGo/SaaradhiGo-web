@@ -31,6 +31,8 @@ export type Session =
  * network round trip to know a role it already has; the account page does,
  * because it displays fields that may have changed elsewhere.
  */
+let verifiedThisLoad = false;
+
 export function useSession({ refresh = false } = {}): Session {
   const pathname = usePathname();
   const [session, setSession] = useState<Session>({
@@ -57,7 +59,12 @@ export function useSession({ refresh = false } = {}): Session {
   }, []);
 
   useEffect(() => {
-    read();
+    // 14 Nov: once per page load, ask the server whether the session still holds, so an expired
+    // one shows "Log in" at once instead of a stale name (the server renews it if it can).
+    if (read() && !verifiedThisLoad) {
+      verifiedThisLoad = true;
+      fetchProfile().then(() => read()).catch(() => read());
+    }
   }, [read, pathname]);
 
   useEffect(() => {
