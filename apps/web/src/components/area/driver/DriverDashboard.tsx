@@ -155,7 +155,8 @@ export function DriverDashboard() {
             {bal.state === 'error' ? <LoadError what="balance" retry={bal.retry} /> : b ? (
               <div className="a40">{money(b.available_balance ?? 0, b.currency ?? cur, locale)}</div>
             ) : <Skel h={40} w={140} />}
-            <div className="a14">{tr('Earned minus cash you collected')}</div>
+            {/* Idaho bans cash (49-3712): the cash half of the line only where cash is taken. */}
+            {today.data?.cash_allowed !== false && <div className="a14">{tr('Earned minus cash you collected')}</div>}
           </div>
         </div>
         <div className="dr-grid2">
