@@ -34,18 +34,24 @@ export function CardHoldSheet({ setup, onDone }: { setup: StripeSetup; onDone: (
   const [js, setJs] = useState<{ stripe: StripeJs; elements: unknown } | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const trRef = useRef(tr);
+  trRef.current = tr;
+  // Mounted once per hold (its client secret), never on a re-render; destroyed when the sheet goes.
   useEffect(() => {
     let live = true;
+    let mounted: { destroy: () => void } | null = null;
     void loadStripe().then((ok) => {
       const ctor = (window as unknown as { Stripe?: (k: string) => StripeJs }).Stripe;
-      if (!live || !ok || !ctor || !box.current) { if (live) setErr(tr('Card payment is not available right now.')); return; }
+      if (!live || !ok || !ctor || !box.current) { if (live) setErr(trRef.current('Card payment is not available right now.')); return; }
       const stripe = ctor(setup.publishableKey);
       const elements = stripe.elements({ clientSecret: setup.clientSecret });
-      elements.create('payment').mount(box.current);
+      const form = elements.create('payment');
+      form.mount(box.current);
+      mounted = form;
       setJs({ stripe, elements });
     });
-    return () => { live = false; };
-  }, [setup, tr]);
+    return () => { live = false; mounted?.destroy(); };
+  }, [setup.clientSecret, setup.publishableKey]);
   async function confirm() {
     if (!js) return;
     setBusy(true);
