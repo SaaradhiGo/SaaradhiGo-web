@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api, apiDownload } from '@/lib/api';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
-import { currentScope, useAdminAccess } from '@/lib/adminScope';
+import { currentScope, useAdminAccess, withScope } from '@/lib/adminScope';
 import { useDensity } from '@/lib/consolePrefs';
 import {
   type Catalogue, type ReportBody, type ReportColumn, type ReportFilters, type Row, CHART_DEFAULT,
@@ -240,7 +240,7 @@ function ReportInner() {
   const filters: ReportFilters = { ...base, group: base.group || card?.default_group || body?.report.default_group || '' };
 
   useEffect(() => {
-    api.get<Catalogue>('/reports/admin/catalogue/').then(setCatalogue).catch(() => setCatalogue(null));
+    api.get<Catalogue>(withScope('/reports/admin/catalogue/')).then(setCatalogue).catch(() => setCatalogue(null));
   }, []);
 
   const load = useCallback(async () => {
@@ -249,7 +249,7 @@ function ReportInner() {
     const problem = rangeProblem(f.from, f.to);
     if (problem) { setError({ status: 400, message: problem }); return; }
     try {
-      const data = await api.get<ReportBody>(reportPath(key, f));
+      const data = await api.get<ReportBody>(withScope(reportPath(key, f)));
       setBody(data);
     } catch (err) {
       setError({
@@ -324,7 +324,7 @@ function ReportInner() {
     <>
       <p className="ops-record-page__back"><Link href="/ops/reports">All reports</Link></p>
       <PageHead title={title} summary={card?.description ?? body?.report.description}
-        actions={body ? <ExportButton path={exportPath(key, filters)} /> : undefined} />
+        actions={body ? <ExportButton path={withScope(exportPath(key, filters))} /> : undefined} />
       <Panel flush>
         <Filters filters={filters} catalogue={catalogue} groups={card?.groups ?? body?.report.groups ?? []}
           showVehicle={(card?.groups ?? body?.report.groups ?? []).includes('vehicle')} noPeriod={key === 'rider_retention'} onApply={go} />

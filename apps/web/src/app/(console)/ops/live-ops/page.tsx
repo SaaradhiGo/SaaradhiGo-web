@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { can, useAdminAccess } from '@/lib/adminScope';
+import { can, selectedMarket, useAdminAccess } from '@/lib/adminScope';
 import { canOpen } from '@/lib/consoleLinks';
 import { useDensity } from '@/lib/consolePrefs';
 import {
@@ -68,7 +68,14 @@ export default function LiveOpsPage() {
   });
 
   const snapshot = live.snapshot;
-  const dots = useMemo(() => dotsInCity(live.dots, city), [live.dots, city]);
+  // The socket streams every driver the operator may see; with the market switch on one
+  // market, only the dots in that market's cities (the snapshot's list) are drawn.
+  const dots = useMemo(() => {
+    const here = dotsInCity(live.dots, city);
+    if (city || selectedMarket(access) === null) return here;
+    const market = new Set(live.cities.map((c) => c.code));
+    return here.filter((d) => d.city !== null && market.has(d.city));
+  }, [live.dots, live.cities, city, access]);
   const trips = useMemo(() => (snapshot?.trips ?? []).filter((t) => !city || t.city === city), [snapshot, city]);
   const alerts = useMemo(
     () => (snapshot?.alerts ?? []).filter((a) => !city || a.city === city || a.city === null), [snapshot, city],

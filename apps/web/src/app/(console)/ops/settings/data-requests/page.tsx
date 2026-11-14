@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ApiError, api } from '@/lib/api';
-import { canAny, useAdminAccess } from '@/lib/adminScope';
+import { canAny, useAdminAccess, withScope } from '@/lib/adminScope';
 import { canOpen } from '@/lib/consoleLinks';
 import { stamp } from '@/lib/consoleTime';
 import { messageOf } from '@/components/console/notifications';
@@ -225,7 +225,7 @@ export default function DataRequestsPage() {
     const s = new URLSearchParams({ status: view, page: String(page) });
     if (kind) s.set('kind', kind);
     setLoading(true);
-    api.get<List>(`/auth/admin/data-requests/?${s}`)
+    api.get<List>(withScope(`/auth/admin/data-requests/?${s}`))
       .then((r) => {
         setRows(r.results); setTotal(r.count); setCounts({ open: r.open, overdue: r.overdue, due: r.due_days }); setError(null);
       })

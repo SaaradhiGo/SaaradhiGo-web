@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
-import { useAdminAccess } from '@/lib/adminScope';
+import { useAdminAccess, withScope } from '@/lib/adminScope';
 import {
   MARKET_STATUS_WORDS, READINESS_WORDS, canReadPlatform, canWritePlatform, launchBlockedBy,
   readinessSummary, type CityRow, type CountryRow, type MarketStatus, type MarketsPayload,
@@ -88,7 +88,7 @@ export default function MarketsPage() {
   const load = useCallback(async () => {
     setError(null);
     try {
-      setData(await api.get<MarketsPayload>('/platform/admin/markets/'));
+      setData(await api.get<MarketsPayload>(withScope('/platform/admin/markets/')));
     } catch (err) {
       setData(null);
       setError(messageOf(err, 'The markets could not be loaded.'));

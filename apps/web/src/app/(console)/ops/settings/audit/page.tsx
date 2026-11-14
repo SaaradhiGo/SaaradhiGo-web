@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api, apiDownload } from '@/lib/api';
-import { useAdminAccess } from '@/lib/adminScope';
+import { useAdminAccess, withScope } from '@/lib/adminScope';
 import { stamp } from '@/lib/consoleTime';
 import {
   auditQuery, canReadAudit, chainWords, diffRows, emptyAuditFilters, type AuditDetail, type AuditFilters,
@@ -40,7 +40,7 @@ export default function AuditPage() {
   const load = useCallback(async () => {
     setError(null);
     try {
-      setData(await api.get<AuditPage>(`/admin-audit/admin/entries/${auditQuery(filters, { page, page_size: PAGE_SIZE })}`));
+      setData(await api.get<AuditPage>(withScope(`/admin-audit/admin/entries/${auditQuery(filters, { page, page_size: PAGE_SIZE })}`)));
     } catch (err) {
       setData(null);
       setError(messageOf(err, 'The audit log could not be loaded.'));
@@ -51,7 +51,7 @@ export default function AuditPage() {
   async function download() {
     setExporting(true); setExportError(null);
     try {
-      const { blob, filename } = await apiDownload(`/admin-audit/admin/entries/export/${auditQuery(filters)}`);
+      const { blob, filename } = await apiDownload(withScope(`/admin-audit/admin/entries/export/${auditQuery(filters)}`));
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();

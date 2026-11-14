@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { useAdminAccess } from '@/lib/adminScope';
+import { selectedMarket, useAdminAccess } from '@/lib/adminScope';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   MODE_WORDS, canReadIntegrations, canWritePlatform, modeTone, type IntegrationRow, type IntegrationsPayload,
@@ -59,7 +59,10 @@ export default function IntegrationsPage() {
     return (<><PageHeader title="Integrations" /><PlatformNav /><PlatformNoAccess what="Integrations" /></>);
   }
 
-  const all = [...(data?.rows ?? [])].sort((x, y) => x.label.localeCompare(y.label) || x.country.localeCompare(y.country));
+  // The console's market switch: that market's providers plus the ones every market shares.
+  // The list is platform configuration (one small payload), so it is narrowed here.
+  const market = selectedMarket(access);
+  const all = [...(data?.rows ?? [])].filter((r) => !market || r.country === market || r.country === 'all').sort((x, y) => x.label.localeCompare(y.label) || x.country.localeCompare(y.country));
   const countries = Array.from(new Set(all.map((r) => r.country))).sort();
   const inView = (r: IntegrationRow) => (view === 'live' ? r.mode === 'live' : view === 'attention' ? (!r.configured || r.mode !== 'live') : true);
   const needle = q.trim().toLowerCase();
