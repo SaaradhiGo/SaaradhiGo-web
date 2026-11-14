@@ -150,7 +150,12 @@ export function endSearchSession(field: SearchField): void {
   delete sessions[field];
 }
 
-export type Place = { description: string; place_id: string };
+export type Place = {
+  description: string;
+  place_id: string;
+  /** Google's split of the suggestion: the place name, then where it is (14 Nov: two lines). */
+  structured_formatting?: { main_text?: string; secondary_text?: string };
+};
 
 /**
  * Destination search.

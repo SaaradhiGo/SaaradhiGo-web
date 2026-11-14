@@ -1,7 +1,7 @@
 // Rendered gate for the public site against the approved design of
 // 2026-11-07 (design/website-2026-11-07). Exits 1 on any failure:
 //
-//   font sizes   a computed size outside {14,16,20,22,28,32,40}px (22 and 32
+//   font sizes   a computed size outside {14,16,20,28,40}px (14 Nov; until then 22 and 32
 //                only under 768px; Cinzel 20 only in the header)
 //   weights      anything but 400 or 600
 //   family       Latin text not drawn in Inter (the Cinzel name excepted)
@@ -64,8 +64,10 @@ const REF_CUT = {};
 // repo's vector logo, so these boxes (x, y, w, h) are not compared: About's
 // logo panel, and on every page the header and footer emblems (measured).
 const REF_MASK = { '/about': [[100, 125, 596, 408]] };
-const SIZES = new Set([14, 16, 20, 22, 28, 32, 40]);
-const PHONE_ONLY = new Set([22, 32]);
+// 14 Nov (owner): the scale is 14/16/20/28/40 everywhere; phones step display and heading down a
+// level (40 -> 28, 28 -> 20) instead of the 32 and 22 they used to use.
+const SIZES = new Set([14, 16, 20, 28, 40]);
+const PHONE_ONLY = new Set([]);
 const NUMBERS = /[₹$€£]\s?\d|\b\d{4,6}\b/;
 const BANNED = /Hyderabad|\bUPI\b|Aadhaar|Telugu|हिन्दी|తెలుగు/;
 const MAX_DIFF = 0.03;

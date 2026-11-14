@@ -7,7 +7,7 @@ import { type Day, type Period, type Profile, isOnline, profile as loadProfile }
 import { chartDay, money } from '@/lib/area/format';
 import { LOAD_TIMEOUT_MS, type Load } from '@/lib/area/useLoad';
 import { DriverHead } from '../DriverShell';
-import { IPower } from '../icons';
+import { IPower, ISwitch } from '../icons';
 import { ProfileMenu } from '../ProfileMenu';
 import { useArea } from '../useArea';
 import { LoadError, Skel } from '../states';
@@ -27,10 +27,9 @@ export function useDriver() {
   return me;
 }
 
+/** The account items only (14 Nov); Documents and Support are in the sidebar and in More. */
 export const DRIVER_MENU = [
   { href: '/driver/profile', label: 'Your profile' },
-  { href: '/driver/documents', label: 'Documents' },
-  { href: '/driver/support', label: 'Support' },
   { href: '/driver/profile#language', label: 'Language' },
 ];
 
@@ -40,7 +39,7 @@ export const DRIVER_MENU = [
  */
 export function DriverTop({ title, sub, me }: { title: string; sub?: string | null; me: Profile | null }) {
   const tr = useTr();
-  const { signOut } = useArea();
+  const { signOut, both, switchTo } = useArea();
   const on = isOnline(me);
   return (
     <DriverHead title={title} sub={sub}>
@@ -53,7 +52,11 @@ export function DriverTop({ title, sub, me }: { title: string; sub?: string | nu
       <span className="abtn abtn--dark dr-go" role="note"><IPower size={18} />
         <span className="dr-go__long">{tr('Go online in the driver app')}</span><span className="dr-go__short">{tr('Go online in the app')}</span>
       </span>
-      <ProfileMenu links={DRIVER_MENU} onSignOut={() => signOut()} />
+      <ProfileMenu links={DRIVER_MENU} onSignOut={() => signOut()} extra={both && (
+        <button type="button" role="menuitem" onClick={() => switchTo('rider')}>
+          <ISwitch size={18} />{tr('Switch to rider')}
+        </button>
+      )} />
     </DriverHead>
   );
 }

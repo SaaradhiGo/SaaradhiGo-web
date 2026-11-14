@@ -16,6 +16,11 @@ const MISSING = [
   // SiteCopy
   'Ride now', 'Schedule', 'Trip type', // the hidden Schedule switch
   'Mobile number · we text a code', 'Confirm', // unused phone variants
+  // 14 Nov mobile UX: English until the reviewer translates them.
+  'A driver is free now', 'Your fare is ready. Book before it changes.',
+  'We are checking every 30 seconds while this page is open, for 10 minutes. Keep it open and we will tell you.',
+  'Drivers come free all the time. Try again in a minute, or we can keep checking for you.',
+  'A driver is free now. Your fare is ready to book.', 'Log in to book this ride. Your trip and fare are kept.',
   // 13 Nov launch approvals: English until the reviewer translates them.
   'Country', 'Registered office', 'file number', 'Tell me when we launch',
   'SaaradhiGo is not available in this area yet.', 'We could not save that. Please try again.',

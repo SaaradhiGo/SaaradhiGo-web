@@ -181,7 +181,7 @@ const en: SiteCopy = {
     schedule: 'Schedule',
     tripType: 'Trip type',
     pickup: 'Pickup',
-    pickupPlaceholder: 'Pickup location',
+    pickupPlaceholder: 'Pickup',
     pickupPlaceholderPhone: 'Pickup: use my location',
     useLocation: 'Use my location',
     dest: 'Destination',

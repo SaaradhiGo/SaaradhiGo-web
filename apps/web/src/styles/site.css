@@ -12,8 +12,9 @@
 }
 @media (max-width: 767px) {
   :root {
-    --text-display: 32px; --leading-display: 40px;
-    --text-heading: 22px; --leading-heading: 28px;
+    /* 14 Nov: a step down the scale on phones (40 -> 28, 28 -> 20); no sizes outside it. */
+    --text-display: 28px; --leading-display: 36px;
+    --text-heading: 20px; --leading-heading: 28px;
   }
 }
 
@@ -242,12 +243,18 @@
 }
 .s-book__box input::placeholder { color: var(--c-text-2); opacity: 1; }
 .s-book__box:focus-within { box-shadow: inset 0 0 0 1px var(--c-field-border); }
+/* 14 Nov: focus is drawn on the whole rounded field, as the design system's fields (area.css
+   .afield), never a square outline on the input inside it. */
+.site .s-book__box input:focus-visible { outline: none; }
+.s-book__box:has(input:focus-visible) { box-shadow: 0 0 0 2px var(--c-focus), 0 0 0 6px var(--c-focus-glow); }
 .s-book__marker { width: 12px; height: 12px; flex-shrink: 0; }
 .s-book__locate {
   width: 44px; height: 44px; margin-right: -12px; border: 0; background: transparent; color: var(--c-accent);
   display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; border-radius: 10px;
 }
-.s-book__locate svg { width: 18px; height: 18px; }
+.s-book__locate svg { width: 18px; height: 18px; flex-shrink: 0; }
+.s-book__locate[data-text="on"] { width: auto; gap: 6px; padding: 0 12px; font: inherit; font-size: var(--text-small);
+  line-height: var(--leading-small); font-weight: 600; white-space: nowrap; }
 .s-book__error { margin: 6px 0 0; color: var(--c-red); font-size: var(--text-small); line-height: var(--leading-small); }
 .s-book__suggest {
   position: absolute; left: 0; right: 0; top: 56px; z-index: 30; background: var(--c-surface); border: 1px solid var(--c-border);
@@ -255,8 +262,12 @@
 }
 .s-book__suggest button {
   min-height: 44px; padding: 8px 12px; border: 0; background: transparent; text-align: left; border-radius: 8px;
-  font: inherit; color: var(--c-text); cursor: pointer;
+  font: inherit; color: var(--c-text); cursor: pointer; display: flex; flex-direction: column; gap: 2px;
 }
+/* Two lines per suggestion (14 Nov): the place at 16 semibold, where it is at 14 muted. */
+.s-book__name, .s-book__area { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.s-book__name { font-size: var(--text-body); line-height: var(--leading-body); font-weight: 600; }
+.s-book__area { font-size: var(--text-small); line-height: var(--leading-small); color: var(--c-text-2); }
 .s-book__suggest button:hover { background: var(--c-muted); }
 .s-book__go { height: 54px; width: 100%; border-radius: 12px; padding: 0; }
 
@@ -612,5 +623,8 @@
 .sg-company { margin-top: 28px; display: grid; gap: 6px; color: var(--c-text-2); }
 .sg-company__name { color: var(--c-text); font-weight: 600; }
 .s-consent { display: grid; gap: 10px; }
-.s-consent__check { display: flex; gap: 10px; align-items: flex-start; font-size: var(--text-small); line-height: 1.45; color: var(--c-text-2); }
+.s-consent__check { display: flex; gap: 10px; align-items: flex-start; font-size: var(--text-small); line-height: 1.45; color: var(--c-text-2);
+  /* 14 Nov: the whole row is the tap target, at least 44px tall. */
+  min-height: 44px; padding: 10px 12px; margin: 0 -12px; border-radius: 10px; cursor: pointer; }
+.s-consent__check:hover { background: var(--c-muted); }
 .s-consent__check input { margin-top: 3px; width: 18px; height: 18px; flex: 0 0 auto; }

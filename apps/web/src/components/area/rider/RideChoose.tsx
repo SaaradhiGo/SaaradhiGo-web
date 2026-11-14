@@ -11,10 +11,13 @@ import {
   quoteFare, routeBetween, serviceabilityAt,
 } from '@/lib/booking';
 import { money } from '@/lib/area/format';
-import { type BookingOptions, type PayMethod, bookingOptions, className, readDraft } from '@/lib/area/rider';
+import { type BookingOptions, type PayMethod, bookingOptions, className, readDraft, updateDraft } from '@/lib/area/rider';
+import { shortPlace } from '@/lib/area/places';
+import { rideBlurbKey } from '@/lib/vehicles';
+import { rideGlyph } from '@/components/home/RideGlyphs';
 import { LOAD_TIMEOUT_MS } from '@/lib/area/useLoad';
 import { tellMeAtLaunch } from '@/lib/booking';
-import { IBack, ICar, ICard, ILock, IUser } from '../icons';
+import { IBack, ICar, ICheck, ILock, IUser } from '../icons';
 import { Skel } from '../states';
 import { FareWorkings } from './FareWorkings';
 import { PhoneStep } from './PhoneStep';
@@ -23,6 +26,14 @@ import { PhoneStep } from './PhoneStep';
 const SEATS: Record<string, number> = { auto: 3, mini: 4, hatchback: 4, sedan: 4, suv: 6, bike: 1 };
 const TINT: Record<string, string> = { auto: 'var(--c-warn-bg)', mini: 'var(--c-green-bg)', hatchback: 'var(--c-green-bg)', sedan: 'var(--c-violet-bg)', suv: 'var(--d-steel-bg)' };
 const PAY_LABEL: Record<PayMethod, string> = { upi: 'UPI', card: 'Card', netbanking: 'Netbanking', cash: 'Cash' };
+/** Pay by as choice rows (14 Nov), each saying when and how the money moves. */
+const PAY_NOTE: Record<PayMethod, string> = {
+  cash: 'Pay the driver at the end', upi: 'Pay online at the end of the trip',
+  card: 'Pay online at the end of the trip', netbanking: 'Pay online at the end of the trip',
+};
+/** "Tell me when one's free": checked every 30 seconds while the page is open, for 10 minutes. */
+const WATCH_EVERY_MS = 30_000;
+const WATCH_FOR_MS = 10 * 60_000;
 
 type Option = { type: string; quote: FareQuote | null };
 
@@ -32,7 +43,7 @@ type Option = { type: string; quote: FareQuote | null };
  * distance and time once; minutes to a driver per class (none nearby: not bookable); how to pay,
  * defaulting to the last method; the mobile is verified once before the first booking.
  */
-export function RideChoose() {
+export function RideChoose({ guest = false }: { guest?: boolean }) {
   const tr = useTr();
   const { locale } = useLocale();
   const router = useRouter();
@@ -54,6 +65,9 @@ export function RideChoose() {
   const [launchSaved, setLaunchSaved] = useState(false);
   const sock = useRef<RideSocket | null>(null);
   const [attempt, setAttempt] = useState(0);
+  // No class has a driver nearby: re-check on a timer when the rider asks to be told (14 Nov).
+  const [watching, setWatching] = useState<number | null>(null);
+  const [freed, setFreed] = useState(false);
 
   useEffect(() => { if (!draft) router.replace('/ride'); }, [draft, router]);
 
@@ -81,16 +95,19 @@ export function RideChoose() {
             type,
             quote: await quoteFare({ pickup: from, destination: to, distanceKm: km, durationMin: min, vehicleType: type }).catch(() => null),
           }))),
-          bookingOptions(from).catch(() => null),
+          guest ? Promise.resolve(null) : bookingOptions(from).catch(() => null),
         ]);
         if (!live) return;
         clearTimeout(timer);
         setOptions(quotes);
         setLaunch(quotes.map((x) => x.quote?.launching?.message).find(Boolean) ?? null);
         setExtra(opts);
-        setPay((p) => p ?? opts?.payment.default ?? 'cash');
+        const methods = opts?.payment?.methods ?? ['cash'];
+        setPay((p) => p ?? (draft?.pay && methods.includes(draft.pay) ? draft.pay : opts?.payment?.default ?? 'cash'));
         const bookable = (o: Option) => o.quote && o.quote.drivers_nearby !== false;
-        setPicked((p) => p ?? quotes.find(bookable)?.type ?? null);
+        // The class chosen before signing in comes back chosen.
+        const kept = quotes.find((o) => o.type === draft?.pick && bookable(o))?.type;
+        setPicked((p) => (p && quotes.some((o) => o.type === p && bookable(o)) ? p : kept ?? quotes.find(bookable)?.type ?? null));
       } catch {
         if (live) { setOptions([]); setError(tr('We could not load fares. Try again.')); }
       }
@@ -100,6 +117,42 @@ export function RideChoose() {
   }, [q.get('d'), attempt]);
 
   const nobody = (o: Option) => o.quote?.drivers_nearby === false;
+  const noneFree = !!options && !launch && options.some((o) => o.quote) && options.every((o) => !o.quote || nobody(o));
+  useEffect(() => {
+    if (watching === null) return;
+    if (!noneFree) {
+      // A driver came free while we watched: say so; the picked class is ready to book.
+      setWatching(null);
+      setFreed(true);
+      try {
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          new Notification(tr('A driver is free now'), { body: tr('Your fare is ready. Book before it changes.') });
+        }
+        navigator.vibrate?.(200);
+      } catch { /* the line on the page says it too */ }
+      return;
+    }
+    if (Date.now() - watching > WATCH_FOR_MS) { setWatching(null); return; }
+    const t = window.setTimeout(() => setAttempt((n) => n + 1), WATCH_EVERY_MS);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watching, noneFree, options]);
+
+  function watchForDriver() {
+    setFreed(false);
+    setWatching(Date.now());
+    try {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'default') void Notification.requestPermission();
+    } catch { /* not offered in this browser */ }
+  }
+
+  /** Sign-in for a visitor, coming back to this trip with the choice kept. */
+  function signInHere(why: string | null) {
+    const id = q.get('d') ?? '';
+    if (id) updateDraft(id, { pick: chosen?.type ?? picked, pay });
+    const next = encodeURIComponent(`/ride/choose?d=${id}`);
+    router.push(`/sign-in?${why ? `why=${why}&` : ''}next=${next}`);
+  }
   const chosen = options?.find((o) => o.type === picked && !nobody(o)) ?? null;
   const chosenFare = chosen?.quote ? money(chosen.quote.estimated_fare, chosen.quote.currency, locale) : null;
   // How long the quote holds, as the server issued it; nothing when it says nothing.
@@ -109,6 +162,8 @@ export function RideChoose() {
 
   function book(phoneDone = false) {
     if (!from || !to || !draft || !chosen?.quote) return;
+    // 14 Nov: a visitor sees the fares; signing in is asked only at Book, and comes back here.
+    if (guest) { signInHere('book'); return; }
     if (extra?.phone_required && !phoneDone) { setAskPhone(true); return; }
     setBusy(true);
     setError(null);
@@ -163,21 +218,30 @@ export function RideChoose() {
   }
 
   if (!draft) return null;
-  const methods = extra?.payment.methods ?? ['cash'];
+  const methods = extra?.payment?.methods ?? ['cash'];
+  const fromShort = draft.from.short || shortPlace(draft.from.label);
+  const toShort = draft.to.short || shortPlace(draft.to.label);
   return (
-    <div className="ar-split">
+    <div className="ar-split ar-split--choose">
       <aside className="ar-panel">
         <div className="arow" style={{ gap: 8 }}>
           <Link href="/ride" className="aico" aria-label={tr('Back')}><IBack /></Link>
           <h1 className="a28">{tr('Choose a ride')}</h1>
         </div>
-        <div className="acard acol" style={{ padding: '14px 16px', gap: 8 }}>
-          <div className="arow" style={{ gap: 10 }}><span className="adot adot--on" aria-hidden="true" /><span data-testid="choose-pickup">{draft.from.label}</span></div>
-          <div className="arow" style={{ gap: 10 }}><span className="adot" style={{ background: 'var(--c-text)', borderRadius: 2 }} aria-hidden="true" /><span>{draft.to.label}</span></div>
-          {tripLine ? <div className="a14 amut" data-testid="trip-line">{tripLine}</div> : options === null ? <Skel h={16} w={140} /> : null}
+        {/* One line for the route (14 Nov): "Cyber Towers → Charminar · 18.8 km · 32 min". */}
+        <div className="acard acol a-wide" style={{ padding: '14px 16px', gap: 8 }} title={`${draft.from.label} → ${draft.to.label}`}>
+          <div className="arow" style={{ gap: 10 }}><span className="adot adot--on" aria-hidden="true" /><span>{fromShort}</span></div>
+          <div className="arow" style={{ gap: 10 }}><span className="adot" style={{ background: 'var(--c-text)', borderRadius: 2 }} aria-hidden="true" /><span>{toShort}</span></div>
+          {tripLine && <div className="a14 amut">{tripLine}</div>}
         </div>
+        <p className="achoose__route a-phone" title={`${draft.from.label} → ${draft.to.label}`}>
+          <span className="ab" data-testid="choose-pickup">{fromShort}</span>
+          {' → '}
+          <span className="ab" data-testid="choose-drop">{toShort}</span>
+          {tripLine && <span className="amut" data-testid="trip-line"> · {tripLine}</span>}
+        </p>
         <div className="acol" style={{ gap: 8 }} role="radiogroup" aria-label={tr('Choose a ride')}>
-          {options === null && [0, 1, 2].map((i) => <Skel key={i} h={64} />)}
+          {options === null && [0, 1, 2].map((i) => <Skel key={i} h={72} />)}
           {options?.length === 0 && error && (
             <button type="button" className="abtn abtn--ghost" onClick={() => setAttempt((n) => n + 1)}>{tr('Try again')}</button>
           )}
@@ -188,11 +252,14 @@ export function RideChoose() {
             const usable = Boolean(fare) && !none;
             const on = usable && o.type === picked;
             const seats = SEATS[o.type.toLowerCase()];
+            const glyph = rideGlyph(rideBlurbKey(o.type));
             return (
               <button key={o.type} type="button" role="radio" aria-checked={on} disabled={!usable}
-                onClick={() => setPicked(o.type)} className="arow" data-testid={`class-${o.type}`}
-                style={{ padding: 14, borderRadius: 14, border: on ? '2px solid var(--c-text)' : '1px solid var(--c-border)', background: 'var(--c-surface)', font: 'inherit', color: 'inherit', textAlign: 'left', cursor: usable ? 'pointer' : 'default', opacity: none ? 0.6 : 1 }}>
-                <span className="aico" style={{ width: 48, height: 48, background: TINT[o.type.toLowerCase()] ?? 'var(--c-muted)' }}><ICar /></span>
+                onClick={() => setPicked(o.type)} className="achoice" data-on={on ? 'true' : undefined}
+                data-testid={`class-${o.type}`}>
+                <span className="aico achoice__glyph" style={{ background: TINT[o.type.toLowerCase()] ?? 'var(--c-muted)' }}>
+                  {glyph ?? <ICar />}
+                </span>
                 <span className="agrow">
                   <span className="ab" style={{ display: 'block' }}>
                     {className(o.type)}
@@ -205,50 +272,80 @@ export function RideChoose() {
                   <span className="a20" style={{ display: 'block' }}>{fare ?? tr('No fare')}</span>
                   {fare && !none && <span className="arow a14 agrn" style={{ gap: 4, justifyContent: 'flex-end' }}><ILock size={14} />{tr('Locked')}</span>}
                 </span>
+                {on && <span className="achoice__tick" aria-hidden="true"><ICheck size={14} /></span>}
               </button>
             );
           })}
         </div>
-        {extra && (
-          <fieldset className="acol" style={{ gap: 6, border: 0, padding: 0, margin: 0 }}>
-            <legend className="albl">{tr('Pay by')}</legend>
-            <div className="arow" style={{ gap: 8, flexWrap: 'wrap' }} role="radiogroup" aria-label={tr('Pay by')}>
-              {methods.map((m) => (
-                <button key={m} type="button" role="radio" aria-checked={pay === m} data-testid={`pay-${m}`}
-                  className={`achip${pay === m ? ' achip--on' : ''}`} onClick={() => setPay(m)}>
-                  <ICard size={16} />{tr(PAY_LABEL[m])}
+        {noneFree && (
+          <div className="anote acol" style={{ alignItems: 'stretch', gap: 10 }} data-testid="no-drivers" role="status">
+            <p className="ab">{tr('No drivers nearby right now')}</p>
+            <p className="a14">{watching !== null
+              ? tr('We are checking every 30 seconds while this page is open, for 10 minutes. Keep it open and we will tell you.')
+              : tr('Drivers come free all the time. Try again in a minute, or we can keep checking for you.')}</p>
+            <div className="arow" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <button type="button" className="abtn abtn--ghost" onClick={() => setAttempt((n) => n + 1)} data-testid="retry-drivers">
+                {tr('Try again')}
+              </button>
+              {watching === null && (
+                <button type="button" className="abtn abtn--dark" onClick={watchForDriver} data-testid="watch-drivers">
+                  {tr("Tell me when one's free")}
                 </button>
-              ))}
+              )}
             </div>
-            {pay && pay !== 'cash' && <p className="a14 amut">{tr('You pay the locked fare online at the end of the trip. If it fails, you can try again or pay cash.')}</p>}
-          </fieldset>
+          </div>
         )}
+        {freed && !noneFree && <p className="a14 agrn ab" role="status" data-testid="driver-free">{tr('A driver is free now. Your fare is ready to book.')}</p>}
+        {(extra || guest) && <fieldset className="acol" style={{ gap: 6, border: 0, padding: 0, margin: 0 }}>
+          <legend className="albl">{tr('Pay by')}</legend>
+          <div className="acol" style={{ gap: 8 }} role="radiogroup" aria-label={tr('Pay by')}>
+            {methods.map((m) => (
+              <button key={m} type="button" role="radio" aria-checked={pay === m} data-testid={`pay-${m}`}
+                className="achoice achoice--pay" data-on={pay === m ? 'true' : undefined} onClick={() => setPay(m)}>
+                <span className="agrow">
+                  <span className="ab">{tr(PAY_LABEL[m])}</span>
+                  <span className="amut"> · {tr(PAY_NOTE[m])}</span>
+                </span>
+                {pay === m && <span className="achoice__tick" aria-hidden="true"><ICheck size={14} /></span>}
+              </button>
+            ))}
+          </div>
+          {pay && pay !== 'cash' && <p className="a14 amut">{tr('You pay the locked fare online at the end of the trip. If it fails, you can try again or pay cash.')}</p>}
+        </fieldset>}
         <div className="arow a14 agrn" style={{ gap: 8, padding: '10px 12px', borderRadius: 12, background: 'var(--c-green-bg)' }}>
           <ILock size={16} />{tr('The fare you book is the fare you pay.')}
           {holdMin !== null && <> {tr('Held for {n} minutes.').replace('{n}', `${holdMin}`)}</>}
         </div>
         {chosen?.quote ? <FareWorkings quote={chosen.quote} /> : null}
         {error && <p className="a14 ared" role="alert">{error}</p>}
-        {launch ? (
-          <div className="acol" style={{ gap: 8, marginTop: 'auto' }} data-testid="launching">
-            <p className="ab" role="status">{launch}</p>
-            {launchSaved
-              ? <p className="a14 agrn" role="status">{tr("We'll tell you when we launch.")}</p>
-              : (
-                <button type="button" className="abtn abtn--pri abtn--block" data-testid="tell-me"
-                  onClick={() => from && tellMeAtLaunch({ lat: from.lat, lng: from.lng })
-                    .then(() => setLaunchSaved(true))
-                    .catch(() => setError(tr('We could not save that. Please try again.')))}>
-                  {tr('Tell me when we launch')}
-                </button>
-              )}
-          </div>
-        ) : (
-          <button type="button" className="abtn abtn--pri abtn--block" style={{ marginTop: 'auto' }}
-            disabled={!chosenFare || busy} onClick={() => book()} data-testid="book">
-            {busy ? tr('Booking…') : chosenFare ? `${tr('Book')} ${className(chosen?.type)} · ${chosenFare}` : tr('Book')}
-          </button>
-        )}
+        {/* Book stays in reach on a phone (14 Nov): sticky at the bottom, above the safe area. */}
+        <div className="achoose__go">
+          {launch ? (
+            <div className="acol" style={{ gap: 8 }} data-testid="launching">
+              <p className="ab" role="status">{launch}</p>
+              {launchSaved
+                ? <p className="a14 agrn" role="status">{tr("We'll tell you when we launch.")}</p>
+                : (
+                  <button type="button" className="abtn abtn--pri abtn--block" data-testid="tell-me"
+                    onClick={() => {
+                      if (guest) { signInHere(null); return; }
+                      if (from) {
+                        tellMeAtLaunch({ lat: from.lat, lng: from.lng })
+                          .then(() => setLaunchSaved(true))
+                          .catch(() => setError(tr('We could not save that. Please try again.')));
+                      }
+                    }}>
+                    {tr('Tell me when we launch')}
+                  </button>
+                )}
+            </div>
+          ) : noneFree ? null : (
+            <button type="button" className="abtn abtn--pri abtn--block"
+              disabled={!chosenFare || busy} onClick={() => book()} data-testid="book">
+              {busy ? tr('Booking…') : chosenFare ? `${tr('Book')} ${className(chosen?.type)} · ${chosenFare}` : tr('Book')}
+            </button>
+          )}
+        </div>
       </aside>
       <div className="ar-map">
         <MapSurface pickup={from} destination={to} routePolyline={route?.points ?? null} />

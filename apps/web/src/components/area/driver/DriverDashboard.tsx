@@ -68,7 +68,7 @@ function DocumentsCard({ data, hasVehicle, noVehicle, failed, retry }: {
     <section className="acard" style={{ padding: 20 }} data-testid="documents-card">
       <div className="arow" style={{ justifyContent: 'space-between' }}>
         <h2 className="a20">{tr('Documents')}</h2>
-        <Link href="/driver/documents" className="aacc ab a14">{tr('Open all')}</Link>
+        <Link href="/driver/documents" className="aacc ab a14 ahit">{tr('Open all')}</Link>
       </div>
       {failed ? <LoadError what="documents" retry={retry} /> : !data ? <Skel h={20} lines={3} gap={18} style={{ marginTop: 16 }} /> : (
         <div style={{ marginTop: 8 }}>
@@ -172,7 +172,7 @@ export function DriverDashboard() {
             <section className="acard" style={{ padding: 20 }}>
               <div className="arow" style={{ justifyContent: 'space-between' }}>
                 <h2 className="a20">{tr('Last 7 days')}</h2>
-                <Link href="/driver/earnings" className="aacc ab a14">{tr('See earnings')}</Link>
+                <Link href="/driver/earnings" className="aacc ab a14 ahit">{tr('See earnings')}</Link>
               </div>
               <WeekChart load={days} currency={cur} />
             </section>

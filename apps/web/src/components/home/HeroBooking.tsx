@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { saveDraft } from '@/lib/area/rider';
+import { suggestionLines } from '@/lib/area/places';
 import { DropMark, PickupMark } from '@/components/art/MiniMaps';
 import { LocateIcon } from '@/components/sg/SiteIcons';
 import { LatLng, Place, placeToPoint, searchPlaces, serviceabilityAt } from '@/lib/booking';
@@ -74,17 +75,6 @@ export function HeroBooking() {
   const [resolved, setResolved] = useState<{ pickup?: LatLng; dest?: LatLng }>({});
   const { t } = useLocale();
   const h = useSite().home;
-  // The phone design words the pickup as an invitation to use the location.
-  const [phone, setPhone] = useState(false);
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') return;
-    const mq = window.matchMedia('(max-width: 767px)');
-    const on = () => setPhone(mq.matches);
-    on();
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
     fetchServiceAreas()
@@ -145,10 +135,10 @@ export function HeroBooking() {
     const which = active === 'pickup' ? 'pickup' : 'dest';
     if (which === 'pickup') {
       setPickupPlace(place);
-      setPickupText(place.description);
+      setPickupText(suggestionLines(place).short);
     } else {
       setDestPlace(place);
-      setDestText(place.description);
+      setDestText(suggestionLines(place).short);
     }
     setSuggestions([]);
     setActive(null);
@@ -189,8 +179,9 @@ export function HeroBooking() {
     setBusy(false);
     if (from && to) {
       const id = saveDraft({
-        from: { lat: from.lat, lng: from.lng, label: pickupText.trim() },
-        to: { lat: to.lat, lng: to.lng, label: destText.trim() },
+        // The full address books the trip; the short one is what the screens show (14 Nov).
+        from: { lat: from.lat, lng: from.lng, label: pickupPlace?.description ?? pickupText.trim(), short: pickupText.trim() },
+        to: { lat: to.lat, lng: to.lng, label: destPlace?.description ?? destText.trim(), short: destText.trim() },
       });
       router.push(`/ride/choose?d=${id}`);
       return;
@@ -276,8 +267,11 @@ export function HeroBooking() {
             disabled={locating}
             aria-label={locating ? t.hero.locating : h.useLocation}
             title={h.useLocation}
+            data-text={value ? undefined : 'on'}
           >
             <LocateIcon />
+            {/* 14 Nov: said in words while the field is empty; the icon alone once there is text. */}
+            {!value && <span aria-hidden="true">{h.useLocation}</span>}
           </button>
         )}
       </div>
@@ -288,11 +282,15 @@ export function HeroBooking() {
       )}
       {active === which && suggestions.length > 0 && (
         <div className="s-book__suggest" role="group" aria-label={`${label} suggestions`}>
-          {suggestions.map((p) => (
-            <button key={p.place_id} type="button" onClick={() => choose(p)}>
-              {p.description}
-            </button>
-          ))}
+          {suggestions.slice(0, 5).map((p) => {
+            const l = suggestionLines(p);
+            return (
+              <button key={p.place_id} type="button" onClick={() => choose(p)}>
+                <span className="s-book__name">{l.name}</span>
+                {l.area && <span className="s-book__area">{l.area}</span>}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -323,7 +321,7 @@ export function HeroBooking() {
       )}
       <div className="s-book__fields">
         <span className="s-book__dots s-only-desk" aria-hidden="true" />
-        {field('pickup', h.pickup, phone ? h.pickupPlaceholderPhone : h.pickupPlaceholder, pickupText, setPickupText, () => {
+        {field('pickup', h.pickup, h.pickupPlaceholder, pickupText, setPickupText, () => {
           setPickupPlace(null);
           setPickupPoint(null);
         })}

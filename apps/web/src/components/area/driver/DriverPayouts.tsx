@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
-import { PAGE_SIZE, balance as loadBalance, payoutPage, period as loadPeriod } from '@/lib/area/driver';
+import { PAGE_SIZE, type Withdrawal, balance as loadBalance, payoutPage, period as loadPeriod } from '@/lib/area/driver';
 import { listWhen, money, setMarketZone } from '@/lib/area/format';
 import { useLoad } from '@/lib/area/useLoad';
 import { LoadError, Skel } from '../states';
@@ -94,6 +94,7 @@ export function DriverPayouts() {
                   <div className="acards a-phone" style={{ padding: '10px 0', borderTop: '1px solid var(--c-border)' }} data-testid="payout-card">
                     <div className="arow"><span className="a14 amut">{when ? `${when.first} · ${when.second}` : ''}</span><span className={`apill ${cls}`}>{tr(label)}</span></div>
                     <div className="a20 amoney">{money(w.amount, cur, locale)}</div>
+                    <Outcome w={w} />
                     {instant && (
                       <>
                         <div className="arow a14"><span className="amut">{tr('Provider fee')}</span><span className="amoney">−{money(fee, cur, locale)}</span></div>
@@ -118,6 +119,7 @@ export function DriverPayouts() {
                           </div>
                         );
                       })() : null}
+                      <Outcome w={w} />
                     </span>
                     <span className={`apill ${cls}`}>{tr(label)}</span>
                   </div>
@@ -134,5 +136,23 @@ export function DriverPayouts() {
         <PayoutMethodCard />
       </main>
     </>
+  );
+}
+
+/**
+ * A rejected or failed payout (14 Nov): one line of why, then where the money went, from the
+ * server's `outcome` (the refund on the wallet, never assumed).
+ */
+function Outcome({ w }: { w: Withdrawal }) {
+  const tr = useTr();
+  const o = w.outcome;
+  if (!o) return null;
+  return (
+    <div className="a14" data-testid="payout-outcome" style={{ fontWeight: 400 }}>
+      {o.reason && <div className="amut" style={{ overflowWrap: 'anywhere' }}>{o.reason}</div>}
+      <div className={o.money === 'returned' ? 'agrn' : 'amut'}>
+        {tr(o.money === 'returned' ? 'Returned to your balance' : 'Not returned to your balance yet. Support can tell you where it is.')}
+      </div>
+    </div>
   );
 }

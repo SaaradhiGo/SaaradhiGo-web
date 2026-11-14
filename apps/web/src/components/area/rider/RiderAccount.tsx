@@ -29,6 +29,20 @@ function Row({ label, value, children }: { label?: string; value: React.ReactNod
   );
 }
 
+/**
+ * An email never splits mid-word (14 Nov): it may wrap only at the "@"; a part too long for the line
+ * is cut with an ellipsis, and the whole address is in the tooltip.
+ */
+function EmailText({ email }: { email: string }) {
+  const at = email.lastIndexOf('@');
+  const parts = at > 0 ? [email.slice(0, at), email.slice(at)] : [email];
+  return (
+    <span title={email} data-testid="email-text" style={{ overflowWrap: 'normal' }}>
+      {parts.map((p) => <span key={p} className="aemail">{p}</span>)}
+    </span>
+  );
+}
+
 const linkBtn = { background: 'none', border: 0, padding: 0, cursor: 'pointer', font: 'inherit' } as const;
 
 /**
@@ -108,7 +122,7 @@ export function RiderAccount() {
         <section className="acard" style={{ padding: 20 }}>
           <div className="arow" style={{ justifyContent: 'space-between' }}>
             <h2 className="a20">{tr('Profile')}</h2>
-            <button type="button" className="aacc ab a14" style={linkBtn} onClick={() => (editing ? save() : setEditing(true))}>
+            <button type="button" className="aacc ab a14 ahit" style={linkBtn} onClick={() => (editing ? save() : setEditing(true))}>
               {tr(editing ? 'Save' : 'Edit')}
             </button>
           </div>
@@ -129,12 +143,12 @@ export function RiderAccount() {
               <Row label={tr('Mobile')} value={maskPhone(me?.phone_number) ?? '—'}>
                 {me?.phone_number && me?.phone_verified !== false && <span className="apill apill--ok">{tr('Verified')}</span>}
               </Row>
-              <Row label={tr('Email')} value={me?.email || '—'}>
+              <Row label={tr('Email')} value={me?.email ? <EmailText email={me.email} /> : '—'}>
                 {me?.email && (me.email_verified === false ? (
                   <span className="acol" style={{ alignItems: 'flex-end', gap: 4 }} data-testid="email-status">
                     <span className="apill apill--warn">{tr('Not confirmed')}</span>
                     {resend !== 'sent' && (
-                      <button type="button" className="aacc ab a14" style={linkBtn} disabled={resend === 'busy'}
+                      <button type="button" className="aacc ab a14 ahit" style={linkBtn} disabled={resend === 'busy'}
                         onClick={async () => { setResend('busy'); setResend(await resendConfirmation()); }}>
                         {tr('Resend')}
                       </button>
@@ -177,9 +191,9 @@ export function RiderAccount() {
           </Row>
           <Row label={tr('Theme')} value={tr(dark ? 'Dark' : 'Light')}>
             <div className="arow" style={{ gap: 4, padding: 4, borderRadius: 10, background: 'var(--c-muted)' }} role="group" aria-label={tr('Theme')}>
-              <button type="button" className={dark ? 'a14 ab amut' : 'achip'} style={dark ? { ...linkBtn, padding: '0 12px' } : { height: 32 }}
+              <button type="button" className={dark ? 'a14 ab amut ahit' : 'achip ahit'} style={dark ? { ...linkBtn, padding: '0 12px' } : { height: 32 }}
                 aria-pressed={!dark} onClick={() => theme('light')}>{tr('Light')}</button>
-              <button type="button" className={dark ? 'achip' : 'a14 ab amut'} style={dark ? { height: 32 } : { ...linkBtn, padding: '0 12px' }}
+              <button type="button" className={dark ? 'achip ahit' : 'a14 ab amut ahit'} style={dark ? { height: 32 } : { ...linkBtn, padding: '0 12px' }}
                 aria-pressed={dark} onClick={() => theme('dark')}>{tr('Dark')}</button>
             </div>
           </Row>
@@ -189,13 +203,13 @@ export function RiderAccount() {
           <h2 className="a20">{tr('Privacy and account')}</h2>
           <div style={{ marginTop: 8 }}>
             <Row value={tr('Download your data')}>
-              <button type="button" className="aacc ab a14" style={linkBtn} onClick={download}>{tr('Request')}</button>
+              <button type="button" className="aacc ab a14 ahit" style={linkBtn} onClick={download}>{tr('Request')}</button>
             </Row>
             <Row value={tr('Sign out')}>
-              <button type="button" style={linkBtn} aria-label={tr('Sign out')} onClick={() => signOut()}><IChevron /></button>
+              <button className="ahit" type="button" style={linkBtn} aria-label={tr('Sign out')} onClick={() => signOut()}><IChevron /></button>
             </Row>
             <Row value={<span className="ared">{tr('Delete account')}</span>}>
-              <button type="button" className="a14 amut" style={linkBtn} onClick={() => setConfirming(true)}>{tr('Asks to confirm')}</button>
+              <button type="button" className="a14 amut ahit" style={linkBtn} onClick={() => setConfirming(true)}>{tr('Asks to confirm')}</button>
               {confirming && <DeleteAccountSheet onClose={() => setConfirming(false)} onClosed={() => signOut()} />}
             </Row>
           </div>

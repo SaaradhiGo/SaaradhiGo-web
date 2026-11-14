@@ -7,11 +7,14 @@ import { useTr } from '@/i18n/website';
 import { type LatLng, type Place, placeToPoint, searchPlaces } from '@/lib/booking';
 import { fetchServiceAreas, primaryArea } from '@/lib/serviceAreas';
 import { useLegal } from '@/components/sg/LegalProvider';
+import { shortPlace, suggestionLines } from '@/lib/area/places';
 import { savedPlaces, saveDraft, streetAddress, trips, type PlaceLabel, type SavedPlace, type Trip } from '@/lib/area/rider';
 import { type PlaceDraft, PlaceSheet } from './PlaceSheet';
 import { IBriefcase, IClock, IHome, IPlus, ITarget } from '../icons';
 
-type Spot = { label: string; point: LatLng; kind?: 'home' | 'work' | 'other' | null; name?: string };
+/** `label` is the full address the trip is booked with; `short` is what the field shows (14 Nov). */
+type Spot = { label: string; short?: string; point: LatLng; kind?: 'home' | 'work' | 'other' | null; name?: string };
+const shown = (s: Spot) => s.short ?? s.label;
 type FieldKey = 'pickup' | 'drop';
 
 /** Where a trip of the rider's last few went (or started), newest first, without repeats. */
@@ -61,7 +64,7 @@ function PlaceField({ field, label, value, query, onQuery, onPick, onFocus, erro
   useEffect(() => {
     if (timer.current) window.clearTimeout(timer.current);
     const q = query.trim();
-    if (q.length < 3 || (value && value.label === query)) { setFound([]); return; }
+    if (q.length < 3 || (value && shown(value) === query)) { setFound([]); return; }
     timer.current = window.setTimeout(() => {
       searchPlaces(q, near, field).then(setFound).catch(() => setFound([]));
     }, 300); // 300 ms after the last keystroke (maps cost, 9 Nov)
@@ -72,7 +75,7 @@ function PlaceField({ field, label, value, query, onQuery, onPick, onFocus, erro
     if (!point) { setNote(tr('We could not find that place. Try another.')); return; }
     setNote(null);
     setFound([]);
-    onPick({ label: p.description, point });
+    onPick({ label: p.description, short: suggestionLines(p).short, point });
   }
 
   const listId = `${id}-list`;
@@ -89,13 +92,16 @@ function PlaceField({ field, label, value, query, onQuery, onPick, onFocus, erro
       {error && <p id={errId} className="a14 ared" data-testid={`${field}-error`}>{error}</p>}
       {note && <p className="a14 ared" role="status">{note}</p>}
       <div id={listId} role="listbox" aria-label={tr('Places')} className={found.length ? 'acard acol asep' : undefined} hidden={!found.length}>
-        {found.slice(0, 5).map((p) => (
-          <button key={p.place_id} type="button" role="option" aria-selected="false" className="arow"
-            style={{ padding: '12px 14px', border: 0, background: 'transparent', font: 'inherit', color: 'inherit', textAlign: 'left', cursor: 'pointer' }}
-            onClick={() => pick(p)}>
-            {p.description}
-          </button>
-        ))}
+        {found.slice(0, 5).map((p) => {
+          const l = suggestionLines(p);
+          return (
+            <button key={p.place_id} type="button" role="option" aria-selected="false" className="asuggest"
+              onClick={() => pick(p)}>
+              <span className="ab asuggest__line">{l.name}</span>
+              {l.area && <span className="a14 amut asuggest__line">{l.area}</span>}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -124,7 +130,7 @@ export function RideHome() {
   const dropRef = useRef<HTMLInputElement>(null);
 
   function setField(f: FieldKey, s: Spot) {
-    if (f === 'pickup') { setPickup(s); setPickupQuery(s.label); } else { setDrop(s); setDropQuery(s.label); }
+    if (f === 'pickup') { setPickup(s); setPickupQuery(shown(s)); } else { setDrop(s); setDropQuery(shown(s)); }
     setErrors((e) => ({ ...e, [f]: null }));
   }
 
@@ -133,8 +139,9 @@ export function RideHome() {
     setField('pickup', { label: provisional, point });
     const address = await streetAddress(point).catch(() => null);
     if (!address) return;
-    setPickup((p) => (p && p.point === point ? { ...p, label: address } : p));
-    setPickupQuery((q) => (q === provisional ? address : q));
+    const short = shortPlace(address);
+    setPickup((p) => (p && p.point === point ? { ...p, label: address, short } : p));
+    setPickupQuery((q) => (q === provisional ? short : q));
   }
 
   function locateMe(quiet = false) {
@@ -174,7 +181,7 @@ export function RideHome() {
     setErrors(missing);
     if (!pickup) { pickupRef.current?.focus(); return; }
     if (!drop) { dropRef.current?.focus(); return; }
-    const id = saveDraft({ from: { ...pickup.point, label: pickup.label }, to: { ...drop.point, label: drop.label } });
+    const id = saveDraft({ from: { ...pickup.point, label: pickup.label, short: shown(pickup) }, to: { ...drop.point, label: drop.label, short: shown(drop) } });
     router.push(`/ride/choose?d=${id}`);
   }
 
@@ -206,7 +213,7 @@ export function RideHome() {
         </div>
         <div className="acol" style={{ gap: 8 }}>
           <PlaceField field="pickup" label={tr('Pickup')} value={pickup} query={pickupQuery} near={drop?.point ?? cityCentre}
-            onQuery={(q) => { setPickupQuery(q); if (pickup && q !== pickup.label) setPickup(null); }}
+            onQuery={(q) => { setPickupQuery(q); if (pickup && q !== shown(pickup)) setPickup(null); }}
             onPick={(s) => setField('pickup', s)} onFocus={() => setActive('pickup')} error={errors.pickup}
             inputRef={pickupRef} dot={<span className="adot adot--on" aria-hidden="true" />} />
           <button type="button" className="achip" style={{ alignSelf: 'flex-start' }} onClick={() => locateMe()} disabled={locating}
@@ -215,7 +222,7 @@ export function RideHome() {
           </button>
           {locNote && <p className="a14 amut" role="status" data-testid="location-note">{locNote}</p>}
           <PlaceField field="drop" label={tr('Where to?')} value={drop} query={dropQuery} near={pickup?.point ?? cityCentre}
-            onQuery={(q) => { setDropQuery(q); if (drop && q !== drop.label) setDrop(null); }}
+            onQuery={(q) => { setDropQuery(q); if (drop && q !== shown(drop)) setDrop(null); }}
             onPick={(s) => setField('drop', s)} onFocus={() => setActive('drop')} error={errors.drop}
             inputRef={dropRef} dot={<span className="adot" style={{ background: 'var(--c-text)', borderRadius: 2 }} aria-hidden="true" />} />
         </div>

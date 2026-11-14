@@ -210,6 +210,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
         // handing back a "go and sign in" link. This is what returns a
         // rider to the booking they abandoned to register.
         await signInWithEmail(email, password, role);
+        await saveSmsMarketingConsent(marketingSms);
         window.location.assign(next);
         return;
       }
@@ -314,7 +315,9 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
     );
   }
 
-  const tabs = (
+  // 14 Nov (owner): a driver signs up with one form (name, mobile, email, password); the mobile is
+  // required for drivers either way, so Email/Mobile tabs meant nothing there.
+  const tabs = role === 'driver' ? null : (
     <div className="s-seg" role="tablist" aria-label={tr('Sign up with')}>
       {(['email', 'mobile'] as const).map((t) => (
         <button

@@ -7,6 +7,7 @@ import MapSurface from '@/components/MapSurface';
 import { TripSafety } from '@/components/booking/TripSafety';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
+import { placeLabel } from '@/lib/area/places';
 import {
   CANCEL_BEFORE_DRIVER, CANCEL_WITH_DRIVER, type CancelPreview, RideSocket, type SocketEvent, cancelPreview, cancelTrip,
   formatPlate, routeBetween,
@@ -248,7 +249,7 @@ export function RideTrip({ id }: { id: string }) {
           )}
           {noDriver && <p className="amut" style={{ marginTop: 4 }}>{tr('Nobody accepted in time. You were not charged.')}</p>}
           {etaLine && <p className="a16 ab" aria-live="polite" style={{ marginTop: 4 }}>{etaLine}</p>}
-          {t?.pickup_address && !over && <p className="amut">{tr('Pickup')}: {t.pickup_address}</p>}
+          {t?.pickup_address && !over && <p className="amut" title={t.pickup_address}>{tr('Pickup')}: {placeLabel(t.pickup_label, t.pickup_address)}</p>}
         </div>
 
         {t?.driver_name && !over && (
@@ -330,7 +331,7 @@ export function RideTrip({ id }: { id: string }) {
                   : <span className="apill apill--neu" data-testid="no-charge">{tr('No charge')}</span>)}
               </span>
             </div>
-            {t.destination_address && <div className="a14 amut">{tr('To')} {t.destination_address}</div>}
+            {t.destination_address && <div className="a14 amut" title={t.destination_address}>{tr('To')} {placeLabel(t.destination_label, t.destination_address)}</div>}
             {fare && t.payment_method === 'cash' && !over && (
               <div className="a14 amut">{tr('Pay {fare} in cash to your driver at the end.').replace('{fare}', fare)}</div>
             )}
