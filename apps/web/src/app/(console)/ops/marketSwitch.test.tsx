@@ -13,7 +13,6 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import type { ComponentType } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TOKEN_KEY } from '@/lib/api';
 import { SCOPE_KEY } from '@/lib/adminScope';
 import { PAGE_NEEDS } from '@/lib/consoleLinks';
 
@@ -54,7 +53,7 @@ beforeEach(() => {
   calls.length = 0;
   answer = null;
   window.localStorage.clear();
-  window.localStorage.setItem(TOKEN_KEY, 'access-1');
+  document.cookie = 'sg-staff-in=1; path=/';
   window.localStorage.setItem(SCOPE_KEY, 'US');
   vi.stubGlobal('fetch', vi.fn((url: string) => {
     const u = String(url);
