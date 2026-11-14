@@ -53,7 +53,8 @@ export function RideCategories() {
         // 14 Nov (owner): the market on screen decides the city whose classes are shown.
         const areas = await fetchServiceAreas();
         const mine = areas.filter((x) => (x.zone as { country?: string }).country === market);
-        const area = primaryArea(mine.length ? mine : areas);
+        // No open area in this market yet: no classes, never another country's (Auto in the USA).
+        const area = mine.length ? primaryArea(mine) : null;
         if (!area?.centre) {
           if (alive) setService({ serviceable: false, zone: null, vehicle_types: [] });
           return;
