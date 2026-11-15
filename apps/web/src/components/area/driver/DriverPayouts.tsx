@@ -1,5 +1,6 @@
 'use client';
 
+import { oneLine } from '@/lib/money';
 import { useEffect, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
@@ -99,7 +100,7 @@ export function DriverPayouts() {
                     <Outcome w={w} />
                     {instant && (
                       <>
-                        <div className="arow a14"><span className="amut">{tr('Provider fee')}</span><span className="amoney">−{money(fee, cur, locale)}</span></div>
+                        <div className="arow a14"><span className="amut">{tr('Provider fee')}</span><span className="amoney">{oneLine(`−${money(fee, cur, locale)}`)}</span></div>
                         <div className="arow a14"><span className="amut">{tr('You received')}</span><span className="ab amoney">{money(Math.max(0, Number(w.amount ?? 0) - fee), cur, locale)}</span></div>
                       </>
                     )}

@@ -1,5 +1,6 @@
 'use client';
 
+import { oneLine } from '@/lib/money';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import type { FareLines } from '@/lib/area/rider';
@@ -39,7 +40,7 @@ export function FareLinesList({ lines, compact = false }: { lines: FareLines; co
       {(lines.refunds ?? []).map((r, i) => (
         <div key={`r${i}`} className="arow" style={{ justifyContent: 'space-between', padding: pad, gap: 12 }} data-testid="fare-lines-refund">
           <dt className="agrow">{tr(r.label)} · {r.date}</dt>
-          <dd style={{ margin: 0 }}>−{money(r.amount, cur, locale)}</dd>
+          <dd style={{ margin: 0 }}>{oneLine(`−${money(r.amount, cur, locale)}`)}</dd>
         </div>
       ))}
       {lines.net_charged != null ? row('net', tr('Net charged'), lines.net_charged, true) : null}

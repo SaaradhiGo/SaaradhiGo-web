@@ -1,3 +1,4 @@
+import { oneLine } from '@/lib/money';
 /**
  * Money and dates on the signed-in screens (owner, 2026-11-08).
  *
@@ -23,7 +24,7 @@ export function money(amount: string | number | null | undefined, currency: stri
   // `|| 0` turns -0 into 0: Intl writes a negative zero as "-₹0.00".
   const n = raw || 0;
   try {
-    return new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    return oneLine(new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n));
   } catch {
     return null;
   }
@@ -36,13 +37,13 @@ export function money(amount: string | number | null | undefined, currency: stri
 export function deduction(amount: string | number | null | undefined, currency: string | null | undefined, locale: string): { text: string; red: boolean } {
   const text = money(Math.abs(Number(amount ?? 0)) || 0, currency, locale) ?? '';
   const red = Number(amount ?? 0) > 0;
-  return { text: red ? `− ${text}` : text, red };
+  return { text: red ? oneLine(`− ${text}`) : text, red };
 }
 
 /** An amount added (tips): "+ ₹20.00" only when above zero, else a plain "₹0.00". */
 export function addition(amount: string | number | null | undefined, currency: string | null | undefined, locale: string): string {
   const text = money(amount ?? 0, currency, locale) ?? '';
-  return Number(amount ?? 0) > 0 ? `+ ${text}` : text;
+  return Number(amount ?? 0) > 0 ? oneLine(`+ ${text}`) : text;
 }
 
 /** The calendar date (YYYY-MM-DD) of an instant in a time zone. */

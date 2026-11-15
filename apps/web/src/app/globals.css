@@ -203,3 +203,6 @@ body {
 .map-surface {
   @apply relative overflow-hidden bg-bg-100;
 }
+
+/* 15 Nov: an amount stays on one line (a phone receipt split "−" from "$29.58"). */
+.amoney, [data-testid="fare-lines"] dd { white-space: nowrap; }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatExact, formatFare } from './money';
+import { formatExact, formatFare, oneLine } from './money';
 
 describe('formatExact', () => {
   it('keeps paise only when there are any', () => {
@@ -9,7 +9,7 @@ describe('formatExact', () => {
   });
 
   it('puts the sign before the symbol', () => {
-    expect(formatExact('-49.32', 'INR')).toBe('-₹49.32');
+    expect(formatExact('-49.32', 'INR')).toBe(oneLine('-₹49.32'));
   });
 
   it('says nothing rather than zero when there is no amount', () => {
@@ -32,5 +32,13 @@ describe('distanceInMarketUnit (15 Nov: a US trip in miles)', () => {
     expect(distanceInMarketUnit('0.8', 'USD')).toEqual({ value: '0.5', unit: 'mi' });
     expect(distanceInMarketUnit('0.8', 'INR')).toEqual({ value: '0.8', unit: 'km' });
     expect(distanceInMarketUnit(null, 'USD')).toBeNull();
+  });
+});
+
+describe('oneLine (15 Nov: a phone receipt split the minus from $29.58)', () => {
+  it('joins the sign to the amount and uses no-break spaces', () => {
+    expect(oneLine('−$29.58')).toBe('−\u2060$29.58');
+    expect(oneLine('− ₹45.50')).toBe('−\u2060\u00A0₹45.50');
+    expect(oneLine('US$ 5')).not.toMatch(/ /);
   });
 });

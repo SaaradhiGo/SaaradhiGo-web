@@ -1,5 +1,6 @@
 'use client';
 
+import { oneLine } from '@/lib/money';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleProvider';
@@ -106,7 +107,7 @@ export function RiderReceipt({ id }: { id: string }) {
             </div>
             <div className="arow" style={{ justifyContent: 'space-between', padding: '12px 0' }}>
               <span>{tr('Changes during the trip')}</span>
-              <span className="ab">{change === null ? '' : same ? tr('None') : `${change > 0 ? '+' : '−'}${money(Math.abs(change), cur, locale)}`}</span>
+              <span className="ab">{change === null ? '' : same ? tr('None') : oneLine(`${change > 0 ? '+' : '−'}${money(Math.abs(change), cur, locale)}`)}</span>
             </div>
             <div className="arow" style={{ justifyContent: 'space-between', padding: '12px 0' }}>
               <span className="ab">{tr('Ride total')}</span><span className="a20">{money(paid, cur, locale) ?? '—'}</span>
@@ -129,7 +130,7 @@ export function RiderReceipt({ id }: { id: string }) {
                   {r.to === 'wallet' ? tr('Refunded to your wallet') : r.status === 'sent' ? tr('Refunded to your card') : tr('Refund on its way to your card')}
                   <span className="amut"> · {dateLabel(r.at, locale, t.timezone, new Date(), true)}</span>
                 </span>
-                <span className="ab">−{money(r.amount, cur, locale)}</span>
+                <span className="ab">{oneLine(`−${money(r.amount, cur, locale)}`)}</span>
               </div>
             ))}
             {(() => {
