@@ -819,5 +819,11 @@
   "Choose a place from the list": "జాబితా నుండి ఒక స్థలాన్ని ఎంచుకోండి",
   "Example from the Treasure Valley test rate card": "Treasure Valley టెస్ట్ రేట్ కార్డ్ నుండి ఉదాహరణ",
   "Standard": "స్టాండర్డ్",
-  "XL": "XL"
+  "XL": "XL",
+  "Tip (100% to your driver)": "టిప్ (100% మీ డ్రైవర్‌కు)",
+  "Total charged": "మొత్తం వసూలు",
+  "We could not charge your card for this trip ({fare}).": "ఈ ట్రిప్ కోసం మీ కార్డ్‌ నుండి వసూలు చేయలేకపోయాం ({fare}).",
+  "Nothing was taken. Our team will contact you about the fare, or you can ask for help on the receipt.": "ఏమీ తీసుకోలేదు. ఛార్జీ గురించి మా బృందం మిమ్మల్ని సంప్రదిస్తుంది, లేదా రసీదులో సహాయం అడగవచ్చు.",
+  "Charging your card…": "మీ కార్డ్ నుండి వసూలు చేస్తున్నాం…",
+  "Paid {fare} by card": "కార్డ్‌తో {fare} చెల్లించారు"
 }
