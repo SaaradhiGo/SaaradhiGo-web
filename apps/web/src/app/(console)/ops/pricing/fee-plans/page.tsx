@@ -117,6 +117,7 @@ function DraftDrawer({ onClose, onDone }: { onClose: () => void; onDone: (text: 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (k: keyof typeof f, v: string) => setF((x) => ({ ...x, [k]: v }));
+  const sym = f.country.trim().toUpperCase() === 'US' ? '$' : '₹';
   const field = (k: keyof typeof f, label: string) => (
     <><label className="ops-form__label" htmlFor={`fp-${k}`}>{label}</label>
       <input id={`fp-${k}`} className="input" value={f[k]} onChange={(e) => set(k, e.target.value)} /></>
@@ -145,6 +146,7 @@ function DraftDrawer({ onClose, onDone }: { onClose: () => void; onDone: (text: 
         <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => void save()} disabled={busy || f.reason.trim().length < 5}>{busy ? 'Working…' : 'Save draft'}</button>
       </>}>
       <div className="ops-form">
+        {/* Money labels follow the plan's country (a US plan is in dollars). */}
         <label className="ops-form__label" htmlFor="fp-type">Plan type</label>
         <select id="fp-type" className="input" value={f.plan_type} onChange={(e) => set('plan_type', e.target.value)}>
           {Object.entries(TYPE_WORDS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -152,14 +154,14 @@ function DraftDrawer({ onClose, onDone }: { onClose: () => void; onDone: (text: 
         {field('country', 'Country (IN, US)')}
         {field('scope_code', 'State or city code (blank = the whole country), e.g. IN-TG or IN-TG-HYD')}
         {field('classes', 'Vehicle classes (comma separated)')}
-        {field('per_trip', 'Fee per trip (₹)')}
-        {field('pass', 'Daily pass (₹, daily pass plans)')}
+        {field('per_trip', `Fee per trip (${sym})`)}
+        {field('pass', `Daily pass (${sym}, daily pass plans)`)}
         {field('free_after', 'Fee-free after this many trips a day (optional)')}
         {field('commission', 'Commission % (commission plans)')}
-        {field('floor', 'Earnings floor a day (₹, 0 = off)')}
-        {field('cap', 'Daily cap (₹, blank = none)')}
+        {field('floor', `Earnings floor a day (${sym}, 0 = off)`)}
+        {field('cap', `Daily cap (${sym}, blank = none)`)}
         {field('waiver_days', 'Launch waiver: first N days from a driver’s first trip')}
-        {field('rider_fee', 'Rider platform fee (₹; only used while its flag is on)')}
+        {field('rider_fee', `Rider platform fee (${sym}; only used while its flag is on)`)}
         {field('note', 'Note')}
         {field('reason', 'Why (kept in the audit log)')}
         {error ? <div className="alert-error" role="alert">{error}</div> : null}

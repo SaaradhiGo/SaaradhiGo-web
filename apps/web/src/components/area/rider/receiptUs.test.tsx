@@ -17,6 +17,7 @@ const TRIP = {
   requested_at: '2026-11-15T00:20:00Z', completed_at: '2026-11-15T00:30:00Z', actual_distance_km: '18.7',
   pickup_address: 'Boise State University, Boise, ID, USA', destination_address: 'The Village at Meridian, Meridian, ID, USA',
   tip: { amount: '5.32', currency: 'USD' },
+  refunds: [{ amount: '29.58', currency: 'USD', to: 'card', status: 'sent', at: '2026-11-15T17:13:46Z' }],
 };
 vi.mock('@/lib/area/api', () => ({
   areaToken: async () => 'sg:rider-session',
@@ -35,6 +36,9 @@ describe('a US receipt', () => {
     expect(screen.getByTestId('receipt-tip').textContent).toContain('$5.32');
     expect(screen.getByTestId('receipt-total-charged').textContent).toContain('$34.90');
     expect(document.body.textContent).toContain('11.6 mi');
+    // 15 Nov (round 5): a refund is its own line on the receipt.
+    expect(screen.getByTestId('receipt-refund').textContent).toContain('Refunded to your card');
+    expect(screen.getByTestId('receipt-refund').textContent).toContain('−$29.58');
     // 15 Nov: the headline is the total charged, and "You paid" reads "Ride total".
     expect(screen.getByTestId('receipt-headline').textContent).toBe('$34.90');
     expect(screen.getByText('Ride total')).toBeTruthy();

@@ -5,6 +5,7 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { areaGet, areaPost } from '@/lib/area/api';
 import { clock, dateLabel, deduction, money } from '@/lib/area/format';
+import { distanceInMarketUnit } from '@/lib/money';
 import { className } from '@/lib/area/rider';
 import { useLoad } from '@/lib/area/useLoad';
 import { messageFor } from '@/lib/publicAuth';
@@ -83,7 +84,7 @@ export function TripDetail({ id, onClose }: { id: number; onClose: () => void })
             <div><div className="ab">{t.destination_address || '—'}</div><div className="a14 amut">{tr('Dropped')} {at(t.completed_at)}</div></div>
           </div>
           <div className="td-lines a14">
-            <div className="td-line"><span className="amut">{tr('Distance')}</span><span className="ab">{t.distance_km ? `${Number(t.distance_km).toFixed(1)} km` : '—'}</span></div>
+            <div className="td-line"><span className="amut">{tr('Distance')}</span><span className="ab">{(() => { const d = t.distance_km ? distanceInMarketUnit(t.distance_km, t.currency) : null; return d ? `${d.value} ${d.unit}` : '—'; })()}</span></div>
             <div className="td-line"><span className="amut">{tr('Duration')}</span><span className="ab">{t.duration_min ? tr('{n} min').replace('{n}', String(Math.round(Number(t.duration_min)))) : '—'}</span></div>
             <div className="td-line"><span className="amut">{tr('Ride')}</span><span className="ab">{className(t.ride_class) ?? (t.ride_class || '—')}</span></div>
             <div className="td-line"><span className="amut">{tr('Paid')}</span><span className="ab">{tr(t.payment_method === 'cash' ? 'Cash' : 'Online')}</span></div>

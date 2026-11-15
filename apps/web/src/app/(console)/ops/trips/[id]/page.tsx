@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { currentScope, getCachedAccess, useAdminAccess } from '@/lib/adminScope';
 import { timeZoneFor } from '@/lib/consoleTime';
-import { currencySymbol } from '@/lib/money';
+import { currencySymbol, distanceInMarketUnit } from '@/lib/money';
 import {
   type ActionKey, type FareCard, type TripActions, cityTime, cityZoneLabel, fareCardLineText,
   fareCardSummary, formatMinor, visibleActions,
@@ -314,8 +314,8 @@ export default function TripDetailPage() {
         )}
         <MetricTile
           label="Distance"
-          value={data.fare.actual_distance_km ?? data.fare.estimated_distance_km}
-          unit="km"
+          value={distanceInMarketUnit(data.fare.actual_distance_km ?? data.fare.estimated_distance_km, cur)?.value ?? null}
+          unit={cur === 'USD' ? 'mi' : 'km'}
           note={data.fare.actual_distance_km ? 'driven' : data.fare.estimated_distance_km ? 'estimated' : undefined}
         />
         <MetricTile label="Surge" value={`×${data.fare.surge_multiplier ?? '1.00'}`} />
@@ -423,7 +423,7 @@ export default function TripDetailPage() {
                 {data.fare_card.early_end ? (
                   <Fact label="Ended early by an operator">
                     Fare for {data.fare_card.early_end.fare_basis}
-                    {data.fare_card.early_end.distance_km ? ` (${data.fare_card.early_end.distance_km} km)` : ''}
+                    {(() => { const d = distanceInMarketUnit(data.fare_card.early_end.distance_km, cur); return d ? ` (${d.value} ${d.unit})` : ''; })()}
                     {data.fare_card.early_end.min_fare_applied ? ' · minimum fare applied' : ''}
                     {data.fare_card.early_end.funded_by && data.fare_card.early_end.platform_paid_driver_minor != null
                       ? ` · ${data.fare_card.early_end.funded_by} paid the driver ${minor(data.fare_card.early_end.platform_paid_driver_minor)}`
