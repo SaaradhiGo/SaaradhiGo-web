@@ -18,6 +18,23 @@ const LEGACY = {
   rider: ['saaradhi_rider_access_token', 'saaradhi_rider_refresh_token'],
 } as const;
 
+/**
+ * 14 Nov (owner): no personal data in browser storage. The signed-in account (name, phone, id) is
+ * held in memory for this page only and read again from the session (`/auth/profile/`,
+ * `/admin-access/me/`); copies older versions saved in localStorage are deleted on the next visit.
+ */
+export const OLD_PERSONAL_KEYS = ['saaradhi_rider_user', 'saaradhi_admin_user'];
+export const accountMemory: { rider: unknown | null; staff: unknown | null } = { rider: null, staff: null };
+
+function forgetStoredPersonalData() {
+  try {
+    for (const k of OLD_PERSONAL_KEYS) window.localStorage.removeItem(k);
+  } catch {
+    /* no storage */
+  }
+}
+if (typeof window !== 'undefined') forgetStoredPersonalData();
+
 /** Pass as the token argument to send a call as the rider/driver session (the cookie on the server). */
 export const RIDER_SESSION = 'sg:rider-session';
 
@@ -102,10 +119,11 @@ function sessionEnded(who: Who) {
   try {
     document.cookie = `${MARKER[who]}=; path=/; max-age=0`;
     for (const k of LEGACY[who]) window.localStorage.removeItem(k);
-    window.localStorage.removeItem(who === 'staff' ? 'saaradhi_admin_user' : 'saaradhi_rider_user');
   } catch {
     /* nothing to clear */
   }
+  accountMemory[who] = null;
+  forgetStoredPersonalData();
   window.dispatchEvent(new Event(who === 'staff' ? CONSOLE_SESSION_ENDED : 'saaradhi:session'));
 }
 
@@ -113,9 +131,7 @@ export function clearTokens() {
   if (typeof window === 'undefined') return;
   try {
     for (const k of LEGACY.staff) window.localStorage.removeItem(k);
-    // The operator's own record goes with the session it belonged to. Leaving it behind would
-    // have the console greeting the previous operator by name on the sign-in screen.
-    window.localStorage.removeItem('saaradhi_admin_user');
+    forgetStoredPersonalData();
     document.cookie = `${MARKER.staff}=; path=/; max-age=0`;
   } catch {
     /* nothing to clear */
@@ -138,6 +154,7 @@ export async function signOutConsole(): Promise<void> {
     if (timer) clearTimeout(timer);
   }
   clearTokens();
+  accountMemory.staff = null;
 }
 
 /** Sign a rider or driver out on the server: refresh token revoked, cookies cleared. */
@@ -426,6 +443,7 @@ export async function loginWithOtp(phone: string, otp: string) {
   return data;
 }
 
+/** Where an operator's record was stored before 14 Nov; now only ever deleted. */
 export const ADMIN_USER_KEY = 'saaradhi_admin_user';
 
 export type OperatorUser = {
@@ -436,14 +454,9 @@ export type OperatorUser = {
   role?: string | null;
 };
 
+/** The signed-in operator as the sign-in answered, in memory only (never browser storage). */
 export function readOperator(): OperatorUser | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem(ADMIN_USER_KEY);
-    return raw ? (JSON.parse(raw) as OperatorUser) : null;
-  } catch {
-    return null;
-  }
+  return (accountMemory.staff as OperatorUser | null) ?? null;
 }
 
 export type AdminLoginExtra = {
@@ -540,13 +553,8 @@ export async function adminLoginWithPassword(
     );
   }
   writeTokens();
-  try {
-    if (data.user) {
-      window.localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(data.user));
-    }
-  } catch {
-    /* private mode: the console still works, it just cannot greet by name */
-  }
+  // In memory only: the console reads the operator from /admin-access/me/ after a reload.
+  if (data.user) accountMemory.staff = data.user;
   return data;
 }
 

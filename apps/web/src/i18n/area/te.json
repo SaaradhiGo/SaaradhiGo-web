@@ -825,5 +825,9 @@
   "We could not charge your card for this trip ({fare}).": "ఈ ట్రిప్ కోసం మీ కార్డ్‌ నుండి వసూలు చేయలేకపోయాం ({fare}).",
   "Nothing was taken. Our team will contact you about the fare, or you can ask for help on the receipt.": "ఏమీ తీసుకోలేదు. ఛార్జీ గురించి మా బృందం మిమ్మల్ని సంప్రదిస్తుంది, లేదా రసీదులో సహాయం అడగవచ్చు.",
   "Charging your card…": "మీ కార్డ్ నుండి వసూలు చేస్తున్నాం…",
-  "Paid {fare} by card": "కార్డ్‌తో {fare} చెల్లించారు"
+  "Paid {fare} by card": "కార్డ్‌తో {fare} చెల్లించారు",
+  "A rider reported a zero tolerance concern (drugs or alcohol) on a trip. Your account is paused while our safety team investigates.": "ఒక ప్రయాణికుడు ట్రిప్‌లో జీరో టాలరెన్స్ (మత్తు పదార్థాలు లేదా మద్యం) ఫిర్యాదు చేశారు. మా భద్రతా బృందం దర్యాప్తు చేసే వరకు మీ ఖాతా నిలిపివేయబడింది.",
+  "Your account is paused": "మీ ఖాతా నిలిపివేయబడింది",
+  "Your account is closed": "మీ ఖాతా మూసివేయబడింది",
+  "Since {date}. You cannot go online until this is resolved.": "{date} నుండి. ఇది పరిష్కారమయ్యే వరకు మీరు ఆన్‌లైన్‌కు వెళ్లలేరు."
 }

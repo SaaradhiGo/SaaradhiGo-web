@@ -55,6 +55,8 @@ export type Requirements = {
   vehicle_types: string[]; vehicle_years: number[]; upload_kinds: Record<string, string>;
   /** 12 Nov: the city's KYC review target, the same number the console's queue alerts on. */
   review_target_working_days?: number;
+  /** 14 Nov: a suspension in force: why (the driver's words), since when. */
+  paused?: { reason_code: string; reason: string; since: string; permanent: boolean } | null;
 };
 
 /** "We usually review within one working day." from the city's review target (12 Nov). */

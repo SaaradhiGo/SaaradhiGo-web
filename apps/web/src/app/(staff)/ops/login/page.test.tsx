@@ -16,7 +16,7 @@
  */
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ADMIN_USER_KEY, TOKEN_KEY } from '@/lib/api';
+import { ADMIN_USER_KEY, TOKEN_KEY, readOperator } from '@/lib/api';
 import LoginPage from './page';
 
 const replace = vi.fn();
@@ -145,7 +145,8 @@ describe('forced password change at sign-in', () => {
 
     // The normal sign-in path: the session is stored exactly as a plain 200 would store it.
     expect(window.localStorage.getItem(TOKEN_KEY)).toBeNull(); // 14 Nov: the token is an HttpOnly cookie now
-    expect(JSON.parse(window.localStorage.getItem(ADMIN_USER_KEY) ?? 'null')).toMatchObject({ email: EMAIL });
+    expect(readOperator()).toMatchObject({ email: EMAIL }); // 14 Nov: in memory, never browser storage
+    expect(window.localStorage.getItem(ADMIN_USER_KEY)).toBeNull();
   });
 
   it('a weak choice keeps the step open with the server\'s reason, and the next choice goes through', async () => {

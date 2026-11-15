@@ -825,5 +825,9 @@
   "We could not charge your card for this trip ({fare}).": "हम इस यात्रा के लिए आपके कार्ड से शुल्क नहीं ले सके ({fare})।",
   "Nothing was taken. Our team will contact you about the fare, or you can ask for help on the receipt.": "कुछ नहीं कटा। हमारी टीम किराए के बारे में आपसे संपर्क करेगी, या आप रसीद पर मदद माँग सकते हैं।",
   "Charging your card…": "आपके कार्ड से शुल्क लिया जा रहा है…",
-  "Paid {fare} by card": "कार्ड से {fare} चुकाया"
+  "Paid {fare} by card": "कार्ड से {fare} चुकाया",
+  "A rider reported a zero tolerance concern (drugs or alcohol) on a trip. Your account is paused while our safety team investigates.": "एक यात्री ने यात्रा पर ज़ीरो टॉलरेंस (नशा या शराब) की शिकायत की है। हमारी सुरक्षा टीम की जाँच तक आपका खाता रोका गया है।",
+  "Your account is paused": "आपका खाता रोका गया है",
+  "Your account is closed": "आपका खाता बंद है",
+  "Since {date}. You cannot go online until this is resolved.": "{date} से। इसके हल होने तक आप ऑनलाइन नहीं जा सकते।"
 }
