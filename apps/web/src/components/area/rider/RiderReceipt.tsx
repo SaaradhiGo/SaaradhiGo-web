@@ -53,6 +53,10 @@ export function RiderReceipt({ id }: { id: string }) {
   const when = t.completed_at ?? t.cancelled_at ?? t.requested_at;
   const paidHow = t.payment_method === 'cash' ? tr('Paid in cash') : t.payment_method ? tr('Paid online') : null;
   const km = t.actual_distance_km ?? t.estimated_distance_km;
+  // 14 Nov (USA): a US trip's distance in miles, like its fares.
+  const dist = km == null ? null : cur === 'USD'
+    ? `${(Number(km) * 0.621371).toFixed(1)} mi`
+    : `${Number(km).toFixed(Number(km) < 10 ? 1 : 0)} km`;
   const inv = t.invoice ?? null;
 
   async function pdf() {
@@ -101,6 +105,18 @@ export function RiderReceipt({ id }: { id: string }) {
             <div className="arow" style={{ justifyContent: 'space-between', padding: '12px 0' }}>
               <span className="ab">{tr('You paid')}</span><span className="a20">{money(paid, cur, locale) ?? '—'}</span>
             </div>
+            {/* 14 Nov (USA): the tip is its own charge, 100% the driver's; the total is what the card paid. */}
+            {t.tip && (
+              <>
+                <div className="arow" style={{ justifyContent: 'space-between', padding: '12px 0' }} data-testid="receipt-tip">
+                  <span>{tr('Tip (100% to your driver)')}</span><span className="ab">{money(t.tip.amount, cur, locale)}</span>
+                </div>
+                <div className="arow" style={{ justifyContent: 'space-between', padding: '12px 0' }} data-testid="receipt-total-charged">
+                  <span className="ab">{tr('Total charged')}</span>
+                  <span className="a20">{money(Number(paid ?? 0) + Number(t.tip.amount), cur, locale)}</span>
+                </div>
+              </>
+            )}
           </div>
           <p className="a14 amut" style={{ marginTop: 8 }}>{tr('If the trip had changed, each change and its reason would be listed here.')}</p>
           <div className="arow" style={{ gap: 8, marginTop: 20, flexWrap: 'wrap' }}>
@@ -127,7 +143,7 @@ export function RiderReceipt({ id }: { id: string }) {
               <div className="ab">{t.destination_address}</div>
               {t.completed_at && (
                 <div className="a14 amut">
-                  {tr('Dropped')} {clock(t.completed_at, locale, t.timezone)}{km != null ? ` · ${Number(km).toFixed(Number(km) < 10 ? 1 : 0)} km` : ''}
+                  {tr('Dropped')} {clock(t.completed_at, locale, t.timezone)}{dist ? ` · ${dist}` : ''}
                 </div>
               )}
             </div>
