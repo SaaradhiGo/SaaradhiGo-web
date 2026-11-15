@@ -67,6 +67,14 @@ describe('approvals', () => {
     expect(await screen.findByText('PO-31')).toBeTruthy();
   });
 
+  it("shows a Treasure Valley request in Boise's time, with the zone (14 Nov)", async () => {
+    routeFetch({ country: 'US', scope: 'US-ID-TV', currency: 'USD', requested_at: '2026-11-15T00:58:00Z' });
+    render(<ApprovalsPage />);
+    await screen.findByRole('button', { name: 'Approve' });
+    expect(screen.getAllByText(/14 Nov, 17:58 MST/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/EST/)).toBeNull();
+  });
+
   it('asks for a reason before rejecting, and approves through the request endpoint', async () => {
     const fetchMock = routeFetch();
     render(<ApprovalsPage />);

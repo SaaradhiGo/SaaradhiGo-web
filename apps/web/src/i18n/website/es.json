@@ -212,5 +212,7 @@
   "We could not create the account. Please try again.": "No pudimos crear la cuenta. Inténtalo de nuevo.",
   "This email already has an account.": "Este correo ya tiene una cuenta.",
   "Forgot password?": "¿Olvidaste tu contraseña?",
-  "Creating your account…": "Creando tu cuenta…"
+  "Creating your account…": "Creando tu cuenta…",
+  "Standard and XL, each with its own price.": "Standard y XL, cada uno con su precio.",
+  "By card in the app. The fare is held on your card when you book and charged when the trip ends.": "Con tarjeta en la aplicación. La tarifa se retiene en tu tarjeta al reservar y se cobra al terminar el viaje."
 }

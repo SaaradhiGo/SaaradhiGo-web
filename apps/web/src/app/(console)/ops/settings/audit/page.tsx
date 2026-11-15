@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, apiDownload } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
-import { stamp } from '@/lib/consoleTime';
+import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   auditQuery, canReadAudit, chainWords, diffRows, emptyAuditFilters, type AuditDetail, type AuditFilters,
   type AuditPage, type AuditRow,
@@ -64,7 +64,7 @@ export default function AuditPage() {
   }
 
   const columns: ListColumn<AuditRow>[] = [
-    { key: 'when', label: 'When', render: (r) => stamp(r.created_at) },
+    { key: 'when', label: 'When', render: (r) => stamp(r.created_at, timeZoneFor(r.place)) },
     { key: 'actor', label: 'Who', render: (r) => <>{r.actor.label ?? 'system'} <span className="muted">{r.actor.role}</span></> },
     { key: 'action', label: 'Action', primary: true, render: (r) => r.action },
     { key: 'target', label: 'Target', render: (r) => `${r.target_type} ${r.target_id}`.trim() },
@@ -207,14 +207,14 @@ function EntryRecord({ id, onClose }: { id: number; onClose: () => void }) {
       label="Audit entry"
       title={entry.action}
       refId={`#${entry.id}`}
-      subtitle={<>{entry.actor.label ?? 'system'} · {stamp(entry.created_at)}</>}
+      subtitle={<>{entry.actor.label ?? 'system'} · {stamp(entry.created_at, timeZoneFor(entry.place))}</>}
       onClose={onClose}
       tabs={[
         {
           key: 'entry', label: 'Entry', content: (
             <div className="nf-editor">
               <dl className="ps-facts">
-                <div><dt>When</dt><dd>{stamp(entry.created_at)}</dd></div>
+                <div><dt>When</dt><dd>{stamp(entry.created_at, timeZoneFor(entry.place))}</dd></div>
                 <div><dt>Who</dt><dd>{entry.actor.label ?? 'system'} · {entry.actor.role || 'no role'}</dd></div>
                 <div><dt>Target</dt><dd>{entry.target_type} {entry.target_id}</dd></div>
                 <div><dt>Place</dt><dd>{entry.place ?? 'none'}</dd></div>

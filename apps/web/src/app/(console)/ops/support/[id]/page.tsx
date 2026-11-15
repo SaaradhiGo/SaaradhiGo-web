@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
-import { stamp, timeZoneFor } from '@/lib/consoleTime';
+import { cityTimeZone, stamp } from '@/lib/consoleTime';
 import {
   ISSUE_LABEL, PRIORITIES, PRIORITY_LABEL, STATUS_LABEL, type MacroSummary, type Sla,
   type SupportActionKey, type SupportActions, composerModes, filterMacros, messageKind,
@@ -204,7 +204,7 @@ function TicketView({
   reload: () => Promise<void>;
 }) {
   const [creditOpen, setCreditOpen] = useState(false);
-  const tz = timeZoneFor(ticket.city?.code);
+  const tz = cityTimeZone(ticket.city);
   const actions = ticket.allowed_actions;
   const visible = visibleSupportActions(actions, access);
   const has = (k: SupportActionKey) => visible.includes(k);

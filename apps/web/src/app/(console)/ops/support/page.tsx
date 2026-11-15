@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
-import { stamp, timeZoneFor } from '@/lib/consoleTime';
+import { cityTimeZone, stamp } from '@/lib/consoleTime';
 import {
   DEFAULT_SUPPORT_FILTERS, ISSUE_LABEL, PRIORITY_LABEL, STATUS_LABEL,
   SUPPORT_PAGE_SIZES, SUPPORT_SORT_OPTIONS, type QueueCounts, type QueueKey, type Sla, type SupportActions,
@@ -177,7 +177,7 @@ function SupportInner() {
     { key: 'city', label: 'City', render: (t) => t.city?.name ?? <span className="muted">Unplaced</span> },
     { key: 'assignee', label: 'Assignee', render: (t) => (t.assignee ? t.assignee.label : <span className="muted">Unassigned</span>) },
     { key: 'status', label: 'Status', render: (t) => <StatusChip tone={STATUS_TONE[t.status] ?? 'neutral'}>{STATUS_LABEL[t.status] ?? t.status}</StatusChip> },
-    { key: 'opened', label: 'Opened', num: true, sortKey: 'created', render: (t) => stamp(t.created_at, timeZoneFor(t.city?.code)) },
+    { key: 'opened', label: 'Opened', num: true, sortKey: 'created', render: (t) => stamp(t.created_at, cityTimeZone(t.city)) },
   ];
 
   async function exportView() {
@@ -189,7 +189,7 @@ function SupportInner() {
         `TKT-${t.id}`, PRIORITY_LABEL[t.priority] ?? t.priority, slaSentence(t.sla),
         t.issue_label ?? ISSUE_LABEL[t.issue_type] ?? t.issue_type, `${requesterName(t)} ${requesterRef(t)}`.trim(),
         t.city?.name ?? '', t.assignee?.label ?? '', STATUS_LABEL[t.status] ?? t.status,
-        stamp(t.created_at, timeZoneFor(t.city?.code)),
+        stamp(t.created_at, cityTimeZone(t.city)),
       ]);
       downloadCsv(`support-${filters.queue}.csv`, toCsv(header, body));
       if (truncated) setNotice({ kind: 'done', text: `Exported the first ${all.length.toLocaleString('en-IN')} tickets. Narrow the view to export the rest.` });
@@ -335,7 +335,7 @@ function TicketRecord({ id, onClose, onChanged }: {
   if (error) return <RecordFailed label="Ticket" message={error} onRetry={() => void load()} onClose={onClose} />;
   if (!ticket) return <RecordLoading label="Ticket" />;
 
-  const tz = timeZoneFor(ticket.city?.code);
+  const tz = cityTimeZone(ticket.city);
   const visible = visibleSupportActions(ticket.allowed_actions, access);
   const has = (k: (typeof visible)[number]) => visible.includes(k);
   const target = { type: 'support_ticket', id: ticket.id } as const;

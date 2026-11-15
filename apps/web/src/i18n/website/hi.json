@@ -212,5 +212,7 @@
   "We could not create the account. Please try again.": "खाता नहीं बन सका। फिर से कोशिश करें।",
   "This email already has an account.": "इस ईमेल पर पहले से खाता है।",
   "Forgot password?": "पासवर्ड भूल गए?",
-  "Creating your account…": "आपका खाता बना रहे हैं…"
+  "Creating your account…": "आपका खाता बना रहे हैं…",
+  "Standard and XL, each with its own price.": "Standard, XL, हर एक का अपना दाम।",
+  "By card in the app. The fare is held on your card when you book and charged when the trip ends.": "ऐप में कार्ड से। बुक करते समय किराया आपके कार्ड पर रोका जाता है और ट्रिप खत्म होने पर लिया जाता है।"
 }
