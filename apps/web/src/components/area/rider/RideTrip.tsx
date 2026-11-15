@@ -349,11 +349,12 @@ export function RideTrip({ id }: { id: string }) {
             onPaid={(how) => { setPaid(how); refresh(); }} />
         ) : state === 'completed' ? (
           <>
-            {t?.market_rules?.tips_enabled && t.driver_name && (
+            {t?.market_rules?.tips_enabled && t.driver_name && !(t.card_held && t.payment_status === 'failed') && (
               <TipCard tripId={id} fare={Number(t.rider_payable ?? t.final_fare ?? t.estimated_fare ?? 0)}
                 currency={t.currency ?? 'USD'} presets={t.market_rules.tip_presets} given={t.tip?.amount ?? null} />
             )}
             <TripSummary id={id} fare={fare} cash={paid === 'cash' || t?.payment_method === 'cash'}
+              card={t?.card_held ? (t.payment_status ?? 'pending') : null}
               driver={t?.driver_name ?? null} onDone={() => router.push('/ride')} />
           </>
         ) : null}
@@ -420,8 +421,10 @@ export function RideTrip({ id }: { id: string }) {
  * 13 Nov: the trip summary before going home, as in the rider app: what was paid and how, the
  * driver, the same receipt as Your trips, and a rating.
  */
-function TripSummary({ id, fare, cash, driver, onDone }: {
+function TripSummary({ id, fare, cash, card = null, driver, onDone }: {
   id: string; fare: string | null; cash: boolean; driver: string | null; onDone: () => void;
+  /** A card held at booking (14 Nov, USA): the charge's own state, never assumed paid. */
+  card?: string | null;
 }) {
   const tr = useTr();
   const [stars, setStars] = useState(0);
@@ -433,7 +436,14 @@ function TripSummary({ id, fare, cash, driver, onDone }: {
   return (
     <section className="acard acol" style={{ padding: 16, gap: 10 }} data-testid="trip-summary" aria-labelledby="sum-title">
       <h2 className="a20" id="sum-title">{tr('Trip complete')}</h2>
-      {fare && <div className="ab">{(cash ? tr('Paid {fare} in cash') : tr('Paid {fare} online')).replace('{fare}', fare)}</div>}
+      {fare && card === 'failed' ? (
+        <div className="acol" style={{ gap: 4 }} role="alert" data-testid="charge-failed">
+          <div className="ab ared">{tr('We could not charge your card for this trip ({fare}).').replace('{fare}', fare)}</div>
+          <div className="a14 amut">{tr('Nothing was taken. Our team will contact you about the fare, or you can ask for help on the receipt.')}</div>
+        </div>
+      ) : fare && card && card !== 'completed' ? (
+        <div className="ab" role="status">{tr('Charging your card…')}</div>
+      ) : fare && <div className="ab">{(cash ? tr('Paid {fare} in cash') : card ? tr('Paid {fare} by card') : tr('Paid {fare} online')).replace('{fare}', fare)}</div>}
       {driver && <div className="a14 amut">{tr('Your driver')}: {driver}</div>}
       <div className="arow" style={{ gap: 4 }} role="group" aria-label={tr('Rate your trip')}>
         {[1, 2, 3, 4, 5].map((n) => (

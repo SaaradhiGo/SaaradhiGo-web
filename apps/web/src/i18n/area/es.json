@@ -821,5 +821,9 @@
   "Standard": "Estándar",
   "XL": "XL",
   "Tip (100% to your driver)": "Propina (100% para tu conductor)",
-  "Total charged": "Total cobrado"
+  "Total charged": "Total cobrado",
+  "We could not charge your card for this trip ({fare}).": "No pudimos cobrar este viaje a tu tarjeta ({fare}).",
+  "Nothing was taken. Our team will contact you about the fare, or you can ask for help on the receipt.": "No se cobró nada. Nuestro equipo te contactará sobre la tarifa, o puedes pedir ayuda en el recibo.",
+  "Charging your card…": "Cobrando tu tarjeta…",
+  "Paid {fare} by card": "Pagaste {fare} con tarjeta"
 }

@@ -821,5 +821,9 @@
   "Standard": "स्टैंडर्ड",
   "XL": "XL",
   "Tip (100% to your driver)": "टिप (100% आपके ड्राइवर को)",
-  "Total charged": "कुल शुल्क"
+  "Total charged": "कुल शुल्क",
+  "We could not charge your card for this trip ({fare}).": "हम इस यात्रा के लिए आपके कार्ड से शुल्क नहीं ले सके ({fare})।",
+  "Nothing was taken. Our team will contact you about the fare, or you can ask for help on the receipt.": "कुछ नहीं कटा। हमारी टीम किराए के बारे में आपसे संपर्क करेगी, या आप रसीद पर मदद माँग सकते हैं।",
+  "Charging your card…": "आपके कार्ड से शुल्क लिया जा रहा है…",
+  "Paid {fare} by card": "कार्ड से {fare} चुकाया"
 }
