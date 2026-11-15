@@ -18,6 +18,8 @@ export type TripDetailData = {
   fare: string | null; platform_fee: string | null; platform_fee_refunded: string | null; tips: string | null;
   /** 15 Nov (trip 219): the rider's card payment was not collected; nothing settled yet. */
   payment?: 'settled' | 'not_collected';
+  /** 15 Nov (US round 4): when the money settled, and the payout that carried it to the bank (null until paid). */
+  settled_at?: string | null; paid_out_at?: string | null;
   earned: string | null; cash_in_hand: string | null; rider: { first_name: string; rating: string | null };
 };
 
@@ -99,6 +101,11 @@ export function TripDetail({ id, onClose }: { id: number; onClose: () => void })
             <div className="td-line"><span>{tr('Tips')}</span><span className="ab">{m(t.tips)}</span></div>
             <div className="td-line" style={{ borderTop: '1px solid var(--c-border)', paddingTop: 8 }}><span className="ab">{tr('You earned')}</span><span className="ab agrn">{m(t.earned)}</span></div>
             {t.cash_in_hand && <div className="a14 amut">{tr('You collected {amount} in cash from the rider.').replace('{amount}', m(t.cash_in_hand))}</div>}
+            {t.payment !== 'not_collected' && !t.cash_in_hand && t.earned != null && (
+              <div className="a14 amut" data-testid="paid-out">
+                {t.paid_out_at ? tr('Paid out {date}').replace('{date}', dateLabel(t.paid_out_at, locale, null, new Date(), true)) : tr('Not paid out yet')}
+              </div>
+            )}
           </div>
           <Report tripId={t.id} />
         </>

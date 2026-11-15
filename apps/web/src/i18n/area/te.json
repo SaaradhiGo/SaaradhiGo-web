@@ -846,5 +846,8 @@
   "Open the trip": "రైడ్ తెరవండి",
   "Paid. You can book now.": "చెల్లించబడింది. ఇప్పుడు మీరు బుక్ చేయవచ్చు.",
   "We could not charge your card. Open the trip to pay.": "మీ కార్డ్ నుండి వసూలు చేయలేకపోయాము. చెల్లించడానికి రైడ్ తెరవండి.",
-  "Your card was declined. Nothing was charged.": "మీ కార్డ్ తిరస్కరించబడింది. ఏమీ వసూలు చేయలేదు."
+  "Your card was declined. Nothing was charged.": "మీ కార్డ్ తిరస్కరించబడింది. ఏమీ వసూలు చేయలేదు.",
+  "Paid out {date}": "{date}న చెల్లించబడింది",
+  "Not paid out yet": "ఇంకా చెల్లించలేదు",
+  "Platform fees ({n})": "ప్లాట్‌ఫామ్ రుసుములు ({n})"
 }
