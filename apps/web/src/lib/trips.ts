@@ -11,6 +11,7 @@
  */
 import type { AdminAccess } from './adminScope';
 import { can } from './adminScope';
+import { oneLine } from './money';
 
 // ---------------------------------------------------------------------------
 // Filters
@@ -177,8 +178,8 @@ export function formatMinor(
   } catch {
     text = `${code} ${whole}${fraction ? `.${fraction}` : ''}`;
   }
-  if (negative) return `−${text}`;
-  return signed && minor > 0 ? `+${text}` : text;
+  if (negative) return oneLine(`−${text}`);
+  return oneLine(signed && minor > 0 ? `+${text}` : text);
 }
 
 /**

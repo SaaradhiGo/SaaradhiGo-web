@@ -1,3 +1,4 @@
+import { oneLine } from './money';
 import { describe, expect, it } from 'vitest';
 import type { AdminAccess } from './adminScope';
 import {
@@ -69,8 +70,8 @@ describe('money is minor units, formatted per currency', () => {
   });
 
   it('signs a ledger movement', () => {
-    expect(signedMoney(50_000, 'INR')).toBe('+₹500.00');
-    expect(signedMoney(-50_000, 'INR')).toBe('−₹500.00');
+    expect(signedMoney(50_000, 'INR')).toBe(oneLine('+₹500.00'));
+    expect(signedMoney(-50_000, 'INR')).toBe(oneLine('−₹500.00'));
     expect(signedMoney(0, 'INR')).toBe('₹0.00');
   });
 });

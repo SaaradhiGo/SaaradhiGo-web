@@ -1,3 +1,4 @@
+import { oneLine } from './money';
 import { describe, expect, it } from 'vitest';
 import type { AdminAccess } from './adminScope';
 import {
@@ -25,8 +26,8 @@ describe('money in minor units', () => {
   });
 
   it('signs adjustments and never prints a missing amount as zero', () => {
-    expect(formatMinor(-200_000, 'INR')).toBe('−₹2,000.00');
-    expect(formatMinor(150, 'INR', { signed: true })).toBe('+₹1.50');
+    expect(formatMinor(-200_000, 'INR')).toBe(oneLine('−₹2,000.00'));
+    expect(formatMinor(150, 'INR', { signed: true })).toBe(oneLine('+₹1.50'));
     expect(formatMinor(null, 'INR')).toBe('—');
     expect(formatMinor(12.5 as number, 'INR')).toBe('—');
   });
@@ -144,7 +145,7 @@ describe('the fare card (AUDIT 27.74)', () => {
 
   it('reads as the money moved', () => {
     expect(fareCardSummary(card)).toBe(
-      'Fare ₹159.72 · Promo −₹20.00 (paid by SaaradhiGo) · Rider paid ₹139.72 (cash)');
+      `Fare ₹159.72 · Promo ${oneLine('−₹20.00')} (paid by SaaradhiGo) · Rider paid ₹139.72 (cash)`);
   });
 
   it('says who paid a referral reward', () => {

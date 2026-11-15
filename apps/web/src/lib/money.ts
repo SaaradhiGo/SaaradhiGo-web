@@ -106,5 +106,16 @@ export function formatExact(
   });
   const symbol = currencySymbol(currency);
   const body = symbol.length === 1 ? `${symbol}${digits}` : `${symbol} ${digits}`.trim();
-  return n < 0 ? `-${body}` : body;
+  return oneLine(n < 0 ? `-${body}` : body);
+}
+
+/**
+ * An amount that never breaks across lines (15 Nov, a phone receipt split "−" from "$29.58"):
+ * spaces become no-break spaces and a leading sign is joined to the digits (U+2060 word joiner).
+ */
+export function oneLine(text: string): string;
+export function oneLine(text: string | null): string | null;
+export function oneLine(text: string | null): string | null {
+  if (text == null) return text;
+  return text.replace(/ /g, '\u00A0').replace(/^([−+-])(\u00A0?)/, '$1\u2060$2');
 }
