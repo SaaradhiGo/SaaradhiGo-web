@@ -6,6 +6,7 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { ICar, IShield } from './icons';
 import { LOAD_TIMEOUT_MS } from '@/lib/area/useLoad';
+import { localClock } from '@/lib/area/format';
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 /** How often the page asks for the driver's position; the server refreshes it every ping. */
@@ -78,8 +79,7 @@ export function SharedTrip({ token }: { token: string }) {
     return () => { live = false; if (timer) window.clearTimeout(timer); };
   }, [token, attempt]);
 
-  const arrive = data?.arrive_at
-    ? new Date(data.arrive_at).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' }) : null;
+  const arrive = localClock(data?.arrive_at, locale);
   const car = data?.vehicle ? [data.vehicle.color, data.vehicle.brand, data.vehicle.model].filter(Boolean).join(' ') : '';
 
   return (

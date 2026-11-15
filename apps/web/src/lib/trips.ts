@@ -224,7 +224,8 @@ export function cityZoneLabel(timeZone: string | null | undefined): string {
 
 /**
  * "02 Oct, 01:30" in the given IANA zone (the trip's city), 24-hour;
- * with `zone: true`, "02 Oct, 01:30 IST".
+ * with `zone: true`, "02 Oct, 01:30 IST". A US city reads month-first on a
+ * 12-hour clock (15 Nov): "Oct 2, 1:30 AM MDT".
  */
 export function cityTime(
   iso: string | null | undefined,
@@ -238,10 +239,14 @@ export function cityTime(
   const tz = timeZone || 'UTC';
   let text: string;
   try {
-    text = new Intl.DateTimeFormat('en-GB', {
-      timeZone: tz, day: '2-digit', month: 'short',
-      hour: '2-digit', minute: '2-digit', hour12: false,
-    }).format(d);
+    text = /^America\//.test(tz)
+      ? new Intl.DateTimeFormat('en-US', {
+        timeZone: tz, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
+      }).format(d).replace(/ /g, ' ')
+      : new Intl.DateTimeFormat('en-GB', {
+        timeZone: tz, day: '2-digit', month: 'short',
+        hour: '2-digit', minute: '2-digit', hour12: false,
+      }).format(d);
   } catch {
     return `${iso.replace('T', ' ').slice(0, 16)} UTC`;
   }

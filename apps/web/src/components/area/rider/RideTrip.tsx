@@ -12,7 +12,7 @@ import {
   CANCEL_BEFORE_DRIVER, CANCEL_WITH_DRIVER, type CancelPreview, RideSocket, type SocketEvent, cancelPreview, cancelTrip,
   formatPlate, routeBetween,
 } from '@/lib/booking';
-import { money } from '@/lib/area/format';
+import { localClock, money } from '@/lib/area/format';
 import { AREA_FLAGS } from '@/lib/area/flags';
 import {
   type Call, type Eta, type Share, type Trip, className, endCall, lockedFare, startCall, startShare, stopShare,
@@ -142,7 +142,7 @@ export function RideTrip({ id }: { id: string }) {
   // Never 0 and never a guess: no estimate, no line.
   const etaMin = eta?.phase === 'to_pickup' ? eta.pickup_eta_min : eta?.phase === 'to_drop' ? eta.drop_eta_min : null;
   const arrive = eta?.phase === 'to_drop' && eta.arrive_at
-    ? new Date(eta.arrive_at).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' }) : null;
+    ? localClock(eta.arrive_at, locale) : null;
   const etaLine = OVER.includes(state) || !etaMin ? null
     : eta?.phase === 'to_pickup' ? tr('Arriving in {n} min').replace('{n}', String(etaMin))
       : arrive ? tr('Arrive about {time}').replace('{time}', arrive) : null;
@@ -378,7 +378,7 @@ export function RideTrip({ id }: { id: string }) {
             {costs && (costs.free ? (
               <p className="a14 agrn" style={{ margin: 0 }}>
                 {costs.free_until
-                  ? tr('Free to cancel until {time}.').replace('{time}', new Date(costs.free_until).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' }))
+                  ? tr('Free to cancel until {time}.').replace('{time}', (localClock(costs.free_until, locale) ?? ''))
                   : tr('Free to cancel.')}
               </p>
             ) : (

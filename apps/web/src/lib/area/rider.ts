@@ -325,8 +325,10 @@ export async function requestEmailConfirmation() {
 }
 
 export type PayMethod = 'upi' | 'card' | 'netbanking' | 'cash';
+/** 15 Nov: the rider's last trip that was not paid; booking waits until it is. */
+export type UnpaidTrip = { trip_id: number; amount: string; currency: string; can_retry_card: boolean };
 export type BookingOptions = {
-  payment: { methods: PayMethod[]; default: PayMethod | null; online_unavailable_reason?: string };
+  payment: { methods: PayMethod[]; default: PayMethod | null; online_unavailable_reason?: string; unpaid_trip?: UnpaidTrip | null };
   search_timeout_seconds: number;
   phone_required: boolean;
 };
@@ -335,6 +337,11 @@ export type BookingOptions = {
 export async function bookingOptions(p: { lat: number; lng: number }) {
   const q = new URLSearchParams({ lat: String(p.lat), lng: String(p.lng) });
   return areaGet<BookingOptions>(`/ride/booking-options/?${q}`);
+}
+
+/** Charge the card saved on the unpaid trip now: `paid`, or the reason it was not. */
+export async function payUnpaidTrip() {
+  return areaPost<{ result: 'paid' | 'nothing_to_pay' | 'not_due' | 'no_card'; message?: string }>('/payments/unpaid/pay/', {});
 }
 
 /** A street address for a point (one cached Maps call), or null. */

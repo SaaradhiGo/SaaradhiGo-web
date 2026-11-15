@@ -5,7 +5,7 @@
  * Intl.NumberFormat, always with the currency's own decimals ("₹0.00",
  * "₹631.55"; owner, 8 Nov).
  *
- * Dates: always in the trip's market time zone, in the reader's locale.
+ * Dates: always in the trip's market time zone, in the MARKET's style (dateLocale: the USA month-first,
  * A list row has two lines: "Today" / "Yesterday" over the full date and time
  * ("Sun, 8 Nov · 9:12 am"), or the date over the time; anything older than
  * seven days carries the year when it is not this year. A trip without a
@@ -80,10 +80,48 @@ function tz(timeZone?: string | null): string {
 
 const readable = (iso: string | null | undefined): iso is string => !!iso && !Number.isNaN(Date.parse(iso));
 
+/** A US time zone: the Americas (every US market) and Hawaii. */
+export const isUsZone = (zone: string | null | undefined): boolean => /^(America\/|US\/|Pacific\/Honolulu$)/.test(zone ?? '');
+
+/**
+ * THE locale every date on these screens is written in (15 Nov, round 3): the MARKET's, read from
+ * the trip's time zone (or the market zone the driver pages set), never from the site market the
+ * visitor picked. In English a US date is month-first with a 12-hour clock ("Sat, Nov 14",
+ * "Nov 9 – 15", "Nov 14, 2026", "7:30 PM"); an Indian one day-first ("Sat, 14 Nov", "14 Nov 2026",
+ * "9:12 am"). Hindi, Telugu and Spanish keep their own order. `UTC` (a calendar day formatted at
+ * noon) says nothing about the market, so the market zone decides.
+ */
+export function dateLocale(locale: string, timeZone?: string | null): string {
+  if (!/^en(-|$)/i.test(locale)) return locale;
+  const zone = timeZone && timeZone !== 'UTC' && valid(timeZone) ? timeZone : market;
+  return isUsZone(zone) ? 'en-US' : 'en-IN';
+}
+
 /** "9:12 am" in the reader's locale. */
 export function clock(iso: string, locale: string, timeZone?: string | null): string {
   if (!readable(iso)) return '';
-  return new Intl.DateTimeFormat(locale, { timeZone: tz(timeZone), hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
+  return new Intl.DateTimeFormat(dateLocale(locale, timeZone), { timeZone: tz(timeZone), hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
+}
+
+/** "7:30 PM" in the reader's OWN zone (a live trip's arrival), in the market's style. */
+export function localClock(iso: string | null | undefined, locale: string): string | null {
+  if (!readable(iso)) return null;
+  const here = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return new Intl.DateTimeFormat(dateLocale(locale, here), { hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
+}
+
+/** "Nov 14, 2026" / "14 Nov 2026", in the market's style. */
+export function fullDate(iso: string | null | undefined, locale: string, timeZone?: string | null): string {
+  if (!readable(iso)) return '';
+  return month3(new Intl.DateTimeFormat(dateLocale(locale, timeZone), {
+    timeZone: tz(timeZone), day: 'numeric', month: 'short', year: 'numeric',
+  }).format(new Date(iso)));
+}
+
+/** "Nov 14, 2026, 7:30 PM" / "14 Nov 2026, 19:30" — a moment shown in full (payouts paused until …). */
+export function dateTime(iso: string | null | undefined, locale: string, timeZone?: string | null): string {
+  if (!readable(iso)) return '';
+  return `${fullDate(iso, locale, timeZone)}, ${clock(iso, locale, timeZone)}`;
 }
 
 /** Every short month in three letters (11 Nov): "Sep", never the British "Sept". */
@@ -95,7 +133,7 @@ export function dateLabel(iso: string, locale: string, timeZone?: string | null,
   const zone = tz(timeZone);
   const at = new Date(iso);
   const otherYear = ymd(at, zone).slice(0, 4) !== ymd(now, zone).slice(0, 4);
-  return month3(new Intl.DateTimeFormat(locale, {
+  return month3(new Intl.DateTimeFormat(dateLocale(locale, timeZone), {
     timeZone: zone, weekday: 'short', day: 'numeric', month: 'short',
     ...(otherYear || withYear ? { year: 'numeric' } : {}),
   }).format(at));
@@ -123,14 +161,15 @@ export function listWhen(
 /** "Mon 2", for the 7-day chart; `date` is a local YYYY-MM-DD. */
 export function chartDay(date: string, locale: string): string {
   const at = new Date(`${date}T12:00:00Z`);
-  const parts = new Intl.DateTimeFormat(locale, { timeZone: 'UTC', weekday: 'short', day: 'numeric' }).formatToParts(at);
+  const parts = new Intl.DateTimeFormat(dateLocale(locale), { timeZone: 'UTC', weekday: 'short', day: 'numeric' }).formatToParts(at);
   const wd = parts.find((p) => p.type === 'weekday')?.value ?? '';
   const d = parts.find((p) => p.type === 'day')?.value ?? '';
   return `${wd} ${d}`.trim();
 }
 
 /** "Mon 2 – Sun 8 Nov" for a period; `start`/`end` are local YYYY-MM-DD. */
-export function rangeLabel(start: string, end: string, locale: string): string {
+export function rangeLabel(start: string, end: string, reader: string): string {
+  const locale = dateLocale(reader);
   const fmt = (d: string, month: boolean) => {
     const at = new Date(`${d}T12:00:00Z`);
     const parts = new Intl.DateTimeFormat(locale, {
@@ -141,7 +180,7 @@ export function rangeLabel(start: string, end: string, locale: string): string {
   };
   const sameMonth = start.slice(0, 7) === end.slice(0, 7);
   // 15 Nov (owner): the USA writes the month first, "Nov 9 – 15" (or "Oct 26 – Nov 1").
-  if (/-US$/.test(locale)) {
+  if (locale === 'en-US') {
     const md = (d: string) => month3(new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })
       .format(new Date(`${d}T12:00:00Z`)));
     if (start === end) return md(start);
@@ -153,7 +192,7 @@ export function rangeLabel(start: string, end: string, locale: string): string {
 /** "November 2026", for "Rider since …". */
 export function monthYear(iso: string | null | undefined, locale: string): string | null {
   if (!iso || Number.isNaN(Date.parse(iso))) return null;
-  return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(new Date(iso));
+  return new Intl.DateTimeFormat(dateLocale(locale), { month: 'long', year: 'numeric' }).format(new Date(iso));
 }
 
 /**
@@ -192,8 +231,8 @@ export function parseNumericDate(text: string, order: DateOrder): string | null 
   return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
-/** "10 Nov" from an ISO instant, for "Uploaded 10 Nov". */
+/** "10 Nov" ("Nov 10" in the US) from an ISO instant, for "Uploaded 10 Nov". */
 export function dayMonth(iso: string | null | undefined, locale: string): string {
   if (!iso || Number.isNaN(Date.parse(iso))) return '';
-  return month3(new Intl.DateTimeFormat(locale, { timeZone: marketZone(), day: 'numeric', month: 'short' }).format(new Date(iso)));
+  return month3(new Intl.DateTimeFormat(dateLocale(locale), { timeZone: marketZone(), day: 'numeric', month: 'short' }).format(new Date(iso)));
 }

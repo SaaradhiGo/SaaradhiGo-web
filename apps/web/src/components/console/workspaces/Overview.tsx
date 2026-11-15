@@ -282,7 +282,10 @@ function usePulse() {
 function cityClock(tz: string | null | undefined, now: number) {
   if (!tz) return '';
   try {
-    const text = new Intl.DateTimeFormat('en-GB', { timeZone: tz, weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
+    // A US city on its own 12-hour clock ("Sat 7:30 PM MST"); India 24-hour (15 Nov).
+    const text = /^America\//.test(tz)
+      ? new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short', hour: 'numeric', minute: '2-digit' }).format(now).replace(/ /g, ' ').replace(',', '')
+      : new Intl.DateTimeFormat('en-GB', { timeZone: tz, weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
     return `${text} ${tz === 'Asia/Kolkata' ? 'IST' : new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'short' }).formatToParts(now).find((p) => p.type === 'timeZoneName')?.value ?? ''}`;
   } catch {
     return '';

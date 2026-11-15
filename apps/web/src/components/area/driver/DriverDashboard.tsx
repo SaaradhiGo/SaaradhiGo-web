@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { balance as loadBalance, daily, nextExpiry, period, vehicles as loadVehicles } from '@/lib/area/driver';
-import { money, rangeLabel, setMarketZone } from '@/lib/area/format';
+import { fullDate, money, rangeLabel, setMarketZone } from '@/lib/area/format';
 import { type FileTile, type Requirements, STEP_INFO, fixAt, setupHref } from '@/lib/area/requirements';
 import { blockingLabels, readyToDrive } from '@/lib/area/setupChecks';
 import { useLoad } from '@/lib/area/useLoad';
@@ -22,7 +22,7 @@ import { FilePill } from './setup/fields';
 function PausedCard({ paused }: { paused: NonNullable<Requirements['paused']> }) {
   const tr = useTr();
   const { locale } = useLocale();
-  const since = new Date(paused.since).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+  const since = fullDate(paused.since, locale);
   return (
     <section className="acard dr-setup" data-testid="paused-card" role="status">
       <div className="agrow">
