@@ -6,7 +6,7 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { type History, type MonthRow, downloadStatement, months as loadMonths } from '@/lib/area/earnings';
 import { areaGet } from '@/lib/area/api';
-import { addition, dateLabel, dateOrder, deduction, money, month3, numericDate } from '@/lib/area/format';
+import { addition, dateLabel, dateOrder, deduction, money, month3, shownDate } from '@/lib/area/format';
 import { useLoad } from '@/lib/area/useLoad';
 import { messageFor } from '@/lib/publicAuth';
 import { IDoc } from '../icons';
@@ -126,7 +126,7 @@ function StatementSheet({ month, onClose }: { month: string; onClose: () => void
   const st = useLoad(() => areaGet<Statement>(`/driver/earnings/statement/?month=${month}`), [month]);
   const s = st.data;
   const m = (v: string | null | undefined) => money(v ?? 0, s?.currency, locale) ?? '';
-  const d = (iso: string) => numericDate(iso, dateOrder(s?.country));
+  const d = (iso: string) => shownDate(iso, dateOrder(s?.country));
   return (
     <Sheet label={tr('Statement, {m}').replace('{m}', ymLabel(month, locale))} onClose={onClose} testid="statement-sheet">
         {st.state === 'error' && <LoadError what="earnings" retry={st.retry} />}

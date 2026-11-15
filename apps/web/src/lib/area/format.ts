@@ -170,6 +170,17 @@ export function numericDate(iso: string | null | undefined, order: DateOrder): s
   return order === 'mdy' ? `${m[2]}/${m[3]}/${m[1]}` : `${m[3]}/${m[2]}/${m[1]}`;
 }
 
+/**
+ * A calendar date to READ (not to type): the USA writes "Apr 12, 2029" (15 Nov, owner); India keeps
+ * dd/mm/yyyy. Inputs keep `numericDate`.
+ */
+export function shownDate(iso: string | null | undefined, order: DateOrder): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? '');
+  if (!m || order !== 'mdy') return numericDate(iso, order);
+  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(m[2]) - 1];
+  return `${month} ${Number(m[3])}, ${m[1]}`;
+}
+
 /** What the driver typed, as ISO; null when it is not a real date. */
 export function parseNumericDate(text: string, order: DateOrder): string | null {
   const m = /^\s*(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})\s*$/.exec(text);

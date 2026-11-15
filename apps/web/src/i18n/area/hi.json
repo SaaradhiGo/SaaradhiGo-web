@@ -835,5 +835,8 @@
   "No platform fee": "कोई प्लेटफ़ॉर्म शुल्क नहीं",
   "Payment not collected": "भुगतान नहीं मिला",
   "Tip": "टिप",
-  "The rider's card payment was not collected, so this trip is not in your earnings yet.": "यात्री का कार्ड भुगतान नहीं मिला, इसलिए यह ट्रिप अभी आपकी कमाई में नहीं है।"
+  "The rider's card payment was not collected, so this trip is not in your earnings yet.": "यात्री का कार्ड भुगतान नहीं मिला, इसलिए यह ट्रिप अभी आपकी कमाई में नहीं है।",
+  "I changed my payout details. Why are payouts paused?": "मैंने भुगतान विवरण बदला। भुगतान क्यों रुके हैं?",
+  "30, 7 and 1 days before your licence, insurance or registration date. Upload the renewed one in Documents.": "आपके लाइसेंस, बीमा या पंजीकरण की तारीख से 30, 7 और 1 दिन पहले। नवीनीकृत दस्तावेज़ दस्तावेज़ में अपलोड करें।",
+  "Earnings shows your plan in one line, and \"How our fee works\" lists every rule with its amounts.": "कमाई में आपका प्लान एक पंक्ति में है, और \"हमारा शुल्क कैसे काम करता है\" में हर नियम राशि के साथ है।"
 }

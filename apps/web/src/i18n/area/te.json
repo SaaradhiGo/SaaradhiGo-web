@@ -835,5 +835,8 @@
   "No platform fee": "ప్లాట్‌ఫారమ్ రుసుము లేదు",
   "Payment not collected": "చెల్లింపు అందలేదు",
   "Tip": "టిప్",
-  "The rider's card payment was not collected, so this trip is not in your earnings yet.": "రైడర్ కార్డు చెల్లింపు అందలేదు, కాబట్టి ఈ ట్రిప్ ఇంకా మీ సంపాదనలో లేదు."
+  "The rider's card payment was not collected, so this trip is not in your earnings yet.": "రైడర్ కార్డు చెల్లింపు అందలేదు, కాబట్టి ఈ ట్రిప్ ఇంకా మీ సంపాదనలో లేదు.",
+  "I changed my payout details. Why are payouts paused?": "నా చెల్లింపు వివరాలు మార్చాను. చెల్లింపులు ఎందుకు ఆగాయి?",
+  "30, 7 and 1 days before your licence, insurance or registration date. Upload the renewed one in Documents.": "మీ లైసెన్స్, బీమా లేదా రిజిస్ట్రేషన్ తేదీకి 30, 7 మరియు 1 రోజుల ముందు. పునరుద్ధరించినది పత్రాలలో అప్‌లోడ్ చేయండి.",
+  "Earnings shows your plan in one line, and \"How our fee works\" lists every rule with its amounts.": "సంపాదనలో మీ ప్లాన్ ఒక లైన్‌లో ఉంటుంది, \"మా రుసుము ఎలా పనిచేస్తుంది\"లో ప్రతి నియమం మొత్తాలతో ఉంటుంది."
 }

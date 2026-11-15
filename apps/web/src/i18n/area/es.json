@@ -835,5 +835,8 @@
   "No platform fee": "Sin tarifa de plataforma",
   "Payment not collected": "Pago no cobrado",
   "Tip": "Propina",
-  "The rider's card payment was not collected, so this trip is not in your earnings yet.": "No se cobró el pago con tarjeta del pasajero, así que este viaje aún no está en tus ganancias."
+  "The rider's card payment was not collected, so this trip is not in your earnings yet.": "No se cobró el pago con tarjeta del pasajero, así que este viaje aún no está en tus ganancias.",
+  "I changed my payout details. Why are payouts paused?": "Cambié mis datos de pago. ¿Por qué están en pausa los pagos?",
+  "30, 7 and 1 days before your licence, insurance or registration date. Upload the renewed one in Documents.": "30, 7 y 1 días antes de la fecha de tu licencia, seguro o registro. Sube el renovado en Documentos.",
+  "Earnings shows your plan in one line, and \"How our fee works\" lists every rule with its amounts.": "Ganancias muestra tu plan en una línea, y \"Cómo funciona nuestra tarifa\" lista cada regla con sus importes."
 }
