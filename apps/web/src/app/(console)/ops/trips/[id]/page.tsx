@@ -689,6 +689,7 @@ export default function TripDetailPage() {
           currency={cur}
           refundable={data.payment_summary?.refundable_minor ?? null}
           refundKey={data.actions?.refund_action_key ?? null}
+          limits={data.actions?.refund_limits ?? null}
           riderName={riderName}
           cancelReasons={data.actions?.cancel_reasons}
           flagReasons={data.actions?.flag_reasons}

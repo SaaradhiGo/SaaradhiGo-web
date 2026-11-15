@@ -262,6 +262,8 @@ export function cityTime(
 export type TripActions = {
   cancel: boolean; flag: boolean; note: boolean; refund: boolean;
   refund_action_key: 'support.refund' | 'finance.refund' | null;
+  /** 15 Nov: what this person may refund alone (per trip, per day) and what is left. */
+  refund_limits?: RefundLimits | null;
   adjust: boolean; reveal: boolean;
   /** Support may prompt the rider's app to show the pickup code again; the code is never sent here. */
   resend_pickup_code?: boolean;
@@ -402,3 +404,8 @@ export function formatWhole(
   if (minor < 0 && whole !== 0) return `−${text}`;
   return signed && minor > 0 ? `+${text}` : text;
 }
+
+export type RefundLimits = {
+  action_key: string; currency: string; per_trip_minor: number; per_trip_left_minor: number;
+  per_day_minor: number | null; used_today_minor: number; per_day_left_minor: number | null; alone_up_to_minor: number;
+};

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import {
-  type ActionKey, type ApprovalBody, formatMinor, interpretWrite, newIdempotencyKey, parseMajorToMinor, exponentOf,
+  type ActionKey, type ApprovalBody, type RefundLimits, formatMinor, interpretWrite, newIdempotencyKey, parseMajorToMinor, exponentOf,
 } from '@/lib/trips';
 import { Drawer } from '@/components/console/ui';
 
@@ -26,10 +26,12 @@ const TITLE: Record<ActionKey, string> = {
  */
 export function ActionDrawer({
   action, tripId, currency, refundable, refundKey, riderName, cancelReasons, flagReasons, onClose, onDone,
-  ticketId,
+  ticketId, limits,
 }: {
   action: ActionKey; tripId: number; currency: string; refundable: number | null;
   refundKey: string | null; riderName: string;
+  /** Srini's ruling (15 Nov): the refund limits for this person, shown in the form. */
+  limits?: RefundLimits | null;
   /** The support ticket a refund is for (fare review): sent with the refund so the server links them. */
   ticketId?: number;
   cancelReasons?: Record<string, string>; flagReasons?: Record<string, string>;
@@ -132,6 +134,18 @@ export function ActionDrawer({
                 <label className="ops-form__label" htmlFor="act-amount">Amount ({currency}){action === 'adjust' ? ', minus for a reduction' : ''}</label>
                 <input id="act-amount" className="input" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} autoComplete="off" />
                 {action === 'refund' && refundable !== null ? <p className="help">Up to {formatMinor(refundable, currency)} is left to refund to {riderName}.</p> : null}
+                {action === 'refund' && limits ? (
+                  <p className="help" data-testid="refund-limits">
+                    You can refund up to {formatMinor(limits.per_trip_minor, limits.currency)} per trip
+                    {limits.per_day_minor != null ? <> and {formatMinor(limits.per_day_minor, limits.currency)} a day</> : null} on your own.
+                    {' '}Left now: {formatMinor(limits.per_trip_left_minor, limits.currency)} on this trip
+                    {limits.per_day_left_minor != null ? <>, {formatMinor(limits.per_day_left_minor, limits.currency)} today</> : null}.
+                    {' '}Above that, a second person approves.
+                  </p>
+                ) : null}
+                {action === 'refund' && limits && parsed !== null && parsed > limits.alone_up_to_minor && !overRefundable ? (
+                  <p className="help" role="status">This refund goes to a checker for approval.</p>
+                ) : null}
                 {amount && parsed === null ? <p className="alert-error" role="alert">Enter an amount in {currency}, at most {currency === 'JPY' ? 'whole units' : 'two decimals'}.</p> : null}
                 {overRefundable ? <p className="alert-error" role="alert">That is more than is left to refund.</p> : null}
               </>

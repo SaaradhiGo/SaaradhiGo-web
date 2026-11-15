@@ -852,5 +852,6 @@
   "Platform fees ({n})": "प्लेटफ़ॉर्म शुल्क ({n})",
   "Refunded to your wallet": "आपके वॉलेट में रिफ़ंड किया गया",
   "Refunded to your card": "आपके कार्ड पर रिफ़ंड किया गया",
-  "Refund on its way to your card": "रिफ़ंड आपके कार्ड पर आ रहा है"
+  "Refund on its way to your card": "रिफ़ंड आपके कार्ड पर आ रहा है",
+  "Net charged": "शुद्ध शुल्क"
 }
