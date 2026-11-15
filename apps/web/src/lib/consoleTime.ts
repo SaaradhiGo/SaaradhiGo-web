@@ -13,8 +13,12 @@
  * because the platform is: a new state in a new time zone is one line.
  */
 const ZONES: Array<[prefix: string, tz: string]> = [
+  // 14 Nov (owner): the Treasure Valley (US-ID-TV) is Boise, Mountain time. The console showed its
+  // support case at "19:58 EST" because every US code fell to New York.
+  ['US-ID', 'America/Boise'],
   ['US-TX', 'America/Chicago'],
-  ['US', 'America/New_York'],
+  // A US-wide row: the backend's US default (base/countries.py), Boise, the only US market.
+  ['US', 'America/Boise'],
   ['IN', 'Asia/Kolkata'],
 ];
 
@@ -24,6 +28,19 @@ export function timeZoneFor(scopeCode: string | null | undefined): string | unde
     .filter(([prefix]) => scopeCode === prefix || scopeCode.startsWith(prefix + '-'))
     .sort((a, b) => b[0].length - a[0].length)[0];
   return hit?.[1];
+}
+
+/**
+ * The zone a row's city keeps: the IANA name the API sent with it when it did (`timezone`, from
+ * the city's service zone), else the one its code maps to. No city: undefined, so `stamp` keeps
+ * today's behaviour (UTC, labelled) or the caller's scope zone.
+ */
+export function cityTimeZone(
+  city: { code?: string | null; timezone?: string | null } | string | null | undefined,
+): string | undefined {
+  if (!city) return undefined;
+  if (typeof city === 'string') return timeZoneFor(city);
+  return city.timezone || timeZoneFor(city.code);
 }
 
 /** "IST", "CDT" -- the short name a person would say. */

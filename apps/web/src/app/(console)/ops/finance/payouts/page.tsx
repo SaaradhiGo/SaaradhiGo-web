@@ -5,7 +5,7 @@ import { type ReactNode, Suspense, useCallback, useEffect, useMemo, useState } f
 import { SELF_APPROVAL_LINE, SELF_APPROVAL_MIN_REASON } from '@/components/console/SelfApprovalNotice';
 import { ApiError, api } from '@/lib/api';
 import { currentScope, useAdminAccess, withScope } from '@/lib/adminScope';
-import { stamp, timeZoneFor } from '@/lib/consoleTime';
+import { cityTimeZone, stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   PAYOUT_LABEL, type ListFilters, ageLabel, apiPath, cityName, formatMinor, formatWhole, payoutTone,
 } from '@/lib/finance';
@@ -279,7 +279,7 @@ function PayoutsInner() {
     },
     { key: 'city', label: 'City', sortKey: 'city', render: (w) => cityName(w.city) },
     { key: 'age', label: 'Waiting', num: true, render: (w) => ageLabel(w.age_seconds) },
-    { key: 'when', label: 'Requested', num: true, sortKey: 'requested', render: (w) => stamp(w.requested_at, timeZoneFor(w.city?.code)) },
+    { key: 'when', label: 'Requested', num: true, sortKey: 'requested', render: (w) => stamp(w.requested_at, cityTimeZone(w.city)) },
   ];
   const requestColumns: ListColumn<Request>[] = [
     { key: 'ref', label: 'Request', primary: true, render: (r) => <span className="sg-num">{r.ref}</span> },
@@ -489,7 +489,7 @@ function PayoutRecord({ row, onClose, onChanged }: {
 
   const current: Row = detail ?? row;
   const can = payoutActions(current, access);
-  const tz = timeZoneFor(row.city?.code);
+  const tz = cityTimeZone(row.city);
   const amount = exact(row);
   const who = row.driver_name || `driver #${row.driver_id}`;
 

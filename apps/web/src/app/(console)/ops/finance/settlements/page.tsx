@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { stamp, timeZoneFor } from '@/lib/consoleTime';
+import { cityTimeZone, stamp } from '@/lib/consoleTime';
 import {
   type ListFilters, apiPath, cityName, filtersFromSearch, filtersToQuery, formatMinor, formatWhole,
 } from '@/lib/finance';
@@ -51,7 +51,7 @@ function SourceChip({ source }: { source: string }) {
 }
 
 function SettlementRecord({ row, onClose }: { row: Row; onClose: () => void }) {
-  const tz = timeZoneFor(row.city?.code);
+  const tz = cityTimeZone(row.city);
   return (
     <RecordPanel
       label="Settlement"
@@ -114,7 +114,7 @@ function SettlementsInner() {
     { key: 'net', label: 'Driver net', num: true, render: (r) => formatWhole(r.driver_net_minor, r.currency) },
     { key: 'method', label: 'Method', render: (r) => words(r.payment_method) },
     { key: 'source', label: 'Source', render: (r) => <SourceChip source={r.source} /> },
-    { key: 'when', label: 'Settled', num: true, render: (r) => stamp(r.settled_at, timeZoneFor(r.city?.code)) },
+    { key: 'when', label: 'Settled', num: true, render: (r) => stamp(r.settled_at, cityTimeZone(r.city)) },
   ];
 
   const query = savedQuery(filtersToQuery(filters));
