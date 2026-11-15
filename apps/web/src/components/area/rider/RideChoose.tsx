@@ -176,7 +176,8 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
   // How long the quote holds, as the server issued it; nothing when it says nothing.
   const exp = chosen?.quote?.quote_expires_at ? Date.parse(chosen.quote.quote_expires_at) : NaN;
   const holdMin = Number.isFinite(exp) && exp > Date.now() ? Math.max(1, Math.round((exp - Date.now()) / 60000)) : null;
-  const miles = options?.some((o) => o.quote?.distance_unit === 'mi') ?? false;
+  // 15 Nov: a US pickup reads miles even when no fare came back (it read "6.9 km" with "No fare").
+  const miles = country === 'US' || (options?.some((o) => o.quote?.distance_unit === 'mi') ?? false);
   const distance = route ? (miles ? `${(route.distanceMeters / MILE_M).toFixed(1)} mi` : route.distanceText) : null;
   const tripLine = route ? [distance, route.durationText].filter(Boolean).join(' · ') : null;
   const us = country === 'US';
