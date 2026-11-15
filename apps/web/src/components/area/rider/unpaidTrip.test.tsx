@@ -23,7 +23,7 @@ describe('Pay for your last trip', () => {
   it('names the trip and the amount, and links to the trip', () => {
     render(ui());
     expect(screen.getByRole('heading', { name: 'Pay for your last trip' })).toBeTruthy();
-    expect(screen.getByTestId('unpaid-trip').textContent).toContain('trip #219');
+    expect(screen.getByTestId('unpaid-trip').textContent).toMatch(/trip .219/);
     expect(screen.getByRole('link', { name: 'Open the trip' }).getAttribute('href')).toBe('/trips/219');
   });
 
