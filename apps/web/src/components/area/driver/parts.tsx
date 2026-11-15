@@ -94,18 +94,20 @@ export function WeekChart({ load, currency }: { load: Load<Day[]>; currency: str
       </div>
     );
   }
-  const top = Math.max(...days.map((d) => Number(d.net)), 0);
-  const empty = days.every((d) => d.trips === 0 && Number(d.net) === 0);
+  // 15 Nov: each bar is what the driver earned that day, tips included, as the cards count it.
+  const amt = (d: Day) => d.earned ?? d.net;
+  const top = Math.max(...days.map((d) => Number(amt(d))), 0);
+  const empty = days.every((d) => d.trips === 0 && Number(amt(d)) === 0);
   return (
     <div className={`dr-chart${empty ? ' dr-chart--empty' : ''}`} role="img" aria-label={tr('Last 7 days')} data-empty={empty || undefined}
       tabIndex={0} /* it scrolls sideways on a phone: reachable by keyboard (axe, 14 Nov) */>
       {empty && <div className="a14 amut er-empty">{tr('No trips in {period} yet').replace('{period}', tr('the last 7 days'))}</div>}
       {days.map((d, i) => {
-        const v = Number(d.net);
+        const v = Number(amt(d));
         const h = top > 0 ? Math.max(4, Math.round((v / top) * 100)) : 4;
         return (
           <div key={d.date}>
-            <span className="a14 ab dr-chart__amt">{money(d.net, currency, locale) ?? ''}</span>
+            <span className="a14 ab dr-chart__amt">{money(amt(d), currency, locale) ?? ''}</span>
             <div className="dr-chart__well">
               <div className={`dr-chart__bar${i === days.length - 1 ? ' dr-chart__bar--today' : ''}`} style={{ height: h }} />
             </div>

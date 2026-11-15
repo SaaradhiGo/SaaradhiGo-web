@@ -6,7 +6,7 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { type History, type MonthRow, downloadStatement, months as loadMonths } from '@/lib/area/earnings';
 import { areaGet } from '@/lib/area/api';
-import { addition, dateLabel, dateOrder, deduction, money, month3, numericDate } from '@/lib/area/format';
+import { addition, dateLabel, dateOrder, deduction, money, month3, shownDate } from '@/lib/area/format';
 import { useLoad } from '@/lib/area/useLoad';
 import { messageFor } from '@/lib/publicAuth';
 import { IDoc } from '../icons';
@@ -126,7 +126,7 @@ function StatementSheet({ month, onClose }: { month: string; onClose: () => void
   const st = useLoad(() => areaGet<Statement>(`/driver/earnings/statement/?month=${month}`), [month]);
   const s = st.data;
   const m = (v: string | null | undefined) => money(v ?? 0, s?.currency, locale) ?? '';
-  const d = (iso: string) => numericDate(iso, dateOrder(s?.country));
+  const d = (iso: string) => shownDate(iso, dateOrder(s?.country));
   return (
     <Sheet label={tr('Statement, {m}').replace('{m}', ymLabel(month, locale))} onClose={onClose} testid="statement-sheet">
         {st.state === 'error' && <LoadError what="earnings" retry={st.retry} />}
@@ -202,7 +202,7 @@ export function DriverEarnings() {
           {s && h ? (
             <>
               <Stat ink label={tr('You earned')} value={m(s.earned)}
-                sub={`${tr('{n} trips').replace('{n}', String(s.trips))} · ${tr('{n} days driven').replace('{n}', String(s.days_driven))}`} />
+                sub={`${tr('{n} trips').replace('{n}', String(s.trips))} · ${tr(s.days_driven === 1 ? '{n} day driven' : '{n} days driven').replace('{n}', String(s.days_driven))}`} />
               <Stat label={tr('Trip fares')} value={m(s.fares)} sub={tr('Avg {a} per trip').replace('{a}', m(s.avg_fare))} />
               <Stat label={tr('Platform fee')} value={fee.text} tone={fee.red && 'red'} sub={s.fee_note ? tr(s.fee_note) : tr('From your trip ledger')} />
               <Stat label={tr('Tips')} value={addition(s.tips, cur, locale)} sub={s.tips_enabled ? tr('From {n} riders').replace('{n}', String(s.tip_riders)) : tr('Tips are not on yet')} />
@@ -270,7 +270,10 @@ export function DriverEarnings() {
               })}
             </ul>
           ) : null}
-          <div className="a14 amut er-note">{tr('Every trip and payout is listed under Trips and Payouts, filterable by any date range. Yearly tax summary available from April.')}</div>
+          {/* 15 Nov: a US driver's yearly summary is ready in January and the 1099 comes through Stripe. */}
+          <div className="a14 amut er-note" data-testid="tax-note">{tr(h?.currency === 'USD'
+            ? 'Every trip and payout is listed under Trips and Payouts, filterable by any date range. Your yearly earnings summary is ready in January; your 1099 tax form is issued through Stripe.'
+            : 'Every trip and payout is listed under Trips and Payouts, filterable by any date range. Yearly tax summary available from April.')}</div>
         </section>
         {viewing && <StatementSheet month={viewing} onClose={() => setViewing(null)} />}
       </main>

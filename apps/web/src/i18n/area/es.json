@@ -101,7 +101,7 @@
   "Locked fare at booking": "Tarifa fijada al reservar",
   "Changes during the trip": "Cambios durante el viaje",
   "None": "Ninguno",
-  "You paid": "Pagaste",
+  "Ride total": "Total del viaje",
   "If the trip had changed, each change and its reason would be listed here.": "Si el viaje hubiera cambiado, cada cambio y su motivo aparecerían aquí.",
   "Download PDF": "Descargar PDF",
   "Get help with this trip": "Obtener ayuda con este viaje",
@@ -829,5 +829,14 @@
   "A rider reported a zero tolerance concern (drugs or alcohol) on a trip. Your account is paused while our safety team investigates.": "Un pasajero informó un caso de tolerancia cero (drogas o alcohol) en un viaje. Tu cuenta está en pausa mientras nuestro equipo de seguridad investiga.",
   "Your account is paused": "Tu cuenta está en pausa",
   "Your account is closed": "Tu cuenta está cerrada",
-  "Since {date}. You cannot go online until this is resolved.": "Desde {date}. No puedes conectarte hasta que se resuelva."
+  "Since {date}. You cannot go online until this is resolved.": "Desde {date}. No puedes conectarte hasta que se resuelva.",
+  "{n} day driven": "{n} día conducido",
+  "Every trip and payout is listed under Trips and Payouts, filterable by any date range. Your yearly earnings summary is ready in January; your 1099 tax form is issued through Stripe.": "Cada viaje y pago aparece en Viajes y Pagos, filtrable por fechas. Tu resumen anual de ganancias está listo en enero; tu formulario fiscal 1099 se emite a través de Stripe.",
+  "No platform fee": "Sin tarifa de plataforma",
+  "Payment not collected": "Pago no cobrado",
+  "Tip": "Propina",
+  "The rider's card payment was not collected, so this trip is not in your earnings yet.": "No se cobró el pago con tarjeta del pasajero, así que este viaje aún no está en tus ganancias.",
+  "I changed my payout details. Why are payouts paused?": "Cambié mis datos de pago. ¿Por qué están en pausa los pagos?",
+  "30, 7 and 1 days before your licence, insurance or registration date. Upload the renewed one in Documents.": "30, 7 y 1 días antes de la fecha de tu licencia, seguro o registro. Sube el renovado en Documentos.",
+  "Earnings shows your plan in one line, and \"How our fee works\" lists every rule with its amounts.": "Ganancias muestra tu plan en una línea, y \"Cómo funciona nuestra tarifa\" lista cada regla con sus importes."
 }

@@ -16,6 +16,8 @@ export type TripDetailData = {
   requested_at: string | null; started_at: string | null; completed_at: string | null;
   distance_km: string | null; duration_min: string | null; ride_class: string; payment_method: string;
   fare: string | null; platform_fee: string | null; platform_fee_refunded: string | null; tips: string | null;
+  /** 15 Nov (trip 219): the rider's card payment was not collected; nothing settled yet. */
+  payment?: 'settled' | 'not_collected';
   earned: string | null; cash_in_hand: string | null; rider: { first_name: string; rating: string | null };
 };
 
@@ -83,6 +85,10 @@ export function TripDetail({ id, onClose }: { id: number; onClose: () => void })
             <div className="td-line"><span className="amut">{tr('Duration')}</span><span className="ab">{t.duration_min ? tr('{n} min').replace('{n}', String(Math.round(Number(t.duration_min)))) : '—'}</span></div>
             <div className="td-line"><span className="amut">{tr('Ride')}</span><span className="ab">{className(t.ride_class) ?? (t.ride_class || '—')}</span></div>
             <div className="td-line"><span className="amut">{tr('Paid')}</span><span className="ab">{tr(t.payment_method === 'cash' ? 'Cash' : 'Online')}</span></div>
+            {t.payment === 'not_collected' && (
+              <p className="a14" data-testid="payment-not-collected"><span className="apill apill--warn">{tr('Payment not collected')}</span>{' '}
+                {tr("The rider's card payment was not collected, so this trip is not in your earnings yet.")}</p>
+            )}
             <div className="td-line"><span className="amut">{tr('Rider')}</span>
               <span className="ab">{t.rider.first_name || tr('Rider')}{t.rider.rating ? ` · ${Number(t.rider.rating).toFixed(1)} ★` : ''}</span></div>
           </div>

@@ -85,12 +85,14 @@ export function RiderReceipt({ id }: { id: string }) {
 
   return (
     <div className="ar-page" style={{ maxWidth: 1000 }}>
-      <Link href="/trips" className="arow a14 ab amut" style={{ gap: 6, textDecoration: 'none' }}><IBack size={16} />{tr('Your trips')}</Link>
+      <Link href="/trips" className="arow a14 ab amut ahit" style={{ gap: 6, textDecoration: 'none' }}><IBack size={16} />{tr('Your trips')}</Link>
       <div className="dr-grid2 dr-grid2--receipt">
         <div className="acard" style={{ padding: 24 }}>
           <div className="arow" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap' }}>
             <div>
-              <div className="a28">{cancelled && (!paid || Number(paid) === 0) ? tr('No charge') : money(paid ?? locked, cur, locale)}</div>
+              {/* 15 Nov: the headline is what the card was charged in all, tip included ($34.90 on trip 218). */}
+              <div className="a28" data-testid="receipt-headline">{cancelled && (!paid || Number(paid) === 0) ? tr('No charge')
+                : money(t.tip && paid != null ? Number(paid) + Number(t.tip.amount) : paid ?? locked, cur, locale)}</div>
               <div className="amut">
                 {[when ? dateLabel(when, locale, t.timezone, new Date(), true) : null, ride, cancelled ? tr('Cancelled') : paidHow]
                   .filter(Boolean).join(' · ')}
@@ -107,7 +109,7 @@ export function RiderReceipt({ id }: { id: string }) {
               <span className="ab">{change === null ? '' : same ? tr('None') : `${change > 0 ? '+' : '−'}${money(Math.abs(change), cur, locale)}`}</span>
             </div>
             <div className="arow" style={{ justifyContent: 'space-between', padding: '12px 0' }}>
-              <span className="ab">{tr('You paid')}</span><span className="a20">{money(paid, cur, locale) ?? '—'}</span>
+              <span className="ab">{tr('Ride total')}</span><span className="a20">{money(paid, cur, locale) ?? '—'}</span>
             </div>
             {/* 14 Nov (USA): the tip is its own charge, 100% the driver's; the total is what the card paid. */}
             {t.tip && (

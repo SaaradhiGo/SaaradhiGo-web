@@ -5,8 +5,8 @@ import { shortPlace } from '@/lib/area/places';
 import { useEffect, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
-import { PAGE_SIZE, ledgerPage } from '@/lib/area/driver';
-import { deduction, listWhen, money } from '@/lib/area/format';
+import { PAGE_SIZE, earnedWithTip, ledgerPage } from '@/lib/area/driver';
+import { addition, deduction, listWhen, money } from '@/lib/area/format';
 import { className } from '@/lib/area/rider';
 import { useLoad } from '@/lib/area/useLoad';
 import { LoadError, Skel } from '../states';
@@ -39,6 +39,7 @@ export function DriverTrips() {
   const rows = useLoad(() => (h ? ledgerPage(h.start, h.end, q, page) : new Promise<never>(() => {})), [h?.start, h?.end, q, page]);
   const failed = s.hist.state === 'error' ? s.hist : rows.state === 'error' ? rows : null;
   const list = rows.data?.results ?? null;
+  const unsettled = rows.data?.unsettled ?? [];
   const count = rows.data?.count ?? 0;
   const words = { today: tr('Today'), yesterday: tr('Yesterday') };
   const cur = h?.currency;
@@ -61,29 +62,47 @@ export function DriverTrips() {
         </div>
         <div className="acard" style={{ overflowX: 'auto' }}>
           {/* 13 Nov: on phones, one card per trip (below the table); the table is for wider screens. */}
-          <table className={`atable${list?.length ? ' a-wide' : ''}`} data-testid="trips-table">
+          <table className={`atable${list?.length || unsettled.length ? ' a-wide' : ''}`} data-testid="trips-table">
             <thead>
               <tr className="albl">
                 <th>{tr('Date and time')}</th><th>{tr('Trip')}</th><th>{tr('Ride')}</th>
-                <th>{tr('Fare')}</th><th>{tr('Platform fee')}</th><th>{tr('You earned')}</th><th>{tr('Paid')}</th>
+                <th>{tr('Fare')}</th><th>{tr('Platform fee')}</th><th>{tr('Tip')}</th><th>{tr('You earned')}</th><th>{tr('Paid')}</th>
               </tr>
             </thead>
             <tbody>
-              {failed && <tr><td colSpan={7}><LoadError what="trips" retry={failed.retry} /></td></tr>}
-              {!failed && list === null && s.period !== 'custom' && [0, 1, 2].map((i) => <tr key={i}><td colSpan={7}><Skel h={18} /></td></tr>)}
-              {!failed && s.period === 'custom' && !s.range && <tr><td colSpan={7} className="amut">{tr('Choose the dates to see their trips.')}</td></tr>}
-              {!failed && list?.length === 0 && !q && h && !h.has_prev && !h.has_next && (
-                <tr><td colSpan={7}>
+              {failed && <tr><td colSpan={8}><LoadError what="trips" retry={failed.retry} /></td></tr>}
+              {!failed && list === null && s.period !== 'custom' && [0, 1, 2].map((i) => <tr key={i}><td colSpan={8}><Skel h={18} /></td></tr>)}
+              {!failed && s.period === 'custom' && !s.range && <tr><td colSpan={8} className="amut">{tr('Choose the dates to see their trips.')}</td></tr>}
+              {!failed && list?.length === 0 && !unsettled.length && !q && h && !h.has_prev && !h.has_next && (
+                <tr><td colSpan={8}>
                   <div className="ab">{tr('No trips yet')}</div>
                   <div className="a14 amut">{tr('Go online in the driver app to get your first ride request.')}</div>
                 </td></tr>
               )}
-              {!failed && list?.length === 0 && (q || !h || h.has_prev || h.has_next) && (
-                <tr><td colSpan={7} className="amut">
+              {!failed && list?.length === 0 && !unsettled.length && (q || !h || h.has_prev || h.has_next) && (
+                <tr><td colSpan={8} className="amut">
                   {q ? tr('No trips match “{q}” in {period}.').replace('{q}', q).replace('{period}', h ? periodLabel(h, locale) : '')
                     : tr('No trips in {period} yet').replace('{period}', h ? periodLabel(h, locale) : '')}
                 </td></tr>
               )}
+              {/* 15 Nov (trip 219): completed, but the rider's card payment was not collected. */}
+              {unsettled.map((r) => {
+                const when = listWhen(r.created_at, locale, h?.timezone, words);
+                const places = r.pickup_address || r.destination_address ? `${short(r.pickup_address)} → ${short(r.destination_address)}` : '';
+                return (
+                  <tr key={r.id} className="tr-open" onClick={() => setOpen(r.trip_id_val)} data-trip={r.trip_id_val} data-testid="unsettled-row">
+                    <td className="tr-nowrap">{when && <div className="ab">{when.first}<div className="a14 amut" style={{ fontWeight: 400 }}>{when.second}</div></div>}</td>
+                    <td className="ab tr-place">
+                      <button type="button" className="tr-open__btn" aria-label={tr('Open trip #{n}').replace('{n}', String(r.trip_id_val))}
+                        onClick={(e) => { e.stopPropagation(); setOpen(r.trip_id_val); }}>{places || `#${r.trip_id_val}`}</button>
+                      <div className="a14 amut" style={{ fontWeight: 400 }}>#{r.trip_id_val}</div>
+                    </td>
+                    <td className="tr-nowrap">{className(r.ride_class) ?? ''}</td>
+                    <td colSpan={4} className="a14 amut">{tr("The rider's card payment was not collected, so this trip is not in your earnings yet.")}</td>
+                    <td className="tr-nowrap"><span className="apill apill--warn">{tr('Payment not collected')}</span></td>
+                  </tr>
+                );
+              })}
               {list?.map((r) => {
                 const when = listWhen(r.created_at, locale, h?.timezone, words);
                 const places = r.pickup_address || r.destination_address ? `${short(r.pickup_address)} → ${short(r.destination_address)}` : '';
@@ -106,13 +125,26 @@ export function DriverTrips() {
                       {/* A fee returned for this trip (11 Nov): already off the fee and in the earning. */}
                       {r.platform_fee_refunded ? <span className="tr-tag" data-testid="refunded-tag">{tr('refunded')}</span> : null}
                     </td>
-                    <td className="ab agrn tr-nowrap">{money(r.net_amount, cur, locale)}</td>
+                    <td className="tr-nowrap">{Number(r.tip ?? 0) > 0 ? addition(r.tip, cur, locale) : ''}</td>
+                    <td className="ab agrn tr-nowrap">{money(earnedWithTip(r), cur, locale)}</td>
                     <td className="tr-nowrap"><span className="apill apill--neu">{tr(r.method === 'cash' ? 'Cash' : 'Online')}</span></td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+          {unsettled.length ? (
+            <ul className="acards a-phone" style={{ padding: '12px 12px 0' }} data-testid="driver-unsettled-cards">
+              {unsettled.map((r) => (
+                <li key={r.id}>
+                  <div className="arow a14 amut"><span>#{r.trip_id_val}</span><span className="apill apill--warn">{tr('Payment not collected')}</span></div>
+                  <button type="button" className="tr-open__btn ab" style={{ textAlign: 'left' }} onClick={() => setOpen(r.trip_id_val)}>
+                    {r.pickup_address || r.destination_address ? `${short(r.pickup_address)} → ${short(r.destination_address)}` : `#${r.trip_id_val}`}</button>
+                  <div className="a14 amut">{tr("The rider's card payment was not collected, so this trip is not in your earnings yet.")}</div>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           {list?.length ? (
             <ul className="acards a-phone" style={{ padding: 12 }} data-testid="driver-trip-cards">
               {list.map((r) => {
@@ -133,7 +165,10 @@ export function DriverTrips() {
                     {r.commission != null && (
                       <div className="arow a14"><span className="amut">{tr('Platform fee')}</span><span className={`amoney${fee.red ? ' ared' : ''}`}>{fee.text}</span></div>
                     )}
-                    <div className="arow"><span className="ab">{tr('You earned')}</span><span className="ab agrn amoney">{money(r.net_amount, cur, locale)}</span></div>
+                    {Number(r.tip ?? 0) > 0 && (
+                      <div className="arow a14"><span className="amut">{tr('Tip')}</span><span className="amoney">{addition(r.tip, cur, locale)}</span></div>
+                    )}
+                    <div className="arow"><span className="ab">{tr('You earned')}</span><span className="ab agrn amoney">{money(earnedWithTip(r), cur, locale)}</span></div>
                   </li>
                 );
               })}

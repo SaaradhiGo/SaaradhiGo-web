@@ -7,7 +7,7 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { LANGUAGES, LANGUAGE_INFO, type Language } from '@/i18n/locales';
 import { useTr } from '@/i18n/website';
 import { vehicles as loadVehicles } from '@/lib/area/driver';
-import { dateOrder, monthYear, numericDate } from '@/lib/area/format';
+import { dateOrder, monthYear, shownDate } from '@/lib/area/format';
 import {
   type ItemStatus, type StepKey, type StepStatus, STATUS_LABEL, setupHref, worst,
 } from '@/lib/area/requirements';
@@ -158,14 +158,14 @@ export function DriverProfile() {
         {data && p && id && pm && (
           <div className="pf-grid">
             <Card id="personal" icon={<IUser />} title={tr('Personal details')} state={stepState(data, 'personal')} href={edit('personal')} rows={[
-              [tr('Date of birth'), numericDate(p.dob, order)],
+              [tr('Date of birth'), shownDate(p.dob, order)],
               [tr('Email'), acct?.email ?? ''],
               [tr('Address'), p.address ? `${[p.address.line2 || p.address.line1, p.address.city].filter(Boolean).join(', ')} ${p.address.postal_code}` : ''],
             ]} />
             <Card id="contacts" icon={<IPhone />} title={tr('Emergency contacts')} state={stepState(data, 'contact')} step="contact" href={edit('contact')}
               rows={p.emergency_contacts.length ? p.emergency_contacts.map((c) => [`${c.name} (${contactRel(c.relationship)})`, spacedPhone(c.phone_number)]) : [[tr('Contact'), '']]} />
             <Card id="identity" icon={<IDoc />} title={tr('Licence and identity')} state={stepState(data, 'identity')} href={edit('identity')} open rows={[
-              [tr('Licence'), id.license_expiry ? tr('Valid until {d}').replace('{d}', numericDate(id.license_expiry, order)) : ''],
+              [tr('Licence'), id.license_expiry ? tr('Valid until {d}').replace('{d}', shownDate(id.license_expiry, order)) : ''],
               ...(item(data, 'aadhaar') ? [[tr('Aadhaar'), id.aadhaar_masked ? `•••• ${id.aadhaar_masked.slice(-4)}` : '']] as [string, string][] : []),
               ...(item(data, 'pan') ? [[tr('PAN'), id.pan_masked ?? '']] as [string, string][] : []),
               ...(item(data, 'police_verification') ? [[tr('Police verification'), label(item(data, 'police_verification')?.status)]] as [string, string | null][] : []),
