@@ -101,7 +101,7 @@
   "Locked fare at booking": "బుకింగ్ సమయంలో లాక్ చేసిన ఛార్జీ",
   "Changes during the trip": "ప్రయాణంలో మార్పులు",
   "None": "ఏవీ లేవు",
-  "You paid": "మీరు చెల్లించింది",
+  "Ride total": "రైడ్ మొత్తం",
   "If the trip had changed, each change and its reason would be listed here.": "ప్రయాణం మారి ఉంటే, ప్రతి మార్పు మరియు దాని కారణం ఇక్కడ ఉంటాయి.",
   "Download PDF": "PDF డౌన్‌లోడ్ చేయండి",
   "Get help with this trip": "ఈ ప్రయాణానికి సహాయం పొందండి",
@@ -829,5 +829,11 @@
   "A rider reported a zero tolerance concern (drugs or alcohol) on a trip. Your account is paused while our safety team investigates.": "ఒక ప్రయాణికుడు ట్రిప్‌లో జీరో టాలరెన్స్ (మత్తు పదార్థాలు లేదా మద్యం) ఫిర్యాదు చేశారు. మా భద్రతా బృందం దర్యాప్తు చేసే వరకు మీ ఖాతా నిలిపివేయబడింది.",
   "Your account is paused": "మీ ఖాతా నిలిపివేయబడింది",
   "Your account is closed": "మీ ఖాతా మూసివేయబడింది",
-  "Since {date}. You cannot go online until this is resolved.": "{date} నుండి. ఇది పరిష్కారమయ్యే వరకు మీరు ఆన్‌లైన్‌కు వెళ్లలేరు."
+  "Since {date}. You cannot go online until this is resolved.": "{date} నుండి. ఇది పరిష్కారమయ్యే వరకు మీరు ఆన్‌లైన్‌కు వెళ్లలేరు.",
+  "{n} day driven": "{n} రోజు నడిపారు",
+  "Every trip and payout is listed under Trips and Payouts, filterable by any date range. Your yearly earnings summary is ready in January; your 1099 tax form is issued through Stripe.": "ప్రతి ట్రిప్ మరియు చెల్లింపు ట్రిప్‌లు, చెల్లింపులలో ఉంటాయి, ఏ తేదీ పరిధితోనైనా చూడవచ్చు. మీ వార్షిక సంపాదన సారాంశం జనవరిలో సిద్ధమవుతుంది; మీ 1099 పన్ను ఫారం Stripe ద్వారా జారీ అవుతుంది.",
+  "No platform fee": "ప్లాట్‌ఫారమ్ రుసుము లేదు",
+  "Payment not collected": "చెల్లింపు అందలేదు",
+  "Tip": "టిప్",
+  "The rider's card payment was not collected, so this trip is not in your earnings yet.": "రైడర్ కార్డు చెల్లింపు అందలేదు, కాబట్టి ఈ ట్రిప్ ఇంకా మీ సంపాదనలో లేదు."
 }

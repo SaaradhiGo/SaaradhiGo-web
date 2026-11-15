@@ -27,7 +27,7 @@
 // site's server (lib/session/bff.ts); page script never sees them and nothing is written to
 // localStorage or sessionStorage but the account's display copy (name, role).
 
-import { ApiError, RIDER_SESSION, accountMemory, api, signOutRider, signedIn } from './api';
+import { ApiError, RIDER_SESSION, accountMemory, api, forgetRideDrafts, signOutRider, signedIn } from './api';
 
 export const RIDER_TOKEN_KEY = 'saaradhi_rider_access_token';
 export const RIDER_REFRESH_KEY = 'saaradhi_rider_refresh_token';
@@ -174,6 +174,7 @@ export function clearRiderTokens() {
     window.localStorage.removeItem(RIDER_REFRESH_KEY);
     window.localStorage.removeItem(RIDER_USER_KEY);
     accountMemory.rider = null;
+    forgetRideDrafts();
   } catch {
     /* nothing to clear */
   }

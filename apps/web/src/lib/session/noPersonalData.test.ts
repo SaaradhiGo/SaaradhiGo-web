@@ -32,9 +32,17 @@ describe('personal data in browser storage', () => {
     await pa.signInWithEmail('ana@example.test', 'pass-word-1', 'rider');
     expect(pa.readSessionUser()?.full_name).toBe('Ana Rider');   // in memory, for this page
     expect(storageText()).not.toMatch(PERSONAL);
+    // 15 Nov: a planned trip (pickup and drop addresses) is kept in this tab until sign-out.
+    const { saveDraft } = await import('@/lib/area/rider');
+    const place = (label: string) => ({ lat: 43.6, lng: -116.2, label });
+    saveDraft({ from: place('1200 W Main St, Boise'), to: place('Boise Airport') });
+    sessionStorage.setItem('sg-other', 'kept');
+    expect(storageText()).toMatch(/sg-ride-draft:/);
     pa.clearRiderTokens();
     expect(pa.readSessionUser()).toBeNull();
     expect(storageText()).not.toMatch(PERSONAL);
+    expect(storageText()).not.toMatch(/sg-ride-draft:|Main St|Boise Airport/);
+    expect(sessionStorage.getItem('sg-other')).toBe('kept');
   });
 
   it('an operator signing in and out leaves none', async () => {

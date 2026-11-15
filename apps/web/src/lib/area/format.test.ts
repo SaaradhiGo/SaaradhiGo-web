@@ -71,3 +71,13 @@ describe('zero amounts (11 Nov)', () => {
     expect(addition('20', 'INR', 'en-IN')).toBe('+ ₹20.00');
   });
 });
+
+describe('US periods read month first (15 Nov)', () => {
+  it('"Nov 9 – 15" in the USA, India unchanged', async () => {
+    const { rangeLabel, dateLabel } = await import('./format');
+    expect(rangeLabel('2026-11-09', '2026-11-15', 'en-US')).toBe('Nov 9 – 15');
+    expect(rangeLabel('2026-10-26', '2026-11-01', 'en-US')).toBe('Oct 26 – Nov 1');
+    expect(rangeLabel('2026-11-09', '2026-11-15', 'en-IN')).toBe('Mon 9 – Sun 15 Nov');
+    expect(dateLabel('2026-11-14T19:00:00Z', 'en-US', 'America/Boise', new Date('2026-11-15T00:00:00Z'))).toBe('Sat, Nov 14');
+  });
+});

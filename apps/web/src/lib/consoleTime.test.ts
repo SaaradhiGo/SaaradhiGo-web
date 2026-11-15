@@ -39,12 +39,22 @@ describe('cityTimeZone', () => {
 
 describe('stamp in the city zone', () => {
   it('shows the Treasure Valley case in Mountain time with its abbreviation', () => {
-    expect(stamp(CASE, cityTimeZone({ code: 'US-ID-TV' }))).toBe('14 Nov, 17:58 MST');
+    expect(stamp(CASE, cityTimeZone({ code: 'US-ID-TV' }))).toBe('Nov 14, 5:58 PM MST');   // 15 Nov: US style
   });
   it('summer in Boise is MDT', () => {
-    expect(stamp('2026-07-01T18:00:00Z', timeZoneFor('US-ID-TV'))).toBe('01 Jul, 12:00 MDT');
+    expect(stamp('2026-07-01T18:00:00Z', timeZoneFor('US-ID-TV'))).toBe('Jul 1, 12:00 PM MDT');
   });
   it('Hyderabad stays IST', () => {
     expect(stamp(CASE, cityTimeZone({ code: 'IN-TG-HYD' }))).toBe('15 Nov, 06:28 IST');
+  });
+});
+
+describe('US style for US cities (15 Nov)', () => {
+  it('writes a US date month first, and India keeps day first', async () => {
+    const { marketDate, clock } = await import('./consoleTime');
+    expect(marketDate('2026-11-14', 'US')).toBe('Nov 14, 2026');
+    expect(marketDate('2026-11-14', 'IN')).toBe('14/11/2026');
+    expect(clock('2026-11-15T02:58:00Z', 'America/Boise')).toBe('7:58 PM');
+    expect(clock('2026-11-15T02:58:00Z', 'Asia/Kolkata')).toBe('08:28');
   });
 });

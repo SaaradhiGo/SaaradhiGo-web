@@ -35,6 +35,25 @@ function forgetStoredPersonalData() {
 }
 if (typeof window !== 'undefined') forgetStoredPersonalData();
 
+/**
+ * 15 Nov (owner): signing out also forgets the trips being planned in this tab (`sg-ride-draft:*`
+ * in sessionStorage: the saved pickup and drop addresses). Not on every visit: a guest's draft has
+ * to survive signing in at Book.
+ */
+export const RIDE_DRAFT_PREFIX = 'sg-ride-draft:';
+export function forgetRideDrafts() {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < window.sessionStorage.length; i += 1) {
+      const k = window.sessionStorage.key(i);
+      if (k && k.startsWith(RIDE_DRAFT_PREFIX)) keys.push(k);
+    }
+    for (const k of keys) window.sessionStorage.removeItem(k);
+  } catch {
+    /* no storage */
+  }
+}
+
 /** Pass as the token argument to send a call as the rider/driver session (the cookie on the server). */
 export const RIDER_SESSION = 'sg:rider-session';
 
@@ -124,6 +143,7 @@ function sessionEnded(who: Who) {
   }
   accountMemory[who] = null;
   forgetStoredPersonalData();
+  if (who === 'rider') forgetRideDrafts();
   window.dispatchEvent(new Event(who === 'staff' ? CONSOLE_SESSION_ENDED : 'saaradhi:session'));
 }
 

@@ -140,6 +140,13 @@ export function rangeLabel(start: string, end: string, locale: string): string {
     return [pick('weekday'), pick('day'), month ? month3(pick('month')) : ''].filter(Boolean).join(' ');
   };
   const sameMonth = start.slice(0, 7) === end.slice(0, 7);
+  // 15 Nov (owner): the USA writes the month first, "Nov 9 – 15" (or "Oct 26 – Nov 1").
+  if (/-US$/.test(locale)) {
+    const md = (d: string) => month3(new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })
+      .format(new Date(`${d}T12:00:00Z`)));
+    if (start === end) return md(start);
+    return sameMonth ? `${md(start)} – ${Number(end.slice(8, 10))}` : `${md(start)} – ${md(end)}`;
+  }
   return `${fmt(start, !sameMonth)} – ${fmt(end, true)}`;
 }
 

@@ -35,6 +35,10 @@ describe('a US receipt', () => {
     expect(screen.getByTestId('receipt-tip').textContent).toContain('$5.32');
     expect(screen.getByTestId('receipt-total-charged').textContent).toContain('$34.90');
     expect(document.body.textContent).toContain('11.6 mi');
+    // 15 Nov: the headline is the total charged, and "You paid" reads "Ride total".
+    expect(screen.getByTestId('receipt-headline').textContent).toBe('$34.90');
+    expect(screen.getByText('Ride total')).toBeTruthy();
+    expect(document.body.textContent).not.toContain('You paid');
     expect(document.body.textContent).not.toMatch(/\d km\b/);
   });
 });

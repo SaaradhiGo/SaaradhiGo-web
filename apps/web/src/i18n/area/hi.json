@@ -101,7 +101,7 @@
   "Locked fare at booking": "बुकिंग पर तय किराया",
   "Changes during the trip": "यात्रा के दौरान बदलाव",
   "None": "कोई नहीं",
-  "You paid": "आपने चुकाया",
+  "Ride total": "सवारी का कुल",
   "If the trip had changed, each change and its reason would be listed here.": "अगर यात्रा बदलती, तो हर बदलाव और उसकी वजह यहाँ लिखी होती।",
   "Download PDF": "PDF डाउनलोड करें",
   "Get help with this trip": "इस यात्रा के लिए मदद लें",
@@ -829,5 +829,11 @@
   "A rider reported a zero tolerance concern (drugs or alcohol) on a trip. Your account is paused while our safety team investigates.": "एक यात्री ने यात्रा पर ज़ीरो टॉलरेंस (नशा या शराब) की शिकायत की है। हमारी सुरक्षा टीम की जाँच तक आपका खाता रोका गया है।",
   "Your account is paused": "आपका खाता रोका गया है",
   "Your account is closed": "आपका खाता बंद है",
-  "Since {date}. You cannot go online until this is resolved.": "{date} से। इसके हल होने तक आप ऑनलाइन नहीं जा सकते।"
+  "Since {date}. You cannot go online until this is resolved.": "{date} से। इसके हल होने तक आप ऑनलाइन नहीं जा सकते।",
+  "{n} day driven": "{n} दिन चलाया",
+  "Every trip and payout is listed under Trips and Payouts, filterable by any date range. Your yearly earnings summary is ready in January; your 1099 tax form is issued through Stripe.": "हर ट्रिप और भुगतान ट्रिप और भुगतान में है, किसी भी तारीख सीमा से छाँटें। आपका सालाना कमाई सारांश जनवरी में तैयार होता है; आपका 1099 टैक्स फ़ॉर्म Stripe के ज़रिए जारी होता है।",
+  "No platform fee": "कोई प्लेटफ़ॉर्म शुल्क नहीं",
+  "Payment not collected": "भुगतान नहीं मिला",
+  "Tip": "टिप",
+  "The rider's card payment was not collected, so this trip is not in your earnings yet.": "यात्री का कार्ड भुगतान नहीं मिला, इसलिए यह ट्रिप अभी आपकी कमाई में नहीं है।"
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { areaDelete, areaGet, areaPatch, areaPost, areaToken } from './api';
-import { api } from '@/lib/api';
+import { RIDE_DRAFT_PREFIX, api } from '@/lib/api';
 import { normalisePhone, verifyPhoneForSignup } from '@/lib/publicAuth';
 import { rideBlurbKey, vehicleClassLabel } from '@/lib/vehicles';
 
@@ -351,7 +351,7 @@ export async function streetAddress(p: { lat: number; lng: number }): Promise<st
 export type DraftPlace = { lat: number; lng: number; label: string; short?: string };
 /** `pick` and `pay` keep the rider's choice across sign-in (14 Nov: a guest signs in only at Book). */
 export type RideDraft = { from: DraftPlace; to: DraftPlace; pick?: string | null; pay?: PayMethod | null };
-const DRAFT_KEY = 'sg-ride-draft:';
+const DRAFT_KEY = RIDE_DRAFT_PREFIX;
 export function saveDraft(d: RideDraft): string {
   const id = Math.random().toString(36).slice(2, 10);
   try { sessionStorage.setItem(DRAFT_KEY + id, JSON.stringify(d)); } catch { /* the page still has it */ }

@@ -647,7 +647,9 @@ button.er-bar { cursor: pointer; }
 /* 13 Nov: the operating company under every signed-in page. */
 .sg-legal-line { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; padding: 14px 16px 20px; font-size: var(--text-small); line-height: var(--leading-small); color: var(--c-text-2); border-top: 1px solid var(--c-border); margin-top: 24px; }
 .sg-legal-line__links { display: inline-flex; gap: 14px; }
-.sg-legal-line a { color: inherit; text-decoration: underline; }
+.sg-legal-line a { color: inherit; text-decoration: underline; display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+/* 15 Nov: the links are 44px tall to tap, so the line itself needs less padding. */
+.sg-legal-line { align-items: center; padding-top: 4px; padding-bottom: 8px; }
 
 /* 13 Nov: tables become one card per row on phones (rider trips, driver earnings and payouts). */
 .a-phone { display: none; }
@@ -680,6 +682,8 @@ button.er-bar { cursor: pointer; }
 /* Tap targets (14 Nov): at least 44x44 on every tappable item, by widening the hit area, not the
    look. ::before because ::after is the switch's knob. */
 .ahit, .aswitch { position: relative; }
+/* 15 Nov (owner): a text link that stands alone (See earnings, Open all, Your trips) is itself 44px tall. */
+.ahit { display: inline-flex; align-items: center; min-height: 44px; }
 .ahit::before, .aswitch::before {
   content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px);
   transform: translate(-50%, -50%);
