@@ -7,7 +7,7 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { LANGUAGES, LANGUAGE_INFO, type Language } from '@/i18n/locales';
 import { useTr } from '@/i18n/website';
 import { vehicles as loadVehicles } from '@/lib/area/driver';
-import { dateOrder, monthYear, shownDate } from '@/lib/area/format';
+import { dateOrder, dateTime, monthYear, shownDate } from '@/lib/area/format';
 import {
   type ItemStatus, type StepKey, type StepStatus, STATUS_LABEL, setupHref, worst,
 } from '@/lib/area/requirements';
@@ -186,7 +186,7 @@ export function DriverProfile() {
                 : [
                   [tr('Paid to'), pm.bank ? `${pm.bank.bank_name} ${pm.bank.account_masked}` : pm.upi_masked ? `UPI ${pm.upi_masked}` : ''],
                   [tr('Verified'), pm.bank ? tr(VERIFY[pm.bank.verification_status] ?? pm.bank.verification_status) : label(worst([item(data, 'payout_method')?.status ?? 'missing']))],
-                  ...(pm.held_until ? [[tr('Payouts paused until'), new Date(pm.held_until).toLocaleString(locale)]] as [string, string][] : []),
+                  ...(pm.held_until ? [[tr('Payouts paused until'), dateTime(pm.held_until, locale)]] as [string, string][] : []),
                 ]} />
             <PrefsCard />
           </div>

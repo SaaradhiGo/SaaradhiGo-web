@@ -22,6 +22,7 @@ import { IBack, ICar, ICheck, ILock, IUser } from '../icons';
 import { Skel } from '../states';
 import { FareWorkings } from './FareWorkings';
 import { PhoneStep } from './PhoneStep';
+import { UnpaidTripCard } from './UnpaidTrip';
 import { useOnScreenMarket } from '@/components/sg/LegalProvider';
 
 /** Seats per class, as the rider app shows them (lib/booking.ts). */
@@ -61,6 +62,8 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
   const [route, setRoute] = useState<RouteLine | null>(null);
   const [options, setOptions] = useState<Option[] | null>(null);
   const [extra, setExtra] = useState<BookingOptions | null>(null);
+  const [paidNote, setPaidNote] = useState<string | null>(null);
+  const unpaid = extra?.payment?.unpaid_trip ?? null;
   const [country, setCountry] = useState('IN');
   const [picked, setPicked] = useState<string | null>(null);
   const [pay, setPay] = useState<PayMethod | null>(null);
@@ -234,6 +237,12 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
         setOptions((all) => all?.map((o) => (o.type === chosen.type ? { ...o, quote: fresh } : o)) ?? all);
         setBusy(false);
         setError(tr('The fare changed. Book again at the new fare.'));
+      } else if (e.type === 'error' && e.code === 'UNPAID_LAST_TRIP') {
+        // 15 Nov: the last trip was not paid; nothing was booked.
+        s.close();
+        setBusy(false);
+        const owed = { trip_id: Number(e.trip_id), amount: String(e.amount ?? ''), currency: String(e.currency ?? ''), can_retry_card: !!e.can_retry_card };
+        setExtra((x) => (x ? { ...x, payment: { ...x.payment, unpaid_trip: owed } } : x));
       } else if (e.type === 'error' && e.code === 'CITY_NOT_LIVE') {
         s.close();
         setBusy(false);
@@ -372,6 +381,12 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
         </div>
         {chosen?.quote ? <FareWorkings quote={chosen.quote} /> : null}
         {error && <p className="a14 ared" role="alert">{error}</p>}
+        {unpaid && <UnpaidTripCard trip={unpaid} onPaid={() => {
+          setExtra((x) => (x ? { ...x, payment: { ...x.payment, unpaid_trip: null } } : x));
+          setError(null);
+          setPaidNote(tr('Paid. You can book now.'));
+        }} />}
+        {paidNote && !unpaid && <p className="a14 agrn" role="status">{paidNote}</p>}
         {/* Book stays in reach on a phone (14 Nov): sticky at the bottom, above the safe area. */}
         <div className="achoose__go">
           {launch ? (
@@ -395,7 +410,7 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
             </div>
           ) : noneFree ? null : (
             <button type="button" className="abtn abtn--pri abtn--block"
-              disabled={!chosenFare || busy} onClick={() => book()} data-testid="book">
+              disabled={!chosenFare || busy || !!unpaid} onClick={() => book()} data-testid="book">
               {busy ? tr('Booking…') : chosenFare ? `${tr('Book')} ${className(chosen?.type)} · ${chosenFare}` : tr('Book')}
             </button>
           )}

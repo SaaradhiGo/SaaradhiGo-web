@@ -46,11 +46,11 @@ describe('money in minor units', () => {
 
 describe('time in the trip city', () => {
   const iso = '2026-10-01T20:00:00Z';
-  it('shows Hyderabad and Austin in their own clocks', () => {
+  it('shows Hyderabad and Austin in their own clocks, each in its market style (15 Nov)', () => {
     expect(cityTime(iso, 'Asia/Kolkata')).toBe('02 Oct, 01:30');
-    expect(cityTime(iso, 'America/Chicago')).toBe('01 Oct, 15:00');
+    expect(cityTime(iso, 'America/Chicago')).toBe('Oct 1, 3:00 PM');
     expect(cityTime(iso, 'Asia/Kolkata', { zone: true })).toBe('02 Oct, 01:30 IST');
-    expect(cityTime(iso, 'America/Chicago', { zone: true })).toMatch(/^01 Oct, 15:00 C[DS]T$/);
+    expect(cityTime(iso, 'America/Chicago', { zone: true })).toMatch(/^Oct 1, 3:00 PM C[DS]T$/);
   });
   it('says nothing rather than inventing a time', () => {
     expect(cityTime(null, 'Asia/Kolkata')).toBe('—');

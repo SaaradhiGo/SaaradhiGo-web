@@ -6,7 +6,7 @@ import { useTr } from '@/i18n/website';
 import { ApiError } from '@/lib/api';
 import { areaGet, areaPost } from '@/lib/area/api';
 import type { Balance } from '@/lib/area/driver';
-import { deduction, money } from '@/lib/area/format';
+import { dateLabel, deduction, money } from '@/lib/area/format';
 
 /**
  * Withdraw now (owner ruling, 9 Nov): only where instant cash-out is on for the driver's city.
@@ -26,7 +26,7 @@ export function NextPayout({ bal }: { bal: Balance }) {
   const { locale } = useLocale();
   const next = bal.next_payout;
   if (!next) return <div className="a14" style={{ marginTop: 10 }}>{tr('Payouts here are on request.')}</div>;
-  const date = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(next.at));
+  const date = dateLabel(next.at, locale);
   return (
     <div className="a14" style={{ marginTop: 10 }}>
       {tr('Next payout: {date} · estimated {amount}')

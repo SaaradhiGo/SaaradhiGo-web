@@ -7,7 +7,8 @@ import { useTr } from '@/i18n/website';
 import { formatPlate } from '@/lib/booking';
 import { areaPatch, areaPost } from '@/lib/area/api';
 import type { Vehicle } from '@/lib/area/driver';
-import { type DateOrder } from '@/lib/area/format';
+import { type DateOrder, dateTime } from '@/lib/area/format';
+import { useLocale } from '@/i18n/LocaleProvider';
 import {
   type Address, type Catalogue, type Contact, type FileTile, type Requirements, catalogue, ifsc as lookupIfsc,
   saveIdentity, savePayoutMethod, savePersonal, setupHref, stripeOnboarding, stripeRefresh, uploadFile,
@@ -511,6 +512,7 @@ const STRIPE: Record<string, string> = { not_started: 'Not started', in_progress
 
 export function PayoutsStep({ data, reload }: StepProps) {
   const tr = useTr();
+  const { locale } = useLocale();
   const run = useSave();
   const search = useSearchParams();
   const pm = data.payout_method;
@@ -577,7 +579,7 @@ export function PayoutsStep({ data, reload }: StepProps) {
         <p className="a14">{tr('On file')}: <span className="ab">{pm.bank ? `${pm.bank.bank_name} ${pm.bank.account_masked}` : `UPI ${pm.upi_masked}`}</span>
           {pm.bank && <> · {tr(VERIFY[pm.bank.verification_status] ?? pm.bank.verification_status)}</>}</p>
       )}
-      {pm.held_until && <p className="a14 ared" role="note">{tr('Your payout details changed. For your safety, payouts resume at {time}.').replace('{time}', new Date(pm.held_until).toLocaleString())}</p>}
+      {pm.held_until && <p className="a14 ared" role="note">{tr('Your payout details changed. For your safety, payouts resume at {time}.').replace('{time}', dateTime(pm.held_until, locale))}</p>}
       <div className="arow" role="radiogroup" aria-label={tr('Payout method')} style={{ gap: 8 }}>
         {(['bank', 'upi'] as const).map((m) => (
           <button key={m} type="button" role="radio" aria-checked={method === m} className={`achip${method === m ? ' achip--on' : ''}`} onClick={() => setMethod(m)}>

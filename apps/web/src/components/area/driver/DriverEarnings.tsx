@@ -6,7 +6,7 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { type History, type MonthRow, downloadStatement, months as loadMonths } from '@/lib/area/earnings';
 import { areaGet } from '@/lib/area/api';
-import { addition, dateLabel, dateOrder, deduction, money, month3, shownDate } from '@/lib/area/format';
+import { addition, dateLabel, dateLocale, dateOrder, deduction, money, month3, shownDate } from '@/lib/area/format';
 import { useLoad } from '@/lib/area/useLoad';
 import { messageFor } from '@/lib/publicAuth';
 import { IDoc } from '../icons';
@@ -47,10 +47,10 @@ function Chart({ h, locale, label }: { h: History; locale: string; label: string
   const tickAt = (i: number) => h.chart.unit !== 'day' || bars.length <= 7 || i === 0 || i === bars.length - 1 || (i % 7 === 0 && i < bars.length - 4);
   const tick = (key: string, i: number) => {
     if (h.chart.unit === 'hour') return `${key}:00`;
-    if (h.chart.unit === 'month') return month3(new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(new Date(`${key.slice(0, 7)}-15T12:00:00Z`)));
+    if (h.chart.unit === 'month') return month3(new Intl.DateTimeFormat(dateLocale(locale), { month: 'short', timeZone: 'UTC' }).format(new Date(`${key.slice(0, 7)}-15T12:00:00Z`)));
     const d = new Date(noon(key));
     return i === 0 || i === bars.length - 1
-      ? month3(new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d)) : String(d.getUTCDate());
+      ? month3(new Intl.DateTimeFormat(dateLocale(locale), { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d)) : String(d.getUTCDate());
   };
   const when = (key: string) => (h.chart.unit === 'hour' ? `${key}:00` : h.chart.unit === 'month' ? ymLabel(key.slice(0, 7), locale)
     : dateLabel(noon(key), locale, 'UTC', new Date(), false));
