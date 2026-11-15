@@ -846,5 +846,7 @@
   "Open the trip": "सवारी खोलें",
   "Paid. You can book now.": "भुगतान हो गया। अब आप बुक कर सकते हैं।",
   "We could not charge your card. Open the trip to pay.": "हम आपके कार्ड से शुल्क नहीं ले सके। भुगतान के लिए सवारी खोलें।",
-  "Your card was declined. Nothing was charged.": "आपका कार्ड अस्वीकार हो गया। कोई शुल्क नहीं लिया गया।"
+  "Your card was declined. Nothing was charged.": "आपका कार्ड अस्वीकार हो गया। कोई शुल्क नहीं लिया गया।",
+  "Paid out {date}": "{date} को भुगतान किया गया",
+  "Not paid out yet": "अभी भुगतान नहीं हुआ"
 }
