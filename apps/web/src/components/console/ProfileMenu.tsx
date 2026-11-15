@@ -66,6 +66,8 @@ export function ProfileMenu({
         ref={button}
         type="button"
         className="ops__profile-btn"
+        // 14 Nov: the name is hidden at phone width, so the button carries it (axe button-name).
+        aria-label={`Account: ${name}`}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
