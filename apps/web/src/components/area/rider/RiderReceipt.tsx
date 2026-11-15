@@ -123,6 +123,15 @@ export function RiderReceipt({ id }: { id: string }) {
                 </div>
               </>
             )}
+            {(t.refunds ?? []).map((r) => (
+              <div key={r.at} className="arow" style={{ justifyContent: 'space-between', padding: '12px 0', gap: 12 }} data-testid="receipt-refund">
+                <span>
+                  {r.to === 'wallet' ? tr('Refunded to your wallet') : r.status === 'sent' ? tr('Refunded to your card') : tr('Refund on its way to your card')}
+                  <span className="amut"> · {dateLabel(r.at, locale, t.timezone, new Date(), true)}</span>
+                </span>
+                <span className="ab">−{money(r.amount, cur, locale)}</span>
+              </div>
+            ))}
           </div>
           <p className="a14 amut" style={{ marginTop: 8 }}>{tr('If the trip had changed, each change and its reason would be listed here.')}</p>
           <div className="arow" style={{ gap: 8, marginTop: 20, flexWrap: 'wrap' }}>

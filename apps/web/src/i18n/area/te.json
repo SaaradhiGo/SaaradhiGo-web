@@ -849,5 +849,8 @@
   "Your card was declined. Nothing was charged.": "మీ కార్డ్ తిరస్కరించబడింది. ఏమీ వసూలు చేయలేదు.",
   "Paid out {date}": "{date}న చెల్లించబడింది",
   "Not paid out yet": "ఇంకా చెల్లించలేదు",
-  "Platform fees ({n})": "ప్లాట్‌ఫామ్ రుసుములు ({n})"
+  "Platform fees ({n})": "ప్లాట్‌ఫామ్ రుసుములు ({n})",
+  "Refunded to your wallet": "మీ వాలెట్‌కు రీఫండ్ చేయబడింది",
+  "Refunded to your card": "మీ కార్డుకు రీఫండ్ చేయబడింది",
+  "Refund on its way to your card": "రీఫండ్ మీ కార్డుకు వస్తోంది"
 }

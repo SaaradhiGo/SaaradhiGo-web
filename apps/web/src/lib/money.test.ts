@@ -25,3 +25,12 @@ describe('summaries stay whole', () => {
     expect(formatFare('978.6', 'INR')).toBe('₹979');
   });
 });
+
+describe('distanceInMarketUnit (15 Nov: a US trip in miles)', () => {
+  it('gives miles for a USD trip and km otherwise', async () => {
+    const { distanceInMarketUnit } = await import('./money');
+    expect(distanceInMarketUnit('0.8', 'USD')).toEqual({ value: '0.5', unit: 'mi' });
+    expect(distanceInMarketUnit('0.8', 'INR')).toEqual({ value: '0.8', unit: 'km' });
+    expect(distanceInMarketUnit(null, 'USD')).toBeNull();
+  });
+});

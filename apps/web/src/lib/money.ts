@@ -77,6 +77,16 @@ export function formatDistance(
   return `${value.toFixed(1)} ${unit ?? 'km'}`;
 }
 
+/** A distance stored in km, in the trip's market unit: miles for a USD trip ("0.5 mi"), else km. */
+export function distanceInMarketUnit(km: string | number | null | undefined, currency?: string | null):
+  { value: string; unit: 'mi' | 'km' } | null {
+  if (km === null || km === undefined || km === '') return null;
+  const n = Number(km);
+  if (!Number.isFinite(n)) return null;
+  if (currency === 'USD') return { value: (n * 0.621371).toFixed(1), unit: 'mi' };
+  return { value: n.toFixed(n < 10 ? 1 : 0), unit: 'km' };
+}
+
 /**
  * An exact amount for a ledger or receipt line: "₹1,151.29", "₹185",
  * "-₹49.32". Paise only when there are any; summaries use `formatFare`.

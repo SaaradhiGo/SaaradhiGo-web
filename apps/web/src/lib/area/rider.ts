@@ -73,6 +73,8 @@ export type Trip = {
     title?: string | null;
     /** 12 Nov: the lines before tax, the taxable value, the tax and the total, adding up exactly. */
     breakdown?: FareLines | null } | null;
+  /** 15 Nov: refunds on the trip (own rider only); `processing` until the provider confirms. */
+  refunds?: { amount: string; currency: string; to: 'card' | 'wallet'; status: 'sent' | 'processing'; at: string }[];
 };
 
 /** The fare lines (servers/ride/invoice_lines.py): lines sum to `taxable`; taxable + tax + extras = total. */

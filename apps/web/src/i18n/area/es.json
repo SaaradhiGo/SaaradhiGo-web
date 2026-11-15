@@ -849,5 +849,8 @@
   "Your card was declined. Nothing was charged.": "Tu tarjeta fue rechazada. No se cobró nada.",
   "Paid out {date}": "Pagado el {date}",
   "Not paid out yet": "Aún no se ha pagado",
-  "Platform fees ({n})": "Tarifas de la plataforma ({n})"
+  "Platform fees ({n})": "Tarifas de la plataforma ({n})",
+  "Refunded to your wallet": "Reembolsado a tu monedero",
+  "Refunded to your card": "Reembolsado a tu tarjeta",
+  "Refund on its way to your card": "Reembolso en camino a tu tarjeta"
 }
