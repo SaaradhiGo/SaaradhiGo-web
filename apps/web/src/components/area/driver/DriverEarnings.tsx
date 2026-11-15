@@ -114,7 +114,7 @@ function Stat({ label, value, sub, ink = false, tone }: { label: string; value: 
 
 type Statement = {
   summary: MonthRow & Record<string, unknown>; trips: { at: string | null; trip_id: number | null; method: string; fare: string | null; fee: string | null; earned: string | null }[];
-  payouts: { at: string; amount: string }[]; currency: string; month: string; start: string; end: string;
+  payouts: { at: string; amount: string }[]; fees?: { at: string; amount: string; note: string }[]; currency: string; month: string; start: string; end: string;
   driver: string; phone_masked: string; pan_masked: string | null; city: string; country: string; number: string; produced_on: string; fee_note?: string;
   company: { name: string; address: string; gstin: string };
 };
@@ -154,6 +154,17 @@ function StatementSheet({ month, onClose }: { month: string; onClose: () => void
                 <div key={i} className="pf-row a14"><span>{t.at ? dateLabel(t.at, locale) : ''} {t.trip_id ? `#${t.trip_id}` : ''}</span><span>{m(t.earned)}</span></div>
               ))}
             </div>
+            {!!s.fees?.length && (
+              <>
+                <h3 className="ab">{tr('Platform fees ({n})').replace('{n}', String(s.fees.length))}</h3>
+                {s.fees.map((f, i) => (
+                  <div key={i} className="pf-row a14" data-testid="statement-fee">
+                    <span>{dateLabel(f.at, locale)} {f.note}</span>
+                    <span className={Number(f.amount) < 0 ? 'agrn' : undefined}>{Number(f.amount) < 0 ? `+${m(String(-Number(f.amount)))}` : `−${m(f.amount)}`}</span>
+                  </div>
+                ))}
+              </>
+            )}
             <h3 className="ab">{tr('Payouts ({n})').replace('{n}', String(s.payouts.length))}</h3>
             {s.payouts.map((p, i) => <div key={i} className="pf-row a14"><span>{dateLabel(p.at, locale)}</span><span>{m(p.amount)}</span></div>)}
           </>

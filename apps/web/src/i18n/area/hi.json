@@ -848,5 +848,6 @@
   "We could not charge your card. Open the trip to pay.": "हम आपके कार्ड से शुल्क नहीं ले सके। भुगतान के लिए सवारी खोलें।",
   "Your card was declined. Nothing was charged.": "आपका कार्ड अस्वीकार हो गया। कोई शुल्क नहीं लिया गया।",
   "Paid out {date}": "{date} को भुगतान किया गया",
-  "Not paid out yet": "अभी भुगतान नहीं हुआ"
+  "Not paid out yet": "अभी भुगतान नहीं हुआ",
+  "Platform fees ({n})": "प्लेटफ़ॉर्म शुल्क ({n})"
 }
