@@ -132,6 +132,18 @@ export function RiderReceipt({ id }: { id: string }) {
                 <span className="ab">−{money(r.amount, cur, locale)}</span>
               </div>
             ))}
+            {(() => {
+              // 15 Nov: what the card paid in all, less every refund that went through.
+              const sent = (t.refunds ?? []).filter((r) => r.status === 'sent' && r.to === 'card');
+              if (!sent.length || paid == null) return null;
+              const charged = Number(paid) + Number(t.tip?.amount ?? 0);
+              const net = Math.max(0, charged - sent.reduce((a, r) => a + Number(r.amount), 0));
+              return (
+                <div className="arow" style={{ justifyContent: 'space-between', padding: '12px 0' }} data-testid="receipt-net-charged">
+                  <span className="ab">{tr('Net charged')}</span><span className="a20">{money(net, cur, locale)}</span>
+                </div>
+              );
+            })()}
           </div>
           <p className="a14 amut" style={{ marginTop: 8 }}>{tr('If the trip had changed, each change and its reason would be listed here.')}</p>
           <div className="arow" style={{ gap: 8, marginTop: 20, flexWrap: 'wrap' }}>

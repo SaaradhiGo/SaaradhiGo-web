@@ -91,6 +91,9 @@ export type FareLines = {
   /** 14 Nov, a US receipt: the tip and what the card was charged in all (fare + tip). */
   tip?: string | null;
   total_charged?: string;
+  /** 15 Nov: refunds sent on the trip and what the rider was charged net of them. */
+  refunds?: { label: string; amount: string; date: string }[];
+  net_charged?: string;
 };
 
 export type Profile = {

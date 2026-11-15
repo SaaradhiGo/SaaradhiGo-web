@@ -36,6 +36,13 @@ export function FareLinesList({ lines, compact = false }: { lines: FareLines; co
           {row('total', tr('Total charged'), lines.total_charged, true)}
         </>
       ) : row('total', tr('Total'), lines.total, true)}
+      {(lines.refunds ?? []).map((r, i) => (
+        <div key={`r${i}`} className="arow" style={{ justifyContent: 'space-between', padding: pad, gap: 12 }} data-testid="fare-lines-refund">
+          <dt className="agrow">{tr(r.label)} · {r.date}</dt>
+          <dd style={{ margin: 0 }}>−{money(r.amount, cur, locale)}</dd>
+        </div>
+      ))}
+      {lines.net_charged != null ? row('net', tr('Net charged'), lines.net_charged, true) : null}
     </dl>
   );
 }

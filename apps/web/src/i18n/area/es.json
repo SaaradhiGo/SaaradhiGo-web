@@ -852,5 +852,6 @@
   "Platform fees ({n})": "Tarifas de la plataforma ({n})",
   "Refunded to your wallet": "Reembolsado a tu monedero",
   "Refunded to your card": "Reembolsado a tu tarjeta",
-  "Refund on its way to your card": "Reembolso en camino a tu tarjeta"
+  "Refund on its way to your card": "Reembolso en camino a tu tarjeta",
+  "Net charged": "Cargo neto"
 }

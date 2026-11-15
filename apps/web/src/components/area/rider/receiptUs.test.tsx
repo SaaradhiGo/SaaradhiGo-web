@@ -39,6 +39,8 @@ describe('a US receipt', () => {
     // 15 Nov (round 5): a refund is its own line on the receipt.
     expect(screen.getByTestId('receipt-refund').textContent).toContain('Refunded to your card');
     expect(screen.getByTestId('receipt-refund').textContent).toContain('−$29.58');
+    // Round 6: what the card paid net of the refund ($34.90 − $29.58).
+    expect(screen.getByTestId('receipt-net-charged').textContent).toContain('$5.32');
     // 15 Nov: the headline is the total charged, and "You paid" reads "Ride total".
     expect(screen.getByTestId('receipt-headline').textContent).toBe('$34.90');
     expect(screen.getByText('Ride total')).toBeTruthy();
