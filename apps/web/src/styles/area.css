@@ -196,6 +196,10 @@
 .ar-map { flex: 1; position: relative; background: var(--c-map); min-width: 0; }
 /* The map surface sets its own position, so it is sized explicitly. */
 .ar-map > * { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* 15 Nov: `.sg-map { position: relative }` (same specificity, loaded later) won over the line
+   above, so on a phone, where .ar-map has only a min-height, the map was 0 px tall: the
+   "blank beige" on the Ride page. */
+.ar-map > .sg-map { position: absolute; inset: 0; }
 
 /* ---- Driver area: black sidebar, header, content. */
 .dr { display: flex; min-height: 100vh; background: var(--c-area); }
