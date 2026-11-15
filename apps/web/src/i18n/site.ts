@@ -387,10 +387,44 @@ export const SITE: Record<Language, SiteCopy> = {
   es: translateCopy(en, 'es'),
 };
 
+/**
+ * 14 Nov (owner): public pages follow the visitor's market. What a US visitor reads instead of
+ * the India copy, in English and translated like the rest: the USA's classes (no Auto, Mini or
+ * Sedan there) and paying by card (Idaho forbids cash, Idaho Code 49-3712).
+ */
+export const US_MARKET_COPY = {
+  classes: 'Standard and XL, each with its own price.',
+  pay: 'By card in the app. The fare is held on your card when you book and charged when the trip ends.',
+};
+const INDIA_CLASSES = 'Auto, Mini, Sedan, SUV, each with its own price.';
+const INDIA_PAY = 'How do I pay?';
+
+function forUS(copy: SiteCopy, language: Language): SiteCopy {
+  const t = (english: string) => translateCopy(english, language);
+  return {
+    ...copy,
+    ride: {
+      ...copy.ride,
+      steps: copy.ride.steps.map((s, i) => (en.ride.steps[i]?.body === INDIA_CLASSES ? { ...s, body: t(US_MARKET_COPY.classes) } : s)),
+    },
+    help: {
+      ...copy.help,
+      faqs: copy.help.faqs.map((f, i) => (en.help.faqs[i]?.q === INDIA_PAY ? { ...f, a: t(US_MARKET_COPY.pay) } : f)),
+    },
+  };
+}
+
+export const SITE_US: Record<Language, SiteCopy> = {
+  en: forUS(SITE.en, 'en'),
+  te: forUS(SITE.te, 'te'),
+  hi: forUS(SITE.hi, 'hi'),
+  es: forUS(SITE.es, 'es'),
+};
+
 export function useSite(): SiteCopy {
   const { language } = useLocale();
   const { market } = useLegal();
-  const copy = SITE[language] ?? en;
+  const copy = (market === 'US' ? SITE_US[language] : SITE[language]) ?? en;
   // 14 Nov (owner): US English for the USA, UK English for India.
   return language === 'en' && market === 'US' ? usEnglishDeep(copy) : copy;
 }

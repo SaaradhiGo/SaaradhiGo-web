@@ -212,5 +212,7 @@
   "We could not create the account. Please try again.": "ఖాతా సృష్టించలేకపోయాం. మళ్లీ ప్రయత్నించండి.",
   "This email already has an account.": "ఈ ఇమెయిల్‌కు ఇప్పటికే ఖాతా ఉంది.",
   "Forgot password?": "పాస్‌వర్డ్ మర్చిపోయారా?",
-  "Creating your account…": "మీ ఖాతా సృష్టిస్తున్నాం…"
+  "Creating your account…": "మీ ఖాతా సృష్టిస్తున్నాం…",
+  "Standard and XL, each with its own price.": "Standard, XL, ఒక్కోదానికి ఒక్కో ధర.",
+  "By card in the app. The fare is held on your card when you book and charged when the trip ends.": "యాప్‌లో కార్డుతో. బుక్ చేసినప్పుడు ఛార్జీ మీ కార్డుపై నిలిపి ఉంచుతాం, ట్రిప్ ముగిసినప్పుడు తీసుకుంటాం."
 }

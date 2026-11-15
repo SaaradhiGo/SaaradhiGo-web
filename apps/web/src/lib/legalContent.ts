@@ -146,7 +146,7 @@ export function privacy(c: Ctx): Doc {
     'Location while you use the app. For riders, to find your pickup and show the route. For drivers, continuously while online, because dispatch needs to know who is nearby.',
     'Trip records: where a trip started and ended, when, what it cost and how it was paid.',
     'For drivers: identity and vehicle documents, a photo of you, and bank or payout details so we can pay you.',
-    'Payment results. Card, UPI and bank details are handled by our payment provider; we keep the result of a payment, not your card number.',
+    `Payment results. ${india ? 'Card, UPI' : 'Card'} and bank details are handled by our payment provider; we keep the result of a payment, not your card number.`,
     'Support messages, ratings and safety reports you send, and error reports from the app so we can fix crashes.',
   ] };
   const sharing: Section = { h: 'Who we share it with', p: [
@@ -256,7 +256,7 @@ export function refunds(c: Ctx, cancellation: string | null): Doc {
         india
           ? 'A refund to UPI, card or netbanking is started the day it is approved; banks usually show it within 5 to 7 working days. Credits are added at once.'
           : 'A refund to your card is started the day it is approved; card issuers usually show it within 5 to 10 business days. Credits are added at once.',
-        'A trip paid in cash is refunded as credits or, on request, to a bank account or UPI ID you give us.',
+        `A trip paid in cash is refunded as credits or, on request, to a bank account${india ? ' or UPI ID' : ''} you give us.`,
       ] },
       { h: 'Contact', p: [contactLine(c)] },
     ],
