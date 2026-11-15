@@ -27,10 +27,11 @@
 // site's server (lib/session/bff.ts); page script never sees them and nothing is written to
 // localStorage or sessionStorage but the account's display copy (name, role).
 
-import { ApiError, RIDER_SESSION, api, signOutRider, signedIn } from './api';
+import { ApiError, RIDER_SESSION, accountMemory, api, signOutRider, signedIn } from './api';
 
 export const RIDER_TOKEN_KEY = 'saaradhi_rider_access_token';
 export const RIDER_REFRESH_KEY = 'saaradhi_rider_refresh_token';
+/** Where the account was stored before 14 Nov; now only ever deleted (lib/api.ts). */
 export const RIDER_USER_KEY = 'saaradhi_rider_user';
 
 export type PublicRole = 'rider' | 'driver';
@@ -65,23 +66,13 @@ export type SessionUser = {
   created_at?: string | null;
 };
 
+/** The signed-in account for this page, in memory only (never browser storage, 14 Nov). */
 export function readSessionUser(): SessionUser | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem(RIDER_USER_KEY);
-    return raw ? (JSON.parse(raw) as SessionUser) : null;
-  } catch {
-    return null;
-  }
+  return (accountMemory.rider as SessionUser | null) ?? null;
 }
 
 function writeSessionUser(user: SessionUser | null) {
-  try {
-    if (user) window.localStorage.setItem(RIDER_USER_KEY, JSON.stringify(user));
-    else window.localStorage.removeItem(RIDER_USER_KEY);
-  } catch {
-    /* private mode: the session simply does not persist */
-  }
+  accountMemory.rider = user;
 }
 
 /** The account as the server currently has it. Also refreshes the copy. */
@@ -182,6 +173,7 @@ export function clearRiderTokens() {
     window.localStorage.removeItem(RIDER_TOKEN_KEY);
     window.localStorage.removeItem(RIDER_REFRESH_KEY);
     window.localStorage.removeItem(RIDER_USER_KEY);
+    accountMemory.rider = null;
   } catch {
     /* nothing to clear */
   }

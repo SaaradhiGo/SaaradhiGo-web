@@ -23,6 +23,9 @@ export type PeriodTotals = {
   gross: string;
   commission: string;
   net: string;
+  /** 14 Nov: tips in the period, and `earned` = net + tips (what "Today you earned" shows). */
+  tips?: string;
+  earned?: string;
   cash_collected: string;
   unresolved_trips: number;
 };

@@ -40,8 +40,8 @@ describe('no token in browser storage', () => {
     await verifyPublicOtp('+919999999999', '123456', 'rider');
     await registerRider({ fullName: 'Ana', email: 'ana@example.test', password: 'pass-word-1' });
     noTokenWritten();
-    // Only the display copy of the account is kept.
-    expect(writes.map((w) => w.key)).toEqual(expect.arrayContaining(['saaradhi_rider_user']));
+    // 14 Nov: not even a display copy of the account is stored.
+    expect(writes.map((w) => w.key)).not.toContain('saaradhi_rider_user');
   });
 
   it('console sign-in by password and by phone code', async () => {

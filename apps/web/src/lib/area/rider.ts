@@ -78,13 +78,17 @@ export type Trip = {
 /** The fare lines (servers/ride/invoice_lines.py): lines sum to `taxable`; taxable + tax + extras = total. */
 export type FareLines = {
   lines: { code: string; label: string; amount: string }[];
-  taxable: string;
+  /** null on a US receipt (14 Nov, Srini): no taxable value. */
+  taxable: string | null;
   tax: { label: string; percent: string; amount: string; included: boolean };
   extras: { code: string; label: string; amount: string }[];
   total: string;
   currency: string;
   /** 13 Nov: false while GST is off: no taxable value and no tax line. */
   tax_shown?: boolean;
+  /** 14 Nov, a US receipt: the tip and what the card was charged in all (fare + tip). */
+  tip?: string | null;
+  total_charged?: string;
 };
 
 export type Profile = {

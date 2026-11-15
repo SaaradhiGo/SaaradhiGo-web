@@ -15,6 +15,26 @@ import { useRequirementsLoad } from './profile/shared';
 import { FilePill } from './setup/fields';
 
 /** While not approved: how far setup is, what is next and about how long it takes. */
+/**
+ * 14 Nov (owner): a suspended driver is told the account is paused, why, and how to reach support,
+ * never "Finish setting up".
+ */
+function PausedCard({ paused }: { paused: NonNullable<Requirements['paused']> }) {
+  const tr = useTr();
+  const { locale } = useLocale();
+  const since = new Date(paused.since).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+  return (
+    <section className="acard dr-setup" data-testid="paused-card" role="status">
+      <div className="agrow">
+        <h2 className="a20">{paused.permanent ? tr('Your account is closed') : tr('Your account is paused')}</h2>
+        <div className="amut">{tr(paused.reason)}</div>
+        <div className="a14 amut">{tr('Since {date}. You cannot go online until this is resolved.').replace('{date}', since)}</div>
+      </div>
+      <Link href="/driver/support" className="abtn abtn--pri dr-setup__go" data-testid="paused-support">{tr('Contact support')}</Link>
+    </section>
+  );
+}
+
 function SetupCard({ data }: { data: Requirements | null }) {
   const tr = useTr();
   const c = data?.checklist;
@@ -116,7 +136,7 @@ export function DriverDashboard() {
     <>
       <DriverTop title={tr('Dashboard')} me={me} />
       <main className="dr-main">
-        <SetupCard data={req.data} />
+        {req.data?.paused ? <PausedCard paused={req.data.paused} /> : <SetupCard data={req.data} />}
         {soon && (
           <div className="anote">
             <span className="anote__icon"><IAlert /></span>
@@ -136,7 +156,7 @@ export function DriverDashboard() {
             <div className="albl">{tr('Today you earned')}</div>
             {today.state === 'error' ? <LoadError what="earnings" retry={today.retry} ink /> : t ? (
               <>
-                <div className="a40">{money(t.net, t.currency, locale)}</div>
+                <div className="a40">{money(t.earned ?? t.net, t.currency, locale)}</div>
                 <div className="a14">{tr('{n} trips').replace('{n}', `${t.trips}`)}</div>
               </>
             ) : <Skel h={40} w={140} />}
@@ -145,7 +165,7 @@ export function DriverDashboard() {
             <div className="albl">{tr('This week')}</div>
             {week.state === 'error' ? <LoadError what="earnings" retry={week.retry} /> : w ? (
               <>
-                <div className="a40">{money(w.net, w.currency, locale)}</div>
+                <div className="a40">{money(w.earned ?? w.net, w.currency, locale)}</div>
                 <div className="a14">{rangeLabel(w.start, w.end, locale)} · {tr('{n} trips').replace('{n}', `${w.trips}`)}</div>
               </>
             ) : <Skel h={40} w={140} />}

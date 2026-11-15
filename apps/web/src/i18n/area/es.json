@@ -825,5 +825,9 @@
   "We could not charge your card for this trip ({fare}).": "No pudimos cobrar este viaje a tu tarjeta ({fare}).",
   "Nothing was taken. Our team will contact you about the fare, or you can ask for help on the receipt.": "No se cobró nada. Nuestro equipo te contactará sobre la tarifa, o puedes pedir ayuda en el recibo.",
   "Charging your card…": "Cobrando tu tarjeta…",
-  "Paid {fare} by card": "Pagaste {fare} con tarjeta"
+  "Paid {fare} by card": "Pagaste {fare} con tarjeta",
+  "A rider reported a zero tolerance concern (drugs or alcohol) on a trip. Your account is paused while our safety team investigates.": "Un pasajero informó un caso de tolerancia cero (drogas o alcohol) en un viaje. Tu cuenta está en pausa mientras nuestro equipo de seguridad investiga.",
+  "Your account is paused": "Tu cuenta está en pausa",
+  "Your account is closed": "Tu cuenta está cerrada",
+  "Since {date}. You cannot go online until this is resolved.": "Desde {date}. No puedes conectarte hasta que se resuelva."
 }

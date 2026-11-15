@@ -8,7 +8,7 @@ import { formatPlate } from '@/lib/booking';
 import { clock, dateLabel, money } from '@/lib/area/format';
 import { type Trip, className, lockedFare, paidFare, rateTrip, receiptPdf, trip as loadTrip } from '@/lib/area/rider';
 import { useLoad } from '@/lib/area/useLoad';
-import { readSessionUser } from '@/lib/publicAuth';
+import { fetchProfile, readSessionUser } from '@/lib/publicAuth';
 import { IBack, IDownload, IHelp, IUser } from '../icons';
 import { LoadError, NotYourTrip, Skel } from '../states';
 import { useOnScreenMarket } from '@/components/sg/LegalProvider';
@@ -33,9 +33,13 @@ export function RiderReceipt({ id }: { id: string }) {
 
   useEffect(() => {
     if (!t) return;
-    const me = readSessionUser()?.id;
-    const mine = t.ratings?.find((r) => me != null && `${r.rater_id}` === `${me}`);
-    if (mine?.score) setStars(mine.score);
+    let live = true;
+    void (async () => {
+      const me = readSessionUser()?.id ?? (await fetchProfile().catch(() => null))?.id;
+      const mine = t.ratings?.find((r) => me != null && `${r.rater_id}` === `${me}`);
+      if (live && mine?.score) setStars(mine.score);
+    })();
+    return () => { live = false; };
   }, [t]);
 
   if (load.notFound) return <NotYourTrip />;
