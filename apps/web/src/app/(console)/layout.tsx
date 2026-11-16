@@ -9,6 +9,7 @@ import {
   AdminAccess, can, fetchAdminAccess, isLockedOut,
 } from '@/lib/adminScope';
 import { NAV_GROUPS, homeFor, visibleGroups } from '@/components/console/navGroups';
+import { canAny } from '@/lib/adminScope';
 import { fetchInboxUnread, fetchQueueCounts } from '@/lib/consoleQueues';
 import {
   readSidebarCollapsed, useTheme, writeSidebarCollapsed,
@@ -133,6 +134,15 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
   }
 
   const groups = useMemo(() => visibleGroups(access ?? null, NAV_GROUPS), [access]);
+  // The nav page that owns this path (longest href); a page with no nav entry is not judged here.
+  const canOpenHere = useMemo(() => {
+    if (!access || !pathname) return true;
+    const owner = NAV_GROUPS.flatMap((g) => g.items)
+      .filter((i) => pathname === i.href || pathname.startsWith(i.href + '/'))
+      .sort((a, b) => b.href.length - a.href.length)[0];
+    if (!owner?.need) return true;
+    return canAny(access, typeof owner.need === 'string' ? [owner.need] : owner.need);
+  }, [access, pathname]);
 
   // The LONGEST nav href that contains the path is the current one, so
   // /finance/payouts lights Payouts and not also Finance (its prefix).
@@ -190,6 +200,15 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
             <div className="ops-loading" aria-busy="true" aria-live="polite">
               <span className="ops-skel ops-skel--text" style={{ width: '12rem' }} aria-hidden="true" />
               <span className="sr-only">Loading your console</span>
+            </div>
+          ) : !canOpenHere ? (
+            /* 16 Nov sweep: a role on a page it has no link for saw that page's load error. */
+            <div className="ops-empty" role="status" data-testid="no-access">
+              <b>You don&apos;t have access to this page</b>
+              <span>
+                Your role does not include it. Ask a Super Admin to give you a role that does
+                (Govern › Staff and roles), or go back to your start page.
+              </span>
             </div>
           ) : isLockedOut(access) ? (
             /* Strict mode, no assignment. Without this the operator gets a

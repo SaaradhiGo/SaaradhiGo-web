@@ -853,5 +853,9 @@
   "Refunded to your wallet": "आपके वॉलेट में रिफ़ंड किया गया",
   "Refunded to your card": "आपके कार्ड पर रिफ़ंड किया गया",
   "Refund on its way to your card": "रिफ़ंड आपके कार्ड पर आ रहा है",
-  "Net charged": "शुद्ध शुल्क"
+  "Net charged": "शुद्ध शुल्क",
+  "Waiting for payout setup": "भुगतान सेटअप की प्रतीक्षा",
+  "Set up payouts to get paid": "भुगतान पाने के लिए पेआउट सेट करें",
+  "Your earnings wait in your wallet until then.": "तब तक आपकी कमाई आपके वॉलेट में रहेगी।",
+  "Cancel this trip?": "यह यात्रा रद्द करें?"
 }

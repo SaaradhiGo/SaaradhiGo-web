@@ -1,5 +1,6 @@
 'use client';
 
+import { requirements } from '@/lib/area/requirements';
 import { oneLine } from '@/lib/money';
 import { useEffect, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
@@ -33,6 +34,8 @@ export function DriverPayouts() {
   const me = useDriver();
   // Each card on its own (8 Nov): one failing leaves the others showing.
   const balance = useLoad(loadBalance);
+  const reqs = useLoad(requirements);
+  const payoutReady = reqs.data ? reqs.data.payout_method?.ready ?? false : null;
   const todayLoad = useLoad(() => loadPeriod('today'));
   const s = usePeriod('month');
   const h = s.hist.data;
@@ -56,7 +59,9 @@ export function DriverPayouts() {
       <main className="dr-main">
         <div className="dr-grid2 dr-grid2--pay">
           <section className="acard acard--ink dr-stat">
-            <div className="albl">{tr('Ready to withdraw')}</div>
+            <div className="albl">
+              {payoutReady === false ? tr('Waiting for payout setup') : tr('Ready to withdraw')}
+            </div>
             {balance.state === 'error' ? <LoadError what="balance" retry={balance.retry} ink /> : bal ? (
               <div className="a40">{money(bal.available_balance ?? 0, bal.currency ?? today?.currency, locale)}</div>
             ) : <Skel h={40} w={140} />}
