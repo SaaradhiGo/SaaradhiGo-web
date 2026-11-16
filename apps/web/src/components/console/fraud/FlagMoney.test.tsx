@@ -5,7 +5,7 @@ import type { FlagDetail, MoneyBlock } from '@/lib/fraud';
 import { ClearRestrictionDrawer } from '@/components/console/ClearRestrictionDrawer';
 import { FlagMoney } from '@/components/console/fraud/FlagMoney';
 
-vi.mock('next/navigation', () => ({ usePathname: () => '/fraud/7', useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('next/navigation', () => ({ usePathname: () => '/ops/fraud/7', useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('next/link', () => ({
   default: function LinkStub({ href, children, ...rest }: React.ComponentProps<'a'> & { href: string }) {
     return <a href={href} {...rest}>{children}</a>;
@@ -44,7 +44,7 @@ const money = (over: Partial<MoneyBlock> = {}): MoneyBlock => ({
 
 const flag = (m: MoneyBlock | undefined, over: Partial<FlagDetail> = {}): FlagDetail => ({
   id: 7, kind: 'incentive_farming', status: 'confirmed', severity: 'high', score: 82, rule_key: 'incentive_farming',
-  rule_version: 1, hit_count: 1, subject: { ref: 'driver #12', role: 'driver', user_id: 12, href: '/drivers/3' },
+  rule_version: 1, hit_count: 1, subject: { ref: 'driver #12', role: 'driver', user_id: 12, href: '/ops/drivers/3' },
   evidence: {}, source_ref: '', scope: 'IN-TG-HYD', scope_name: 'Hyderabad', assigned_to: null, assigned_at: null,
   decision_reason: 'promo_abuse', decision_note: 'Confirmed', decided_by: null, decided_at: null,
   created_at: '2026-11-01T10:00:00Z', last_seen_at: null, age_hours: 3, may_review: true,
@@ -131,14 +131,14 @@ describe('the rewards and money panel', () => {
 describe('online payment only', () => {
   const rider = (cash: MoneyBlock['cash']) => flag(money({ rewards: [], recover: { applies: false, may_request: true, max_minor: 0,
     reason_code: 'fraud_recovery' }, cash }), {
-    kind: 'payment_abuse', decision_reason: 'payment_abuse', subject: { ref: 'rider #9', role: 'rider', user_id: 9, href: '/riders/9' },
+    kind: 'payment_abuse', decision_reason: 'payment_abuse', subject: { ref: 'rider #9', role: 'rider', user_id: 9, href: '/ops/riders/9' },
   });
 
   it('is offered on a confirmed payment-abuse flag, sends the note, and points blocking at the Riders page', async () => {
     const done = vi.fn();
     post.mockResolvedValue({ restriction_id: 1, kind: 'cash_disabled', created: true });
     render(<FlagMoney flag={rider({ offered: true, active: false, set_at: null, may_set: true,
-      note: 'Blocking stays the separate Suspend the rider action, for repeat or severe cases only.', block_href: '/riders/9' })}
+      note: 'Blocking stays the separate Suspend the rider action, for repeat or severe cases only.', block_href: '/ops/riders/9' })}
       onDone={done} />);
     expect(screen.getByText(/for repeat or severe cases only/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Online payment only' }));
@@ -149,14 +149,14 @@ describe('online payment only', () => {
   });
 
   it('shows that it is on instead of the button once set', () => {
-    render(<FlagMoney flag={rider({ offered: true, active: true, set_at: '2026-11-02T10:00:00Z', may_set: true, note: 'n', block_href: '/riders/9' })}
+    render(<FlagMoney flag={rider({ offered: true, active: true, set_at: '2026-11-02T10:00:00Z', may_set: true, note: 'n', block_href: '/ops/riders/9' })}
       onDone={() => undefined} />);
     expect(screen.queryByRole('button', { name: 'Online payment only' })).toBeNull();
     expect(screen.getByText(/Online only since/)).toBeTruthy();
   });
 
   it('is not offered at all unless the flag was confirmed as payment abuse', () => {
-    render(<FlagMoney flag={rider({ offered: false, active: false, set_at: null, may_set: true, note: 'n', block_href: '/riders/9' })}
+    render(<FlagMoney flag={rider({ offered: false, active: false, set_at: null, may_set: true, note: 'n', block_href: '/ops/riders/9' })}
       onDone={() => undefined} />);
     expect(screen.queryByText('Online payment only')).toBeNull();
   });

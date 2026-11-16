@@ -77,6 +77,16 @@ export function formatDistance(
   return `${value.toFixed(1)} ${unit ?? 'km'}`;
 }
 
+/** A distance stored in km, in the trip's market unit: miles for a USD trip ("0.5 mi"), else km. */
+export function distanceInMarketUnit(km: string | number | null | undefined, currency?: string | null):
+  { value: string; unit: 'mi' | 'km' } | null {
+  if (km === null || km === undefined || km === '') return null;
+  const n = Number(km);
+  if (!Number.isFinite(n)) return null;
+  if (currency === 'USD') return { value: (n * 0.621371).toFixed(1), unit: 'mi' };
+  return { value: n.toFixed(n < 10 ? 1 : 0), unit: 'km' };
+}
+
 /**
  * An exact amount for a ledger or receipt line: "₹1,151.29", "₹185",
  * "-₹49.32". Paise only when there are any; summaries use `formatFare`.
@@ -96,5 +106,16 @@ export function formatExact(
   });
   const symbol = currencySymbol(currency);
   const body = symbol.length === 1 ? `${symbol}${digits}` : `${symbol} ${digits}`.trim();
-  return n < 0 ? `-${body}` : body;
+  return oneLine(n < 0 ? `-${body}` : body);
+}
+
+/**
+ * An amount that never breaks across lines (15 Nov, a phone receipt split "−" from "$29.58"):
+ * spaces become no-break spaces and a leading sign is joined to the digits (U+2060 word joiner).
+ */
+export function oneLine(text: string): string;
+export function oneLine(text: string | null): string | null;
+export function oneLine(text: string | null): string | null {
+  if (text == null) return text;
+  return text.replace(/ /g, '\u00A0').replace(/^([−+-])(\u00A0?)/, '$1\u2060$2');
 }

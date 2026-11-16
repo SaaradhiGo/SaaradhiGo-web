@@ -1,7 +1,7 @@
 'use client';
 
-import { ApiError } from '@/lib/api';
-import { areaGet, areaToken } from './api';
+import { ApiError, bffFetch } from '@/lib/api';
+import { areaGet } from './api';
 
 /**
  * Earnings history (10 Nov v2): any period since the driver joined, every month, and monthly
@@ -12,7 +12,7 @@ export type HistoryPeriod = 'day' | 'week' | 'month' | 'year' | 'taxyear' | 'cus
 export type HistorySummary = {
   trips: number; days_driven: number; fares: string; avg_fare: string; commission: string; daily_fee: string;
   platform_fee: string; tips: string; tip_riders: number; earned: string; paid_to_bank: string; payouts: number;
-  cash_collected: string; unresolved_trips: number; fee_note: string; tips_enabled: boolean;
+  cash_collected: string; unresolved_trips: number; fee_note: string; tips_enabled: boolean; cash_allowed?: boolean;
 };
 export type History = {
   period: HistoryPeriod; start: string; end: string; timezone: string; currency: string; today: string;
@@ -34,14 +34,10 @@ export function history(period: HistoryPeriod, date?: string, range?: { start: s
 }
 export const months = () => areaGet<Months>('/driver/earnings/months/');
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
 /** A month's statement as a file (`pdf` or `csv`), saved through a Blob: a link cannot carry the token. */
 export async function downloadStatement(month: string, as: 'pdf' | 'csv') {
-  const token = await areaToken();
-  const resp = await fetch(`${BASE}/driver/earnings/statement/?month=${month}&as=${as}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
+  const resp = await bffFetch('rider', 'GET', `/driver/earnings/statement/?month=${month}&as=${as}`);
   if (!resp.ok) throw new ApiError(resp.status, 'STATEMENT_FAILED', `HTTP ${resp.status}`, false, null);
   const url = URL.createObjectURL(await resp.blob());
   const a = document.createElement('a');

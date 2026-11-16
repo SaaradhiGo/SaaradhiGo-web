@@ -203,3 +203,9 @@ body {
 .map-surface {
   @apply relative overflow-hidden bg-bg-100;
 }
+
+/* 15 Nov: an amount stays on one line (a phone receipt split "−" from "$29.58"). */
+.amoney, [data-testid="fare-lines"] dd { white-space: nowrap; }
+
+/* 16 Nov sweep: inline links on the sign-in forms were 21px tall; give them a 44px target. */
+p.text-sm > a.sg-link, p.text-sm > button.sg-link { display: inline-flex; align-items: center; min-height: 44px; }

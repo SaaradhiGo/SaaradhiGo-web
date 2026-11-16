@@ -1,5 +1,6 @@
 'use client';
 
+import { LegalLine } from '@/components/sg/Footer';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -7,6 +8,7 @@ import { useTr } from '@/i18n/website';
 import { AREA_FLAGS } from '@/lib/area/flags';
 import { IHelp, IMoon, ISun, ISwitch } from './icons';
 import { ProfileMenu } from './ProfileMenu';
+import { ConfirmEmail } from './rider/ConfirmEmail';
 import { areaPath, useArea } from './useArea';
 
 /**
@@ -20,6 +22,8 @@ const MENU = [
   { href: '/account#places', label: 'Saved places' },
   { href: AREA_FLAGS.trustedContacts ? '/account#safety' : '/safety', label: 'Safety' },
   { href: '/account#language', label: 'Language' },
+  // 14 Nov: the phone header has no room for Help, so the menu has it (two taps from any page).
+  { href: '/help', label: 'Help', phone: true },
 ];
 
 const NAV = [
@@ -66,14 +70,21 @@ export function RiderShell({ children }: { children: React.ReactNode }) {
             onClick={flip} aria-label={tr(dark ? 'Switch to light theme' : 'Switch to dark theme')}>
             {dark ? <ISun size={18} /> : <IMoon size={18} />}
           </button>
-          <ProfileMenu links={MENU} onSignOut={() => signOut()} extra={both && (
-            <button type="button" role="menuitem" onClick={() => switchTo('driver')}>
-              <ISwitch size={18} />{tr('Switch to driver')}
+          <ProfileMenu links={MENU} onSignOut={() => signOut()} extra={<>
+            <button type="button" role="menuitem" className="apm-phone" onClick={flip}>
+              {dark ? <ISun size={18} /> : <IMoon size={18} />}{tr(dark ? 'Light theme' : 'Dark theme')}
             </button>
-          )} />
+            {both && (
+              <button type="button" role="menuitem" onClick={() => switchTo('driver')}>
+                <ISwitch size={18} />{tr('Switch to driver')}
+              </button>
+            )}
+          </>} />
         </div>
       </header>
+      <ConfirmEmail />
       <main id="main" className="ar-main">{children}</main>
+      <LegalLine />
     </div>
   );
 }

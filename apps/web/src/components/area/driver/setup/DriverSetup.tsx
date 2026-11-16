@@ -7,7 +7,7 @@ import { useTr } from '@/i18n/website';
 import { vehicles as loadVehicles } from '@/lib/area/driver';
 import { dateOrder } from '@/lib/area/format';
 import {
-  type Step, type StepKey, STEP_INFO, setupHref, stepFromSlug, stepSub,
+  type Step, type StepKey, STEP_INFO, setupHref, stepFromSlug, stepSub, reviewPromise,
 } from '@/lib/area/requirements';
 import { blockingLabels, readyToDrive, stepWords } from '@/lib/area/setupChecks';
 import { useLoad } from '@/lib/area/useLoad';
@@ -123,7 +123,7 @@ export function DriverSetup({ slug }: { slug: string }) {
                   </span>
                 </Link>
               ))}
-              {!ready && <p className="a14 amut su-foot">{tr('You can go online once every step is approved. We usually review within one working day.')}</p>}
+              {!ready && <p className="a14 amut su-foot">{reviewPromise(data.review_target_working_days, tr)}</p>}
             </nav>
             <section className="acard su-card" data-testid="setup-step" data-current={step.key}>
               {fromProfile && (

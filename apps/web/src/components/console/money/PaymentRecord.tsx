@@ -99,14 +99,14 @@ export function PaymentRecord({ id, onClose }: { id: number | string; onClose?: 
       subtitle={<>{cityName(data.city)} · {stamp(data.created_at, tz)}</>}
       status={<StatusChip tone={paymentChipTone(data.status)}>{words(data.status)}</StatusChip>}
       onClose={onClose}
-      actions={<PageButtonLink page="trips" href={`/trips/${data.trip_id}`} variant="ghost">Open trip T-{data.trip_id}</PageButtonLink>}
+      actions={<PageButtonLink page="trips" href={`/ops/trips/${data.trip_id}`} variant="ghost">Open trip T-{data.trip_id}</PageButtonLink>}
       tabs={[
         {
           key: 'summary', label: 'Money', content: (
             <div className="grid gap-3">
               <RecordStat label="Charged" value={formatMinor(data.amount_minor, data.currency)} note={`${data.currency} · ${words(data.method)}`} />
               <Facts>
-                <Fact label="Trip"><PageLink page="trips" href={`/trips/${data.trip_id}`}>T-{data.trip_id}</PageLink></Fact>
+                <Fact label="Trip"><PageLink page="trips" href={`/ops/trips/${data.trip_id}`}>T-{data.trip_id}</PageLink></Fact>
                 <Fact label="City">{cityName(data.city)}</Fact>
                 <Fact label="Gateway">{data.gateway}</Fact>
                 <Fact label="Order reference">{data.gateway_order_id || '—'}</Fact>
@@ -120,7 +120,7 @@ export function PaymentRecord({ id, onClose }: { id: number | string; onClose?: 
                   <tbody>
                     {data.chain.map((p) => (
                       <tr key={p.id}>
-                        <td>{p.current ? <b>#{p.id} (this)</b> : <Link href={`/finance/payments/${p.id}`}>#{p.id}</Link>}</td>
+                        <td>{p.current ? <b>#{p.id} (this)</b> : <Link href={`/ops/finance/payments/${p.id}`}>#{p.id}</Link>}</td>
                         <td>{words(p.method)}</td>
                         <td><StatusChip tone={paymentChipTone(p.status)}>{words(p.status)}</StatusChip></td>
                         <td className="num">{formatMinor(p.amount_minor, p.currency)}</td>
@@ -143,7 +143,7 @@ export function PaymentRecord({ id, onClose }: { id: number | string; onClose?: 
                 <tbody>
                   {data.refunds.map((r) => (
                     <tr key={r.id}>
-                      <td>#{r.id}{r.approval_request_id ? <> · <PageLink page="approvals" href={`/approvals?id=${r.approval_request_id}`}>APR-{r.approval_request_id}</PageLink></> : null}</td>
+                      <td>#{r.id}{r.approval_request_id ? <> · <PageLink page="approvals" href={`/ops/approvals?id=${r.approval_request_id}`}>APR-{r.approval_request_id}</PageLink></> : null}</td>
                       <td className="num">{formatMinor(r.amount_minor, r.currency)}</td>
                       <td>{words(r.method)}</td>
                       <td><StatusChip tone={r.status === 'completed' ? 'good' : 'info'}>{words(r.status)}</StatusChip></td>

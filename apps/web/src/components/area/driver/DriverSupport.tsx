@@ -6,10 +6,13 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { areaGet, areaPost } from '@/lib/area/api';
 import { dateLabel } from '@/lib/area/format';
+import { requirements, reviewPromise } from '@/lib/area/requirements';
 import { useLoad } from '@/lib/area/useLoad';
 import { messageFor } from '@/lib/publicAuth';
 import { LoadError, Skel } from '../states';
 import { DriverTop, useDriver } from './parts';
+
+const REVIEW_Q = 'How long does a review take?';
 
 /** The driver's questions, by topic (11 Nov). Answers point at the screen that holds the detail. */
 const TOPICS: { key: string; title: string; href: string; link: string; qa: [string, string][] }[] = [
@@ -40,6 +43,23 @@ const TOPICS: { key: string; title: string; href: string; link: string; qa: [str
     ['How do I change my vehicle?', 'Open Your vehicle in setup. A change goes for review; you can go online again once it is approved.'],
   ] },
 ];
+
+/**
+ * 15 Nov (owner): a US driver's answers carry no India-only words (UPI, PUC, fitness, cash in hand,
+ * India's 80% share). A question mapped to null is not asked in the USA.
+ */
+const US_QA: Record<string, [string, string] | null> = {
+  'I changed my bank or UPI. Why are payouts paused?': ['I changed my payout details. Why are payouts paused?',
+    'For your safety, payouts wait 24 hours after a change, and we text you about it. If you did not make the change, write to us now.'],
+  'Why is my balance lower than my earnings?': null,
+  'When do you remind me about expiry?': ['When do you remind me about expiry?',
+    '30, 7 and 1 days before your licence, insurance or registration date. Upload the renewed one in Documents.'],
+  'How is my platform fee worked out?': ['How is my platform fee worked out?',
+    'Earnings shows your plan in one line, and "How our fee works" lists every rule with its amounts.'],
+};
+const topicsFor = (country: string | null | undefined) => (country !== 'US' ? TOPICS : TOPICS.map((t) => ({
+  ...t, qa: t.qa.flatMap(([q, a]) => (q in US_QA ? (US_QA[q] ? [US_QA[q]!] : []) : [[q, a] as [string, string]])),
+})));
 
 type Ticket = { id: number; status: string; issue_type: string; description: string; created_at: string; trip_id: number | null };
 const ISSUES: [string, string][] = [['payment', 'Earnings or payouts'], ['account', 'Documents or account'], ['fare_dispute', 'A trip or fare'],
@@ -84,6 +104,8 @@ export function DriverSupport() {
   const tr = useTr();
   const { locale } = useLocale();
   const me = useDriver();
+  const req = useLoad(requirements).data;
+  const reviewDays = req ? req.review_target_working_days ?? 1 : undefined;
   const tickets = useLoad(async () => {
     const got = await areaGet<{ results?: Ticket[] } | Ticket[]>('/support/tickets/');
     return Array.isArray(got) ? got : got.results ?? [];
@@ -93,11 +115,11 @@ export function DriverSupport() {
       <DriverTop title={tr('Support')} me={me} />
       <main className="dr-main" data-testid="driver-support">
         <div className="ds-topics">
-          {TOPICS.map((t) => (
+          {topicsFor(req?.config?.country).map((t) => (
             <section key={t.title} className="acard ds-topic" data-topic={t.title}>
               <h2 className="a20">{tr(t.title)}</h2>
               {t.qa.map(([q, a]) => (
-                <details key={q}><summary>{tr(q)}</summary><p className="a14 amut">{tr(a)}</p></details>
+                <details key={q}><summary>{tr(q)}</summary><p className="a14 amut">{q === REVIEW_Q ? reviewPromise(reviewDays, tr, true) : tr(a)}</p></details>
               ))}
               <Link href={t.href} className="aacc ab a14">{tr(t.link)} →</Link>
             </section>

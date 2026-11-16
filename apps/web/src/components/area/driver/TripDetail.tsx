@@ -5,6 +5,7 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { areaGet, areaPost } from '@/lib/area/api';
 import { clock, dateLabel, deduction, money } from '@/lib/area/format';
+import { distanceInMarketUnit } from '@/lib/money';
 import { className } from '@/lib/area/rider';
 import { useLoad } from '@/lib/area/useLoad';
 import { messageFor } from '@/lib/publicAuth';
@@ -16,6 +17,10 @@ export type TripDetailData = {
   requested_at: string | null; started_at: string | null; completed_at: string | null;
   distance_km: string | null; duration_min: string | null; ride_class: string; payment_method: string;
   fare: string | null; platform_fee: string | null; platform_fee_refunded: string | null; tips: string | null;
+  /** 15 Nov (trip 219): the rider's card payment was not collected; nothing settled yet. */
+  payment?: 'settled' | 'not_collected';
+  /** 15 Nov (US round 4): when the money settled, and the payout that carried it to the bank (null until paid). */
+  settled_at?: string | null; paid_out_at?: string | null;
   earned: string | null; cash_in_hand: string | null; rider: { first_name: string; rating: string | null };
 };
 
@@ -79,10 +84,14 @@ export function TripDetail({ id, onClose }: { id: number; onClose: () => void })
             <div><div className="ab">{t.destination_address || '—'}</div><div className="a14 amut">{tr('Dropped')} {at(t.completed_at)}</div></div>
           </div>
           <div className="td-lines a14">
-            <div className="td-line"><span className="amut">{tr('Distance')}</span><span className="ab">{t.distance_km ? `${Number(t.distance_km).toFixed(1)} km` : '—'}</span></div>
+            <div className="td-line"><span className="amut">{tr('Distance')}</span><span className="ab">{(() => { const d = t.distance_km ? distanceInMarketUnit(t.distance_km, t.currency) : null; return d ? `${d.value} ${d.unit}` : '—'; })()}</span></div>
             <div className="td-line"><span className="amut">{tr('Duration')}</span><span className="ab">{t.duration_min ? tr('{n} min').replace('{n}', String(Math.round(Number(t.duration_min)))) : '—'}</span></div>
             <div className="td-line"><span className="amut">{tr('Ride')}</span><span className="ab">{className(t.ride_class) ?? (t.ride_class || '—')}</span></div>
             <div className="td-line"><span className="amut">{tr('Paid')}</span><span className="ab">{tr(t.payment_method === 'cash' ? 'Cash' : 'Online')}</span></div>
+            {t.payment === 'not_collected' && (
+              <p className="a14" data-testid="payment-not-collected"><span className="apill apill--warn">{tr('Payment not collected')}</span>{' '}
+                {tr("The rider's card payment was not collected, so this trip is not in your earnings yet.")}</p>
+            )}
             <div className="td-line"><span className="amut">{tr('Rider')}</span>
               <span className="ab">{t.rider.first_name || tr('Rider')}{t.rider.rating ? ` · ${Number(t.rider.rating).toFixed(1)} ★` : ''}</span></div>
           </div>
@@ -93,6 +102,11 @@ export function TripDetail({ id, onClose }: { id: number; onClose: () => void })
             <div className="td-line"><span>{tr('Tips')}</span><span className="ab">{m(t.tips)}</span></div>
             <div className="td-line" style={{ borderTop: '1px solid var(--c-border)', paddingTop: 8 }}><span className="ab">{tr('You earned')}</span><span className="ab agrn">{m(t.earned)}</span></div>
             {t.cash_in_hand && <div className="a14 amut">{tr('You collected {amount} in cash from the rider.').replace('{amount}', m(t.cash_in_hand))}</div>}
+            {t.payment !== 'not_collected' && !t.cash_in_hand && t.earned != null && (
+              <div className="a14 amut" data-testid="paid-out">
+                {t.paid_out_at ? tr('Paid out {date}').replace('{date}', dateLabel(t.paid_out_at, locale, null, new Date(), true)) : tr('Not paid out yet')}
+              </div>
+            )}
           </div>
           <Report tripId={t.id} />
         </>

@@ -7,13 +7,15 @@ import type { Language } from '@/i18n/locales';
 import { useTr } from '@/i18n/website';
 import { type Profile, maskPhone, profile as loadProfile } from '@/lib/area/rider';
 import { ILogout } from './icons';
+import { useOneMenu } from './oneMenu';
 
 /**
  * The profile button at the far right of every signed-in header (10 Nov): the photo or
  * initials and the first name with a down arrow (the avatar alone on phones), opening the
  * name, the masked mobile, the area's links, a divider and a one-click Sign out.
  */
-export type MenuLink = { href: string; label: string };
+/** `phone`: only on a phone, where the header has no room for it (14 Nov: Help). */
+export type MenuLink = { href: string; label: string; phone?: boolean };
 
 let shared: Promise<Profile> | null = null;
 
@@ -57,8 +59,9 @@ export function Avatar({ me, size = 36 }: { me: Profile | null; size?: number })
 export function ProfileMenu({ links, onSignOut, extra }: { links: MenuLink[]; onSignOut: () => void; extra?: React.ReactNode }) {
   const tr = useTr();
   const [me] = useAccount();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useOneMenu('profile');
   const box = useRef<HTMLDivElement | null>(null);
+  const btn = useRef<HTMLButtonElement | null>(null);
   const { language, setLanguage } = useLocale();
 
   // Only the market's languages (10 Nov): a language this market does not offer falls back to English.
@@ -70,16 +73,16 @@ export function ProfileMenu({ links, onSignOut, extra }: { links: MenuLink[]; on
   useEffect(() => {
     if (!open) return;
     const away = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { setOpen(false); btn.current?.focus(); } };
     document.addEventListener('mousedown', away);
     document.addEventListener('keydown', esc);
     return () => { document.removeEventListener('mousedown', away); document.removeEventListener('keydown', esc); };
-  }, [open]);
+  }, [open, setOpen]);
 
   const name = firstName(me);
   return (
     <div className="apm" ref={box}>
-      <button type="button" className="apm-btn" data-testid="profile-button" aria-haspopup="menu" aria-expanded={open}
+      <button ref={btn} type="button" className="apm-btn" data-testid="profile-button" aria-haspopup="menu" aria-expanded={open}
         aria-label={name ? tr('Account menu for {name}').replace('{name}', name) : tr('Account menu')}
         onClick={() => setOpen(!open)}>
         <Avatar me={me} />
@@ -95,7 +98,7 @@ export function ProfileMenu({ links, onSignOut, extra }: { links: MenuLink[]; on
             {maskPhone(me?.phone_number) && <div className="a14 amut">{maskPhone(me?.phone_number)}</div>}
           </div>
           {links.map((l) => (
-            <Link key={l.href} href={l.href} role="menuitem" onClick={() => setOpen(false)}>{tr(l.label)}</Link>
+            <Link key={l.href} href={l.href} role="menuitem" className={l.phone ? 'apm-phone' : undefined} onClick={() => setOpen(false)}>{tr(l.label)}</Link>
           ))}
           {extra}
           <hr className="apm-rule" />

@@ -1,7 +1,7 @@
 'use client';
 
 import { areaDelete, areaGet, areaPatch, areaPost, areaToken } from './api';
-import { api } from '@/lib/api';
+import { RIDE_DRAFT_PREFIX, api } from '@/lib/api';
 import { normalisePhone, verifyPhoneForSignup } from '@/lib/publicAuth';
 import { rideBlurbKey, vehicleClassLabel } from '@/lib/vehicles';
 
@@ -27,6 +27,9 @@ export type Trip = {
   id: number;
   pickup_address?: string | null;
   destination_address?: string | null;
+  /** 13 Nov: "Charminar, Ghansi Bazaar", for lists and cards (lib/area/places.ts). */
+  pickup_label?: string | null;
+  destination_label?: string | null;
   pickup_lat?: string | number | null;
   pickup_long?: string | number | null;
   destination_lat?: string | number | null;
@@ -53,7 +56,44 @@ export type Trip = {
   otp?: string | number | null;
   ratings?: { score?: number; rater_id?: number }[] | null;
   planned_route_polyline?: string | null;
-  fare_breakdown?: { total_fare?: string | null } | null;
+  fare_breakdown?: { total_fare?: string | null; base_fare?: string | null; distance_fare?: string | null;
+    time_fare?: string | null; surge_multiplier?: string | null; gst_amount?: string | null } | null;
+  /** 11 Nov: why the system cancelled (no_driver_accepted), when the search ends, the invoice. */
+  cancellation_reason?: string | null;
+  cancellation_message?: string | null;
+  search_expires_at?: string | null;
+  vehicle_line?: string | null;
+  /** 14 Nov (USA): a card held at booking (captured at the end: never "pay again"). */
+  card_held?: { status: string } | null;
+  market_rules?: { cash_allowed: boolean; tips_enabled: boolean; tip_presets: number[]; zero_tolerance: boolean } | null;
+  tip?: { amount: string; currency: string } | null;
+  invoice?: { number: string; issued_at?: string | null; rider_name: string; tax_label?: string; tax_amount?: string;
+    total?: string; currency?: string; company: { name: string; address?: string; gstin?: string; cin?: string };
+    /** 13 Nov: 'Receipt' while the market's entity is not GST-registered, else 'Tax invoice'. */
+    title?: string | null;
+    /** 12 Nov: the lines before tax, the taxable value, the tax and the total, adding up exactly. */
+    breakdown?: FareLines | null } | null;
+  /** 15 Nov: refunds on the trip (own rider only); `processing` until the provider confirms. */
+  refunds?: { amount: string; currency: string; to: 'card' | 'wallet'; status: 'sent' | 'processing'; at: string }[];
+};
+
+/** The fare lines (servers/ride/invoice_lines.py): lines sum to `taxable`; taxable + tax + extras = total. */
+export type FareLines = {
+  lines: { code: string; label: string; amount: string }[];
+  /** null on a US receipt (14 Nov, Srini): no taxable value. */
+  taxable: string | null;
+  tax: { label: string; percent: string; amount: string; included: boolean };
+  extras: { code: string; label: string; amount: string }[];
+  total: string;
+  currency: string;
+  /** 13 Nov: false while GST is off: no taxable value and no tax line. */
+  tax_shown?: boolean;
+  /** 14 Nov, a US receipt: the tip and what the card was charged in all (fare + tip). */
+  tip?: string | null;
+  total_charged?: string;
+  /** 15 Nov: refunds sent on the trip and what the rider was charged net of them. */
+  refunds?: { label: string; amount: string; date: string }[];
+  net_charged?: string;
 };
 
 export type Profile = {
@@ -68,6 +108,11 @@ export type Profile = {
   /** The languages offered in the account's market (10 Nov). */
   market_languages?: string[];
   market_country?: string | null;
+  /** 11 Nov: riders sign up by email; the number is proved at the first booking. */
+  phone_verified?: boolean;
+  email_verified?: boolean;
+  /** 12 Nov: present while the email is unconfirmed: whether a link can be emailed here at all. */
+  email_mail_configured?: boolean;
 };
 
 type Page<T> = { results?: T[] } | T[];
@@ -106,8 +151,7 @@ export async function addPlace(p: { address_text: string; latitude: number; long
 }
 
 export async function removePlace(id: number) {
-  const token = await areaToken();
-  return api.delete(`/rider/locations/${id}/delete/`, token ?? undefined);
+  return areaDelete(`/rider/locations/${id}/delete/`);
 }
 
 export async function trips(status?: 'completed' | 'cancelled'): Promise<Trip[]> {
@@ -145,8 +189,7 @@ export async function changePhone(phone: string, otp: string): Promise<Profile> 
 }
 
 export async function updateName(patch: { full_name?: string; email?: string }) {
-  const token = await areaToken();
-  return api.patch<Profile>('/auth/update/', patch, token ?? undefined);
+  return areaPatch<Profile>('/auth/update/', patch);
 }
 
 export async function exportData() {
@@ -155,6 +198,21 @@ export async function exportData() {
 
 export async function deleteAccount() {
   return areaPost('/auth/me/delete/', { confirm: 'DELETE' });
+}
+
+/** 13 Nov: what deleting the account removes and keeps, and money still owed (drivers). */
+export type AccountClosure = {
+  deleted: string[]; kept: string[];
+  pending_payouts: { balance: string; currency: string; in_flight: number } | null;
+  /** 13 Nov: a driver who owes SaaradhiGo (negative balance); the account closes once settled. */
+  owed_to_saaradhigo?: { amount: string; currency: string; message: string } | null;
+  closure: { status: string; requested_at: string } | null; web_url: string;
+};
+export async function accountClosure() {
+  return areaGet<AccountClosure>('/auth/me/delete/');
+}
+export async function closeAccount() {
+  return areaPost<{ status: 'closed' | 'waiting_payouts' | 'waiting_settlement'; message?: string }>('/auth/me/delete/', { confirm: 'DELETE' });
 }
 
 /** The fare the rider booked: the locked estimate the trip carries. */
@@ -262,3 +320,95 @@ export async function startCall(tripId: string | number): Promise<Call> {
 export async function endCall(sessionId: number) {
   return areaPost(`/calls/sessions/${sessionId}/end/`, {});
 }
+
+
+// --- 11 Nov rider QA fixes ------------------------------------------------------------------
+
+/** Send the "Confirm your email" link again. */
+export async function requestEmailConfirmation() {
+  return areaPost('/auth/email/verify/request/', {});
+}
+
+export type PayMethod = 'upi' | 'card' | 'netbanking' | 'cash';
+/** 15 Nov: the rider's last trip that was not paid; booking waits until it is. */
+export type UnpaidTrip = { trip_id: number; amount: string; currency: string; can_retry_card: boolean };
+export type BookingOptions = {
+  payment: { methods: PayMethod[]; default: PayMethod | null; online_unavailable_reason?: string; unpaid_trip?: UnpaidTrip | null };
+  search_timeout_seconds: number;
+  phone_required: boolean;
+};
+
+/** How the rider can pay here, the city's search time, and whether the mobile is still needed. */
+export async function bookingOptions(p: { lat: number; lng: number }) {
+  const q = new URLSearchParams({ lat: String(p.lat), lng: String(p.lng) });
+  return areaGet<BookingOptions>(`/ride/booking-options/?${q}`);
+}
+
+/** Charge the card saved on the unpaid trip now: `paid`, or the reason it was not. */
+export async function payUnpaidTrip() {
+  return areaPost<{ result: 'paid' | 'nothing_to_pay' | 'not_due' | 'no_card'; message?: string }>('/payments/unpaid/pay/', {});
+}
+
+/** A street address for a point (one cached Maps call), or null. */
+export async function streetAddress(p: { lat: number; lng: number }): Promise<string | null> {
+  const data = await areaPost<{ results?: { formatted_address?: string }[] }>('/ride/maps/reverse-geocode', { lat: p.lat, lng: p.lng });
+  return data?.results?.[0]?.formatted_address ?? null;
+}
+
+/**
+ * The trip being planned, kept in this tab rather than the URL (11 Nov): coordinates in a URL
+ * end up in logs and analytics. The URL carries only a random id.
+ */
+/** `label` is the full address the trip is booked with; `short` is what the screens show (14 Nov). */
+export type DraftPlace = { lat: number; lng: number; label: string; short?: string };
+/** `pick` and `pay` keep the rider's choice across sign-in (14 Nov: a guest signs in only at Book). */
+export type RideDraft = { from: DraftPlace; to: DraftPlace; pick?: string | null; pay?: PayMethod | null };
+const DRAFT_KEY = RIDE_DRAFT_PREFIX;
+export function saveDraft(d: RideDraft): string {
+  const id = Math.random().toString(36).slice(2, 10);
+  try { sessionStorage.setItem(DRAFT_KEY + id, JSON.stringify(d)); } catch { /* the page still has it */ }
+  return id;
+}
+export function updateDraft(id: string, patch: Partial<RideDraft>) {
+  const d = readDraft(id);
+  if (!d) return;
+  try { sessionStorage.setItem(DRAFT_KEY + id, JSON.stringify({ ...d, ...patch })); } catch { /* best effort */ }
+}
+export function readDraft(id: string | null): RideDraft | null {
+  if (!id) return null;
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY + id);
+    return raw ? (JSON.parse(raw) as RideDraft) : null;
+  } catch { return null; }
+}
+
+/** Online payment at the end of the trip, for the locked fare (Razorpay Checkout). */
+export type Order = { payment_id: number; gateway: string; order_id?: string; gateway_order_id?: string; key_id?: string;
+  amount_paise?: string | number; currency?: string; description?: string;
+  prefill?: { name?: string; contact?: string; email?: string };
+  /** 13 Nov, US card through Stripe: the PaymentIntent the browser confirms. */
+  client_secret?: string; publishable_key?: string };
+export async function createOrder(tripId: string | number) {
+  return areaPost<Order>('/payments/create-order/', { trip_id: Number(tripId) });
+}
+export async function verifyPayment(body: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
+  return areaPost('/payments/verify/', { ...body, gateway: 'razorpay' });
+}
+/** Stripe has no client signature: the server re-reads the PaymentIntent (13 Nov). */
+export async function verifyStripePayment(orderId: string) {
+  return areaPost('/payments/verify/', { gateway_order_id: orderId, gateway: 'stripe' });
+}
+/** The fallback when online payment fails: the rider pays the driver in cash. */
+export async function payByCash(tripId: string | number) {
+  return areaPost('/payments/switch/', { trip_id: Number(tripId), new_method: 'cash' });
+}
+
+/** A card held at booking for the locked fare (14 Nov, USA; servers/payments/card_hold.py). */
+export type CardHold = { hold_id: number; client_secret: string | null; publishable_key: string; amount: string;
+  currency: string; status: string; test_mode: boolean };
+export const holdCard = (quoteId: string) => areaPost<CardHold>('/payments/card/hold/', { quote_id: quoteId });
+export const holdStatus = (id: number) => areaGet<{ hold_id: number; status: string }>(`/payments/card/hold/${id}/`);
+export const tipTrip = (id: string, body: { percent: number } | { amount: string }) =>
+  areaPost<{ tip_id: number; amount: string; currency: string }>(`/ride/trips/${id}/tip/`, body);
+export const reportImpairment = (id: string, description: string) =>
+  areaPost<{ ticket_id: number; driver_paused: boolean; message: string }>(`/ride/trips/${id}/report-impairment/`, { description });

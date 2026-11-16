@@ -18,6 +18,7 @@ import { landingFor } from '@/lib/landing';
 import { SosBar } from '@/components/console/shell/SosBar';
 import { TopBar } from '@/components/console/TopBar';
 import { RecoveryLowBanner } from '@/components/console/RecoveryLowBanner';
+import { ConsoleLegalLine } from '@/components/console/shell/ConsoleLegalLine';
 import '@/styles/console.css';
 
 /**
@@ -57,7 +58,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
   const [access, setAccess] = useState<AdminAccess | null | undefined>(undefined);
 
   useEffect(() => {
-    if (!readToken()) router.replace('/login');
+    if (!readToken()) router.replace('/ops/login');
     else setOperator(readOperator());
   }, [router, pathname]);
 
@@ -84,8 +85,8 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
   // sign-in page and remember where the operator was.
   useEffect(() => {
     const onEnded = () => {
-      const next = pathname && pathname !== '/login' ? `&next=${encodeURIComponent(pathname)}` : '';
-      router.replace(`/login?reason=expired${next}`);
+      const next = pathname && pathname !== '/ops/login' ? `&next=${encodeURIComponent(pathname)}` : '';
+      router.replace(`/ops/login?reason=expired${next}`);
     };
     window.addEventListener(CONSOLE_SESSION_ENDED, onEnded);
     return () => window.removeEventListener(CONSOLE_SESSION_ENDED, onEnded);
@@ -121,7 +122,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
 
   function signOut() {
     // Revokes a stored refresh token on the server before clearing (AUDIT 27.78).
-    void signOutConsole().finally(() => router.replace('/login'));
+    void signOutConsole().finally(() => router.replace('/ops/login'));
   }
 
   function toggleSidebar() {
@@ -203,6 +204,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
               </span>
             </div>
           ) : children}
+          <ConsoleLegalLine access={access ?? null} />
         </main>
       </div>
     </div>

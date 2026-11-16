@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { balance as loadBalance, daily, nextExpiry, period, vehicles as loadVehicles } from '@/lib/area/driver';
-import { money, rangeLabel, setMarketZone } from '@/lib/area/format';
+import { fullDate, money, rangeLabel, setMarketZone } from '@/lib/area/format';
 import { type FileTile, type Requirements, STEP_INFO, fixAt, setupHref } from '@/lib/area/requirements';
 import { blockingLabels, readyToDrive } from '@/lib/area/setupChecks';
 import { useLoad } from '@/lib/area/useLoad';
@@ -15,6 +15,26 @@ import { useRequirementsLoad } from './profile/shared';
 import { FilePill } from './setup/fields';
 
 /** While not approved: how far setup is, what is next and about how long it takes. */
+/**
+ * 14 Nov (owner): a suspended driver is told the account is paused, why, and how to reach support,
+ * never "Finish setting up".
+ */
+function PausedCard({ paused }: { paused: NonNullable<Requirements['paused']> }) {
+  const tr = useTr();
+  const { locale } = useLocale();
+  const since = fullDate(paused.since, locale);
+  return (
+    <section className="acard dr-setup" data-testid="paused-card" role="status">
+      <div className="agrow">
+        <h2 className="a20">{paused.permanent ? tr('Your account is closed') : tr('Your account is paused')}</h2>
+        <div className="amut">{tr(paused.reason)}</div>
+        <div className="a14 amut">{tr('Since {date}. You cannot go online until this is resolved.').replace('{date}', since)}</div>
+      </div>
+      <Link href="/driver/support" className="abtn abtn--pri dr-setup__go" data-testid="paused-support">{tr('Contact support')}</Link>
+    </section>
+  );
+}
+
 function SetupCard({ data }: { data: Requirements | null }) {
   const tr = useTr();
   const c = data?.checklist;
@@ -68,7 +88,7 @@ function DocumentsCard({ data, hasVehicle, noVehicle, failed, retry }: {
     <section className="acard" style={{ padding: 20 }} data-testid="documents-card">
       <div className="arow" style={{ justifyContent: 'space-between' }}>
         <h2 className="a20">{tr('Documents')}</h2>
-        <Link href="/driver/documents" className="aacc ab a14">{tr('Open all')}</Link>
+        <Link href="/driver/documents" className="aacc ab a14 ahit">{tr('Open all')}</Link>
       </div>
       {failed ? <LoadError what="documents" retry={retry} /> : !data ? <Skel h={20} lines={3} gap={18} style={{ marginTop: 16 }} /> : (
         <div style={{ marginTop: 8 }}>
@@ -116,7 +136,7 @@ export function DriverDashboard() {
     <>
       <DriverTop title={tr('Dashboard')} me={me} />
       <main className="dr-main">
-        <SetupCard data={req.data} />
+        {req.data?.paused ? <PausedCard paused={req.data.paused} /> : <SetupCard data={req.data} />}
         {soon && (
           <div className="anote">
             <span className="anote__icon"><IAlert /></span>
@@ -136,7 +156,7 @@ export function DriverDashboard() {
             <div className="albl">{tr('Today you earned')}</div>
             {today.state === 'error' ? <LoadError what="earnings" retry={today.retry} ink /> : t ? (
               <>
-                <div className="a40">{money(t.net, t.currency, locale)}</div>
+                <div className="a40">{money(t.earned ?? t.net, t.currency, locale)}</div>
                 <div className="a14">{tr('{n} trips').replace('{n}', `${t.trips}`)}</div>
               </>
             ) : <Skel h={40} w={140} />}
@@ -145,7 +165,7 @@ export function DriverDashboard() {
             <div className="albl">{tr('This week')}</div>
             {week.state === 'error' ? <LoadError what="earnings" retry={week.retry} /> : w ? (
               <>
-                <div className="a40">{money(w.net, w.currency, locale)}</div>
+                <div className="a40">{money(w.earned ?? w.net, w.currency, locale)}</div>
                 <div className="a14">{rangeLabel(w.start, w.end, locale)} · {tr('{n} trips').replace('{n}', `${w.trips}`)}</div>
               </>
             ) : <Skel h={40} w={140} />}
@@ -155,7 +175,8 @@ export function DriverDashboard() {
             {bal.state === 'error' ? <LoadError what="balance" retry={bal.retry} /> : b ? (
               <div className="a40">{money(b.available_balance ?? 0, b.currency ?? cur, locale)}</div>
             ) : <Skel h={40} w={140} />}
-            <div className="a14">{tr('Earned minus cash you collected')}</div>
+            {/* Idaho bans cash (49-3712): the cash half of the line only where cash is taken. */}
+            {today.data?.cash_allowed !== false && <div className="a14">{tr('Earned minus cash you collected')}</div>}
           </div>
         </div>
         <div className="dr-grid2">
@@ -172,7 +193,7 @@ export function DriverDashboard() {
             <section className="acard" style={{ padding: 20 }}>
               <div className="arow" style={{ justifyContent: 'space-between' }}>
                 <h2 className="a20">{tr('Last 7 days')}</h2>
-                <Link href="/driver/earnings" className="aacc ab a14">{tr('See earnings')}</Link>
+                <Link href="/driver/earnings" className="aacc ab a14 ahit">{tr('See earnings')}</Link>
               </div>
               <WeekChart load={days} currency={cur} />
             </section>

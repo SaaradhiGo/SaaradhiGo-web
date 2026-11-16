@@ -1,12 +1,13 @@
 'use client';
 
+import { DeleteAccountSheet } from '../DeleteAccountSheet';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { LANGUAGES, LANGUAGE_INFO, type Language } from '@/i18n/locales';
 import { useTr } from '@/i18n/website';
 import { vehicles as loadVehicles } from '@/lib/area/driver';
-import { dateOrder, monthYear, numericDate } from '@/lib/area/format';
+import { dateOrder, dateTime, monthYear, shownDate } from '@/lib/area/format';
 import {
   type ItemStatus, type StepKey, type StepStatus, STATUS_LABEL, setupHref, worst,
 } from '@/lib/area/requirements';
@@ -51,7 +52,8 @@ function Card({ id, icon, title, state, step, rows, href, open = false }: {
 function PrefsCard() {
   const tr = useTr();
   const { language, setLanguage } = useLocale();
-  const { both, switchTo } = useArea();
+  const { both, switchTo, signOut } = useArea();
+  const [deleting, setDeleting] = useState(false);
   const [acct] = useAccount();
   const [editing, setEditing] = useState(false);
   const [dark, setDark] = useState(false);
@@ -85,6 +87,11 @@ function PrefsCard() {
       {editing && both && (
         <button type="button" className="su-link a14" style={{ marginTop: 12, textAlign: 'left' }} onClick={() => switchTo('rider')}>{tr('Switch to rider')}</button>
       )}
+      {editing && (
+        <button type="button" className="su-link a14 ared" style={{ marginTop: 12, textAlign: 'left' }}
+          onClick={() => setDeleting(true)} data-testid="driver-delete-account">{tr('Delete account')}</button>
+      )}
+      {deleting && <DeleteAccountSheet onClose={() => setDeleting(false)} onClosed={() => signOut()} />}
       <button type="button" className="su-link a14 pf-go" onClick={() => setEditing(!editing)}>{tr(editing ? 'Done' : 'Edit')} {editing ? '' : '→'}</button>
     </section>
   );
@@ -151,14 +158,14 @@ export function DriverProfile() {
         {data && p && id && pm && (
           <div className="pf-grid">
             <Card id="personal" icon={<IUser />} title={tr('Personal details')} state={stepState(data, 'personal')} href={edit('personal')} rows={[
-              [tr('Date of birth'), numericDate(p.dob, order)],
+              [tr('Date of birth'), shownDate(p.dob, order)],
               [tr('Email'), acct?.email ?? ''],
               [tr('Address'), p.address ? `${[p.address.line2 || p.address.line1, p.address.city].filter(Boolean).join(', ')} ${p.address.postal_code}` : ''],
             ]} />
             <Card id="contacts" icon={<IPhone />} title={tr('Emergency contacts')} state={stepState(data, 'contact')} step="contact" href={edit('contact')}
               rows={p.emergency_contacts.length ? p.emergency_contacts.map((c) => [`${c.name} (${contactRel(c.relationship)})`, spacedPhone(c.phone_number)]) : [[tr('Contact'), '']]} />
             <Card id="identity" icon={<IDoc />} title={tr('Licence and identity')} state={stepState(data, 'identity')} href={edit('identity')} open rows={[
-              [tr('Licence'), id.license_expiry ? tr('Valid until {d}').replace('{d}', numericDate(id.license_expiry, order)) : ''],
+              [tr('Licence'), id.license_expiry ? tr('Valid until {d}').replace('{d}', shownDate(id.license_expiry, order)) : ''],
               ...(item(data, 'aadhaar') ? [[tr('Aadhaar'), id.aadhaar_masked ? `•••• ${id.aadhaar_masked.slice(-4)}` : '']] as [string, string][] : []),
               ...(item(data, 'pan') ? [[tr('PAN'), id.pan_masked ?? '']] as [string, string][] : []),
               ...(item(data, 'police_verification') ? [[tr('Police verification'), label(item(data, 'police_verification')?.status)]] as [string, string | null][] : []),
@@ -179,7 +186,7 @@ export function DriverProfile() {
                 : [
                   [tr('Paid to'), pm.bank ? `${pm.bank.bank_name} ${pm.bank.account_masked}` : pm.upi_masked ? `UPI ${pm.upi_masked}` : ''],
                   [tr('Verified'), pm.bank ? tr(VERIFY[pm.bank.verification_status] ?? pm.bank.verification_status) : label(worst([item(data, 'payout_method')?.status ?? 'missing']))],
-                  ...(pm.held_until ? [[tr('Payouts paused until'), new Date(pm.held_until).toLocaleString(locale)]] as [string, string][] : []),
+                  ...(pm.held_until ? [[tr('Payouts paused until'), dateTime(pm.held_until, locale)]] as [string, string][] : []),
                 ]} />
             <PrefsCard />
           </div>

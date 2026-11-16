@@ -1,7 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Masthead } from './PageShell';
 import { usePages } from '@/i18n/usePages';
+import { useLegal } from '@/components/sg/LegalProvider';
+import { type StateRules, fetchStateRules } from '@/lib/legal';
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/support';
 
 /**
@@ -21,6 +24,11 @@ import { SUPPORT_EMAIL, SUPPORT_MAILTO } from '@/lib/support';
  */
 export function ContactContent() {
   const p = usePages().contact;
+  const { market, entity } = useLegal();
+  // 14 Nov (USA): the agent for service of process in Idaho (Idaho Code 49-3705), once configured.
+  const [rules, setRules] = useState<Record<string, StateRules>>({});
+  useEffect(() => { if (market === 'US') void fetchStateRules().then(setRules); }, [market]);
+  const agent = market === 'US' ? rules['US-ID']?.service_agent : undefined;
 
   return (
     <>
@@ -39,6 +47,21 @@ export function ContactContent() {
             <p className="hp-hint">{p.emailHint}</p>
           </div>
         </div>
+
+        {market === 'US' && (
+          <div className="hp-block" data-testid="us-legal-contact">
+            <h2>{entity.legal_name}</h2>
+            <div>
+              <p>SaaradhiGo in the United States is operated by {entity.legal_name}.</p>
+              {agent?.name ? (
+                <p data-testid="idaho-agent">
+                  Agent for service of process in Idaho: {agent.name}
+                  {agent.address ? `, ${agent.address}` : ''}{agent.phone ? `, ${agent.phone}` : ''}.
+                </p>
+              ) : null}
+            </div>
+          </div>
+        )}
 
         <ul className="hp-topics">
           {p.routes.map((r) => (

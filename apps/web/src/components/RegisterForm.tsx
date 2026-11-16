@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Alert, Field, SubmitButton } from '@/components/form';
+import { SmsConsent, saveSmsMarketingConsent } from '@/components/SmsConsent';
 import PhoneField, { usePhoneMarkets } from '@/components/PhoneField';
 import { useSite } from '@/i18n/site';
 import { useTr } from '@/i18n/website';
@@ -97,6 +98,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
   const auth = useSite().auth;
 
   const [fullName, setFullName] = useState('');
+  const [marketingSms, setMarketingSms] = useState(false);
   const [country, setCountry] = useState('');
   const [national, setNational] = useState('');
   const [email, setEmail] = useState('');
@@ -208,6 +210,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
         // handing back a "go and sign in" link. This is what returns a
         // rider to the booking they abandoned to register.
         await signInWithEmail(email, password, role);
+        await saveSmsMarketingConsent(marketingSms);
         window.location.assign(next);
         return;
       }
@@ -270,6 +273,7 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
     setBusy(true);
     try {
       await verifyPublicOtp(toE164(market, national), otp, role);
+      await saveSmsMarketingConsent(marketingSms);
       // The name and the address were typed on the first step; the code
       // route creates the account from the number alone, so they are
       // attached now. A failure here does not undo a valid sign-in --
@@ -311,7 +315,9 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
     );
   }
 
-  const tabs = (
+  // 14 Nov (owner): a driver signs up with one form (name, mobile, email, password); the mobile is
+  // required for drivers either way, so Email/Mobile tabs meant nothing there.
+  const tabs = role === 'driver' ? null : (
     <div className="s-seg" role="tablist" aria-label={tr('Sign up with')}>
       {(['email', 'mobile'] as const).map((t) => (
         <button
@@ -451,6 +457,8 @@ export default function RegisterForm({ role }: { role: PublicRole }) {
           />
         )}
       </div>
+
+      <SmsConsent marketing={marketingSms} onMarketing={setMarketingSms} us={toE164(market, national).startsWith('+1')} />
 
       {tab === 'email' ? (
         <>

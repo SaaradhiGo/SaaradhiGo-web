@@ -23,7 +23,7 @@ import { TopBar } from '@/components/console/TopBar';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn(), prefetch: vi.fn() }),
-  usePathname: () => '/dashboard',
+  usePathname: () => '/ops/dashboard',
 }));
 vi.mock('next/link', () => ({
   default: function LinkStub({ href, children, ...rest }: React.ComponentProps<'a'> & { href: string }) {
@@ -126,36 +126,36 @@ const ROW: CityRow = {
 };
 
 const NAV = {
-  super_admin: ['/dashboard', '/live-ops', '/trips', '/safety-ops', '/support', '/drivers', '/kyc', '/riders', '/finance', '/finance/payments', '/finance/payouts', '/finance/reconciliation', '/promotions', '/promotions/incentives', '/promotions/referrals', '/notifications', '/settings', '/zones', '/pricing', '/settings/integrations', '/approvals', '/fraud', '/settings/audit', '/settings/staff', '/settings/data-requests', '/reports', '/settings/security'],
-  city_ops_manager: ['/dashboard', '/live-ops', '/trips', '/safety-ops', '/support', '/drivers', '/kyc', '/riders', '/promotions', '/promotions/incentives', '/promotions/referrals', '/notifications', '/settings', '/zones', '/pricing', '/settings/integrations', '/approvals', '/fraud', '/settings/audit', '/reports', '/settings/security'],
-  support_agent: ['/dashboard', '/trips', '/support', '/drivers', '/kyc', '/riders', '/notifications', '/settings/security'],
-  support_lead: ['/dashboard', '/trips', '/support', '/drivers', '/kyc', '/riders', '/notifications', '/settings/security'],
-  safety_officer: ['/dashboard', '/live-ops', '/trips', '/safety-ops', '/support', '/drivers', '/kyc', '/riders', '/settings/security'],
-  kyc_verifier: ['/drivers', '/kyc', '/settings/security'],
-  finance: ['/dashboard', '/trips', '/support', '/drivers', '/kyc', '/riders', '/finance', '/finance/payments', '/finance/payouts', '/finance/reconciliation', '/promotions', '/promotions/incentives', '/promotions/referrals', '/pricing', '/approvals', '/reports', '/settings/security'],
+  super_admin: ['/ops/dashboard', '/ops/live-ops', '/ops/trips', '/ops/safety-ops', '/ops/support', '/ops/drivers', '/ops/kyc', '/ops/riders', '/ops/finance', '/ops/finance/payments', '/ops/finance/payouts', '/ops/finance/reconciliation', '/ops/promotions', '/ops/promotions/incentives', '/ops/promotions/referrals', '/ops/notifications', '/ops/settings', '/ops/zones', '/ops/pricing', '/ops/settings/integrations', '/ops/approvals', '/ops/fraud', '/ops/settings/audit', '/ops/settings/staff', '/ops/settings/data-requests', '/ops/reports', '/ops/settings/security'],
+  city_ops_manager: ['/ops/dashboard', '/ops/live-ops', '/ops/trips', '/ops/safety-ops', '/ops/support', '/ops/drivers', '/ops/kyc', '/ops/riders', '/ops/promotions', '/ops/promotions/incentives', '/ops/promotions/referrals', '/ops/notifications', '/ops/settings', '/ops/zones', '/ops/pricing', '/ops/settings/integrations', '/ops/approvals', '/ops/fraud', '/ops/settings/audit', '/ops/reports', '/ops/settings/security'],
+  support_agent: ['/ops/dashboard', '/ops/trips', '/ops/support', '/ops/drivers', '/ops/kyc', '/ops/riders', '/ops/notifications', '/ops/settings/security'],
+  support_lead: ['/ops/dashboard', '/ops/trips', '/ops/support', '/ops/drivers', '/ops/kyc', '/ops/riders', '/ops/notifications', '/ops/settings/security'],
+  safety_officer: ['/ops/dashboard', '/ops/live-ops', '/ops/trips', '/ops/safety-ops', '/ops/support', '/ops/drivers', '/ops/kyc', '/ops/riders', '/ops/settings/security'],
+  kyc_verifier: ['/ops/drivers', '/ops/kyc', '/ops/settings/security'],
+  finance: ['/ops/dashboard', '/ops/trips', '/ops/support', '/ops/drivers', '/ops/kyc', '/ops/riders', '/ops/finance', '/ops/finance/payments', '/ops/finance/payouts', '/ops/finance/reconciliation', '/ops/promotions', '/ops/promotions/incentives', '/ops/promotions/referrals', '/ops/pricing', '/ops/approvals', '/ops/reports', '/ops/settings/security'],
   // Owner ruling 4: Marketing keeps the Command Centre (aggregates only).
-  marketing: ['/dashboard', '/live-ops', '/promotions', '/promotions/incentives', '/promotions/referrals', '/notifications', '/approvals', '/fraud', '/reports', '/settings/security'],
-  analyst: ['/dashboard', '/live-ops', '/trips', '/drivers', '/kyc', '/riders', '/promotions', '/promotions/incentives', '/promotions/referrals', '/pricing', '/reports', '/settings/security'],
+  marketing: ['/ops/dashboard', '/ops/live-ops', '/ops/promotions', '/ops/promotions/incentives', '/ops/promotions/referrals', '/ops/notifications', '/ops/approvals', '/ops/fraud', '/ops/reports', '/ops/settings/security'],
+  analyst: ['/ops/dashboard', '/ops/live-ops', '/ops/trips', '/ops/drivers', '/ops/kyc', '/ops/riders', '/ops/promotions', '/ops/promotions/incentives', '/ops/promotions/referrals', '/ops/pricing', '/ops/reports', '/ops/settings/security'],
 } as const;
 
 /** Every destination on the city board (a tile or a queue), without the city query. */
 const BOARD = {
-  super_admin: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online', '/finance/payouts',
-    '/safety-ops', '/support', '/drivers?approved=false'],
-  city_ops_manager: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online',
-    '/safety-ops', '/support', '/drivers?approved=false'],
-  support_agent: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online',
-    '/support', '/drivers?approved=false'],
-  support_lead: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online',
-    '/support', '/drivers?approved=false'],
-  safety_officer: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online',
-    '/safety-ops', '/support', '/drivers?approved=false'],
-  kyc_verifier: ['/drivers?status=online', '/drivers?approved=false'],
-  finance: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online', '/finance/payouts',
-    '/support', '/drivers?approved=false'],
+  super_admin: ['/ops/trips', '/ops/trips?status=completed', '/ops/trips?status=cancelled', '/ops/drivers?status=online', '/ops/finance/payouts',
+    '/ops/safety-ops', '/ops/support', '/ops/drivers?approved=false'],
+  city_ops_manager: ['/ops/trips', '/ops/trips?status=completed', '/ops/trips?status=cancelled', '/ops/drivers?status=online',
+    '/ops/safety-ops', '/ops/support', '/ops/drivers?approved=false'],
+  support_agent: ['/ops/trips', '/ops/trips?status=completed', '/ops/trips?status=cancelled', '/ops/drivers?status=online',
+    '/ops/support', '/ops/drivers?approved=false'],
+  support_lead: ['/ops/trips', '/ops/trips?status=completed', '/ops/trips?status=cancelled', '/ops/drivers?status=online',
+    '/ops/support', '/ops/drivers?approved=false'],
+  safety_officer: ['/ops/trips', '/ops/trips?status=completed', '/ops/trips?status=cancelled', '/ops/drivers?status=online',
+    '/ops/safety-ops', '/ops/support', '/ops/drivers?approved=false'],
+  kyc_verifier: ['/ops/drivers?status=online', '/ops/drivers?approved=false'],
+  finance: ['/ops/trips', '/ops/trips?status=completed', '/ops/trips?status=cancelled', '/ops/drivers?status=online', '/ops/finance/payouts',
+    '/ops/support', '/ops/drivers?approved=false'],
   marketing: [],
-  analyst: ['/trips', '/trips?status=completed', '/trips?status=cancelled', '/drivers?status=online',
-    '/drivers?approved=false'],
+  analyst: ['/ops/trips', '/ops/trips?status=completed', '/ops/trips?status=cancelled', '/ops/drivers?status=online',
+    '/ops/drivers?approved=false'],
 } as const;
 
 const strip = (href: string) => href.replace(/[?&]scope=[^&]*/, '').replace(/\?$/, '');
@@ -206,8 +206,8 @@ describe('the link rule, by role template', () => {
       const t = TEMPLATES[role].permissions;
       const found = hrefs(container).sort();
       const want = [
-        ...(t.includes('support.read') ? ['/support/inbox'] : []),
-        ...(t.includes('safety.read') || t.includes('safety.respond') ? ['/safety-ops'] : []),
+        ...(t.includes('support.read') ? ['/ops/support/inbox'] : []),
+        ...(t.includes('safety.read') || t.includes('safety.respond') ? ['/ops/safety-ops'] : []),
       ].sort();
       expect(found).toEqual(want);
     });
@@ -225,6 +225,6 @@ describe('the link rule, by role template', () => {
     const { container } = render(<CityBoard row={ROW} access={null} single />);
     expect(hrefs(container)).toEqual([]);
     expect(visibleGroups(null, NAV_GROUPS).flatMap((g) => g.items.map((i) => i.href)))
-      .toEqual(['/settings/security']);
+      .toEqual(['/ops/settings/security']);
   });
 });

@@ -13,8 +13,12 @@
  * because the platform is: a new state in a new time zone is one line.
  */
 const ZONES: Array<[prefix: string, tz: string]> = [
+  // 14 Nov (owner): the Treasure Valley (US-ID-TV) is Boise, Mountain time. The console showed its
+  // support case at "19:58 EST" because every US code fell to New York.
+  ['US-ID', 'America/Boise'],
   ['US-TX', 'America/Chicago'],
-  ['US', 'America/New_York'],
+  // A US-wide row: the backend's US default (base/countries.py), Boise, the only US market.
+  ['US', 'America/Boise'],
   ['IN', 'Asia/Kolkata'],
 ];
 
@@ -26,10 +30,30 @@ export function timeZoneFor(scopeCode: string | null | undefined): string | unde
   return hit?.[1];
 }
 
+/**
+ * The zone a row's city keeps: the IANA name the API sent with it when it did (`timezone`, from
+ * the city's service zone), else the one its code maps to. No city: undefined, so `stamp` keeps
+ * today's behaviour (UTC, labelled) or the caller's scope zone.
+ */
+export function cityTimeZone(
+  city: { code?: string | null; timezone?: string | null } | string | null | undefined,
+): string | undefined {
+  if (!city) return undefined;
+  if (typeof city === 'string') return timeZoneFor(city);
+  return city.timezone || timeZoneFor(city.code);
+}
+
 /** "IST", "CDT" -- the short name a person would say. */
 export function zoneAbbreviation(timeZone: string | null | undefined): string {
   return zoneLabelAt(new Date(), timeZone || 'UTC');
 }
+
+/**
+ * 15 Nov (owner): a US city's times in US style ("Nov 14, 7:58 PM MST"); India keeps "14 Nov, 19:58 IST".
+ */
+const usZone = (timeZone: string | null | undefined) => !!timeZone && timeZone.startsWith('America/');
+/** Intl puts a narrow no-break space before AM/PM; a plain space reads and searches the same. */
+const plain = (s: string) => s.replace(/[  ]/g, ' ');
 
 function parse(iso: string | null | undefined): Date | null {
   if (!iso) return null;
@@ -37,11 +61,14 @@ function parse(iso: string | null | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** 24-hour clock, e.g. "14:05". */
+/** "14:05"; a US city's "2:05 PM". */
 export function clock(iso: string | null | undefined, timeZone?: string | null): string {
   const d = parse(iso);
   if (!d) return '—';
   try {
+    if (usZone(timeZone)) {
+      return plain(new Intl.DateTimeFormat('en-US', { timeZone: timeZone!, hour: 'numeric', minute: '2-digit', hour12: true }).format(d));
+    }
     return new Intl.DateTimeFormat('en-GB', {
       timeZone: timeZone || 'UTC', hour: '2-digit', minute: '2-digit', hour12: false,
     }).format(d);
@@ -69,9 +96,11 @@ export function stamp(iso: string | null | undefined, timeZone?: string | null):
   if (!d) return '—';
   const tz = timeZone || 'UTC';
   try {
-    const text = new Intl.DateTimeFormat('en-GB', {
-      timeZone: tz, day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
-    }).format(d);
+    const text = usZone(tz)
+      ? plain(new Intl.DateTimeFormat('en-US', { timeZone: tz, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }).format(d))
+      : new Intl.DateTimeFormat('en-GB', {
+        timeZone: tz, day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
+      }).format(d);
     const label = zoneLabelAt(d, tz);
     return label ? `${text} ${label}` : text;
   } catch {
@@ -82,10 +111,25 @@ export function stamp(iso: string | null | undefined, timeZone?: string | null):
 /** "Monday 27 October" for the page header. */
 export function longDate(date: Date, timeZone?: string): string {
   try {
-    return new Intl.DateTimeFormat('en-GB', {
+    return new Intl.DateTimeFormat(usZone(timeZone) ? 'en-US' : 'en-GB', {
       timeZone, weekday: 'long', day: 'numeric', month: 'long',
     }).format(date);
   } catch {
     return date.toDateString();
   }
+}
+
+/**
+ * A calendar date ("2028-10-31" or an ISO timestamp) as the market writes it: dd/mm/yyyy for India
+ * (the default), "Oct 31, 2028" for the USA (15 Nov). Never shifted by a time zone: it is a date.
+ */
+export function marketDate(iso: string | null | undefined, country: string = 'IN'): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? '');
+  if (!m) return iso ?? '';
+  const [, y, mo, d] = m;
+  if (country.toUpperCase() === 'US') {
+    const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(mo) - 1];
+    return month ? `${month} ${Number(d)}, ${y}` : `${mo}/${d}/${y}`;
+  }
+  return `${d}/${mo}/${y}`;
 }

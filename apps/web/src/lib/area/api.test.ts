@@ -1,14 +1,9 @@
 /**
- * Gate (8 Nov): an expired session never leaves a page loading. A 401 that a
- * renewal cannot fix signs out cleanly -- the role cookie first, then the
- * tokens -- and goes to Log in with a message; a renewal that works sends the
- * request again instead.
+ * Gate (8 Nov): an expired session never leaves a page loading. 14 Nov: the server renews the
+ * session (lib/session/bff.ts); a 401 that reaches the page means it could not, so the page signs
+ * out cleanly -- the role cookie first -- and goes to Log in with a message.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-const B64 = (o: object) => btoa(JSON.stringify(o)).replace(/=+$/, '');
-const jwt = (exp: number) => `h.${B64({ exp })}.s`;
-const LATER = () => Math.floor(Date.now() / 1000) + 600;
 
 const calls: string[] = [];
 let answer: (url: string) => Response;
@@ -19,8 +14,7 @@ beforeEach(() => {
   calls.length = 0;
   assign.mockReset();
   localStorage.clear();
-  localStorage.setItem('saaradhi_rider_access_token', jwt(LATER()));
-  localStorage.setItem('saaradhi_rider_refresh_token', 'r1');
+  document.cookie = 'sg-rider-in=1; path=/';
   vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
     calls.push(`${init?.method ?? 'GET'} ${String(url).replace(/^https?:\/\/[^/]+/, '')}`);
     return answer(String(url));
@@ -35,36 +29,30 @@ afterEach(() => { vi.unstubAllGlobals(); });
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
 describe('area requests and an expired session', () => {
-  it('401 and the refresh refused: sign out and go to Log in with a message', async () => {
-    answer = (url) => (url.includes('/auth/refresh/') ? json(400, {}) : url.endsWith('/api/session') ? json(200, {}) : json(401, {}));
+  it('401 (the server could not renew): sign out and go to Log in with a message', async () => {
+    answer = (url) => (url.endsWith('/api/session') ? json(200, {}) : json(401, {}));
     const { areaGet } = await import('./api');
     await expect(areaGet('/driver/earnings/period/?period=today')).rejects.toMatchObject({ status: 401 });
     await vi.waitFor(() => expect(assign).toHaveBeenCalled());
     expect(assign).toHaveBeenCalledWith('/driver/sign-in?ended=1&next=%2Fdriver%2Fearnings');
     expect(calls).toContain('DELETE /api/session');
-    expect(localStorage.getItem('saaradhi_rider_access_token')).toBeNull();
-    expect(localStorage.getItem('saaradhi_rider_refresh_token')).toBeNull();
+    expect(calls).toContain('GET /api/rider?to=/driver/earnings/period/?period=today');
   });
 
-  it('401, then the refresh works: the request is sent again and nobody is signed out', async () => {
-    let first = true;
-    answer = (url) => {
-      if (url.includes('/auth/refresh/')) return json(200, { data: { token: jwt(LATER() + 60), refresh_token: 'r2' } });
-      if (first) { first = false; return json(401, {}); }
-      return json(200, { data: { ok: true } });
-    };
+  it('answered: no sign-out, and the call went through the rider session route', async () => {
+    answer = () => json(200, { data: { ok: true } });
     const { areaGet } = await import('./api');
     await expect(areaGet('/driver/earnings/period/?period=today')).resolves.toEqual({ ok: true });
     expect(assign).not.toHaveBeenCalled();
-    expect(localStorage.getItem('saaradhi_rider_refresh_token')).toBe('r2');
+    expect(calls).toEqual(['GET /api/rider?to=/driver/earnings/period/?period=today']);
   });
 
-  it('no token at all: never sent as the console session, and the visitor goes to Log in', async () => {
-    localStorage.clear();
+  it('no session at all: never sent as the console session, and the visitor goes to Log in', async () => {
+    document.cookie = 'sg-rider-in=; path=/; max-age=0';
     answer = (url) => (url.endsWith('/api/session') ? json(200, {}) : json(401, {}));
     const { areaGet } = await import('./api');
     await expect(areaGet('/driver/earnings/daily/')).rejects.toMatchObject({ status: 401 });
     await vi.waitFor(() => expect(assign).toHaveBeenCalled());
-    expect(calls.filter((c) => c.includes('/driver/earnings/daily/'))).toHaveLength(1);
+    expect(calls.filter((c) => c.includes('/api/staff'))).toHaveLength(0);
   });
 });

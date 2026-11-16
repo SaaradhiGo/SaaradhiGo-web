@@ -2,12 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { saveDraft } from '@/lib/area/rider';
+import { suggestionLines } from '@/lib/area/places';
 import { DropMark, PickupMark } from '@/components/art/MiniMaps';
 import { LocateIcon } from '@/components/sg/SiteIcons';
-import { LatLng, Place, placeToPoint, searchPlaces, serviceabilityAt } from '@/lib/booking';
+import { LatLng, Place, placeToPoint, serviceabilityAt } from '@/lib/booking';
+import { SearchStatus, usePlaceSearch } from '@/lib/usePlaceSearch';
+import { useTr } from '@/i18n/website';
 import { fetchServiceAreas, primaryArea } from '@/lib/serviceAreas';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useSite } from '@/i18n/site';
+import { useLegal } from '@/components/sg/LegalProvider';
 import { SITE_FLAGS } from '@/lib/siteFlags';
 
 /**
@@ -58,41 +63,31 @@ export function HeroBooking() {
   const [pickupPoint, setPickupPoint] = useState<{ lat: number; lng: number } | null>(null);
 
   const [active, setActive] = useState<'pickup' | 'dest' | null>(null);
-  const [suggestions, setSuggestions] = useState<Place[]>([]);
   const [errors, setErrors] = useState<{ pickup?: string; dest?: string }>({});
   const [busy, setBusy] = useState(false);
   const [locating, setLocating] = useState(false);
-  /** A reason the suggestion list is empty, when there is one worth saying. */
-  const [searchNote, setSearchNote] = useState<string | null>(null);
   // Where to bias the place search. Starts as the first live service area
   // and is replaced by the rider's own position the moment they share it.
   const [searchNear, setSearchNear] = useState<LatLng | null>(null);
-  // The active city: suggestions are RESTRICTED to its zone (owner, 2026-11-06).
-  const [area, setArea] = useState<{ code: string; name: string } | null>(null);
+  // 14 Nov (owner): the pickup point decides the market. Suggestions come from every country we
+  // operate in (IN, US), ranked nearest the visitor: their location, else the country chosen in
+  // the header, else their account's market. No longer restricted to one city's zone.
+  const { market } = useLegal();
+  /** The chosen market's launch city: the bias until the visitor shares their location. */
+  const [marketCentre, setMarketCentre] = useState<LatLng | null>(null);
   /** Coordinates of the chosen places, resolved once on choosing. */
   const [resolved, setResolved] = useState<{ pickup?: LatLng; dest?: LatLng }>({});
   const { t } = useLocale();
   const h = useSite().home;
-  // The phone design words the pickup as an invitation to use the location.
-  const [phone, setPhone] = useState(false);
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') return;
-    const mq = window.matchMedia('(max-width: 767px)');
-    const on = () => setPhone(mq.matches);
-    on();
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
     fetchServiceAreas()
       .then((areas) => {
-        const area = primaryArea(areas);
-        if (!cancelled && area) setArea({ code: area.zone.code, name: area.zone.city || area.zone.name });
+        const mine = areas.filter((a) => (a.zone as { country?: string }).country === market);
+        const area = primaryArea(mine.length ? mine : areas);
         if (!cancelled && area?.centre) {
           // Only as a default: an explicit location wins, and is set below.
-          setSearchNear((current) => current ?? area.centre);
+          setMarketCentre(area.centre);
         }
       })
       .catch(() => {
@@ -101,55 +96,29 @@ export function HeroBooking() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [market]);
 
-  // Debounced lookup, and only for the field being typed in.
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (!active) return;
-    const text = active === 'pickup' ? pickupText : destText;
-    if (text.trim().length < 3) {
-      setSuggestions([]);
-      return;
-    }
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      searchPlaces(text, searchNear, active === 'pickup' ? 'pickup' : 'drop', area?.code)
-        .then((places) => {
-          setSuggestions(places);
-          setSearchNote(null);
-        })
-        .catch((err) => {
-          setSuggestions([]);
-          // A rate limit is a REASON, not an empty result. The guest cap is
-          // shared across anonymous callers, so a visitor can hit it through
-          // no fault of their own; showing nothing leaves them retyping into
-          // a box that will never answer. 429 says wait, or sign in -- a
-          // signed-in rider bypasses the cap entirely.
-          const status = (err as { status?: number } | null)?.status;
-          setSearchNote(status === 429 ? t.validation.searchThrottled : null);
-        });
-    }, 300); // 300 ms after the last keystroke (maps cost, 9 Nov)
-    return () => {
-      if (timer.current) clearTimeout(timer.current);
-    };
-    // `t` is in the deps because the throttle note is a translated string:
-    // without it, switching language mid-search would leave the previous
-    // language's message on screen. `searchNear` is here so that sharing a
-    // location re-runs the search around the rider rather than leaving the
-    // city-centre results on screen.
-  }, [active, pickupText, destText, searchNear, area?.code, t.validation.searchThrottled]);
+  // 14 Nov: one lookup for every search box (lib/usePlaceSearch): "Searching…" while it waits,
+  // "Can't search right now" when it could not, and a later answer always wins.
+  const search = usePlaceSearch(active === 'pickup' ? pickupText : active === 'dest' ? destText : '', {
+    near: searchNear ?? marketCentre,
+    field: active === 'pickup' ? 'pickup' : 'drop',
+    market,
+    skip: !active || (active === 'pickup' ? Boolean(pickupPlace) : Boolean(destPlace)),
+  });
+  const suggestions = search.found;
+  const tr = useTr();
 
   function choose(place: Place) {
     const which = active === 'pickup' ? 'pickup' : 'dest';
     if (which === 'pickup') {
       setPickupPlace(place);
-      setPickupText(place.description);
+      setPickupText(suggestionLines(place).short);
     } else {
       setDestPlace(place);
-      setDestText(place.description);
+      setDestText(suggestionLines(place).short);
     }
-    setSuggestions([]);
+    search.clear();
     setActive(null);
     // A place outside every service area says so at once, not at booking.
     void placeToPoint(place.place_id, which === 'pickup' ? 'pickup' : 'drop')
@@ -157,8 +126,9 @@ export function HeroBooking() {
         if (!point) return;
         setResolved((r) => ({ ...r, [which]: point }));
         const where = await serviceabilityAt(point).catch(() => null);
-        if (where && !where.serviceable && area) {
-          setErrors((p) => ({ ...p, [which]: t.validation.notInArea.replace('{area}', area.name) }));
+        // Outside every zone: "We're not in this area yet" (14 Nov).
+        if (where && !where.serviceable) {
+          setErrors((p) => ({ ...p, [which]: t.validation.notInArea }));
         }
       })
       .catch(() => { /* resolved again at submit */ });
@@ -170,43 +140,40 @@ export function HeroBooking() {
     const next: { pickup?: string; dest?: string } = {};
     if (!pickupText.trim()) next.pickup = t.validation.pickupRequired;
     if (!destText.trim()) next.dest = t.validation.destRequired;
+    // 14 Nov (owner): text typed but not chosen from the list is not a place. Stay, and say so
+    // under that field, instead of going to the booking page with nothing to price.
+    if (!next.pickup && !pickupPlace && !pickupPoint) next.pickup = tr('Choose a place from the list');
+    if (!next.dest && !destPlace) next.dest = tr('Choose a place from the list');
     setErrors(next);
-    if (Object.keys(next).length > 0) return;
-
-    setBusy(true);
-    const params = new URLSearchParams();
-
-    // A chosen place resolves to coordinates, which is what `/book` prefers.
-    // If resolution fails the text still travels: the booking page can search
-    // for it again, and nothing here pretends it was pinned.
-    try {
-      if (pickupPoint) {
-        params.set('pickup', `${pickupPoint.lat},${pickupPoint.lng}`);
-      } else if (pickupPlace) {
-        const p = resolved.pickup ?? await placeToPoint(pickupPlace.place_id);
-        if (p) params.set('pickup', `${p.lat},${p.lng}`);
-      }
-      if (destPlace) {
-        const d = resolved.dest ?? await placeToPoint(destPlace.place_id, 'drop');
-        if (d) params.set('dest', `${d.lat},${d.lng}`);
-      }
-    } catch {
-      // Fall through to the text handoff below.
+    if (Object.keys(next).length > 0) {
+      setActive(next.pickup ? 'pickup' : 'dest');
+      return;
     }
 
-    if (!params.has('dest') && destText.trim()) params.set('q', destText.trim());
-
-    // THE WORDS TRAVEL, NOT JUST THE COORDINATES. `/book` used to receive
-    // only lat/lng, so it showed a rider "17.38500, 78.48670" where they had
-    // typed "Banjara Hills". Sending the label they actually chose lets the
-    // next screen repeat their trip back to them in their own words, which
-    // matters most to a signed-out visitor who has to sign in before going
-    // any further.
-    if (pickupText.trim()) params.set('pickup_label', pickupText.trim());
-    if (destText.trim()) params.set('dest_label', destText.trim());
-
+    setBusy(true);
+    // 13 Nov (owner): /book is gone. The places go to the rider's booking as a draft in this tab:
+    // /ride/choose shows the fares (a visitor signs in first and comes back to them). Without both
+    // places resolved there is nothing to price yet, so the booking page opens to finish them.
+    let from: LatLng | null = pickupPoint ?? null;
+    let to: LatLng | null = null;
+    try {
+      if (!from && pickupPlace) from = resolved.pickup ?? await placeToPoint(pickupPlace.place_id);
+      if (destPlace) to = resolved.dest ?? await placeToPoint(destPlace.place_id, 'drop');
+    } catch {
+      // Unresolved: the booking page asks again.
+    }
     setBusy(false);
-    router.push(params.toString() ? `/book?${params.toString()}` : '/book');
+    if (from && to) {
+      const id = saveDraft({
+        // The full address books the trip; the short one is what the screens show (14 Nov).
+        from: { lat: from.lat, lng: from.lng, label: pickupPlace?.description ?? pickupText.trim(), short: pickupText.trim() },
+        to: { lat: to.lat, lng: to.lng, label: destPlace?.description ?? destText.trim(), short: destText.trim() },
+      });
+      router.push(`/ride/choose?d=${id}`);
+      return;
+    }
+    // Chosen but not resolved (the place lookup failed): say so, never navigate away silently.
+    setErrors({ [from ? 'dest' : 'pickup']: tr('We could not find that place. Try another.') });
   }
 
   /** Browser geolocation, only on an explicit click, with a usable error. */
@@ -224,13 +191,13 @@ export function HeroBooking() {
         setPickupText(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
         setPickupPlace(null);
         setPickupPoint({ lat: latitude, lng: longitude });
-        // From here on, search around the rider, inside their own zone.
+        // From here on, suggestions are ranked from where the rider is.
         setSearchNear({ lat: latitude, lng: longitude });
         serviceabilityAt({ lat: latitude, lng: longitude })
           .then((where) => {
-            if (where.zone) setArea({ code: where.zone.code, name: where.zone.name });
+            if (!where.serviceable) setErrors((p) => ({ ...p, pickup: t.validation.notInArea }));
           })
-          .catch(() => { /* keep the launch city */ });
+          .catch(() => { /* checked again on the fares page */ });
         setErrors((p) => ({ ...p, pickup: undefined }));
         setLocating(false);
       },
@@ -270,7 +237,7 @@ export function HeroBooking() {
           }}
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
-              setSuggestions([]);
+              search.clear();
               setActive(null);
             }
             if (e.key === 'Enter') {
@@ -287,8 +254,11 @@ export function HeroBooking() {
             disabled={locating}
             aria-label={locating ? t.hero.locating : h.useLocation}
             title={h.useLocation}
+            data-text={value ? undefined : 'on'}
           >
             <LocateIcon />
+            {/* 14 Nov: said in words while the field is empty; the icon alone once there is text. */}
+            {!value && <span aria-hidden="true">{h.useLocation}</span>}
           </button>
         )}
       </div>
@@ -297,13 +267,21 @@ export function HeroBooking() {
           {errors[which]}
         </p>
       )}
+      {active === which && (
+        <SearchStatus state={search.state} onRetry={search.retry} className="s-book__note"
+          throttledText={t.validation.searchThrottled} />
+      )}
       {active === which && suggestions.length > 0 && (
         <div className="s-book__suggest" role="group" aria-label={`${label} suggestions`}>
-          {suggestions.map((p) => (
-            <button key={p.place_id} type="button" onClick={() => choose(p)}>
-              {p.description}
-            </button>
-          ))}
+          {suggestions.slice(0, 5).map((p) => {
+            const l = suggestionLines(p);
+            return (
+              <button key={p.place_id} type="button" onClick={() => choose(p)}>
+                <span className="s-book__name">{l.name}</span>
+                {l.area && <span className="s-book__area">{l.area}</span>}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -334,18 +312,12 @@ export function HeroBooking() {
       )}
       <div className="s-book__fields">
         <span className="s-book__dots s-only-desk" aria-hidden="true" />
-        {field('pickup', h.pickup, phone ? h.pickupPlaceholderPhone : h.pickupPlaceholder, pickupText, setPickupText, () => {
+        {field('pickup', h.pickup, h.pickupPlaceholder, pickupText, setPickupText, () => {
           setPickupPlace(null);
           setPickupPoint(null);
         })}
         {field('dest', h.dest, h.destPlaceholder, destText, setDestText, () => setDestPlace(null))}
       </div>
-
-      {searchNote && (
-        <p className="s-book__error" role="status">
-          {searchNote}
-        </p>
-      )}
 
       <button type="submit" className="s-btn s-btn--primary s-book__go" disabled={busy}>
         {h.seeFares}

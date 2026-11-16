@@ -14,16 +14,16 @@ import { Empty, Pill } from '@/components/console/ui';
  * Both open with `fraud.read`; a page is only drawn when it would open (the link rule).
  */
 const TABS = [
-  { href: '/fraud', label: 'Queue' },
-  { href: '/fraud/rules', label: 'Rules' },
+  { href: '/ops/fraud', label: 'Queue' },
+  { href: '/ops/fraud/rules', label: 'Rules' },
 ] as const;
 
 export function FraudNav() {
   const pathname = usePathname() ?? '';
   const access = useAdminAccess();
   if (!canOpen(access, 'fraud')) return null;
-  const onRules = pathname === '/fraud/rules' || pathname.startsWith('/fraud/rules/');
-  const current = onRules ? '/fraud/rules' : '/fraud';
+  const onRules = pathname === '/ops/fraud/rules' || pathname.startsWith('/fraud/rules/');
+  const current = onRules ? '/ops/fraud/rules' : '/ops/fraud';
   return (
     <nav className="ops-subnav" aria-label="Fraud and risk">
       {TABS.map((t) => (

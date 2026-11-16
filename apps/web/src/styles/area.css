@@ -54,6 +54,8 @@
   gap: 12px; padding: 0 16px; color: var(--c-text-2); border: 2px solid transparent;
 }
 .afield--on { background: var(--c-surface); border-color: var(--c-text); color: var(--c-text); }
+.afield--bad { border-color: var(--c-red); }
+.afield:focus-within { outline: 2px solid var(--c-accent); outline-offset: 2px; }
 .afield input {
   flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; color: var(--c-text);
   height: 100%; outline: none;
@@ -119,6 +121,34 @@
   line-height: var(--leading-title); letter-spacing: 0.05em; color: var(--c-gold);
 }
 
+/* The choose screen (14 Nov): one-line route, choice rows with a selected border and tick, and
+   Book kept in reach at the bottom of a phone. */
+.achoose__route { overflow-wrap: anywhere; }
+.achoice {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 12px 14px; border-radius: 14px;
+  border: 1px solid var(--c-border); background: var(--c-surface); font: inherit; color: inherit; text-align: left; cursor: pointer;
+}
+.achoice[data-on="true"] { border: 2px solid var(--c-text); padding: 11px 13px; }
+.achoice:disabled { cursor: default; opacity: 0.6; }
+.achoice__glyph { width: 48px; height: 48px; color: var(--c-text); }
+.achoice__glyph svg { width: 36px; height: 24px; }
+/* The tick is a badge on the selected row's corner, so nothing else moves. */
+.achoice { position: relative; }
+.achoice__tick {
+  position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; border-radius: 11px; display: flex;
+  align-items: center; justify-content: center; background: var(--c-text); color: var(--c-page); pointer-events: none;
+}
+.achoice--pay { min-height: 52px; }
+.achoose__go { margin-top: auto; }
+
+/* A place suggestion (14 Nov): two lines, the name then where it is; never a 3-line address. */
+.asuggest {
+  display: flex; flex-direction: column; gap: 2px; width: 100%; min-height: 48px; padding: 10px 14px; border: 0;
+  background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer;
+}
+.asuggest:hover { background: var(--c-muted); }
+.asuggest__line { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ---- Rider area: white top bar, content below. */
 .ar-top {
   height: 72px; background: var(--c-surface); border-bottom: 1px solid var(--c-border);
@@ -152,6 +182,9 @@
 }
 .ar-menu a:hover, .ar-menu button:hover { background: var(--c-muted); }
 .ar-main { min-height: calc(100vh - 72px); }
+/* 11 Nov: "Confirm your email", one line under the bar, never blocking. */
+.ar-note { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: center;
+  padding: 8px max(16px, env(safe-area-inset-left, 0px)); background: var(--c-gold-bg); color: var(--c-text); }
 .ar-page { max-width: 1120px; margin: 0 auto; padding: 32px; display: flex; flex-direction: column; gap: 20px; }
 
 /* Map-first pages: a 460px panel on the left, the map filling the rest. */
@@ -163,6 +196,10 @@
 .ar-map { flex: 1; position: relative; background: var(--c-map); min-width: 0; }
 /* The map surface sets its own position, so it is sized explicitly. */
 .ar-map > * { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* 15 Nov: `.sg-map { position: relative }` (same specificity, loaded later) won over the line
+   above, so on a phone, where .ar-map has only a min-height, the map was 0 px tall: the
+   "blank beige" on the Ride page. */
+.ar-map > .sg-map { position: absolute; inset: 0; }
 
 /* ---- Driver area: black sidebar, header, content. */
 .dr { display: flex; min-height: 100vh; background: var(--c-area); }
@@ -209,7 +246,8 @@
   height: 80px; padding: 0 32px; display: flex; align-items: center; gap: 16px;
   border-bottom: 1px solid var(--c-border); background: var(--c-page);
 }
-.dr-main { padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; }
+/* 13 Nov: grows, so the legal line sits at the bottom of the window, not mid-screen. */
+.dr-main { flex: 1 0 auto; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; }
 .dr-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .dr-grid2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; align-items: start; }
 .dr-grid2 > *, .dr-grid3 > * { min-width: 0; }
@@ -281,7 +319,14 @@
   .ar-split { flex-direction: column-reverse; height: auto; }
   .ar-panel { width: 100%; border-right: 0; padding: 20px 16px; }
   .ar-map { min-height: 320px; }
+  .ar-split--choose .ar-map { min-height: 180px; height: 180px; flex: none; }
+  /* The panel must not be its own scroller on a phone, or Book would stick inside it. */
+  .ar-split--choose .ar-panel { overflow: visible; }
   .ar-page { padding: 20px 16px; }
+  .achoose__go {
+    position: sticky; bottom: 0; z-index: 5; margin: 0 -16px -20px; background: var(--c-surface);
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--c-border);
+  }
 }
 @media (max-width: 767px) {
   .ar-top { gap: 8px; padding: 0 12px; }
@@ -516,7 +561,7 @@ button.er-bar { cursor: pointer; }
   .ar .dr-tab--on { color: var(--c-gold-2); background: var(--c-side-active); }
   .dr-tab__dots { font-size: var(--text-body); line-height: 22px; letter-spacing: 1px; }
   .dr-more { flex: 1 1 0; min-width: 0; display: flex; position: relative; }
-  .dr-more > summary { width: 100%; }
+  .dr-more > button { width: 100%; border: 0; background: transparent; font-family: inherit; }
   .dr-more__menu {
     position: absolute; right: 0; bottom: calc(100% + 8px); min-width: 200px; background: var(--c-surface);
     border: 1px solid var(--c-border); border-radius: 14px; padding: 6px; display: flex; flex-direction: column;
@@ -558,7 +603,7 @@ button.er-bar { cursor: pointer; }
 /* Trips: a row opens its trip. */
 .atable tr.tr-open { cursor: pointer; }
 .atable tr.tr-open:hover td { background: var(--c-muted); }
-.tr-open__btn { all: unset; cursor: pointer; font-weight: 600; }
+.tr-open__btn { all: unset; position: relative; cursor: pointer; font-weight: 600; }
 .tr-open__btn:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; border-radius: 4px; }
 .td-lines { display: grid; gap: 8px; }
 .td-line { display: flex; justify-content: space-between; gap: 12px; }
@@ -602,3 +647,72 @@ button.er-bar { cursor: pointer; }
 .tr-tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 6px; background: var(--c-muted); color: var(--c-text-2);
   font-size: var(--text-small); line-height: var(--leading-small); font-weight: 600; }
 .pf-face--initials { font-size: var(--text-heading); font-weight: 600; color: var(--c-accent); background: var(--c-gold-bg); }
+
+/* 13 Nov: the operating company under every signed-in page. */
+.sg-legal-line { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: space-between; padding: 14px 16px 20px; font-size: var(--text-small); line-height: var(--leading-small); color: var(--c-text-2); border-top: 1px solid var(--c-border); margin-top: 24px; }
+.sg-legal-line__links { display: inline-flex; gap: 14px; }
+.sg-legal-line a { color: inherit; text-decoration: underline; display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+/* 15 Nov: the links are 44px tall to tap, so the line itself needs less padding. */
+.sg-legal-line { align-items: center; padding-top: 4px; padding-bottom: 8px; }
+
+/* 13 Nov: tables become one card per row on phones (rider trips, driver earnings and payouts). */
+.a-phone { display: none; }
+@media (max-width: 767px) {
+  .a-wide { display: none !important; }
+  .a-phone { display: block; }
+  .astack-phone { flex-direction: column; align-items: stretch !important; }
+  .astack-phone > .abtn { align-self: flex-start; }
+}
+.acards { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.acards > li { display: grid; gap: 6px; padding: 14px 16px; border: 1px solid var(--c-border); border-radius: 14px; background: var(--c-surface); }
+.acards .arow { justify-content: space-between; gap: 12px; }
+.acards .amoney { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.amoney { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* 13 Nov: seven amounts do not fit over seven bars on a phone; the cards above give the totals. */
+@media (max-width: 767px) { .dr-chart__amt { display: none; } }
+
+/* Phone-only menu items (14 Nov): Help and the theme, which the phone header has no room for. */
+@media (min-width: 768px) { .apm-phone { display: none !important; } }
+/* Period switcher on a phone (14 Nov): one row, Day · Week · Month · Year · the calendar, 44px tall. */
+@media (max-width: 767px) {
+  .er-tabs { flex-wrap: nowrap; width: 100%; }
+  .er-tabs .achip { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 0 6px; justify-content: center; }
+  .er-tabs .achip[data-period="custom"] { flex: 0 0 48px; }
+  .er-tab__word { display: inline; }
+  .er-tabs [data-period="custom"] .er-tab__word { display: none; }
+}
+
+/* Tap targets (14 Nov): at least 44x44 on every tappable item, by widening the hit area, not the
+   look. ::before because ::after is the switch's knob. */
+.ahit, .aswitch { position: relative; }
+/* 15 Nov (owner): a text link that stands alone (See earnings, Open all, Your trips) is itself 44px tall. */
+.ahit { display: inline-flex; align-items: center; min-height: 44px; }
+.ahit::before, .aswitch::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+.aemail { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+/* 14 Nov: on a phone every tappable thing in the areas has a 44x44 hit area. Zero specificity, so
+   any element that already sets its position keeps it; the pseudo-element widens what a finger hits
+   without changing what is drawn. */
+@media (max-width: 767px) {
+  :where(.ar) :where(a[href], button, summary, [role="switch"], [role="tab"], [role="radio"], [role="menuitem"]) { position: relative; }
+  :where(.ar) :where(a[href], button, summary, [role="switch"], [role="tab"], [role="radio"], [role="menuitem"])::before {
+    content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+  .ar select.achip, .ar .ainput select { min-height: 44px; }
+  /* The earnings chart: a column per day at least 44px wide, scrolling inside its card. */
+  .er-chart { overflow-x: auto; }
+  .er-chart:not([style]) { --n: 7; }
+  .er-chart > * { min-width: calc(44px * var(--n, 7) + 6px * (var(--n, 7) - 1)); }
+}
+/* Stars and the rider header on a phone (14 Nov): real 44px targets, side by side. */
+.astar { padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+@media (max-width: 767px) {
+  .astar { width: 44px; height: 44px; margin: -12px -2px; }
+  .ar-nav a { min-width: 46px; min-height: 44px; justify-content: center; }
+  .er-files .su-link { min-width: 44px; min-height: 44px; }
+  .ar-top > a:first-child { min-width: 44px; min-height: 44px; }
+}

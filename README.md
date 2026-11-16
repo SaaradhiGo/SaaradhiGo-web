@@ -22,35 +22,14 @@ See each app's own README for setup details:
 - [apps/android/README.md](apps/android/README.md)
 - [apps/ios/README.md](apps/ios/README.md)
 
-## Branching and release workflow
+## Branches and deploys
 
-This repository follows a 5-level hierarchical branching strategy:
-
-`feature/* → develop → testing → staging → release → main`
-
-Each level has progressively stricter branch-protection rules (approvals, status checks, force-push policy). The full configuration — including the GitHub Actions status checks each branch must pass — is documented in [BRANCH_PROTECTION_GUIDE.md](BRANCH_PROTECTION_GUIDE.md).
-
-Quick reference:
-
-| Branch    | Approvals | Force push | Purpose                           |
-| --------- | --------- | ---------- | --------------------------------- |
-| `main`    | 2         | No         | Production                        |
-| `release` | 1         | No         | Release candidate                 |
-| `staging` | 1         | No         | Pre-prod verification             |
-| `testing` | 0         | Yes        | QA testing branch                 |
-| `develop` | 0         | Yes        | Integration of feature branches   |
-
-## Required CI status checks
-
-Expected status checks (per BRANCH_PROTECTION_GUIDE.md):
-
-- `build/web`, `test/web`
-- `build/android`, `test/android`
-- `build/ios`, `test/ios`
-- `code-quality`
-- `security-scan`
-
-These should be wired up via GitHub Actions as each app gains real code.
+- **Feature branches** open a PR into `develop`. CI must pass: `verify` (lint, types, tests, build, layout and area gates) and `secret scan`.
+- **`develop` deploys to QA automatically.** Railway (QA project, service `web`, root `apps/web`) builds every new commit on `develop` once its GitHub checks pass ("wait for CI"). Nobody deploys QA by hand except to redeploy a commit already on `develop`.
+- **`main` is production.** It takes pull requests from `develop` only (`source branch` check, `.github/workflows/main-source.yml`), with every CI check green, merged with a merge commit. No direct pushes or force-pushes, for admins too.
+- **Production deploys only from `main`, through CI, never by hand.** When a production environment exists, its deploy runs from a push to `main` after CI, never from `workflow_dispatch`, a local machine or a dashboard button.
+- **How (13 Nov):** `.github/workflows/production.yml` runs after `ops-console` is green for a push to `main`, only when `PRODUCTION_DEPLOY_ENABLED` is `true` and `AWS_DEPLOY_ROLE_ARN` is set. It builds `apps/web/Dockerfile.production` with the production URLs, pushes it to ECR (AWS ap-south-1) and rolls the web instances. The stack itself is code in SaaradhiGo-backend `infra/production`. Until the variables are set, a merge to `main` deploys nothing.
+- The older five-branch model (`testing`, `staging`, `release`) and [BRANCH_PROTECTION_GUIDE.md](BRANCH_PROTECTION_GUIDE.md) are retired; those branches are not used.
 
 ## Related repositories
 

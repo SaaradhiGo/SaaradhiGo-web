@@ -1,5 +1,6 @@
 'use client';
 
+import { DeleteAccountSheet } from '../DeleteAccountSheet';
 import { useEffect, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { LANGUAGES, LANGUAGE_INFO, type Language } from '@/i18n/locales';
@@ -7,12 +8,14 @@ import { useTr } from '@/i18n/website';
 import { AREA_FLAGS } from '@/lib/area/flags';
 import { monthYear } from '@/lib/area/format';
 import {
-  type Profile, deleteAccount, exportData, maskPhone, profile as loadProfile, updateName,
+  type Profile, exportData, maskPhone, profile as loadProfile, updateName,
 } from '@/lib/area/rider';
 import { useLoad } from '@/lib/area/useLoad';
+import { areaGet, areaPatch } from '@/lib/area/api';
 import { ICard, IChevron, IUser } from '../icons';
 import { LoadError, Skel } from '../states';
 import { SafetyCard, SavedPlacesCard } from './AccountCards';
+import { type ResendState, resendConfirmation, resendNote } from './ConfirmEmail';
 import { useArea } from '../useArea';
 
 function Row({ label, value, children }: { label?: string; value: React.ReactNode; children?: React.ReactNode }) {
@@ -24,6 +27,20 @@ function Row({ label, value, children }: { label?: string; value: React.ReactNod
       </div>
       {children}
     </div>
+  );
+}
+
+/**
+ * An email never splits mid-word (14 Nov): it may wrap only at the "@"; a part too long for the line
+ * is cut with an ellipsis, and the whole address is in the tooltip.
+ */
+function EmailText({ email }: { email: string }) {
+  const at = email.lastIndexOf('@');
+  const parts = at > 0 ? [email.slice(0, at), email.slice(at)] : [email];
+  return (
+    <span title={email} data-testid="email-text" style={{ overflowWrap: 'normal' }}>
+      {parts.map((p) => <span key={p} className="aemail">{p}</span>)}
+    </span>
   );
 }
 
@@ -46,6 +63,7 @@ export function RiderAccount() {
   const [dark, setDark] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [resend, setResend] = useState<ResendState>('idle');
 
   // Each card on its own (8 Nov): profile and saved places load, fail and retry separately.
   const profileLoad = useLoad(loadProfile);
@@ -88,14 +106,6 @@ export function RiderAccount() {
     }
   }
 
-  async function remove() {
-    try {
-      await deleteAccount();
-      signOut();
-    } catch {
-      setNote(tr('We could not delete your account. Contact support.'));
-    }
-  }
 
   const since = monthYear(me?.created_at, locale);
 
@@ -113,7 +123,7 @@ export function RiderAccount() {
         <section className="acard" style={{ padding: 20 }}>
           <div className="arow" style={{ justifyContent: 'space-between' }}>
             <h2 className="a20">{tr('Profile')}</h2>
-            <button type="button" className="aacc ab a14" style={linkBtn} onClick={() => (editing ? save() : setEditing(true))}>
+            <button type="button" className="aacc ab a14 ahit" style={linkBtn} onClick={() => (editing ? save() : setEditing(true))}>
               {tr(editing ? 'Save' : 'Edit')}
             </button>
           </div>
@@ -132,9 +142,24 @@ export function RiderAccount() {
             <>
               <Row label={tr('Name')} value={me?.full_name || '—'} />
               <Row label={tr('Mobile')} value={maskPhone(me?.phone_number) ?? '—'}>
-                {me?.phone_number && <span className="apill apill--ok">{tr('Verified')}</span>}
+                {me?.phone_number && me?.phone_verified !== false && <span className="apill apill--ok">{tr('Verified')}</span>}
               </Row>
-              <Row label={tr('Email')} value={me?.email || '—'} />
+              <Row label={tr('Email')} value={me?.email ? <EmailText email={me.email} /> : '—'}>
+                {me?.email && (me.email_verified === false ? (
+                  <span className="acol" style={{ alignItems: 'flex-end', gap: 4 }} data-testid="email-status">
+                    <span className="apill apill--warn">{tr('Not confirmed')}</span>
+                    {resend !== 'sent' && (
+                      <button type="button" className="aacc ab a14 ahit" style={linkBtn} disabled={resend === 'busy'}
+                        onClick={async () => { setResend('busy'); setResend(await resendConfirmation()); }}>
+                        {tr('Resend')}
+                      </button>
+                    )}
+                  </span>
+                ) : <span className="apill apill--ok" data-testid="email-status">{tr('Confirmed')}</span>)}
+              </Row>
+              {resendNote(resend, tr) && (
+                <p className={`a14 ${resend === 'sent' ? 'amut' : 'ared'}`} role="status">{resendNote(resend, tr)}</p>
+              )}
             </>
           )}
         </section>
@@ -145,14 +170,25 @@ export function RiderAccount() {
           <h2 className="a20">{tr('Payment')}</h2>
           <div className="arow" style={{ marginTop: 12, padding: 14, borderRadius: 12, background: 'var(--c-muted)' }}>
             <span className="aico" style={{ background: 'var(--c-surface)' }}><ICard /></span>
-            <div className="agrow">
-              <div className="ab">{tr('Cash')}</div>
-              <div className="a14 amut">{tr('Pay your driver the locked fare at the end.')}</div>
-            </div>
+            {me?.market_country === 'US' ? (
+              <div className="agrow" data-testid="us-payment">
+                <div className="ab">{tr('Card, Apple Pay or Google Pay')}</div>
+                <div className="a14 amut">{tr('Held for the locked fare when you book, charged when the trip ends.')}</div>
+              </div>
+            ) : (
+              <div className="agrow">
+                <div className="ab">{tr('Cash')}</div>
+                <div className="a14 amut">{tr('Pay your driver the locked fare at the end.')}</div>
+              </div>
+            )}
             <span className="apill apill--ok">{tr('Default')}</span>
           </div>
-          <p className="a14 amut" style={{ marginTop: 12 }}>{tr('Other ways to pay will appear here when they are available in your city.')}</p>
+          <p className="a14 amut" style={{ marginTop: 12 }}>{me?.market_country === 'US'
+            ? tr('Cash is not accepted in the USA. You choose your card when you book.')
+            : tr('Other ways to pay will appear here when they are available in your city.')}</p>
         </section>
+
+        {me?.market_country === 'US' && <AccessibilityCard />}
 
         {AREA_FLAGS.trustedContacts && <SafetyCard />}
 
@@ -167,9 +203,9 @@ export function RiderAccount() {
           </Row>
           <Row label={tr('Theme')} value={tr(dark ? 'Dark' : 'Light')}>
             <div className="arow" style={{ gap: 4, padding: 4, borderRadius: 10, background: 'var(--c-muted)' }} role="group" aria-label={tr('Theme')}>
-              <button type="button" className={dark ? 'a14 ab amut' : 'achip'} style={dark ? { ...linkBtn, padding: '0 12px' } : { height: 32 }}
+              <button type="button" className={dark ? 'a14 ab amut ahit' : 'achip ahit'} style={dark ? { ...linkBtn, padding: '0 12px' } : { height: 32 }}
                 aria-pressed={!dark} onClick={() => theme('light')}>{tr('Light')}</button>
-              <button type="button" className={dark ? 'achip' : 'a14 ab amut'} style={dark ? { height: 32 } : { ...linkBtn, padding: '0 12px' }}
+              <button type="button" className={dark ? 'achip ahit' : 'a14 ab amut ahit'} style={dark ? { height: 32 } : { ...linkBtn, padding: '0 12px' }}
                 aria-pressed={dark} onClick={() => theme('dark')}>{tr('Dark')}</button>
             </div>
           </Row>
@@ -179,24 +215,45 @@ export function RiderAccount() {
           <h2 className="a20">{tr('Privacy and account')}</h2>
           <div style={{ marginTop: 8 }}>
             <Row value={tr('Download your data')}>
-              <button type="button" className="aacc ab a14" style={linkBtn} onClick={download}>{tr('Request')}</button>
+              <button type="button" className="aacc ab a14 ahit" style={linkBtn} onClick={download}>{tr('Request')}</button>
             </Row>
             <Row value={tr('Sign out')}>
-              <button type="button" style={linkBtn} aria-label={tr('Sign out')} onClick={() => signOut()}><IChevron /></button>
+              <button className="ahit" type="button" style={linkBtn} aria-label={tr('Sign out')} onClick={() => signOut()}><IChevron /></button>
             </Row>
             <Row value={<span className="ared">{tr('Delete account')}</span>}>
-              {confirming ? (
-                <span className="arow" style={{ gap: 8 }}>
-                  <button type="button" className="a14 ab" style={linkBtn} onClick={() => setConfirming(false)}>{tr('Keep')}</button>
-                  <button type="button" className="a14 ab ared" style={linkBtn} onClick={remove}>{tr('Delete')}</button>
-                </span>
-              ) : (
-                <button type="button" className="a14 amut" style={linkBtn} onClick={() => setConfirming(true)}>{tr('Asks to confirm')}</button>
-              )}
+              <button type="button" className="a14 amut ahit" style={linkBtn} onClick={() => setConfirming(true)}>{tr('Asks to confirm')}</button>
+              {confirming && <DeleteAccountSheet onClose={() => setConfirming(false)} onClosed={() => signOut()} />}
             </Row>
           </div>
         </section>
       </div>
     </div>
+  );
+}
+
+/** 14 Nov (USA; Idaho 49-3713): what your driver should know, e.g. "I use a folding wheelchair". */
+function AccessibilityCard() {
+  const tr = useTr();
+  const [note, setNote] = useState('');
+  const [saved, setSaved] = useState<string | null>(null);
+  useEffect(() => {
+    areaGet<{ note: string }>('/rider/accessibility/').then((r) => { setNote(r.note); setSaved(r.note); }).catch(() => {});
+  }, []);
+  async function save() {
+    const r = await areaPatch<{ note: string }>('/rider/accessibility/', { note });
+    setNote(r.note);
+    setSaved(r.note);
+  }
+  return (
+    <section className="acard acol" style={{ padding: 20, gap: 10 }} data-testid="accessibility-note">
+      <h2 className="a20">{tr('Accessibility needs')}</h2>
+      <p className="a14 amut">{tr('Your driver sees this when they accept your trip. Service animals are always welcome.')}</p>
+      <label className="acol a14" style={{ gap: 4 }}>
+        <span className="ab">{tr('Note for your driver')}</span>
+        <span className="ainput"><input value={note} maxLength={200} placeholder={tr('For example: I use a folding wheelchair')}
+          onChange={(e) => setNote(e.target.value)} aria-label={tr('Note for your driver')} /></span>
+      </label>
+      <button type="button" className="abtn abtn--ghost" onClick={save} disabled={note === (saved ?? '')}>{tr('Save')}</button>
+    </section>
   );
 }

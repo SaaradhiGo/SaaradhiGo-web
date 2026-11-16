@@ -1,5 +1,6 @@
 'use client';
 
+import { OPTIONAL_NOT_ADDED, isOptionalNotAdded } from '@/lib/area/requirements';
 import { useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { Panel } from '@/components/console/ui';
@@ -39,6 +40,16 @@ export function RequirementsPanel({ driverId, req, may, onDone }: { driverId: nu
     } finally { setBusy(false); }
   }
 
+  async function background(status: 'clear' | 'failed') {
+    setBusy(true); setError(null);
+    try {
+      await api.post(`/driver/admin/${driverId}/background/`, { status, note: reason.trim() });
+      setReason('');
+      onDone(status === 'clear' ? 'Background check marked clear.' : 'Background check failed. The driver is off the road.');
+    } catch (err) {
+      setError(err instanceof ApiError && err.fromServer ? err.message : 'That did not go through. Nothing was changed.');
+    } finally { setBusy(false); }
+  }
   const decisionRow = (key: 'legal_name' | 'payout_method', text: string) => (
     <div className="grid gap-2" style={{ borderTop: '1px solid var(--ops-hairline)', paddingTop: 8 }}>
       <div>{text}</div>
@@ -57,9 +68,11 @@ export function RequirementsPanel({ driverId, req, may, onDone }: { driverId: nu
       <div className="grid gap-2" data-testid="console-requirements">
         {req.items.map((i) => (
           <div key={i.key} className="flex justify-between gap-2 flex-wrap">
-            <span>{i.label}{i.need === 'optional' ? <span className="muted"> · optional</span> : null}{i.blocks_online ? <span className="muted"> · keeps offline</span> : null}</span>
+            <span>{i.label}{i.need === 'optional' && i.status !== 'missing' ? <span className="muted"> · optional</span> : null}{i.blocks_online ? <span className="muted"> · keeps offline</span> : null}</span>
             <span>
-              <StatusChip tone={TONE[i.status] ?? 'info'}>{i.status === 'expiring' && i.expires ? `Expiring ${i.expires}` : i.status.replace('_', ' ')}</StatusChip>
+              {isOptionalNotAdded(i)
+                ? <StatusChip tone="neutral">{OPTIONAL_NOT_ADDED}</StatusChip>
+                : <StatusChip tone={TONE[i.status] ?? 'info'}>{i.status === 'expiring' && i.expires ? `Expiring ${i.expires}` : i.status.replace('_', ' ')}</StatusChip>}
               {i.reason ? <span className="muted"> {i.reason}</span> : null}
             </span>
           </div>
@@ -68,6 +81,17 @@ export function RequirementsPanel({ driverId, req, may, onDone }: { driverId: nu
         {req.bank && req.bank.verification_status !== 'verified'
           ? decisionRow('payout_method', `Bank account ${req.bank.bank_name} ••${req.bank.account_last4} (${req.bank.ifsc}) for ${req.bank.holder_name}: ${req.bank.verification_status.replace('_', ' ')}.`)
           : null}
+        {/* 14 Nov (USA): a background check report marked "consider" is decided here (clear or failed). */}
+        {req.background_check_status === 'consider' && may ? (
+          <div className="grid gap-2" style={{ borderTop: '1px solid var(--ops-hairline)', paddingTop: 8 }} data-testid="background-decision">
+            <div>Background check report needs review (marked consider). Read it at the provider, then decide.</div>
+            <div className="flex gap-2 flex-wrap items-center">
+              <button type="button" className="sg-btn sg-btn--sm" disabled={busy} onClick={() => void background('clear')}>Mark clear</button>
+              <input aria-label="Reason (kept in the audit log)" className="input" placeholder="Reason, if it fails" value={reason} onChange={(e) => setReason(e.target.value)} />
+              <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={busy || !reason.trim()} onClick={() => void background('failed')}>Fail</button>
+            </div>
+          </div>
+        ) : null}
         {error ? <div className="alert-error" role="alert">{error}</div> : null}
       </div>
     </Panel>

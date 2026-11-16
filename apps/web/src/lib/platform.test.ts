@@ -17,14 +17,14 @@ describe('tabs follow the capabilities (the link rule)', () => {
   it('shows a Super Admin everything and a role with nothing no tab', () => {
     const all = access(['platform.read', 'platform.settings', 'platform.integrations.read', 'audit.read']);
     expect(visibleTabs(all).map((t) => t.key)).toEqual(
-      ['markets', 'driverRequirements', 'flags', 'versions', 'notices', 'settings', 'integrations', 'audit']);
+      ['markets', 'driverRequirements', 'marketRules', 'flags', 'versions', 'notices', 'settings', 'integrations', 'audit']);
     expect(visibleTabs(access(['trip.read']))).toEqual([]);
     expect(visibleTabs(null)).toEqual([]);
   });
 
   it('gives City Ops the read tabs and the audit log, not settings or integrations', () => {
     const ops = access(['platform.read', 'platform.city_pause', 'audit.read']);
-    expect(visibleTabs(ops).map((t) => t.key)).toEqual(['markets', 'driverRequirements', 'flags', 'versions', 'notices', 'audit']);
+    expect(visibleTabs(ops).map((t) => t.key)).toEqual(['markets', 'driverRequirements', 'marketRules', 'flags', 'versions', 'notices', 'audit']);
   });
 });
 
@@ -48,9 +48,9 @@ describe('readiness wording', () => {
 
   it('a warning never blocks a launch', () => {
     const items = [
-      { key: 'zone', ok: true, status: 'ok' as const, blocking: false, label: 'Zone', detail: '', href: '/zones' },
+      { key: 'zone', ok: true, status: 'ok' as const, blocking: false, label: 'Zone', detail: '', href: '/ops/zones' },
       { key: 'tax', ok: true, status: 'warning' as const, blocking: false, label: 'Tax', detail: '', href: '' },
-      { key: 'fare_card', ok: false, status: 'missing' as const, blocking: true, label: 'Fare cards', detail: '', href: '/pricing' },
+      { key: 'fare_card', ok: false, status: 'missing' as const, blocking: true, label: 'Fare cards', detail: '', href: '/ops/pricing' },
     ];
     expect(launchBlockedBy(items).map((i) => i.key)).toEqual(['fare_card']);
     expect(launchBlockedBy(null)).toEqual([]);

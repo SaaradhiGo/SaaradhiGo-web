@@ -6,7 +6,7 @@ import { approvedCaveats } from '@/lib/drivers';
 import { ActionTiles } from '@/components/console/kit/ActionTiles';
 import { SuperAdminChip } from './SuperAdminBanner';
 
-let path = '/trips';
+let path = '/ops/trips';
 vi.mock('next/navigation', () => ({ usePathname: () => path, useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('next/link', () => ({
   default: ({ href, children, ...rest }: React.ComponentProps<'a'> & { href: string }) => <a href={href} {...rest}>{children}</a>,
@@ -31,7 +31,7 @@ describe('Overview lead tiles', () => {
     await screen.findByText('7');
     const lead = container.querySelector('.ops-tiles--lead') as HTMLElement;
     expect([...lead.querySelectorAll('a')].map((a) => a.getAttribute('href'))).toEqual([
-      '/safety-ops', '/approvals', '/finance/payouts?status=pending', '/kyc',
+      '/ops/safety-ops', '/ops/approvals', '/ops/finance/payouts?status=pending', '/ops/kyc',
     ]);
   });
   it('draws nothing the operator cannot open', () => {
@@ -43,11 +43,11 @@ describe('Overview lead tiles', () => {
 
 describe('Super Admin chip', () => {
   it('is quiet on other pages and absent on the dashboard', () => {
-    path = '/trips';
+    path = '/ops/trips';
     const { unmount } = render(<SuperAdminChip access={access(1)} />);
     expect(screen.getByText('1 more Super Admin needed')).toBeTruthy();
     unmount();
-    path = '/dashboard';
+    path = '/ops/dashboard';
     render(<SuperAdminChip access={access(1)} />);
     expect(screen.queryByText(/Super Admin/)).toBeNull();
   });

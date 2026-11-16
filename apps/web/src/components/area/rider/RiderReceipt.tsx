@@ -1,5 +1,6 @@
 'use client';
 
+import { oneLine } from '@/lib/money';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleProvider';
@@ -8,9 +9,11 @@ import { formatPlate } from '@/lib/booking';
 import { clock, dateLabel, money } from '@/lib/area/format';
 import { type Trip, className, lockedFare, paidFare, rateTrip, receiptPdf, trip as loadTrip } from '@/lib/area/rider';
 import { useLoad } from '@/lib/area/useLoad';
-import { readSessionUser } from '@/lib/publicAuth';
+import { fetchProfile, readSessionUser } from '@/lib/publicAuth';
 import { IBack, IDownload, IHelp, IUser } from '../icons';
-import { LoadError, Skel } from '../states';
+import { LoadError, NotYourTrip, Skel } from '../states';
+import { useOnScreenMarket } from '@/components/sg/LegalProvider';
+import { FareLinesList } from './FareLinesList';
 
 const STAR = 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z';
 
@@ -24,16 +27,23 @@ export function RiderReceipt({ id }: { id: string }) {
   const { locale } = useLocale();
   const load = useLoad(() => loadTrip(id), [id]);
   const t: Trip | null = load.data;
+  // The receipt's own market names the operating company in the footer (13 Nov).
+  useOnScreenMarket(t ? (t.currency === 'USD' ? 'US' : 'IN') : null);
   const [stars, setStars] = useState(0);
   const [note, setNote] = useState<string | null>(null);
 
   useEffect(() => {
     if (!t) return;
-    const me = readSessionUser()?.id;
-    const mine = t.ratings?.find((r) => me != null && `${r.rater_id}` === `${me}`);
-    if (mine?.score) setStars(mine.score);
+    let live = true;
+    void (async () => {
+      const me = readSessionUser()?.id ?? (await fetchProfile().catch(() => null))?.id;
+      const mine = t.ratings?.find((r) => me != null && `${r.rater_id}` === `${me}`);
+      if (live && mine?.score) setStars(mine.score);
+    })();
+    return () => { live = false; };
   }, [t]);
 
+  if (load.notFound) return <NotYourTrip />;
   if (load.state === 'error') return <div className="ar-page"><LoadError what="receipt" retry={load.retry} /></div>;
   if (!t) return <div className="ar-page" style={{ maxWidth: 1200 }}><Skel h={28} w={260} /><Skel h={18} lines={6} gap={18} style={{ marginTop: 24 }} /></div>;
 
@@ -48,6 +58,11 @@ export function RiderReceipt({ id }: { id: string }) {
   const when = t.completed_at ?? t.cancelled_at ?? t.requested_at;
   const paidHow = t.payment_method === 'cash' ? tr('Paid in cash') : t.payment_method ? tr('Paid online') : null;
   const km = t.actual_distance_km ?? t.estimated_distance_km;
+  // 14 Nov (USA): a US trip's distance in miles, like its fares.
+  const dist = km == null ? null : cur === 'USD'
+    ? `${(Number(km) * 0.621371).toFixed(1)} mi`
+    : `${Number(km).toFixed(Number(km) < 10 ? 1 : 0)} km`;
+  const inv = t.invoice ?? null;
 
   async function pdf() {
     try {
@@ -71,12 +86,14 @@ export function RiderReceipt({ id }: { id: string }) {
 
   return (
     <div className="ar-page" style={{ maxWidth: 1000 }}>
-      <Link href="/trips" className="arow a14 ab amut" style={{ gap: 6, textDecoration: 'none' }}><IBack size={16} />{tr('Your trips')}</Link>
+      <Link href="/trips" className="arow a14 ab amut ahit" style={{ gap: 6, textDecoration: 'none' }}><IBack size={16} />{tr('Your trips')}</Link>
       <div className="dr-grid2 dr-grid2--receipt">
         <div className="acard" style={{ padding: 24 }}>
           <div className="arow" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap' }}>
             <div>
-              <div className="a28">{cancelled && (!paid || Number(paid) === 0) ? tr('No charge') : money(paid ?? locked, cur, locale)}</div>
+              {/* 15 Nov: the headline is what the card was charged in all, tip included ($34.90 on trip 218). */}
+              <div className="a28" data-testid="receipt-headline">{cancelled && (!paid || Number(paid) === 0) ? tr('No charge')
+                : money(t.tip && paid != null ? Number(paid) + Number(t.tip.amount) : paid ?? locked, cur, locale)}</div>
               <div className="amut">
                 {[when ? dateLabel(when, locale, t.timezone, new Date(), true) : null, ride, cancelled ? tr('Cancelled') : paidHow]
                   .filter(Boolean).join(' · ')}
@@ -90,11 +107,44 @@ export function RiderReceipt({ id }: { id: string }) {
             </div>
             <div className="arow" style={{ justifyContent: 'space-between', padding: '12px 0' }}>
               <span>{tr('Changes during the trip')}</span>
-              <span className="ab">{change === null ? '' : same ? tr('None') : `${change > 0 ? '+' : '−'}${money(Math.abs(change), cur, locale)}`}</span>
+              <span className="ab">{change === null ? '' : same ? tr('None') : oneLine(`${change > 0 ? '+' : '−'}${money(Math.abs(change), cur, locale)}`)}</span>
             </div>
             <div className="arow" style={{ justifyContent: 'space-between', padding: '12px 0' }}>
-              <span className="ab">{tr('You paid')}</span><span className="a20">{money(paid, cur, locale) ?? '—'}</span>
+              <span className="ab">{tr('Ride total')}</span><span className="a20">{money(paid, cur, locale) ?? '—'}</span>
             </div>
+            {/* 14 Nov (USA): the tip is its own charge, 100% the driver's; the total is what the card paid. */}
+            {t.tip && (
+              <>
+                <div className="arow" style={{ justifyContent: 'space-between', padding: '12px 0' }} data-testid="receipt-tip">
+                  <span>{tr('Tip (100% to your driver)')}</span><span className="ab">{money(t.tip.amount, cur, locale)}</span>
+                </div>
+                <div className="arow" style={{ justifyContent: 'space-between', padding: '12px 0' }} data-testid="receipt-total-charged">
+                  <span className="ab">{tr('Total charged')}</span>
+                  <span className="a20">{money(Number(paid ?? 0) + Number(t.tip.amount), cur, locale)}</span>
+                </div>
+              </>
+            )}
+            {(t.refunds ?? []).map((r) => (
+              <div key={r.at} className="arow" style={{ justifyContent: 'space-between', padding: '12px 0', gap: 12 }} data-testid="receipt-refund">
+                <span>
+                  {r.to === 'wallet' ? tr('Refunded to your wallet') : r.status === 'sent' ? tr('Refunded to your card') : tr('Refund on its way to your card')}
+                  <span className="amut"> · {dateLabel(r.at, locale, t.timezone, new Date(), true)}</span>
+                </span>
+                <span className="ab">{oneLine(`−${money(r.amount, cur, locale)}`)}</span>
+              </div>
+            ))}
+            {(() => {
+              // 15 Nov: what the card paid in all, less every refund that went through.
+              const sent = (t.refunds ?? []).filter((r) => r.status === 'sent' && r.to === 'card');
+              if (!sent.length || paid == null) return null;
+              const charged = Number(paid) + Number(t.tip?.amount ?? 0);
+              const net = Math.max(0, charged - sent.reduce((a, r) => a + Number(r.amount), 0));
+              return (
+                <div className="arow" style={{ justifyContent: 'space-between', padding: '12px 0' }} data-testid="receipt-net-charged">
+                  <span className="ab">{tr('Net charged')}</span><span className="a20">{money(net, cur, locale)}</span>
+                </div>
+              );
+            })()}
           </div>
           <p className="a14 amut" style={{ marginTop: 8 }}>{tr('If the trip had changed, each change and its reason would be listed here.')}</p>
           <div className="arow" style={{ gap: 8, marginTop: 20, flexWrap: 'wrap' }}>
@@ -102,6 +152,7 @@ export function RiderReceipt({ id }: { id: string }) {
             <Link href="/contact" className="abtn abtn--ghost"><IHelp size={18} />{tr('Get help with this trip')}</Link>
           </div>
           {note && <p className="a14 amut" role="status" style={{ marginTop: 12 }}>{note}</p>}
+          {inv && !cancelled && <Invoice t={t} />}
         </div>
         <div className="acard acol" style={{ padding: 24, gap: 14 }}>
           <div className="a20">{tr('Trip')}</div>
@@ -120,7 +171,7 @@ export function RiderReceipt({ id }: { id: string }) {
               <div className="ab">{t.destination_address}</div>
               {t.completed_at && (
                 <div className="a14 amut">
-                  {tr('Dropped')} {clock(t.completed_at, locale, t.timezone)}{km != null ? ` · ${Number(km).toFixed(Number(km) < 10 ? 1 : 0)} km` : ''}
+                  {tr('Dropped')} {clock(t.completed_at, locale, t.timezone)}{dist ? ` · ${dist}` : ''}
                 </div>
               )}
             </div>
@@ -130,7 +181,9 @@ export function RiderReceipt({ id }: { id: string }) {
               <span className="aico" style={{ width: 44, height: 44, borderRadius: 22, background: 'var(--c-border)' }}><IUser /></span>
               <div className="agrow">
                 <div className="ab">{t.driver_name}</div>
-                <div className="a14 amut">{[v?.color, ride, v?.vehicle_number ? formatPlate(v.vehicle_number) : null].filter(Boolean).join(' · ')}</div>
+                <div className="a14 amut" data-testid="receipt-vehicle">
+                  {t.vehicle_line ?? [v?.color, ride, v?.vehicle_number ? formatPlate(v.vehicle_number) : null].filter(Boolean).join(' · ')}
+                </div>
               </div>
             </div>
           )}
@@ -139,8 +192,8 @@ export function RiderReceipt({ id }: { id: string }) {
               <span className="a14 amut">{tr('Rate your trip')}</span>
               <span className="arow" style={{ gap: 4 }} role="radiogroup" aria-label={tr('Rate your trip')}>
                 {[1, 2, 3, 4, 5].map((n) => (
-                  <button key={n} type="button" role="radio" aria-checked={stars === n} aria-label={`${n}`}
-                    onClick={() => rate(n)} style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', color: 'var(--c-primary)' }}>
+                  <button key={n} type="button" role="radio" aria-checked={stars === n} aria-label={`${n}`} className="astar"
+                    onClick={() => rate(n)} style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--c-primary)' }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill={n <= stars ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2} strokeLinejoin="round" aria-hidden="true"><path d={STAR} /></svg>
                   </button>
                 ))}
@@ -150,5 +203,46 @@ export function RiderReceipt({ id }: { id: string }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * The tax invoice (11 Nov), the same lines as the PDF: number, rider, issuer with address and
+ * GSTIN where configured, both addresses, and the fare broken into base, distance and time,
+ * demand and tax.
+ */
+function Invoice({ t }: { t: Trip }) {
+  const tr = useTr();
+  const { locale } = useLocale();
+  const inv = t.invoice;
+  if (!inv) return null;
+  const row = (label: string, value: string | null | undefined, strong = false) => (
+    <div className="arow" style={{ justifyContent: 'space-between', padding: '8px 0', gap: 12 }}>
+      <span className={strong ? 'ab' : undefined}>{label}</span><span className={strong ? 'ab' : undefined}>{value ?? '—'}</span>
+    </div>
+  );
+  return (
+    <section className="acol" style={{ gap: 4, marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--c-border)' }}
+      aria-labelledby="inv-title" data-testid="invoice">
+      <h2 className="a20" id="inv-title">{tr(inv.title ?? 'Tax invoice')}</h2>
+      {row(tr(inv.title === 'Receipt' ? 'Receipt number' : 'Invoice number'), inv.number)}
+      {row(tr('Issued to'), inv.rider_name)}
+      <div className="a14 amut" style={{ padding: '4px 0' }}>
+        {inv.company.name && <div className="ab" style={{ color: 'var(--c-text)' }}>{inv.company.name}</div>}
+        {inv.company.address && <div>{inv.company.address}</div>}
+        {inv.company.cin && <div>CIN {inv.company.cin}</div>}
+        {inv.company.gstin && <div>GSTIN {inv.company.gstin}</div>}
+      </div>
+      {row(tr('Pickup'), t.pickup_address)}
+      {row(tr('Drop'), t.destination_address)}
+      <div className="asep" style={{ marginTop: 8 }}>
+        {inv.breakdown ? <FareLinesList lines={inv.breakdown} /> : (
+          <>
+            {row(inv.tax_label ?? tr('Tax'), money(inv.tax_amount ?? null, inv.currency ?? t.currency, locale))}
+            {row(tr('Total'), money(inv.total ?? null, inv.currency ?? t.currency, locale), true)}
+          </>
+        )}
+      </div>
+    </section>
   );
 }

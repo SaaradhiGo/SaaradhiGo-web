@@ -914,7 +914,16 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .ops-doc__tick.is-off { border-color: var(--ops-danger-edge); color: var(--ops-danger); }
 .ops-doc__text { display: grid; gap: 1px; min-width: 0; }
 .ops-doc__text b { font: 600 13.5px/1.35 var(--font-sans); }
+/* 13 Nov: a document's expiry under its name; the chip turns amber within 30 days. */
+.ops-doc__expiry { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; font: 500 12.5px/1.4 var(--font-sans); color: var(--ops-ink-2); }
 .ops-doc__text span { font: 500 11.5px/1.45 var(--font-sans); color: var(--ops-ink-5); }
+/* 13 Nov: a pill or chip inside a document row keeps its own size and colour (the rule above is more specific than .ops-pill--*, which left "Not recorded" grey on red). */
+.ops-doc__text span.ops-pill { font: 700 10.5px/1.6 var(--font-sans); color: var(--ops-ink-2); }
+.ops-doc__text span.ops-pill--good { color: var(--ops-success); }
+.ops-doc__text span.ops-pill--bad { color: var(--ops-danger); }
+.ops-doc__text span.ops-pill--wait, .ops-doc__text span.ops-pill--caution { color: var(--ops-caution); }
+.ops-doc__text span.ops-pill--info { color: var(--ops-info); }
+.ops-doc__text span.ops-doc__expiry { display: inline-flex; color: var(--ops-ink-2); font: 500 12px/1.45 var(--font-sans); }
 .ops-doc__open { font: 700 11.5px/1 var(--font-sans); color: var(--gold-text); text-decoration: none; border: 1px solid var(--ops-gold-edge); border-radius: 8px; padding: 7px 11px; white-space: nowrap; }
 .ops-doc__open:hover { background: var(--ops-gold-wash); }
 .ops-doc__missing { font: 600 11.5px/1 var(--font-sans); color: var(--ops-ink-6); white-space: nowrap; }
@@ -2154,6 +2163,8 @@ button.ops-square:focus-visible { outline: 2px solid var(--ops-gold-300); outlin
 .ops-kyc__chip:focus-visible, .ops-kyc__reason:focus-visible, .ops-kyc__toggle button:focus-visible { outline: 2px solid var(--ops-gold-300); outline-offset: 2px; }
 .ops-kyc__viewer, .ops-kyc__panel { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--ops-hairline); background: var(--ops-bg-100); min-width: 0; }
 .ops-kyc__tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+/* 12 Nov: the viewer's Rotate / Zoom buttons at the console's control size (as the Front/Back toggle and the SOS card's actions), not the site's 48px buttons. */
+.ops-kyc__tools .sg-btn { height: 28px; min-height: 28px; padding: 0 10px; font: 600 12px/1.3 var(--font-sans); width: auto; }
 .ops-kyc__title { font: 800 15px/1.3 var(--font-sans); color: var(--ops-ink-1); margin-right: 8px; }
 .ops-kyc__spacer { flex: 1; }
 .ops-kyc__zoom { min-width: 3.2em; text-align: center; font: 600 12px/1 var(--font-sans); color: var(--ops-ink-3); }
@@ -2311,3 +2322,18 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 @media (max-width: 900px) { .lo-ws { height: auto; } .lo-stage { flex-direction: column; } .lo-canvas { min-height: 460px; } .lo-queue { width: auto; max-height: 260px; } .lo-strip { flex-wrap: wrap; } }
 /* In the workspace the caption is for screen readers only; visible, it ran under the map logo. */
 .lo-map--fill .lo-map__note { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Staff and roles: rows open the record, so they say so (14 Nov). The name reads as a
+   link, the row lifts on hover, and each row has a Manage button of at least 44x44. */
+.ops-list__table tr.is-link .st-name { color: var(--gold-text); font-weight: 700; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; transition: text-decoration-color .12s; }
+.ops-list__table tr.is-link:hover .st-name, .ops-list__table tr.is-link:focus-visible .st-name { text-decoration-color: currentColor; }
+.st-manage {
+  display: inline-flex; align-items: center; gap: 6px; min-width: 44px; min-height: 44px; padding: 0 12px;
+  border: 1px solid var(--ops-line-strong); border-radius: var(--radius-sm, 8px); background: transparent;
+  color: var(--gold-text); font: 700 13px/1 var(--font-sans); cursor: pointer; white-space: nowrap;
+}
+.st-manage:hover, .ops-list__table tr.is-link:hover .st-manage { background: var(--ops-wash); }
+.st-manage:focus-visible { outline: 2px solid var(--ops-gold-300); outline-offset: 2px; }
+.st-chevron { font-size: 18px; line-height: 1; transition: transform .12s; }
+.ops-list__table tr.is-link:hover .st-chevron { transform: translateX(2px); }
+@media (prefers-reduced-motion: reduce) { .st-chevron, .ops-list__table tr.is-link .st-name { transition: none; } }

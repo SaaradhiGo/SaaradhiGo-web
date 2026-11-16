@@ -2,19 +2,22 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
-import { LANGUAGES, LANGUAGE_INFO } from '@/i18n/locales';
+import { LANGUAGES, LANGUAGE_INFO, MARKETS, MARKET_INFO, type Market } from '@/i18n/locales';
 import { useTr } from '@/i18n/website';
+import { useLegal } from './LegalProvider';
 
 /**
- * Language. That is the whole control.
+ * Language and country: one globe in the header (owner, 13 Nov).
  *
- * A globe and nothing else in the bar (approved design, 2026-11-07): the
- * languages are listed only once it is opened, never in the header or the
- * footer. It sets the language and never the market (see `i18n/locales.ts`):
- * a rider choosing how to read the site is not telling us where they are.
+ * A globe and nothing else in the bar (approved design, 2026-11-07); the panel lists the
+ * languages, then the countries. The two stay independent: choosing a language never sets the
+ * market (see `i18n/locales.ts`). The country decides the company named in the footer, the
+ * currency and the policies, and it replaces the footer's own country dropdown and globe.
  */
 export function LanguagePicker() {
-  const { language, setLanguage } = useLocale();
+  const { language, setLanguage, setMarket } = useLocale();
+  const { market, choose } = useLegal();
+  const pickCountry = (m: Market) => { choose(m); setMarket(m); };
   const tr = useTr();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement | null>(null);
@@ -45,29 +48,53 @@ export function LanguagePicker() {
         aria-expanded={open}
         aria-haspopup="true"
         onClick={() => setOpen((v) => !v)}
-        aria-label={tr('Language')}
+        aria-label={tr('Language and country')}
+        data-testid="locale-globe"
       >
         <GlobeIcon />
       </button>
 
       {open && (
-        <div className="s-lang__panel" role="group" aria-label={tr('Language')}>
-          {LANGUAGES.map((code) => (
-            <button
-              key={code}
-              type="button"
-              className="s-lang__item"
-              aria-pressed={language === code}
-              lang={code}
-              onClick={() => {
-                setLanguage(code);
-                setOpen(false);
-              }}
-            >
-              {LANGUAGE_INFO[code].label}
-              {language === code && <CheckIcon />}
-            </button>
-          ))}
+        <div className="s-lang__panel" role="group" aria-label={tr('Language and country')}>
+          <div className="s-lang__head" id="s-lang-language">{tr('Language')}</div>
+          <div role="group" aria-labelledby="s-lang-language">
+            {LANGUAGES.map((code) => (
+              <button
+                key={code}
+                type="button"
+                className="s-lang__item"
+                aria-pressed={language === code}
+                lang={code}
+                onClick={() => {
+                  setLanguage(code);
+                  setOpen(false);
+                }}
+              >
+                {LANGUAGE_INFO[code].label}
+                {language === code && <CheckIcon />}
+              </button>
+            ))}
+          </div>
+          <div className="s-lang__head" id="s-lang-country">{tr('Country')}</div>
+          <div role="group" aria-labelledby="s-lang-country">
+            {MARKETS.map((m) => (
+              <button
+                key={m}
+                type="button"
+                className="s-lang__item"
+                aria-pressed={market === m}
+                data-testid={`locale-country-${m}`}
+                onClick={() => {
+                  pickCountry(m);
+                  setOpen(false);
+                }}
+              >
+                {MARKET_INFO[m].label}
+                {market === m && <CheckIcon />}
+              </button>
+            ))}
+          </div>
+          <p className="s-lang__note">{tr('Country sets the company, currency and policies.')}</p>
         </div>
       )}
     </div>

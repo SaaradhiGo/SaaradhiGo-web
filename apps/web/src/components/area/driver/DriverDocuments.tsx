@@ -56,7 +56,8 @@ export function DriverDocuments() {
       <DriverTop title={tr('Documents')} me={me} />
       <main className="dr-main">
         <section className="acard" style={{ padding: 20 }} data-testid="documents-summary">
-          <div className="arow" style={{ flexWrap: 'wrap' }}>
+          {/* 13 Nov: on phones the summary has its own row and the support button sits below it. */}
+          <div className="arow astack-phone" style={{ flexWrap: 'wrap' }}>
             <div className="agrow">
               <h2 className="a20" data-testid="documents-count">
                 {rows.length ? tr('{a} of {n} approved').replace('{a}', `${approved}`).replace('{n}', `${rows.length}`) : tr('Documents')}

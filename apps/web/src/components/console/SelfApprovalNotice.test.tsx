@@ -25,7 +25,7 @@ function answer(data: unknown, ok = true) {
   return fetchMock;
 }
 
-beforeEach(() => { window.localStorage.clear(); window.localStorage.setItem(TOKEN_KEY, 'access-1'); });
+beforeEach(() => { window.localStorage.clear(); document.cookie = 'sg-staff-in=1; path=/'; });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('SelfApprovalNotice', () => {
@@ -33,7 +33,7 @@ describe('SelfApprovalNotice', () => {
     const fetchMock = answer({ count: 3, results: [], self_approval_on: true });
     render(<SelfApprovalNotice />);
     const link = await screen.findByRole('link', { name: '3 decisions self-approved' });
-    expect(link.getAttribute('href')).toBe('/approvals?view=self');
+    expect(link.getAttribute('href')).toBe('/ops/approvals?view=self');
     expect(screen.getByText(/Self-approval is on/)).toBeTruthy();
     expect(String(fetchMock.mock.calls[0][0])).toContain('self_approved=1');
   });

@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { safeReturnTo } from './returnTo';
 
-const FALLBACK = '/dashboard';
+const FALLBACK = '/ops/dashboard';
 
 describe('safeReturnTo', () => {
   it.each([
@@ -26,17 +26,17 @@ describe('safeReturnTo', () => {
     ['JaVaScRiPt:alert(1)'],
     ['data:text/html,hi'],
     ['evil.example'],
-    ['/trips/%E0%A4%A'],
+    ['/ops/trips/%E0%A4%A'],
   ])('refuses %j', (value) => {
     expect(safeReturnTo(value, FALLBACK)).toBe(FALLBACK);
   });
 
   it('follows an ordinary console path with its query and fragment', () => {
-    expect(safeReturnTo('/trips/1?x=1#y', FALLBACK)).toBe('/trips/1?x=1#y');
+    expect(safeReturnTo('/ops/trips/1?x=1#y', FALLBACK)).toBe('/ops/trips/1?x=1#y');
   });
 
   it('follows an encoded path too', () => {
-    expect(safeReturnTo(encodeURIComponent('/drivers/7?tab=docs'), FALLBACK)).toBe('/drivers/7?tab=docs');
+    expect(safeReturnTo(encodeURIComponent('/ops/drivers/7?tab=docs'), FALLBACK)).toBe('/ops/drivers/7?tab=docs');
   });
 
   it('falls back when nothing is given', () => {

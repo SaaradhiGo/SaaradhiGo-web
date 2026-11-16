@@ -14,21 +14,21 @@ import { canOpen } from '@/lib/consoleLinks';
  * cannot open falls through to the next: never a page that would refuse them.
  */
 const ORDER: Array<{ roles: string[]; href: string; page: Parameters<typeof canOpen>[1] }> = [
-  { roles: ['super_admin', 'city_ops_manager', 'country_lead'], href: '/dashboard', page: 'dashboard' },
-  { roles: ['safety_officer'], href: '/safety-ops', page: 'safety' },
-  { roles: ['kyc_verifier'], href: '/kyc', page: 'drivers' },
-  { roles: ['support_agent', 'support_lead'], href: '/support', page: 'support' },
-  { roles: ['finance'], href: '/finance', page: 'finance' },
-  { roles: ['marketing', 'analyst'], href: '/reports', page: 'reports' },
+  { roles: ['super_admin', 'city_ops_manager', 'country_lead'], href: '/ops/dashboard', page: 'dashboard' },
+  { roles: ['safety_officer'], href: '/ops/safety-ops', page: 'safety' },
+  { roles: ['kyc_verifier'], href: '/ops/kyc', page: 'drivers' },
+  { roles: ['support_agent', 'support_lead'], href: '/ops/support', page: 'support' },
+  { roles: ['finance'], href: '/ops/finance', page: 'finance' },
+  { roles: ['marketing', 'analyst'], href: '/ops/reports', page: 'reports' },
 ];
 
 export function landingFor(access: AdminAccess | null): string {
-  if (!access) return '/settings/security';
+  if (!access) return '/ops/settings/security';
   const held = new Set((access.roles ?? []).map((r) => r.role));
   if (access.is_superuser) held.add('super_admin');
   for (const step of ORDER) {
     if (step.roles.some((r) => held.has(r)) && canOpen(access, step.page)) return step.href;
   }
-  if (canOpen(access, 'dashboard')) return '/dashboard';
-  return '/settings/security';
+  if (canOpen(access, 'dashboard')) return '/ops/dashboard';
+  return '/ops/settings/security';
 }

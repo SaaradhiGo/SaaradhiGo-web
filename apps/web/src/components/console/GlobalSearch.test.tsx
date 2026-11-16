@@ -16,7 +16,7 @@ const push = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push, replace: vi.fn(), prefetch: vi.fn() }),
-  usePathname: () => '/dashboard',
+  usePathname: () => '/ops/dashboard',
 }));
 
 type Reply = { status: number; body: unknown };
@@ -55,7 +55,7 @@ function type(text: string) {
 const settle = () => new Promise((r) => setTimeout(r, 320));
 
 beforeEach(() => {
-  window.localStorage.setItem(TOKEN_KEY, 'operator-token');
+  document.cookie = 'sg-staff-in=1; path=/';
   push.mockReset();
 });
 
@@ -78,14 +78,14 @@ describe('debounce and fan-out', () => {
     await act(settle);
 
     expect(calls).toHaveLength(4);
-    const paths = calls.map((c) => new URL(c.url).pathname).sort();
+    const paths = calls.map((c) => new URL(String(c.url).split('?to=').pop()!, 'http://x').pathname).sort();
     expect(paths).toEqual([
-      '/api/v1/search/admin/drivers/', '/api/v1/search/admin/riders/',
-      '/api/v1/search/admin/trips/', '/api/v1/search/admin/vehicles/',
+      '/search/admin/drivers/', '/search/admin/riders/',
+      '/search/admin/trips/', '/search/admin/vehicles/',
     ]);
     for (const c of calls) {
-      expect(new URL(c.url).searchParams.get('q')).toBe('ravi');
-      expect(c.auth).toBe('Bearer operator-token');
+      expect(new URL(String(c.url).split('?to=').pop()!, 'http://x').searchParams.get('q')).toBe('ravi');
+      expect(c.auth).toBeUndefined();
     }
   });
 
@@ -114,8 +114,8 @@ describe('debounce and fan-out', () => {
     type('ravi');
     await act(settle);
 
-    const paths = calls.map((c) => new URL(c.url).pathname).sort();
-    expect(paths).toEqual(['/api/v1/search/admin/drivers/', '/api/v1/search/admin/vehicles/']);
+    const paths = calls.map((c) => new URL(String(c.url).split('?to=').pop()!, 'http://x').pathname).sort();
+    expect(paths).toEqual(['/search/admin/drivers/', '/search/admin/vehicles/']);
   });
 });
 
@@ -237,7 +237,7 @@ describe('keyboard', () => {
     fireEvent.keyDown(box, { key: 'ArrowDown' });
     fireEvent.keyDown(box, { key: 'ArrowDown' });
     fireEvent.keyDown(box, { key: 'Enter' });
-    expect(push).toHaveBeenCalledWith('/drivers/5');
+    expect(push).toHaveBeenCalledWith('/ops/drivers/5');
     expect(box.value).toBe('');
     expect(box.getAttribute('aria-expanded')).toBe('false');
 
@@ -246,14 +246,14 @@ describe('keyboard', () => {
     await act(settle);
     await screen.findByRole('listbox');
     fireEvent.keyDown(box, { key: 'Enter' });
-    expect(push).toHaveBeenCalledWith('/trips/42');
+    expect(push).toHaveBeenCalledWith('/ops/trips/42');
   });
 
   it('a vehicle opens its driver', async () => {
     const box = await openWithThree();
     fireEvent.keyDown(box, { key: 'End' });
     fireEvent.keyDown(box, { key: 'Enter' });
-    expect(push).toHaveBeenCalledWith('/drivers/5');
+    expect(push).toHaveBeenCalledWith('/ops/drivers/5');
   });
 
   it('Escape closes the list and keeps the text; a second Escape clears it', async () => {
@@ -271,13 +271,13 @@ describe('keyboard', () => {
   it('a click on an option opens it', async () => {
     await openWithThree();
     fireEvent.click(screen.getByRole('option', { name: /^Ravi K\./ }));
-    expect(push).toHaveBeenCalledWith('/drivers/5');
+    expect(push).toHaveBeenCalledWith('/ops/drivers/5');
   });
 
   it('a stale answer does not overwrite a newer one', async () => {
     const answers: Record<string, () => void> = {};
     vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => new Promise<Response>((resolve) => {
-      const url = new URL(String(input));
+      const url = new URL(String(input).split('?to=').pop()!, 'http://x');
       const q = url.searchParams.get('q')!;
       const key = (['trips', 'drivers', 'riders', 'vehicles'] as const).find((k) => url.pathname.includes(k))!;
       const body = key === 'drivers' && q === 'old'

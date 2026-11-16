@@ -48,11 +48,27 @@ export type PayoutMethod = {
 };
 export type Requirements = {
   config: { country: string; state: string; items: Record<string, { need: Need; blocks_online: boolean }>;
-    min_driver_age: number | null; max_vehicle_age_years: number | null; languages: string[] };
+    min_driver_age: number | null; max_vehicle_age_years: number | null; languages: string[];
+    min_vehicle_year?: number | null; vehicle_min_doors?: number | null };
   checklist: Checklist; personal: Personal; identity: Identity; payout_method: PayoutMethod;
   states: { code: string; name: string }[]; relationships: { code: string; label: string }[];
   vehicle_types: string[]; vehicle_years: number[]; upload_kinds: Record<string, string>;
+  /** 12 Nov: the city's KYC review target, the same number the console's queue alerts on. */
+  review_target_working_days?: number;
+  /** 14 Nov: a suspension in force: why (the driver's words), since when. */
+  paused?: { reason_code: string; reason: string; since: string; permanent: boolean } | null;
 };
+
+/** "We usually review within one working day." from the city's review target (12 Nov). */
+export function reviewPromise(days: number | null | undefined, tr: (s: string) => string, short = false): string {
+  const n = days && days > 0 ? days : 1;
+  if (short) {
+    return n === 1 ? tr('Usually one working day. Each document shows its own state; a rejected one says why.')
+      : tr('Usually {n} working days. Each document shows its own state; a rejected one says why.').replace('{n}', String(n));
+  }
+  return n === 1 ? tr('You can go online once every step is approved. We usually review within one working day.')
+    : tr('You can go online once every step is approved. We usually review within {n} working days.').replace('{n}', String(n));
+}
 export type Catalogue = { type: string; makes: { make: string; models: { id: number; model: string }[] }[]; colours: string[] };
 
 export const requirements = () => areaGet<Requirements>('/driver/requirements/');
@@ -80,6 +96,21 @@ export const STATUS_LABEL: Record<ItemStatus, string> = {
   missing: 'Missing', in_review: 'In review', approved: 'Approved', rejected: 'Rejected',
   expiring: 'Expiring', done: 'Done',
 };
+/**
+ * 13 Nov: an optional item nobody added is not "Missing": it reads "Optional · not added", in
+ * grey, and never counts toward the total (the server's done/total already leaves it out). The
+ * driver app and the console use the same words.
+ */
+export const OPTIONAL_NOT_ADDED = 'Optional · not added';
+export function isOptionalNotAdded(it: { need?: string; status: string }) {
+  return it.need === 'optional' && it.status === 'missing';
+}
+export function itemLabel(it: { need?: string; status: ItemStatus }) {
+  return isOptionalNotAdded(it) ? OPTIONAL_NOT_ADDED : STATUS_LABEL[it.status];
+}
+export function itemTone(it: { need?: string; status: ItemStatus }) {
+  return isOptionalNotAdded(it) ? 'apill--neu' : STATUS_TONE[it.status];
+}
 export const STATUS_TONE: Record<ItemStatus, string> = {
   missing: 'apill--neu', in_review: 'apill--warn', approved: 'apill--ok', rejected: 'apill--err',
   expiring: 'apill--warn', done: 'apill--ok',

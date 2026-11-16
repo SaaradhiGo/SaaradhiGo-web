@@ -32,7 +32,7 @@ export const SUPPORT_MAILTO = `mailto:${SUPPORT_EMAIL}?subject=${encodeURICompon
  * self-consistent and its robots file can keep crawlers out entirely.
  */
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL || 'https://saaradhigo.com'
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://www.saaradhigo.com'
 ).replace(/\/$/, '');
 
 /**
@@ -41,4 +41,5 @@ export const SITE_URL = (
  * QA must not be indexed, and nothing should link a rider from QA to
  * production or the other way round.
  */
-export const IS_PUBLIC_SITE = SITE_URL === 'https://saaradhigo.com';
+// 13 Nov: production is www.saaradhigo.com (the apex redirects to it); both count as the public site.
+export const IS_PUBLIC_SITE = SITE_URL === 'https://www.saaradhigo.com' || SITE_URL === 'https://saaradhigo.com';

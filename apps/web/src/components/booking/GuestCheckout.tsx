@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Alert, Field, SubmitButton } from '@/components/form';
+import { SmsConsent, saveSmsMarketingConsent } from '@/components/SmsConsent';
 import PhoneField, { usePhoneMarkets } from '@/components/PhoneField';
 import { Button } from '@/components/sg/Button';
 import { nationalLooksValid, toE164 } from '@/lib/markets';
@@ -63,6 +64,7 @@ export function GuestCheckout({
   const testPhones = qaTestPhones();
 
   const [fullName, setFullName] = useState('');
+  const [marketingSms, setMarketingSms] = useState(false);
   const [country, setCountry] = useState('');
   const [national, setNational] = useState('');
   const [email, setEmail] = useState('');
@@ -115,6 +117,7 @@ export function GuestCheckout({
       // account is refused here instead of quietly booking a ride on a
       // driver's identity.
       await verifyPublicOtp(phone, otp, 'rider');
+      await saveSmsMarketingConsent(marketingSms);
       try {
         await updateProfile({
           full_name: fullName.trim(),
@@ -206,6 +209,7 @@ export function GuestCheckout({
         label="Mobile number"
         help="Your driver calls this at the pickup. We send a code to confirm it."
       />
+      <SmsConsent marketing={marketingSms} onMarketing={setMarketingSms} us={country === 'US'} />
 
       <Field
         label="Email address (optional)"

@@ -11,6 +11,7 @@
  */
 import type { AdminAccess } from './adminScope';
 import { can } from './adminScope';
+import { oneLine } from './money';
 
 // ---------------------------------------------------------------------------
 // Filters
@@ -177,8 +178,8 @@ export function formatMinor(
   } catch {
     text = `${code} ${whole}${fraction ? `.${fraction}` : ''}`;
   }
-  if (negative) return `−${text}`;
-  return signed && minor > 0 ? `+${text}` : text;
+  if (negative) return oneLine(`−${text}`);
+  return oneLine(signed && minor > 0 ? `+${text}` : text);
 }
 
 /**
@@ -224,7 +225,8 @@ export function cityZoneLabel(timeZone: string | null | undefined): string {
 
 /**
  * "02 Oct, 01:30" in the given IANA zone (the trip's city), 24-hour;
- * with `zone: true`, "02 Oct, 01:30 IST".
+ * with `zone: true`, "02 Oct, 01:30 IST". A US city reads month-first on a
+ * 12-hour clock (15 Nov): "Oct 2, 1:30 AM MDT".
  */
 export function cityTime(
   iso: string | null | undefined,
@@ -238,10 +240,14 @@ export function cityTime(
   const tz = timeZone || 'UTC';
   let text: string;
   try {
-    text = new Intl.DateTimeFormat('en-GB', {
-      timeZone: tz, day: '2-digit', month: 'short',
-      hour: '2-digit', minute: '2-digit', hour12: false,
-    }).format(d);
+    text = /^America\//.test(tz)
+      ? new Intl.DateTimeFormat('en-US', {
+        timeZone: tz, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
+      }).format(d).replace(/ /g, ' ')
+      : new Intl.DateTimeFormat('en-GB', {
+        timeZone: tz, day: '2-digit', month: 'short',
+        hour: '2-digit', minute: '2-digit', hour12: false,
+      }).format(d);
   } catch {
     return `${iso.replace('T', ' ').slice(0, 16)} UTC`;
   }
@@ -257,6 +263,8 @@ export function cityTime(
 export type TripActions = {
   cancel: boolean; flag: boolean; note: boolean; refund: boolean;
   refund_action_key: 'support.refund' | 'finance.refund' | null;
+  /** 15 Nov: what this person may refund alone (per trip, per day) and what is left. */
+  refund_limits?: RefundLimits | null;
   adjust: boolean; reveal: boolean;
   /** Support may prompt the rider's app to show the pickup code again; the code is never sent here. */
   resend_pickup_code?: boolean;
@@ -397,3 +405,8 @@ export function formatWhole(
   if (minor < 0 && whole !== 0) return `−${text}`;
   return signed && minor > 0 ? `+${text}` : text;
 }
+
+export type RefundLimits = {
+  action_key: string; currency: string; per_trip_minor: number; per_trip_left_minor: number;
+  per_day_minor: number | null; used_today_minor: number; per_day_left_minor: number | null; alone_up_to_minor: number;
+};

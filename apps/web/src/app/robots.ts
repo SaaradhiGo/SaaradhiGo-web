@@ -23,7 +23,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/book', '/my-trips', '/ride/choose', '/ride/trip/', '/trips', '/account', '/login', '/verify-email', '/reset-password'],
+        disallow: ['/my-trips', '/ride/choose', '/ride/trip/', '/trips', '/account', '/ops/', '/role-gate', '/verify-email', '/reset-password'],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,

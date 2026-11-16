@@ -10,5 +10,7 @@ export const generateMetadata = localized({
 });
 
 export default function AboutPage() {
+  // The operating company is in the footer line on this page (the About layout must fit the
+  // approved height); the Contact page carries the full company block.
   return <AboutContent />;
 }

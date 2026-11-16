@@ -1,5 +1,9 @@
 'use client';
 
+import { ExampleLines, ExampleTag } from '@/components/sg/ExampleRequest';
+import { mockClassesFor } from '@/lib/exampleFare';
+import { useLegal } from '@/components/sg/LegalProvider';
+
 import Link from 'next/link';
 import { HeroBooking } from '@/components/home/HeroBooking';
 import { HeroMapArt } from '@/components/art/HeroMapArt';
@@ -181,6 +185,8 @@ export function HomeContent() {
 
 function RiderMock() {
   const h = useSite().home;
+  // 14 Nov: the market's own classes (USA: Standard and XL; no Auto).
+  const classes = mockClassesFor(useLegal().market, h.mockClasses);
   return (
     <div className="s-phone" aria-hidden="true">
       <div className="s-phone__screen">
@@ -189,14 +195,15 @@ function RiderMock() {
         </div>
         <div className="s-phone__body">
           <div className="t-small t-strong">{h.mockChoose}</div>
-          {h.mockClasses.map((c, i) => (
+          {classes.map((c, i) => (
             <div key={c} className={`s-mock-row${i === 0 ? ' s-mock-row--on' : ''}`}>
               <span className={`s-mock-row__swatch s-mock-row__swatch--${i}`} />
               <span className="s-mock-row__name">{c}</span>
               <LockIcon />
             </div>
           ))}
-          <div className="s-mock-btn" style={{ marginTop: 4 }}>{h.mockBook}</div>
+          {/* The button books the market's first class (USA: Book Standard, never Auto). */}
+          <div className="s-mock-btn" style={{ marginTop: 4 }}>{h.mockBook.replace(h.mockClasses[0], classes[0])}</div>
         </div>
       </div>
     </div>
@@ -213,12 +220,11 @@ function DriverMock() {
           <span className="s-mock-avatar" />
         </div>
         <div className="s-mock-card">
-          <div className="t-label">{h.mockRequest}</div>
-          <div className="s-bars">
-            <div className="s-bar"><span>{h.mockFare}</span><i style={{ width: 44 }} /></div>
-            <div className="s-bar"><span>{h.mockCommission}</span><i style={{ width: 26 }} /></div>
-            <div className="s-bar s-bar--earn"><span>{h.mockEarn}</span><i style={{ width: 38 }} /></div>
+          <div className="s-request__head">
+            <div className="t-label">{h.mockRequest}</div>
+            <ExampleTag />
           </div>
+          <ExampleLines fare={h.mockFare} commission={h.mockCommission} earn={h.mockEarn} />
           <div className="s-mock-actions">
             <span>{h.mockDecline}</span>
             <span>{h.mockAccept}</span>

@@ -13,6 +13,8 @@ export type Period = 'today' | 'week' | 'month';
 
 export type PeriodTotals = {
   period: Period;
+  /** 14 Nov: false where the market bans cash (Idaho); absent means cash is allowed. */
+  cash_allowed?: boolean;
   start: string;
   end: string;
   timezone: string;
@@ -21,11 +23,15 @@ export type PeriodTotals = {
   gross: string;
   commission: string;
   net: string;
+  /** 14 Nov: tips in the period, and `earned` = net + tips (what "Today you earned" shows). */
+  tips?: string;
+  earned?: string;
   cash_collected: string;
   unresolved_trips: number;
 };
 
-export type Day = { date: string; trips: number; gross: string; commission: string; net: string };
+/** 15 Nov: `tips` that day and `earned` = net + tips, as "Today you earned" counts them. */
+export type Day = { date: string; trips: number; gross: string; commission: string; net: string; tips?: string; earned?: string };
 
 export type Balance = {
   available_balance?: string | null;
@@ -48,6 +54,8 @@ export type Withdrawal = {
   /** Withdraw now (10 Nov): `instant`, with the provider fee it cost (minor units). */
   origin?: string | null;
   fee_minor?: number | null;
+  /** 14 Nov: a rejected or failed payout's one-line reason, and whether the money is back. */
+  outcome?: { reason: string | null; money: 'returned' | 'held' } | null;
 };
 
 /** One settled trip from the ledger (GET /driver/earnings/). */
@@ -66,7 +74,12 @@ export type EarningRow = {
   ride_class?: string | null;
   /** A platform fee returned for this trip (11 Nov), already off `commission` and in `net_amount`. */
   platform_fee_refunded?: string | null;
+  /** 15 Nov: the trip's tip (100% the driver's); `net_amount` is before it. */
+  tip?: string | null;
 };
+/** 15 Nov (trip 219): a completed trip whose card payment was not collected; no amounts, not in earnings. */
+export type UnsettledRow = { id: string; trip_id_val: number; created_at?: string | null; pickup_address?: string | null;
+  destination_address?: string | null; ride_class?: string | null; method?: string | null };
 
 export type Profile = {
   status?: string | null;
@@ -93,6 +106,7 @@ export type Onboarding = {
 };
 export type Vehicle = {
   id: number; insurance_expiry?: string | null; permit_expiry?: string | null; fitness_expiry?: string | null; puc_expiry?: string | null;
+  registration_expiry?: string | null; doors?: number | null;
   vehicle_number?: string | null; brand?: string | null; model?: string | null; color?: string | null;
   vehicle_type?: { type?: string | null } | string | null;
 };
@@ -124,8 +138,12 @@ const paged = <T,>(p: Page<T> & { count?: number }): Paged<T> => {
   const results = list(p);
   return { count: Array.isArray(p) ? results.length : p?.count ?? results.length, results };
 };
-export const ledgerPage = async (start: string, end: string, q: string, page: number) =>
-  paged(await areaGet<Page<EarningRow> & { count?: number }>(`/driver/earnings/?${pagedQuery(start, end, q, page)}`));
+export const ledgerPage = async (start: string, end: string, q: string, page: number) => {
+  const p = await areaGet<Page<EarningRow> & { count?: number; unsettled?: UnsettledRow[] }>(`/driver/earnings/?${pagedQuery(start, end, q, page)}`);
+  return { ...paged(p), unsettled: (!Array.isArray(p) && p?.unsettled) || [] };
+};
+/** What a trip row earned, tip included, as the cards count it. */
+export const earnedWithTip = (r: EarningRow) => (r.net_amount == null ? null : String(Number(r.net_amount) + Number(r.tip ?? 0)));
 export const payoutPage = async (start: string, end: string, q: string, page: number) =>
   paged(await areaGet<Page<Withdrawal> & { count?: number }>(`/driver/withdrawals/history/?${pagedQuery(start, end, q, page)}`));
 export const profile = () => areaGet<Profile>('/driver/driver/profile/');

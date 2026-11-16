@@ -151,8 +151,8 @@ for (const theme of THEMES) {
     };
     for (const [name, list, selector] of [
       ['trip-detail', '/trips?status=completed', 'tbody a[href^="/trips/"]'],
-      ['driver-detail', '/drivers', 'tbody a[href^="/drivers/"]'],
-      ['ticket-detail', '/support?status=all', 'tbody a[href^="/support/"]'],
+      ['driver-detail', '/drivers', 'tbody a[href^="/ops/drivers/"]'],
+      ['ticket-detail', '/support?status=all', 'tbody a[href^="/ops/support/"]'],
     ]) {
       const href = await firstHref(list, selector);
       if (!href) { console.log(`  (no ${name}: nothing listed)`); continue; }

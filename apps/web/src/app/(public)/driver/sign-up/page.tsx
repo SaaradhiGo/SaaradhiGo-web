@@ -20,7 +20,7 @@ export default function Page() {
   return (
     <AuthShell
       title="Apply to drive"
-      intro="Create your account first. Documents and vehicle details come next, in the driver app."
+      intro="Create your account first. Documents and vehicle details come next, here or in the driver app."
       footer={
         <>
           <p>

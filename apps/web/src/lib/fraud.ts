@@ -347,7 +347,7 @@ export function queueQuery(f: QueueFilters, extra: Record<string, string> = {}):
   return q.toString();
 }
 
-/** The filters a link carries (`/fraud?kind=referral_abuse`), falling back to the blank ones. */
+/** The filters a link carries (`/ops/fraud?kind=referral_abuse`), falling back to the blank ones. */
 export function filtersFromParams(get: (key: string) => string | null): QueueFilters {
   return {
     status: get('status') ?? BLANK_FILTERS.status,

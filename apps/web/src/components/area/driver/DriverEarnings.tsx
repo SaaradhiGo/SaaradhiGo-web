@@ -6,7 +6,7 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { type History, type MonthRow, downloadStatement, months as loadMonths } from '@/lib/area/earnings';
 import { areaGet } from '@/lib/area/api';
-import { addition, dateLabel, dateOrder, deduction, money, month3, numericDate } from '@/lib/area/format';
+import { addition, dateLabel, dateLocale, dateOrder, deduction, money, month3, shownDate } from '@/lib/area/format';
 import { useLoad } from '@/lib/area/useLoad';
 import { messageFor } from '@/lib/publicAuth';
 import { IDoc } from '../icons';
@@ -47,10 +47,10 @@ function Chart({ h, locale, label }: { h: History; locale: string; label: string
   const tickAt = (i: number) => h.chart.unit !== 'day' || bars.length <= 7 || i === 0 || i === bars.length - 1 || (i % 7 === 0 && i < bars.length - 4);
   const tick = (key: string, i: number) => {
     if (h.chart.unit === 'hour') return `${key}:00`;
-    if (h.chart.unit === 'month') return month3(new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(new Date(`${key.slice(0, 7)}-15T12:00:00Z`)));
+    if (h.chart.unit === 'month') return month3(new Intl.DateTimeFormat(dateLocale(locale), { month: 'short', timeZone: 'UTC' }).format(new Date(`${key.slice(0, 7)}-15T12:00:00Z`)));
     const d = new Date(noon(key));
     return i === 0 || i === bars.length - 1
-      ? month3(new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d)) : String(d.getUTCDate());
+      ? month3(new Intl.DateTimeFormat(dateLocale(locale), { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d)) : String(d.getUTCDate());
   };
   const when = (key: string) => (h.chart.unit === 'hour' ? `${key}:00` : h.chart.unit === 'month' ? ymLabel(key.slice(0, 7), locale)
     : dateLabel(noon(key), locale, 'UTC', new Date(), false));
@@ -58,10 +58,12 @@ function Chart({ h, locale, label }: { h: History; locale: string; label: string
   const across = !empty && h.chart.unit !== 'hour' && bars.length <= 12;
   const m = (v: string | number | undefined) => money(v ?? 0, h.currency, locale) ?? '';
   return (
-    <div className={h.chart.unit === 'month' ? 'er-scrollx' : undefined} onMouseLeave={() => setTip(null)}>
+    <div className={h.chart.unit === 'month' ? 'er-scrollx' : 'er-chart'} onMouseLeave={() => setTip(null)}
+      style={{ '--n': bars.length } as React.CSSProperties} tabIndex={0} role="group" aria-label={tr('Earnings by day')}>
       <div className={`er-bars${empty ? ' er-bars--empty' : ''}${across ? ' er-bars--amts' : ''}`}
         role="list" aria-label={tr('Earnings by day')} data-empty={empty || undefined}>
-        {empty && <div className="a14 amut er-empty" role="status">{tr('No trips in {period} yet').replace('{period}', label)}</div>}
+        {/* A list may only hold list items (axe aria-required-children, 13 Nov): the empty line is one. */}
+        {empty && <div className="a14 amut er-empty" role="listitem"><span role="status">{tr('No trips in {period} yet').replace('{period}', label)}</span></div>}
         {bars.map((b, i) => {
           const v = Number(b.earned);
           const px = top > 0 && v > 0 ? Math.max(4, Math.round((v / top) * 120)) : 0;
@@ -112,7 +114,7 @@ function Stat({ label, value, sub, ink = false, tone }: { label: string; value: 
 
 type Statement = {
   summary: MonthRow & Record<string, unknown>; trips: { at: string | null; trip_id: number | null; method: string; fare: string | null; fee: string | null; earned: string | null }[];
-  payouts: { at: string; amount: string }[]; currency: string; month: string; start: string; end: string;
+  payouts: { at: string; amount: string }[]; fees?: { at: string; amount: string; note: string }[]; currency: string; month: string; start: string; end: string;
   driver: string; phone_masked: string; pan_masked: string | null; city: string; country: string; number: string; produced_on: string; fee_note?: string;
   company: { name: string; address: string; gstin: string };
 };
@@ -124,7 +126,7 @@ function StatementSheet({ month, onClose }: { month: string; onClose: () => void
   const st = useLoad(() => areaGet<Statement>(`/driver/earnings/statement/?month=${month}`), [month]);
   const s = st.data;
   const m = (v: string | null | undefined) => money(v ?? 0, s?.currency, locale) ?? '';
-  const d = (iso: string) => numericDate(iso, dateOrder(s?.country));
+  const d = (iso: string) => shownDate(iso, dateOrder(s?.country));
   return (
     <Sheet label={tr('Statement, {m}').replace('{m}', ymLabel(month, locale))} onClose={onClose} testid="statement-sheet">
         {st.state === 'error' && <LoadError what="earnings" retry={st.retry} />}
@@ -152,6 +154,17 @@ function StatementSheet({ month, onClose }: { month: string; onClose: () => void
                 <div key={i} className="pf-row a14"><span>{t.at ? dateLabel(t.at, locale) : ''} {t.trip_id ? `#${t.trip_id}` : ''}</span><span>{m(t.earned)}</span></div>
               ))}
             </div>
+            {!!s.fees?.length && (
+              <>
+                <h3 className="ab">{tr('Platform fees ({n})').replace('{n}', String(s.fees.length))}</h3>
+                {s.fees.map((f, i) => (
+                  <div key={i} className="pf-row a14" data-testid="statement-fee">
+                    <span>{dateLabel(f.at, locale)} {f.note}</span>
+                    <span className={Number(f.amount) < 0 ? 'agrn' : undefined}>{Number(f.amount) < 0 ? `+${m(String(-Number(f.amount)))}` : `−${m(f.amount)}`}</span>
+                  </div>
+                ))}
+              </>
+            )}
             <h3 className="ab">{tr('Payouts ({n})').replace('{n}', String(s.payouts.length))}</h3>
             {s.payouts.map((p, i) => <div key={i} className="pf-row a14"><span>{dateLabel(p.at, locale)}</span><span>{m(p.amount)}</span></div>)}
           </>
@@ -200,7 +213,7 @@ export function DriverEarnings() {
           {s && h ? (
             <>
               <Stat ink label={tr('You earned')} value={m(s.earned)}
-                sub={`${tr('{n} trips').replace('{n}', String(s.trips))} · ${tr('{n} days driven').replace('{n}', String(s.days_driven))}`} />
+                sub={`${tr('{n} trips').replace('{n}', String(s.trips))} · ${tr(s.days_driven === 1 ? '{n} day driven' : '{n} days driven').replace('{n}', String(s.days_driven))}`} />
               <Stat label={tr('Trip fares')} value={m(s.fares)} sub={tr('Avg {a} per trip').replace('{a}', m(s.avg_fare))} />
               <Stat label={tr('Platform fee')} value={fee.text} tone={fee.red && 'red'} sub={s.fee_note ? tr(s.fee_note) : tr('From your trip ledger')} />
               <Stat label={tr('Tips')} value={addition(s.tips, cur, locale)} sub={s.tips_enabled ? tr('From {n} riders').replace('{n}', String(s.tip_riders)) : tr('Tips are not on yet')} />
@@ -223,7 +236,8 @@ export function DriverEarnings() {
             <h2 className="a20">{tr('All months')}</h2>
             {all.data && <span className="a14 amut">{tr('Since you joined in {m} · statements are ready on the 1st of each month').replace('{m}', ymLabel(all.data.joined, locale))}</span>}
           </div>
-          <div className="er-scroll">
+          {/* 13 Nov: on phones, one card per month (below); money is never clipped. */}
+          <div className={`er-scroll${all.data?.months.length ? ' a-wide' : ''}`}>
             <div className="er-grid albl er-ghead"><span>{tr('Month')}</span><span>{tr('Trips')}</span><span>{tr('Fares')}</span><span>{tr('Platform fee')}</span><span>{tr('Tips')}</span><span>{tr('You earned')}</span><span>{tr('Statement')}</span></div>
             {all.state === 'error' && <div style={{ padding: '0 20px' }}><LoadError what="earnings" retry={all.retry} /></div>}
             {!all.data && all.state !== 'error' && <div style={{ padding: '14px 20px' }}><Skel h={18} lines={2} gap={18} /></div>}
@@ -235,7 +249,7 @@ export function DriverEarnings() {
                 {(() => { const f = deduction(row.platform_fee, cur, locale); return <span className={f.red ? 'ared' : undefined}>{f.text}</span>; })()}
                 <span>{addition(row.tips, cur, locale)}</span>
                 <span className="ab agrn" data-earned={row.earned}>{m(row.earned)}</span>
-                <span className="arow" style={{ gap: 12 }}>
+                <span className="arow er-files" style={{ gap: 12 }}>
                   <button type="button" className="su-link a14" onClick={() => setViewing(row.month)}>{tr('View')}</button>
                   <button type="button" className="su-link a14" data-testid={`pdf-${row.month}`} onClick={() => void file(row.month, 'pdf')}>PDF</button>
                   <button type="button" className="su-link a14" data-testid={`csv-${row.month}`} onClick={() => void file(row.month, 'csv')}>CSV</button>
@@ -243,7 +257,34 @@ export function DriverEarnings() {
               </div>
             ))}
           </div>
-          <div className="a14 amut er-note">{tr('Every trip and payout is listed under Trips and Payouts, filterable by any date range. Yearly tax summary available from April.')}</div>
+          {all.data?.months.length ? (
+            <ul className="acards a-phone" style={{ padding: '0 16px 12px' }} data-testid="month-cards">
+              {all.data.months.map((row) => {
+                const f = deduction(row.platform_fee, cur, locale);
+                return (
+                  <li key={row.month} data-card-month={row.month}>
+                    <div className="arow">
+                      <span className="ab">{ymLabel(row.month, locale)}{row.so_far ? ` ${tr('(so far)')}` : ''}</span>
+                      <span className="a14 amut">{tr('{n} trips').replace('{n}', String(row.trips))}</span>
+                    </div>
+                    <div className="arow a14"><span className="amut">{tr('Fares')}</span><span className="amoney">{m(row.fares)}</span></div>
+                    <div className="arow a14"><span className="amut">{tr('Platform fee')}</span><span className={`amoney${f.red ? ' ared' : ''}`}>{f.text}</span></div>
+                    <div className="arow a14"><span className="amut">{tr('Tips')}</span><span className="amoney">{addition(row.tips, cur, locale)}</span></div>
+                    <div className="arow"><span className="ab">{tr('You earned')}</span><span className="ab agrn amoney">{m(row.earned)}</span></div>
+                    <div className="arow er-files" style={{ justifyContent: 'flex-start', gap: 16 }}>
+                      <button type="button" className="su-link a14" onClick={() => setViewing(row.month)}>{tr('View')}</button>
+                      <button type="button" className="su-link a14" onClick={() => void file(row.month, 'pdf')}>PDF</button>
+                      <button type="button" className="su-link a14" onClick={() => void file(row.month, 'csv')}>CSV</button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+          {/* 15 Nov: a US driver's yearly summary is ready in January and the 1099 comes through Stripe. */}
+          <div className="a14 amut er-note" data-testid="tax-note">{tr(h?.currency === 'USD'
+            ? 'Every trip and payout is listed under Trips and Payouts, filterable by any date range. Your yearly earnings summary is ready in January; your 1099 tax form is issued through Stripe.'
+            : 'Every trip and payout is listed under Trips and Payouts, filterable by any date range. Yearly tax summary available from April.')}</div>
         </section>
         {viewing && <StatementSheet month={viewing} onClose={() => setViewing(null)} />}
       </main>

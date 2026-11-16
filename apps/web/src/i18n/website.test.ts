@@ -13,9 +13,84 @@ import { WEBSITE, translate } from './website';
 
 /** Shown on the public pages, not in the translation files: stays English. */
 const MISSING = [
+  // 14 Nov, USA: the driver's Payouts line where cash is banned (Idaho). English only until translated.
+  'You earned {earned} today.',
   // SiteCopy
   'Ride now', 'Schedule', 'Trip type', // the hidden Schedule switch
   'Mobile number · we text a code', 'Confirm', // unused phone variants
+  // 14 Nov USA (Idaho): US pages and flows, English until translated (Spanish for native review).
+  'Non-discrimination and accessibility',
+  'Background check consent',
+  'Doors',
+  'We could not start the check. Try again.',
+  'I have read the disclosure',
+  'Before we can check your background, read the disclosure about the report we will get.',
+  'Read the background check disclosure',
+  'I authorise DeepTrics LLC and its background check provider to get consumer reports about me, now and while I drive, as described in the disclosure.',
+  'Authorise the background check',
+  'Authorised. Your check is with our provider.',
+  "SaaradhiGo never stores your Social Security number. You enter it only in the provider's secure form.",
+  'I will serve every rider without discrimination, carry service animals, and help riders with disabilities, including stowing a folding wheelchair.',
+  'Read the policy',
+  'Card payment is not available right now.',
+  'Your card was not accepted.',
+  'Confirm your card',
+  'We hold {amount} now and charge it only when the trip ends.',
+  'Hold and book',
+  'This fare has expired. Get a new one.',
+  'We could not confirm your card. Try again.',
+  'Cash is not accepted here. Your card is held for the locked fare and charged only when the trip ends.',
+  'Test payment: no card is charged.',
+  'Card, Apple Pay or Google Pay',
+  'Held for the locked fare when you book, charged when the trip ends.',
+  'Cash is not accepted in the USA. You choose your card when you book.',
+  'Accessibility needs',
+  'Your driver sees this when they accept your trip. Service animals are always welcome.',
+  'Note for your driver',
+  'For example: I use a folding wheelchair',
+  'You tipped {amount}',
+  '100% goes to your driver.',
+  'We could not add the tip. Nothing was charged.',
+  'Add a tip',
+  '100% goes to your driver. Charged to the card you paid with.',
+  'Tip',
+  'Other amount',
+  'Tip amount',
+  'Choose a tip',
+  'Tip {amount}',
+  'We could not send your report. Try again, or call support.',
+  'Report driver impairment',
+  'Tell us if your driver seemed affected by drugs or alcohol. We pause the driver at once while we investigate. If you are in danger, call 911 first.',
+  'What happened (optional)',
+  'Send report',
+  // 14 Nov mobile UX: English until the reviewer translates them.
+  'A driver is free now', 'Your fare is ready. Book before it changes.',
+  'We are checking every 30 seconds while this page is open, for 10 minutes. Keep it open and we will tell you.',
+  'Drivers come free all the time. Try again in a minute, or we can keep checking for you.',
+  'A driver is free now. Your fare is ready to book.', 'Log in to book this ride. Your trip and fare are kept.',
+  // 13 Nov launch approvals: English until the reviewer translates them.
+  'Country', 'Registered office', 'file number', 'Tell me when we launch',
+  'SaaradhiGo is not available in this area yet.', 'We could not save that. Please try again.',
+  // 13 Nov follow-up: account deletion.
+  'Your account closes after your earnings are paid.', 'Delete your account',
+  'Closing: waiting for your earnings to be paid.', 'What we delete', 'What we must keep',
+  'You are still owed {amount}. Your account closes after it is paid; until then you stay signed in and cannot go online.',
+  'Type DELETE to confirm', 'Keep my account',
+  // 13 Nov apps follow-up: trip summary and owing on closure.
+  'Closing: waiting for what you owe to be settled.', 'Paid {fare} in cash', 'Paid {fare} online',
+  'Your driver', '{n} stars',
+  // 13 Nov, public-site UX: role gate, account switch, globe panel, example request
+  'Driver home', 'Example ride request', 'That did not work. Try again.', 'Back to driver home', 'Back to booking',
+  'Sign in to drive', 'Sign in to ride', 'This page needs you to be signed in.', 'Sign in',
+  'This page is for driving', 'This page is for riding',
+  'You are using SaaradhiGo as a rider right now. Switch to driving to open it. Nothing about your rides changes.',
+  'You are using SaaradhiGo as a driver right now. Switch to riding to open it. Nothing about your driving changes.',
+  'Switch to driving', 'Switch to riding', 'Ride with your SaaradhiGo account',
+  'Book rides with the account you drive with: same name, same mobile number, no new sign-up. Your driving is not affected.',
+  'Ride with this account', 'Driver pages need a driver account. See what you need and how to apply.',
+  'Example from the Hyderabad rate card', 'Example', 'Language and country', 'Country sets the company, currency and policies.',
+  // 13 Nov, review fixes: the payout card on phones
+  'Provider fee', 'You received',
 ];
 
 /** Class names the rider app shows in Latin script in every language. */

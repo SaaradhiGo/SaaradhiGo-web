@@ -7,13 +7,21 @@ import MapSurface from '@/components/MapSurface';
 import { TripSafety } from '@/components/booking/TripSafety';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
-import { type CancelPreview, RIDER_CANCEL_REASONS, RideSocket, type SocketEvent, cancelPreview, cancelTrip, formatPlate } from '@/lib/booking';
-import { money } from '@/lib/area/format';
+import { placeLabel } from '@/lib/area/places';
+import {
+  CANCEL_BEFORE_DRIVER, CANCEL_WITH_DRIVER, type CancelPreview, RideSocket, type SocketEvent, cancelPreview, cancelTrip,
+  formatPlate, routeBetween,
+} from '@/lib/booking';
+import { localClock, money } from '@/lib/area/format';
 import { AREA_FLAGS } from '@/lib/area/flags';
 import {
   type Call, type Eta, type Share, type Trip, className, endCall, lockedFare, startCall, startShare, stopShare,
-  trip as loadTrip, tripDriver, tripEta, tripShare,
+  rateTrip, saveDraft, trip as loadTrip, tripDriver, tripEta, tripShare,
 } from '@/lib/area/rider';
+import { PayOnline } from './PayOnline';
+import { ReportImpairment, TipCard } from './UsTrip';
+import { useOnScreenMarket } from '@/components/sg/LegalProvider';
+import { NotYourTrip, Skel, isNotFound } from '../states';
 import { ILock, IPhone, IShare, IShield, IUser } from '../icons';
 
 const OVER = ['completed', 'cancelled'];
@@ -49,7 +57,12 @@ export function RideTrip({ id }: { id: string }) {
   const { locale } = useLocale();
   const router = useRouter();
   const [t, setT] = useState<Trip | null>(null);
+  // 14 Nov: the trip's market (its pickup's) names the company in the footer.
+  useOnScreenMarket(t ? (t.currency === 'USD' ? 'US' : 'IN') : null);
   const [state, setState] = useState<string>('requested');
+  // 13 Nov: nothing is said about the trip until the server has answered; a 404 is not yours.
+  const [loaded, setLoaded] = useState(false);
+  const [missing, setMissing] = useState(false);
   const [rating, setRating] = useState<string | null>(null);
   const [code, setCode] = useState<string | null>(null);
   const [shown, setShown] = useState(false);
@@ -63,7 +76,12 @@ export function RideTrip({ id }: { id: string }) {
     cancelPreview(id).then((p) => { if (live) setCosts(p); }).catch(() => { if (live) setCosts(null); });
     return () => { live = false; };
   }, [cancelling, id]);
-  const [reason, setReason] = useState<string>(RIDER_CANCEL_REASONS[0].value);
+  // Nothing preselected (11 Nov); the reasons follow the trip state.
+  const [reason, setReason] = useState<string | null>(null);
+  const [reasonError, setReasonError] = useState(false);
+  const [routeLine, setRouteLine] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const [paid, setPaid] = useState<'online' | 'cash' | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [eta, setEta] = useState<Eta | null>(null);
   const [shareState, setShareState] = useState<Share | null>(null);
@@ -71,8 +89,9 @@ export function RideTrip({ id }: { id: string }) {
   const sock = useRef<RideSocket | null>(null);
 
   const refresh = useCallback(async () => {
-    const d = await loadTrip(id).catch(() => null);
+    const d = await loadTrip(id).catch((e) => { if (isNotFound(e)) setMissing(true); return null; });
     if (!d) return;
+    setLoaded(true);
     setT(d);
     if (d.status) setState(d.status);
     if (d.otp !== null && d.otp !== undefined && `${d.otp}` !== '') setCode(`${d.otp}`);
@@ -109,11 +128,21 @@ export function RideTrip({ id }: { id: string }) {
     return () => s.close();
   }, [id, refresh]);
 
+  // Someone else's trip: drop the live connection to it at once.
+  useEffect(() => { if (missing) sock.current?.close(); }, [missing]);
+
+  const searching = ['requested', 'pending', 'searching'].includes(state);
+  useEffect(() => {
+    if (!searching) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [searching]);
+
   const words = statusWords(state);
   // Never 0 and never a guess: no estimate, no line.
   const etaMin = eta?.phase === 'to_pickup' ? eta.pickup_eta_min : eta?.phase === 'to_drop' ? eta.drop_eta_min : null;
   const arrive = eta?.phase === 'to_drop' && eta.arrive_at
-    ? new Date(eta.arrive_at).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' }) : null;
+    ? localClock(eta.arrive_at, locale) : null;
   const etaLine = OVER.includes(state) || !etaMin ? null
     : eta?.phase === 'to_pickup' ? tr('Arriving in {n} min').replace('{n}', String(etaMin))
       : arrive ? tr('Arrive about {time}').replace('{time}', arrive) : null;
@@ -125,6 +154,28 @@ export function RideTrip({ id }: { id: string }) {
   const fare = t ? money(lockedFare(t), t.currency, locale) : null;
   const pickup = t && Number.isFinite(Number(t.pickup_lat)) ? { lat: Number(t.pickup_lat), lng: Number(t.pickup_long) } : null;
   const drop = t && Number.isFinite(Number(t.destination_lat)) ? { lat: Number(t.destination_lat), lng: Number(t.destination_long) } : null;
+  const noDriver = state === 'cancelled' && t?.cancellation_reason === 'no_driver_accepted';
+  const assigned = Boolean(t?.driver_name) || !searching;
+  const reasons = assigned ? CANCEL_WITH_DRIVER : CANCEL_BEFORE_DRIVER;
+  // How far the driver search has got, against the city's search time (11 Nov).
+  const searchEnd = t?.search_expires_at ? Date.parse(t.search_expires_at) : NaN;
+  const searchStart = t?.requested_at ? Date.parse(t.requested_at) : NaN;
+  const searchShare = Number.isFinite(searchEnd) && Number.isFinite(searchStart) && searchEnd > searchStart
+    ? Math.min(1, Math.max(0, (now - searchStart) / (searchEnd - searchStart))) : null;
+  const pkey = pickup && drop ? [pickup.lat, pickup.lng, drop.lat, drop.lng].join(',') : '';
+  useEffect(() => {
+    // The route line on the finding and trip screens: the planned route, else one route call.
+    if (!pickup || !drop || t?.planned_route_polyline || routeLine) return;
+    routeBetween(pickup, drop).then((r) => setRouteLine(r?.points ?? null)).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pkey, t?.planned_route_polyline]);
+
+  /** Try again after "No drivers nearby": the same trip, back to the fares. */
+  function rebook() {
+    if (!t || !pickup || !drop) { router.push('/ride'); return; }
+    const d = saveDraft({ from: { ...pickup, label: t.pickup_address ?? '' }, to: { ...drop, label: t.destination_address ?? '' } });
+    router.push('/ride/choose?d=' + d);
+  }
 
   /** Share the trip's live link (the system share sheet, else copy). */
   async function share() {
@@ -167,23 +218,42 @@ export function RideTrip({ id }: { id: string }) {
   }
 
   async function cancel() {
+    if (!reason) { setReasonError(true); return; }
     try {
       await cancelTrip(id, reason);
       setCancelling(false);
       setState('cancelled');
+      // "I feel unsafe" cancels AND opens the safety options: SOS, share trip, call support.
+      if (reason === 'safety') setSafety(true);
     } catch {
       setNote(tr('We could not cancel this ride. Try again.'));
     }
   }
+
+  if (missing) return <NotYourTrip />;
+  if (!loaded) return <div className="ar-page" aria-busy="true"><Skel h={28} w="40%" /><Skel lines={3} style={{ marginTop: 16 }} /></div>;
 
   return (
     <div className="ar-split">
       <aside className="ar-panel">
         <div>
           <span className={`apill ${state === 'cancelled' ? 'apill--neu' : 'apill--ok'}`}>{tr(words.pill)}</span>
-          <h1 className="a28" style={{ marginTop: 12 }}>{tr(words.head)}</h1>
+          <h1 className="a28" style={{ marginTop: 12 }}>{noDriver ? tr('No drivers nearby right now') : tr(words.head)}</h1>
+          {searching && (
+            <div className="acol" style={{ gap: 6, marginTop: 8 }} data-testid="finding">
+              <p className="a16" aria-live="polite">{tr('Looking for drivers near you…')}</p>
+              {searchShare !== null && (
+                <div role="progressbar" aria-label={tr('Driver search')} aria-valuemin={0} aria-valuemax={100}
+                  aria-valuenow={Math.round(searchShare * 100)} style={{ height: 6, borderRadius: 3, background: 'var(--c-border)', overflow: 'hidden' }}>
+                  <div style={{ width: (searchShare * 100) + '%', height: '100%', background: 'var(--c-accent)', transition: 'width 1s linear' }} />
+                </div>
+              )}
+              <p className="a14 amut">{tr('You can cancel for free while we look.')}</p>
+            </div>
+          )}
+          {noDriver && <p className="amut" style={{ marginTop: 4 }}>{tr('Nobody accepted in time. You were not charged.')}</p>}
           {etaLine && <p className="a16 ab" aria-live="polite" style={{ marginTop: 4 }}>{etaLine}</p>}
-          {t?.pickup_address && !over && <p className="amut">{tr('Pickup')}: {t.pickup_address}</p>}
+          {t?.pickup_address && !over && <p className="amut" title={t.pickup_address}>{tr('Pickup')}: {placeLabel(t.pickup_label, t.pickup_address)}</p>}
         </div>
 
         {t?.driver_name && !over && (
@@ -259,10 +329,13 @@ export function RideTrip({ id }: { id: string }) {
               <span className="ab">{ride}</span>
               <span className="arow" style={{ gap: 8 }}>
                 {fare && <span className="a20">{fare}</span>}
-                {fare && <span className="apill apill--ok"><ILock size={14} />{tr('Locked')}</span>}
+                {fare && state !== 'cancelled' && <span className="apill apill--ok"><ILock size={14} />{tr('Locked')}</span>}
+                {state === 'cancelled' && (costs && !costs.free && costs.fee && t.cancelled_by === 'rider'
+                  ? <span className="apill apill--warn">{tr('Fee {fee} on your next ride').replace('{fee}', money(costs.fee, costs.currency, locale) ?? '')}</span>
+                  : <span className="apill apill--neu" data-testid="no-charge">{tr('No charge')}</span>)}
               </span>
             </div>
-            {t.destination_address && <div className="a14 amut">{tr('To')} {t.destination_address}</div>}
+            {t.destination_address && <div className="a14 amut" title={t.destination_address}>{tr('To')} {placeLabel(t.destination_label, t.destination_address)}</div>}
             {fare && t.payment_method === 'cash' && !over && (
               <div className="a14 amut">{tr('Pay {fare} in cash to your driver at the end.').replace('{fare}', fare)}</div>
             )}
@@ -270,10 +343,28 @@ export function RideTrip({ id }: { id: string }) {
         )}
         {note && <p className="a14 amut" role="status">{note}</p>}
 
-        {state === 'completed' && (
-          <Link href={`/trips/${id}`} className="abtn abtn--pri abtn--block">{tr('See your receipt')}</Link>
-        )}
-        {state === 'cancelled' && (
+        {/* 14 Nov (USA): a card held at booking is charged by us at the end: never "pay again". */}
+        {state === 'completed' && t && fare && !paid && !t.card_held && ['upi', 'card'].includes(t.payment_method ?? '') && t.payment_status !== 'completed' ? (
+          <PayOnline tripId={id} fare={fare} method={t.payment_method ?? 'upi'} cashAllowed={t.market_rules?.cash_allowed !== false}
+            onPaid={(how) => { setPaid(how); refresh(); }} />
+        ) : state === 'completed' ? (
+          <>
+            {t?.market_rules?.tips_enabled && t.driver_name && !(t.card_held && t.payment_status === 'failed') && (
+              <TipCard tripId={id} fare={Number(t.rider_payable ?? t.final_fare ?? t.estimated_fare ?? 0)}
+                currency={t.currency ?? 'USD'} presets={t.market_rules.tip_presets} given={t.tip?.amount ?? null} />
+            )}
+            <TripSummary id={id} fare={fare} cash={paid === 'cash' || t?.payment_method === 'cash'}
+              card={t?.card_held ? (t.payment_status ?? 'pending') : null}
+              driver={t?.driver_name ?? null} onDone={() => router.push('/ride')} />
+          </>
+        ) : null}
+        {t?.market_rules?.zero_tolerance && t.driver_name && state !== 'cancelled' && <ReportImpairment tripId={id} />}
+        {noDriver ? (
+          <div className="arow" style={{ gap: 8 }}>
+            <button type="button" className="abtn abtn--ghost" onClick={() => router.push('/ride')}>{tr('Back')}</button>
+            <button type="button" className="abtn abtn--pri agrow" onClick={rebook} data-testid="try-again">{tr('Try again')}</button>
+          </div>
+        ) : state === 'cancelled' && (
           <button type="button" className="abtn abtn--pri abtn--block" onClick={() => router.push('/ride')}>{tr('Book another ride')}</button>
         )}
         {!over && !cancelling && (
@@ -287,7 +378,7 @@ export function RideTrip({ id }: { id: string }) {
             {costs && (costs.free ? (
               <p className="a14 agrn" style={{ margin: 0 }}>
                 {costs.free_until
-                  ? tr('Free to cancel until {time}.').replace('{time}', new Date(costs.free_until).toLocaleTimeString(locale, { hour: 'numeric', minute: '2-digit' }))
+                  ? tr('Free to cancel until {time}.').replace('{time}', (localClock(costs.free_until, locale) ?? ''))
                   : tr('Free to cancel.')}
               </p>
             ) : (
@@ -296,10 +387,19 @@ export function RideTrip({ id }: { id: string }) {
                   .replace('{fee}', money(costs.fee, costs.currency, locale) ?? '')}
               </p>
             ))}
-            <label className="ab" htmlFor="why">{tr('Why are you cancelling?')}</label>
-            <select id="why" className="afield" value={reason} onChange={(e) => setReason(e.target.value)}>
-              {RIDER_CANCEL_REASONS.map((r) => <option key={r.value} value={r.value}>{tr(r.label)}</option>)}
-            </select>
+            <fieldset className="acol" style={{ gap: 6, border: 0, padding: 0, margin: 0 }}
+              aria-describedby={reasonError ? 'why-err' : undefined}>
+              <legend className="ab">{tr('Why are you cancelling?')}</legend>
+              {reasons.map((r) => (
+                <label key={r.value} className="arow a14" style={{ gap: 8, cursor: 'pointer' }}>
+                  <input type="radio" name="why" value={r.value} checked={reason === r.value}
+                    onChange={() => { setReason(r.value); setReasonError(false); }} />
+                  {tr(r.label)}
+                </label>
+              ))}
+            </fieldset>
+            {reasonError && <p id="why-err" className="a14 ared">{tr('Choose a reason.')}</p>}
+            {reason === 'safety' && <p className="a14 amut">{tr('We will also open the safety options: SOS, share your trip and call support.')}</p>}
             <div className="arow" style={{ gap: 8 }}>
               <button type="button" className="abtn abtn--ghost" onClick={() => setCancelling(false)}>{tr('Keep ride')}</button>
               <button type="button" className="abtn abtn--dark" onClick={cancel}>{tr('Cancel ride')}</button>
@@ -308,10 +408,52 @@ export function RideTrip({ id }: { id: string }) {
         )}
       </aside>
       <div className="ar-map">
-        <MapSurface pickup={pickup} destination={drop} driver={driverAt} routePolyline={t?.planned_route_polyline ?? null}>
+        <MapSurface pickup={pickup} destination={drop} driver={driverAt} routePolyline={t?.planned_route_polyline ?? routeLine}>
           {etaLine && etaMin ? <span className="amaplabel">{tr('{n} min').replace('{n}', String(etaMin))}</span> : null}
         </MapSurface>
       </div>
     </div>
+  );
+}
+
+
+/**
+ * 13 Nov: the trip summary before going home, as in the rider app: what was paid and how, the
+ * driver, the same receipt as Your trips, and a rating.
+ */
+function TripSummary({ id, fare, cash, card = null, driver, onDone }: {
+  id: string; fare: string | null; cash: boolean; driver: string | null; onDone: () => void;
+  /** A card held at booking (14 Nov, USA): the charge's own state, never assumed paid. */
+  card?: string | null;
+}) {
+  const tr = useTr();
+  const [stars, setStars] = useState(0);
+  const [note, setNote] = useState<string | null>(null);
+  async function rate(n: number) {
+    try { await rateTrip(id, n); setStars(n); setNote(tr('Thanks for rating your trip.')); }
+    catch { setNote(tr('We could not save your rating.')); }
+  }
+  return (
+    <section className="acard acol" style={{ padding: 16, gap: 10 }} data-testid="trip-summary" aria-labelledby="sum-title">
+      <h2 className="a20" id="sum-title">{tr('Trip complete')}</h2>
+      {fare && card === 'failed' ? (
+        <div className="acol" style={{ gap: 4 }} role="alert" data-testid="charge-failed">
+          <div className="ab ared">{tr('We could not charge your card for this trip ({fare}).').replace('{fare}', fare)}</div>
+          <div className="a14 amut">{tr('Nothing was taken. Our team will contact you about the fare, or you can ask for help on the receipt.')}</div>
+        </div>
+      ) : fare && card && card !== 'completed' ? (
+        <div className="ab" role="status">{tr('Charging your card…')}</div>
+      ) : fare && <div className="ab">{(cash ? tr('Paid {fare} in cash') : card ? tr('Paid {fare} by card') : tr('Paid {fare} online')).replace('{fare}', fare)}</div>}
+      {driver && <div className="a14 amut">{tr('Your driver')}: {driver}</div>}
+      <div className="arow" style={{ gap: 4 }} role="group" aria-label={tr('Rate your trip')}>
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button key={n} type="button" className={`achip${n <= stars ? ' achip--on' : ''}`} aria-pressed={n <= stars}
+            aria-label={tr('{n} stars').replace('{n}', String(n))} onClick={() => rate(n)}>★</button>
+        ))}
+      </div>
+      {note && <p className="a14 amut" role="status">{note}</p>}
+      <Link href={`/trips/${id}`} className="abtn abtn--ghost abtn--block">{tr('See your receipt')}</Link>
+      <button type="button" className="abtn abtn--pri abtn--block" onClick={onDone}>{tr('Done')}</button>
+    </section>
   );
 }

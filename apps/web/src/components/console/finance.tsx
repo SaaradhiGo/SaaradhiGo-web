@@ -22,20 +22,20 @@ import { Download } from '@/components/console/icons';
  */
 
 const TABS = [
-  { href: '/finance', label: 'Overview' },
-  { href: '/finance/payments', label: 'Payments' },
-  { href: '/finance/refunds', label: 'Refunds' },
-  { href: '/finance/settlements', label: 'Settlements' },
-  { href: '/finance/payouts', label: 'Payouts' },
-  { href: '/finance/reconciliation', label: 'Reconciliation' },
-  { href: '/finance/payout-settings', label: 'Payout settings' },
+  { href: '/ops/finance', label: 'Overview' },
+  { href: '/ops/finance/payments', label: 'Payments' },
+  { href: '/ops/finance/refunds', label: 'Refunds' },
+  { href: '/ops/finance/settlements', label: 'Settlements' },
+  { href: '/ops/finance/payouts', label: 'Payouts' },
+  { href: '/ops/finance/reconciliation', label: 'Reconciliation' },
+  { href: '/ops/finance/payout-settings', label: 'Payout settings' },
 ] as const;
 
 export function FinanceNav() {
   const pathname = usePathname() ?? '';
   // The overview is /finance itself; every other tab owns its sub-paths. A page
   // under /finance that no tab owns (a driver's ledger) marks none of them.
-  const current = TABS.find((t) => (t.href === '/finance'
+  const current = TABS.find((t) => (t.href === '/ops/finance'
     ? pathname === t.href
     : pathname === t.href || pathname.startsWith(`${t.href}/`)))?.href;
   return (
@@ -161,6 +161,6 @@ export function ExportButton({ path, label = 'Export CSV' }: { path: string; lab
 /** A link into the driver's statement, drawn only if the operator can open Finance. */
 export function LedgerLink({ driverId }: { driverId: number }) {
   return (
-    <PageButtonLink page="finance" href={`/finance/drivers/${driverId}/ledger`}>Ledger</PageButtonLink>
+    <PageButtonLink page="finance" href={`/ops/finance/drivers/${driverId}/ledger`}>Ledger</PageButtonLink>
   );
 }

@@ -12,17 +12,17 @@ import { Empty } from '@/components/console/ui';
  * sees a tab that would 403.
  */
 const TABS = [
-  { href: '/notifications', label: 'Templates' },
-  { href: '/notifications/campaigns', label: 'Campaigns' },
-  { href: '/notifications/delivery', label: 'Delivery log' },
-  { href: '/notifications/providers', label: 'Providers' },
+  { href: '/ops/notifications', label: 'Templates' },
+  { href: '/ops/notifications/campaigns', label: 'Campaigns' },
+  { href: '/ops/notifications/delivery', label: 'Delivery log' },
+  { href: '/ops/notifications/providers', label: 'Providers' },
 ] as const;
 
 export function NotificationsNav() {
   const pathname = usePathname() ?? '';
   const access = useAdminAccess();
   if (!canOpen(access, 'notifications')) return null;
-  const current = TABS.find((t) => (t.href === '/notifications'
+  const current = TABS.find((t) => (t.href === '/ops/notifications'
     ? pathname === t.href
     : pathname === t.href || pathname.startsWith(`${t.href}/`)))?.href;
   return (

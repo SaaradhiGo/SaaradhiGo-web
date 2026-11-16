@@ -8,6 +8,7 @@ import { vehicleGlyphFor } from '@/components/sg/icons';
 import { rideGlyph } from '@/components/home/RideGlyphs';
 import { primaryArea, fetchServiceAreas } from '@/lib/serviceAreas';
 import { serviceabilityAt, type Serviceability } from '@/lib/booking';
+import { useLegal } from '@/components/sg/LegalProvider';
 
 /**
  * The classes the pricing service says are priced at the city centre.
@@ -41,6 +42,7 @@ const PLACEHOLDER_CARDS = 4;
 export function RideCategories() {
   const { t, language } = useLocale();
   const h = HOME_COPY[language];
+  const { market } = useLegal();
   const [service, setService] = useState<Serviceability | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -48,7 +50,11 @@ export function RideCategories() {
     let alive = true;
     (async () => {
       try {
-        const area = primaryArea(await fetchServiceAreas());
+        // 14 Nov (owner): the market on screen decides the city whose classes are shown.
+        const areas = await fetchServiceAreas();
+        const mine = areas.filter((x) => (x.zone as { country?: string }).country === market);
+        // No open area in this market yet: no classes, never another country's (Auto in the USA).
+        const area = mine.length ? primaryArea(mine) : null;
         if (!area?.centre) {
           if (alive) setService({ serviceable: false, zone: null, vehicle_types: [] });
           return;
@@ -62,7 +68,7 @@ export function RideCategories() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [market]);
 
   const loading = service === null && !failed;
   const categories = service?.vehicle_types ?? [];

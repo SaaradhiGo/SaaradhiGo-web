@@ -166,10 +166,10 @@ export function moveActive(current: number, delta: number, count: number): numbe
  */
 export function hrefFor(hit: Hit): string | null {
   switch (hit.type) {
-    case 'trip': return `/trips/${hit.id}`;
-    case 'driver': return `/drivers/${hit.id}`;
-    case 'rider': return `/riders/${hit.user.id}`;
-    case 'vehicle': return hit.driver_id ? `/drivers/${hit.driver_id}` : null;
+    case 'trip': return `/ops/trips/${hit.id}`;
+    case 'driver': return `/ops/drivers/${hit.id}`;
+    case 'rider': return `/ops/riders/${hit.user.id}`;
+    case 'vehicle': return hit.driver_id ? `/ops/drivers/${hit.driver_id}` : null;
   }
 }
 

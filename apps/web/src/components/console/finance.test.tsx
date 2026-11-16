@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AdminAccess } from '@/lib/adminScope';
 import { ExportButton, FinanceNav, LedgerLink, Pager, RangeBar } from '@/components/console/finance';
 
-let pathname = '/finance/payouts';
+let pathname = '/ops/finance/payouts';
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn(), prefetch: vi.fn() }),
   usePathname: () => pathname,
@@ -25,7 +25,7 @@ vi.mock('@/lib/adminScope', async (importOriginal) => {
   return { ...original, useAdminAccess: () => current, withScope: (p: string) => p };
 });
 
-afterEach(() => { cleanup(); current = null; pathname = '/finance/payouts'; });
+afterEach(() => { cleanup(); current = null; pathname = '/ops/finance/payouts'; });
 
 const access = (permissions: string[]) => ({ permissions, roles: [], scopes: [], access_model: 'assignments' } as unknown as AdminAccess);
 
@@ -56,13 +56,13 @@ describe('LedgerLink', () => {
     expect(container.innerHTML).toBe('');
     current = access(['finance.read']);
     rerender(<LedgerLink driverId={7} />);
-    expect(container.querySelector('a')?.getAttribute('href')).toBe('/finance/drivers/7/ledger');
+    expect(container.querySelector('a')?.getAttribute('href')).toBe('/ops/finance/drivers/7/ledger');
   });
 });
 
 describe('FinanceNav', () => {
   it('marks the current page and only that one', () => {
-    pathname = '/finance/payouts';
+    pathname = '/ops/finance/payouts';
     render(<FinanceNav />);
     const links = screen.getAllByRole('link');
     expect(links.map((l) => l.textContent)).toEqual(['Overview', 'Payments', 'Refunds', 'Settlements', 'Payouts', 'Reconciliation', 'Payout settings']);
@@ -70,20 +70,20 @@ describe('FinanceNav', () => {
   });
 
   it('keeps a detail page under its tab, and the overview off every other', () => {
-    pathname = '/finance/payments/12';
+    pathname = '/ops/finance/payments/12';
     render(<FinanceNav />);
     const current = screen.getAllByRole('link').filter((l) => l.getAttribute('aria-current') === 'page');
     expect(current.map((l) => l.textContent)).toEqual(['Payments']);
   });
 
   it('marks no tab on a finance page that no tab owns (a driver ledger)', () => {
-    pathname = '/finance/drivers/7/ledger';
+    pathname = '/ops/finance/drivers/7/ledger';
     render(<FinanceNav />);
     expect(screen.getAllByRole('link').filter((l) => l.getAttribute('aria-current') === 'page')).toEqual([]);
   });
 
   it('marks the overview on /finance itself', () => {
-    pathname = '/finance';
+    pathname = '/ops/finance';
     render(<FinanceNav />);
     const current = screen.getAllByRole('link').filter((l) => l.getAttribute('aria-current') === 'page');
     expect(current.map((l) => l.textContent)).toEqual(['Overview']);

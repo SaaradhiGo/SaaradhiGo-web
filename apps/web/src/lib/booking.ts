@@ -23,6 +23,7 @@
 
 import { ApiError, api } from './api';
 import { readRiderToken } from './publicAuth';
+import type { FareLines } from './area/rider';
 
 export type LatLng = { lat: number; lng: number };
 
@@ -33,6 +34,8 @@ export type Zone = {
   currency: string;
   distance_unit: 'km' | 'mi';
   timezone?: string;
+  /** 14 Nov: what a visitor may pay with at this pickup (Idaho: card only); absent on old servers. */
+  payment_methods?: string[];
 };
 
 /** `min_fare` is optional: the public endpoint may not carry a price yet. */
@@ -53,6 +56,8 @@ export type FareQuote = {
   currency?: string | null;
   distance_unit?: string | null;
   fare_breakdown?: Record<string, unknown>;
+  /** 12 Nov: "How this fare is worked out", the same lines as the tax invoice. */
+  fare_lines?: FareLines | null;
   /** The quote to book at: the fare holds until it expires (servers/ride/quotes.py). */
   quote_id?: string | null;
   quote_expires_at?: string | null;
@@ -61,7 +66,15 @@ export type FareQuote = {
   drivers_nearby?: boolean;
   /** A cancellation fee from an earlier trip that this booking carries (MVAG 2025), shown before booking. */
   cancellation_due?: { amount: string; currency: string; trip_ids: number[] } | null;
+  /** 13 Nov: the city has not launched yet. Fares show; Book says this message instead. */
+  launching?: { code: string; message: string } | null;
 };
+
+/** "Tell me when we launch" (13 Nov): idempotent per rider and city. */
+export async function tellMeAtLaunch(at: { lat: number; lng: number }) {
+  const { api } = await import('./api');
+  return api.post<{ city: string; already_live: boolean }>('/platform/launch-interest/', at);
+}
 
 /** Seats per class, as the rider app shows them. */
 const SEATS: Record<string, number> = {
@@ -139,7 +152,12 @@ export function endSearchSession(field: SearchField): void {
   delete sessions[field];
 }
 
-export type Place = { description: string; place_id: string };
+export type Place = {
+  description: string;
+  place_id: string;
+  /** Google's split of the suggestion: the place name, then where it is (14 Nov: two lines). */
+  structured_formatting?: { main_text?: string; secondary_text?: string };
+};
 
 /**
  * Destination search.
@@ -155,6 +173,8 @@ export async function searchPlaces(
   field: SearchField = 'pickup',
   /** A service-zone code: suggestions are then restricted to that zone. */
   zone?: string | null,
+  /** 14 Nov: the country chosen in the header; ranks the results when there is no location. */
+  market?: string | null,
 ): Promise<Place[]> {
   // BIAS THE SEARCH, OR GET THE WRONG HEMISPHERE. Unbiased, the autocomplete
   // is worldwide: "Banjara" typed by a rider in Hyderabad returned
@@ -169,6 +189,7 @@ export async function searchPlaces(
       session_token: sessionToken(field),
       ...(near ? { location: `${near.lat},${near.lng}` } : {}),
       ...(zone ? { zone } : {}),
+      ...(market ? { market } : {}),
     },
     readRiderToken(),
   );
@@ -309,18 +330,27 @@ export class RideSocket {
   ) {}
 
   open() {
-    const token = readRiderToken();
+    const session = readRiderToken();
     const base = wsBase();
-    if (!token || !base) {
+    if (!session || !base) {
       this.onState('closed');
       return;
     }
     this.closedByUs = false;
     this.onState('connecting');
+    // 14 Nov: the page holds no token, so the socket opens with a single-use, 30-second ticket
+    // issued to the session (POST /auth/ws-ticket/), never a token in the URL.
+    void api.post<{ ticket?: string }>('/auth/ws-ticket/', {}, session)
+      .then((r) => {
+        if (this.closedByUs) return;
+        if (!r?.ticket) { this.onState('closed'); return; }
+        this.connect(`${base}${this.path}${this.path.includes('?') ? '&' : '?'}ticket=${encodeURIComponent(r.ticket)}`);
+      })
+      .catch(() => this.onState('closed'));
+  }
 
-    const ws = new WebSocket(
-      `${base}${this.path}${this.path.includes('?') ? '&' : '?'}token=${token}`,
-    );
+  private connect(url: string) {
+    const ws = new WebSocket(url);
     this.ws = ws;
 
     ws.onopen = () => this.onState('open');
@@ -357,14 +387,24 @@ export class RideSocket {
   }
 }
 
-/** The five reasons `/ride/trip/<id>/cancel/` accepts from a RIDER. */
-export const RIDER_CANCEL_REASONS = [
-  { value: 'no_show', label: 'The driver did not arrive' },
-  { value: 'wrong_location', label: 'The pickup point is wrong' },
+/**
+ * Why a rider cancels (11 Nov): nothing preselected, and the reasons follow the trip state.
+ * Before a driver is assigned there is no driver to be late or at the wrong point.
+ */
+export const CANCEL_BEFORE_DRIVER = [
+  { value: 'changed_plans', label: 'Changed my plans' },
+  { value: 'booked_by_mistake', label: 'Booked by mistake' },
   { value: 'too_long', label: 'The wait is too long' },
-  { value: 'safety', label: 'I feel unsafe' },
   { value: 'other', label: 'Something else' },
 ] as const;
+export const CANCEL_WITH_DRIVER = [
+  ...CANCEL_BEFORE_DRIVER,
+  { value: 'no_show', label: 'The driver did not arrive' },
+  { value: 'wrong_location', label: 'The pickup point is wrong' },
+  { value: 'safety', label: 'I feel unsafe' },
+] as const;
+/** @deprecated kept for older imports; the full set with a driver assigned. */
+export const RIDER_CANCEL_REASONS = CANCEL_WITH_DRIVER;
 
 /** What cancelling now costs (9 Nov): free (and until when), or the fee due on the next ride. */
 export type CancelPreview = { free: boolean; free_until: string | null; fee: string | null; currency: string };

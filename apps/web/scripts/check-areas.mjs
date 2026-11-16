@@ -3,8 +3,12 @@
 //   frame      a driver page without the sidebar and DRIVER badge (under 768 wide, 11 Nov:
 //              without the bottom bar), or a rider page with either
 //   sideways   horizontal scroll at 360, 390, 768, 1024 or 1440 wide
-//   type       a size other than 14/16/20/28/40 (22 and 32 only on phone
-//              headings), a weight other than 400/600, text under 14px
+//   clipped    on phones (13 Nov): an amount cut off, or a table column under 120 px with text in it
+//   type       a size other than 14/16/20/28/40 (14 Nov: no 22 or 32 on phones
+//              either), a weight other than 400/600, text under 14px
+//   taps       on phones (14 Nov): anything tappable with a hit area under 44x44,
+//              measured by hit-testing (padding added for touch counts); the footer's
+//              text links and links inside a sentence are exempt
 //   dates      a trip or payout row without a date and a time
 //   visual     more than 3% of pixels off screenshots/<page>.png at 1440x900,
 //              the map, logo and value regions masked (diffs in DIFFS)
@@ -55,12 +59,16 @@ const MAX_DIFF = 0.03;
 // 11 Nov (owner): every screen at 3%. The driver Trips, Documents and Payouts references were
 // replaced with the approved 10-11 Nov screens (header profile button, period switcher and search,
 // one-source Documents), so no allowance is left.
+// 14 Nov (owner): rider-web-choose.png is the choose screen with a glyph per class and the selected
+// tick the owner asked for, taken from this build; the layout around them is the 8 Nov design.
 const ALLOW = {};
 // Redesigned on 10 Nov (design/driver-v2-2026-11-10): compared with those screenshots by
 // check-driver-v2.mjs, in the design's own state, not here.
 const V2 = new Set(['driver-web-dashboard', 'driver-web-earnings', 'driver-web-profile', 'driver-v2-setup']);
-const SIZES = new Set([14, 16, 20, 22, 28, 32, 40]);
-const PHONE_ONLY = new Set([22, 32]);
+// 14 Nov (owner): the scale is 14/16/20/28/40 everywhere; phones step display and heading down a
+// level (40 -> 28, 28 -> 20) instead of the 32 and 22 they used to use.
+const SIZES = new Set([14, 16, 20, 28, 40]);
+const PHONE_ONLY = new Set([]);
 const WIDTHS = [[360, 740], [390, 844], [768, 1024], [1024, 768], [1440, 900]];
 // English everywhere; the other languages at the phone and desktop extremes,
 // where longer strings break a layout first (no visual diff: the reference is English).
@@ -69,8 +77,8 @@ const LANG_WIDTHS = [[360, 740], [1440, 900]];
 
 const RIDER = [
   ['/ride', 'rider-web-home'],
-  [QA ? '/ride/choose?from=17.4504,78.3810&to=17.4344,78.3866&tl=Inorbit%20Mall%2C%20Madhapur'
-    : '/ride/choose?from=17.4504,78.3810&to=17.2403,78.4294&tl=International%20Airport', 'rider-web-choose'],
+  // The trip lives in the tab, never in the URL (11 Nov): the draft is seeded in every context.
+  [QA ? '/ride/choose?d=gateqa' : '/ride/choose?d=gate', 'rider-web-choose'],
   ['/ride/trip/201', 'rider-web-trip'],
   ['/trips', 'rider-web-trips'],
   ['/trips/101', 'rider-web-receipt'],
@@ -114,6 +122,13 @@ async function signed(session) {
   const body = b64(enc.encode(JSON.stringify(session)));
   return `${body}.${b64(new Uint8Array(await webcrypto.subtle.sign('HMAC', key, enc.encode(body))))}`;
 }
+// 14 Nov: signed-in calls go through this site's session server, `/api/rider?to=<backend path>`
+// (lib/session/bff.ts), and the login keys are HttpOnly cookies the page never sees. The gate signs
+// in with the readable marker cookie and answers those calls from the same fixtures.
+const API_RE = /\/api\/v1\/|\/api\/(rider|staff)\?to=/;
+const viaBff = (u) => /\/api\/(rider|staff)\?to=/.test(u);
+const apiUrl = (u) => (viaBff(u) ? `http://api.gate/api/v1${u.slice(u.indexOf('?to=') + 4)}` : u);
+const signedInCookie = (ctx, site) => ctx.addCookies([{ name: 'sg-rider-in', value: '1', url: site }]);
 const fakeJwt = () => `${b64(enc.encode('{"alg":"none"}'))}.${b64(enc.encode(JSON.stringify({ exp: 4102444800, user_id: 7 })))}.x`;
 
 async function context(browser, role, width, height, lang = 'en') {
@@ -123,6 +138,13 @@ async function context(browser, role, width, height, lang = 'en') {
   });
   await ctx.addCookies([{ name: 'sg-language', value: lang, url: SITE }]);
   await ctx.addInitScript((l) => { try { localStorage.setItem('sg-theme', 'light'); localStorage.setItem('sg-language', l); } catch {} }, lang);
+  await ctx.addInitScript(() => {
+    const from = { lat: 17.4504, lng: 78.381, label: 'Current location' };
+    try {
+      sessionStorage.setItem('sg-ride-draft:gate', JSON.stringify({ from, to: { lat: 17.2403, lng: 78.4294, label: 'International Airport' } }));
+      sessionStorage.setItem('sg-ride-draft:gateqa', JSON.stringify({ from, to: { lat: 17.4344, lng: 78.3866, label: 'Inorbit Mall, Madhapur' } }));
+    } catch {}
+  });
   if (QA) {
     const { signIn } = await import(pathToFileURL(path.resolve(process.env.LOGIN_MJS || 'scripts/qa-login.mjs')).href);
     const r = await signIn(ctx, SITE, role === 'driver' ? 'DRIVER' : 'RIDER');
@@ -131,17 +153,17 @@ async function context(browser, role, width, height, lang = 'en') {
   }
   const exp = Math.floor(Date.now() / 1000) + 3600;
   await ctx.addCookies([{ name: 'sg-session', value: await signed({ uid: '7', roles: [role], role, exp }), url: SITE }]);
-  await ctx.addInitScript((t) => { try { localStorage.setItem('saaradhi_rider_access_token', t); } catch {} }, fakeJwt());
+  await signedInCookie(ctx, SITE);
   await fixtures(ctx);
   return ctx;
 }
 
 function fixtures(ctx) {
-  return ctx.route(/\/api\/v1\//, async (route) => {
+  return ctx.route(API_RE, async (route) => {
     const req = route.request();
     let body = null;
     try { body = req.postDataJSON(); } catch {}
-    const data = fixture(req.method(), req.url(), body);
+    const data = fixture(req.method(), apiUrl(req.url()), body);
     await route.fulfill(data === null ? { status: 404, json: { error: 'no fixture' } } : { json: data });
   });
 }
@@ -230,8 +252,72 @@ const measure = (page) => page.evaluate(({ sizes, phone }) => {
     rows: [...document.querySelectorAll('.atable tbody tr, [data-row="dated"]')].map((r) => (r.querySelector('td') ?? r).innerText.trim()).filter(Boolean),
     payoutRows: [...document.querySelectorAll('main .acard .arow')].filter((r) => /\d/.test(r.innerText) && r.querySelector('.apill')).map((r) => r.innerText.trim()),
     text: document.body.innerText,
+    // 13 Nov: on phones no amount is clipped and no table column is too narrow to read.
+    clipped: innerWidth >= 768 ? [] : (() => {
+      const out = [];
+      const shown = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'; };
+      for (const el of document.querySelectorAll('main *')) {
+        const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('');
+        if (!/[₹$]\s?\d/.test(own) || !shown(el)) continue;
+        const r = el.getBoundingClientRect();
+        let bad = r.right > innerWidth + 1 || r.left < -1 || el.scrollWidth > el.clientWidth + 1;
+        for (let a = el.parentElement; a && !bad; a = a.parentElement) {
+          const o = getComputedStyle(a);
+          if (/(hidden|clip|auto|scroll)/.test(o.overflowX)) { const ar = a.getBoundingClientRect(); if (r.right > ar.right + 1 || r.left < ar.left - 1) bad = true; }
+        }
+        if (bad) out.push(own.trim().slice(0, 30));
+      }
+      return out.slice(0, 5);
+    })(),
+    narrow: innerWidth >= 768 ? [] : [...document.querySelectorAll('main th, main td, main .er-grid > span')]
+      .filter((c) => { const r = c.getBoundingClientRect(); return r.width > 0 && r.height > 0 && c.innerText.trim().length > 2 && r.width < 120 && !c.hasAttribute('colspan'); })
+      .map((c) => `${Math.round(c.getBoundingClientRect().width)}px "${c.innerText.trim().replace(/\s+/g, ' ').slice(0, 24)}"`).slice(0, 5),
   };
 }, { sizes: [...SIZES], phone: [...PHONE_ONLY] });
+
+// 14 Nov (owner): on a phone everything tappable is at least 44x44. Measured by hit-testing, so
+// padding or a pseudo-element added for touch counts: from the centre of each target, the points
+// 21px left, right, up and down must still land on it. The footer's text links and links inside a
+// sentence (WCAG 2.5.8's inline exception) are exempt.
+const TAP_SELECTOR = 'a[href], button, [role="button"], [role="switch"], [role="tab"], [role="radio"], [role="menuitem"], input[type="checkbox"], input[type="radio"], select, summary';
+const taps = (page) => page.evaluate(async (sel) => {
+  const out = [];
+  const inline = (el) => {
+    if (el.tagName !== 'A') return false;
+    const p = el.parentElement;
+    if (!p || !/^(P|LI|SPAN|SMALL|LABEL)$/.test(p.tagName)) return false;
+    const own = [...p.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join('').trim();
+    return own.length > 0;
+  };
+  const els = [...document.querySelectorAll(sel)].filter((el) => {
+    const s = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    if (s.visibility === 'hidden' || s.display === 'none' || r.width === 0 || r.height === 0) return false;
+    if (el.disabled || el.closest('[aria-hidden="true"], .ar-map, .sg-legal-line, footer, [inert]')) return false;
+    return !inline(el);
+  });
+  for (const el of els) {
+    // A checkbox or radio inside a label: the whole label row is what is tapped.
+    const target = el.matches('input') && el.closest('label') ? el.closest('label') : el;
+    target.scrollIntoView({ block: 'center', inline: 'center' });
+    await new Promise((r) => requestAnimationFrame(r));
+    const r = target.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    let other = '';
+    const hits = [[cx - 21, cy], [cx + 21, cy], [cx, cy - 21], [cx, cy + 21]].map(([x, y]) => {
+      if (x < 0 || y < 0 || x > innerWidth || y > innerHeight) return true; // off screen: cannot judge
+      const at = document.elementFromPoint(x, y);
+      if (at && !(at === target || target.contains(at))) other ||= `${at.tagName.toLowerCase()}${at.className && typeof at.className === 'string' ? '.' + at.className.trim().split(/\s+/)[0] : ''}`;
+      // Landing on itself, inside itself, or on the label that wraps it.
+      return !!at && (at === target || target.contains(at) || (at.closest('label') && at.closest('label') === target.closest('label')));
+    });
+    if (hits.every(Boolean)) continue;
+    const name = (el.getAttribute('aria-label') || el.innerText || el.getAttribute('title') || el.tagName).trim().replace(/\s+/g, ' ').slice(0, 24);
+    out.push(`"${name}" ${Math.round(r.width)}x${Math.round(r.height)}${other ? ` (hits ${other})` : ''}`);
+  }
+  window.scrollTo(0, 0);
+  return [...new Set(out)].slice(0, 8);
+}, TAP_SELECTOR);
 
 function diff(shot, refFile, mask) {
   const a = PNG.sync.read(readFileSync(refFile));
@@ -267,7 +353,10 @@ for (const [role, pages] of process.env.STATES_ONLY === '1' ? [] : [['rider', RI
       const m = await measure(page);
       if (new URL(page.url()).pathname !== p.split('?')[0]) fail(`${at}: landed on ${new URL(page.url()).pathname}`);
       if (m.sideways) fail(`${at}: scrolls sideways`);
+      if (m.clipped.length) fail(`${at}: money clipped: ${m.clipped.join('; ')}`);
+      if (m.narrow.length) fail(`${at}: a column narrower than 120 px: ${m.narrow.join('; ')}`);
       if (m.type.length) fail(`${at}: type off the scale: ${m.type.join('; ')}`);
+      if (w < 768) { const t = await taps(page); if (t.length) fail(`${at}: tap targets under 44x44: ${t.join('; ')}`); }
       if (role === 'driver' && (w < 768 ? !m.tabbar : (!m.badge || (w >= 1024 && !m.side)))) fail(`${at}: no driver sidebar and DRIVER badge (or, on a phone, the bottom bar)`);
       if (role === 'rider' && m.anyBadge) fail(`${at}: a rider page shows driver chrome`);
       if (w === 1440 && lang === 'en' && DATED.includes(p)) {
@@ -352,16 +441,12 @@ async function stateContext(role, how, failing = null) {
   const cookie = await signed({ uid: '7', roles: [role], role, exp });
   // A cookie signed before the last deploy no longer verifies.
   await ctx.addCookies([{ name: 'sg-session', value: how === 'stale-cookie' ? `${cookie.slice(0, -4)}AAAA` : cookie, url: SITE }]);
-  await ctx.addInitScript((t) => {
-    if (sessionStorage.getItem('seeded')) return;
-    localStorage.setItem('saaradhi_rider_access_token', t);
-    localStorage.setItem('saaradhi_rider_refresh_token', 'gate-refresh');
-    sessionStorage.setItem('seeded', '1');
-  }, fakeJwt());
-  await ctx.route(/\/api\/v1\//, async (route) => {
+  await signedInCookie(ctx, SITE);
+  await ctx.route(API_RE, async (route) => {
     const req = route.request();
-    const url = req.url();
-    if (how === 'expired') return route.fulfill(url.includes('/auth/refresh/') ? { status: 400, json: {} } : { status: 401, json: {} });
+    const url = apiUrl(req.url());
+    // Expired: the session server could not renew, so it answers 401 and says the session ended.
+    if (how === 'expired') return route.fulfill({ status: 401, json: {}, headers: { 'x-sg-session': 'ended' } });
     if (failing && fail500.on && failing.test(url)) return route.fulfill({ status: 500, json: { error: 'gate' } });
     let body = null;
     try { body = req.postDataJSON(); } catch {}

@@ -83,14 +83,15 @@ export function SafetyBoard({ access }: { access: AdminAccess | null }) {
               {c} <span className="sg-num">{n}</span>
             </button>
           ))}
-          <Link href="/safety-ops?tab=incidents" className="sg-btn sg-btn--ghost sg-btn--sm">All cases</Link>
+          <Link href="/ops/safety-ops?tab=incidents" className="sg-btn sg-btn--ghost sg-btn--sm">All cases</Link>
         </div>
       </header>
       {error ? <p className="alert-error" role="alert">{error}</p> : null}
       {notice ? <p className="alert-success" role="status">{notice}</p> : null}
 
       <div className="ops-board">
-        <div className="ops-board__lanes">
+        {/* 14 Nov: the lanes scroll sideways at phone width; keyboard users can reach and scroll them. */}
+        <div className="ops-board__lanes" role="region" aria-label="Safety queues" tabIndex={0}>
           {LANES.map((lane) => {
             const rows = (board?.lanes[lane.key] ?? []).filter(keep);
             const hot = lane.key === 'not_acknowledged';
@@ -104,7 +105,7 @@ export function SafetyBoard({ access }: { access: AdminAccess | null }) {
                 {rows.map((r) => (
                   <article key={r.id} className={`ops-sos-card${hot ? ' ops-sos-card--hot' : ''}`}>
                     <div className="ops-sos-card__top">
-                      <Link href={`/safety-ops/incidents/${r.id}`} className="ops-sos-card__ref">{r.ref}</Link>
+                      <Link href={`/ops/safety-ops/incidents/${r.id}`} className="ops-sos-card__ref">{r.ref}</Link>
                       <span className={`sg-num ${hot ? 'ops-text--critical' : 'muted'}`}>{timer(r.sos.oldest_active_at ?? r.opened_at, now)}</span>
                     </div>
                     <div className="ops-sos-card__what">{r.title}{r.trip_ref ? ` · ${r.trip_ref}` : ''}</div>

@@ -119,11 +119,11 @@ describe('flattenOptions and moveActive', () => {
 
 describe('hrefFor', () => {
   it('opens trips and drivers directly, riders by their latest trip, vehicles by their driver', () => {
-    expect(hrefFor(trip)).toBe('/trips/42');
-    expect(hrefFor(driver)).toBe('/drivers/5');
-    expect(hrefFor(rider)).toBe('/riders/7');
-    expect(hrefFor(riderWithoutTrips)).toBe('/riders/7');
-    expect(hrefFor(vehicle)).toBe('/drivers/5');
+    expect(hrefFor(trip)).toBe('/ops/trips/42');
+    expect(hrefFor(driver)).toBe('/ops/drivers/5');
+    expect(hrefFor(rider)).toBe('/ops/riders/7');
+    expect(hrefFor(riderWithoutTrips)).toBe('/ops/riders/7');
+    expect(hrefFor(vehicle)).toBe('/ops/drivers/5');
     expect(hrefFor({ ...vehicle, driver_id: null, driver: null })).toBeNull();
   });
 });

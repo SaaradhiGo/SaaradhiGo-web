@@ -4,9 +4,9 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { type History, type HistoryPeriod, history as loadHistory } from '@/lib/area/earnings';
-import { dateLabel, dateOrder, datePlaceholder, monthYear, numericDate, parseNumericDate, rangeLabel, setMarketZone } from '@/lib/area/format';
+import { dateLabel, dateOrder, datePlaceholder, monthYear, numericDate, parseNumericDate, shownDate, rangeLabel, setMarketZone } from '@/lib/area/format';
 import { type Load, useLoad } from '@/lib/area/useLoad';
-import { IBack, IChevron, IClock, ISearch } from '../icons';
+import { IBack, ICalendar, IChevron, ISearch } from '../icons';
 import { useAccount } from '../ProfileMenu';
 
 const TABS: [HistoryPeriod, string][] = [['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['year', 'Year'], ['custom', 'Custom range']];
@@ -68,8 +68,10 @@ export function PeriodSwitcher({ s, children }: { s: PeriodState; children?: Rea
           {TABS.map(([p, name]) => {
             const on = period === p || (p === 'year' && period === 'taxyear');
             return (
-              <button key={p} type="button" role="tab" aria-selected={on} className={`achip${on ? ' achip--on' : ' er-tab'}`} onClick={() => pick(p)}>
-                {p === 'custom' && <IClock size={16} />}{tr(name)}
+              <button key={p} type="button" role="tab" aria-selected={on} className={`achip${on ? ' achip--on' : ' er-tab'}`} onClick={() => pick(p)}
+                aria-label={p === 'custom' ? tr(name) : undefined} data-period={p}>
+                {/* 14 Nov: on a phone Custom range is the calendar alone, so the five fit one row. */}
+                {p === 'custom' && <ICalendar size={18} />}<span className={p === 'custom' ? 'er-tab__word' : undefined}>{tr(name)}</span>
               </button>
             );
           })}
@@ -99,7 +101,7 @@ export function PeriodSwitcher({ s, children }: { s: PeriodState; children?: Rea
             <span className="ainput"><input value={to} placeholder={datePlaceholder(order)} inputMode="numeric" onChange={(e) => setTo(e.target.value)} /></span></label>
           <button type="button" className="abtn abtn--dark" onClick={apply}>{tr('Show')}</button>
           {err && <p className="a14 ared" role="alert" style={{ width: '100%' }}>{err}</p>}
-          {range && <p className="a14 amut" style={{ width: '100%' }}>{numericDate(range.start, order)} – {numericDate(range.end, order)}</p>}
+          {range && <p className="a14 amut" style={{ width: '100%' }}>{shownDate(range.start, order)} – {shownDate(range.end, order)}</p>}
         </div>
       )}
     </>

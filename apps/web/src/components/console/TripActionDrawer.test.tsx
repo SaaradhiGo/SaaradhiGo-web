@@ -75,4 +75,20 @@ describe('ActionDrawer', () => {
     open('note');
     expect((screen.getByRole('button', { name: 'Internal note' }) as HTMLButtonElement).disabled).toBe(true);
   });
+
+  it('shows the refund limits and says when a refund goes to a checker (15 Nov ruling)', () => {
+    render(
+      <ActionDrawer
+        action="refund" tripId={218} currency="USD" refundable={2_958} refundKey="finance.refund"
+        riderName="Avery" onClose={vi.fn()} onDone={vi.fn()}
+        limits={{ action_key: 'finance.refund', currency: 'USD', per_trip_minor: 5_000, per_trip_left_minor: 5_000,
+          per_day_minor: 25_000, used_today_minor: 23_000, per_day_left_minor: 2_000, alone_up_to_minor: 2_000 }}
+      />,
+    );
+    const text = screen.getByTestId('refund-limits').textContent ?? '';
+    expect(text).toContain('$50.00 per trip');
+    expect(text).toContain('$250.00 a day');
+    expect(text).toContain('$20.00 today');
+    expect(screen.getByText('This refund goes to a checker for approval.')).toBeTruthy();   // $29.58 > $20.00 left
+  });
 });

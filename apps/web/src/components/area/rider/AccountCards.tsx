@@ -54,7 +54,7 @@ export function SavedPlacesCard() {
           <div className="a14 amut">{tr('Used for one-tap booking')}</div>
         </div>
         {load.state === 'ok' && (
-          <button type="button" className="aacc ab a14 arow" style={{ ...linkBtn, gap: 4, whiteSpace: 'nowrap' }}
+          <button type="button" className="aacc ab a14 arow ahit" style={{ ...linkBtn, gap: 4, whiteSpace: 'nowrap' }}
             onClick={() => setSheet({ place: null })}>
             <IPlus size={16} />{tr('Add')}
           </button>
@@ -76,13 +76,13 @@ export function SavedPlacesCard() {
           </div>
           {confirm === p.id ? (
             <span className="arow" style={{ gap: 10 }}>
-              <button type="button" className="a14 ab" style={linkBtn} onClick={() => setConfirm(null)}>{tr('Keep')}</button>
-              <button type="button" className="a14 ab ared" style={linkBtn} onClick={() => remove(p.id)}>{tr('Delete')}</button>
+              <button type="button" className="a14 ab ahit" style={linkBtn} onClick={() => setConfirm(null)}>{tr('Keep')}</button>
+              <button type="button" className="a14 ab ared ahit" style={linkBtn} onClick={() => remove(p.id)}>{tr('Delete')}</button>
             </span>
           ) : (
             <span className="arow" style={{ gap: 12 }}>
-              <button type="button" className="aacc ab a14" style={linkBtn} onClick={() => setSheet({ place: p })}>{tr('Edit')}</button>
-              <button type="button" className="a14 amut" style={linkBtn} onClick={() => setConfirm(p.id)}>{tr('Delete')}</button>
+              <button type="button" className="aacc ab a14 ahit" style={linkBtn} onClick={() => setSheet({ place: p })}>{tr('Edit')}</button>
+              <button type="button" className="a14 amut ahit" style={linkBtn} onClick={() => setConfirm(p.id)}>{tr('Delete')}</button>
             </span>
           )}
         </div>
@@ -149,7 +149,7 @@ export function SafetyCard() {
           <div className="a14 amut">{tr('They get your trip link and SOS alerts')}</div>
         </div>
         {load.state === 'ok' && contacts.length < max && !adding && (
-          <button type="button" className="aacc ab a14" style={linkBtn} onClick={() => setAdding(true)}>{tr('Add')}</button>
+          <button type="button" className="aacc ab a14 ahit" style={linkBtn} onClick={() => setAdding(true)}>{tr('Add')}</button>
         )}
       </div>
       {load.state === 'error' && <LoadError what="contacts" retry={load.retry} />}
@@ -166,11 +166,11 @@ export function SafetyCard() {
           </div>
           {confirm === c.id ? (
             <span className="arow" style={{ gap: 10 }}>
-              <button type="button" className="a14 ab" style={linkBtn} onClick={() => setConfirm(null)}>{tr('Keep')}</button>
-              <button type="button" className="a14 ab ared" style={linkBtn} onClick={() => remove(c.id)}>{tr('Remove')}</button>
+              <button type="button" className="a14 ab ahit" style={linkBtn} onClick={() => setConfirm(null)}>{tr('Keep')}</button>
+              <button type="button" className="a14 ab ared ahit" style={linkBtn} onClick={() => remove(c.id)}>{tr('Remove')}</button>
             </span>
           ) : (
-            <button type="button" className="a14 amut" style={linkBtn} onClick={() => setConfirm(c.id)}>{tr('Remove')}</button>
+            <button type="button" className="a14 amut ahit" style={linkBtn} onClick={() => setConfirm(c.id)}>{tr('Remove')}</button>
           )}
         </div>
       ))}

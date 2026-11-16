@@ -16,7 +16,7 @@ import { CommandCentre } from './CommandCentre';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: vi.fn(), push: vi.fn(), prefetch: vi.fn() }),
-  usePathname: () => '/dashboard',
+  usePathname: () => '/ops/dashboard',
 }));
 
 vi.mock('next/link', () => ({
@@ -203,7 +203,7 @@ describe('ready', () => {
     render(<CommandCentre access={ops} />);
     expect(await screen.findByText('SOS open')).toBeTruthy();
     expect(screen.getByText(/3 items waiting on you/)).toBeTruthy();
-    expect(screen.getByText('SOS open').closest('a')?.getAttribute('href')).toBe('/safety-ops?scope=IN-TG-HYD');
+    expect(screen.getByText('SOS open').closest('a')?.getAttribute('href')).toBe('/ops/safety-ops?scope=IN-TG-HYD');
   });
 
   it('draws no SOS queue, link or count for a role that cannot open Safety, even if sent', async () => {

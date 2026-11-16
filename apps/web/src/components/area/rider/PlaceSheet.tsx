@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import MapSurface from '@/components/MapSurface';
 import { useTr } from '@/i18n/website';
 import { ApiError } from '@/lib/api';
-import { type LatLng, type Place, placeToPoint, searchPlaces } from '@/lib/booking';
+import { type LatLng, type Place, placeToPoint } from '@/lib/booking';
+import { SearchStatus, usePlaceSearch } from '@/lib/usePlaceSearch';
 import { type PlaceLabel, type SavedPlace, createPlace, updatePlace } from '@/lib/area/rider';
 
 export type PlaceDraft = { label?: PlaceLabel; name?: string; address_text?: string; point?: LatLng | null };
@@ -32,10 +33,8 @@ export function PlaceSheet({ place, draft, near, onClose, onSaved }: {
   const [query, setQuery] = useState(start.address);
   const [address, setAddress] = useState(start.address);
   const [point, setPoint] = useState<LatLng | null>(start.point);
-  const [found, setFound] = useState<Place[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const timer = useRef<number | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -43,14 +42,10 @@ export function PlaceSheet({ place, draft, near, onClose, onSaved }: {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  useEffect(() => {
-    if (timer.current) window.clearTimeout(timer.current);
-    const q = query.trim();
-    if (q.length < 3 || q === address) { setFound([]); return; }
-    timer.current = window.setTimeout(() => {
-      searchPlaces(q, near ?? point, 'drop').then(setFound).catch(() => setFound([]));
-    }, 300); // 300 ms after the last keystroke (maps cost, 9 Nov)
-  }, [query, address, near, point]);
+  // 14 Nov: the shared lookup, with "Searching…" and "Can't search right now" (lib/usePlaceSearch).
+  const search = usePlaceSearch(query, { near: near ?? point, field: 'drop', skip: query.trim() === address });
+  const found = search.found;
+  const setFound = (_: Place[]) => search.clear();
 
   async function pick(p: Place) {
     const at = await placeToPoint(p.place_id, 'drop').catch(() => null);
@@ -92,6 +87,7 @@ export function PlaceSheet({ place, draft, near, onClose, onSaved }: {
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tr('Search for an address')}
               aria-label={tr('Search for an address')} autoFocus={!place} />
           </label>
+          <SearchStatus state={search.state} onRetry={search.retry} className="a14 amut" />
           {found.length > 0 && (
             <div className="acard acol asep" role="listbox" aria-label={tr('Places')}>
               {found.slice(0, 5).map((p) => (

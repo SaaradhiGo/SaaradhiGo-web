@@ -278,3 +278,30 @@ export function scopeLabel(access: AdminAccess | null): string {
 export function isLockedOut(access: AdminAccess | null): boolean {
   return access?.access_model === 'denied';
 }
+
+/**
+ * The market the console's switch is on: 'IN', 'US', or null for all of them.
+ *
+ * Read from the selected place's path (`GLOBAL/US/US-TX/US-TX-AUS/` is the
+ * USA), so a state or city selection belongs to its country. Global, nothing
+ * selected with more than one country held, and a not-yet-scoped account are
+ * all "every market": null.
+ */
+export function selectedMarket(access: AdminAccess | null): 'IN' | 'US' | null {
+  if (!access || access.access_model === 'legacy_unscoped') return null;
+  const selected = readSelectedScope();
+  const match = selected ? access.scopes.find((s) => s.code === selected) : undefined;
+  // Nothing (valid) selected is "everything I hold": one market only if all of it is in one.
+  const places = match ? [match] : access.scopes;
+  const markets = new Set(places.map(marketOfScope));
+  if (markets.size !== 1) return null;
+  return [...markets][0];
+}
+
+function marketOfScope(scope: AdminScope): 'IN' | 'US' | null {
+  if (scope.kind === 'global') return null;
+  const country = (scope.path ?? `${scope.code}/`).split('/').filter(Boolean)
+    .find((c) => c !== 'GLOBAL') ?? scope.code;
+  const code = country.slice(0, 2).toUpperCase();
+  return code === 'IN' || code === 'US' ? code : null;
+}

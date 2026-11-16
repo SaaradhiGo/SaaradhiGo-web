@@ -123,12 +123,12 @@ export function CampaignRecord({ id, onClose, onManage, refreshKey = 0 }: {
               ) : null}
               {c.state === 'pending_approval' && c.approval_request_id ? (
                 <p className="ops-note" role="status">
-                  Waiting for a second admin: <PageLink page="approvals" href={`/approvals?id=${c.approval_request_id}`}>APR-{c.approval_request_id}</PageLink>. Nothing goes live until they approve.
+                  Waiting for a second admin: <PageLink page="approvals" href={`/ops/approvals?id=${c.approval_request_id}`}>APR-{c.approval_request_id}</PageLink>. Nothing goes live until they approve.
                 </p>
               ) : null}
               {c.budget_request_id ? (
                 <p className="ops-note" role="status">
-                  Budget raise waiting: <PageLink page="approvals" href={`/approvals?id=${c.budget_request_id}`}>APR-{c.budget_request_id}</PageLink>.
+                  Budget raise waiting: <PageLink page="approvals" href={`/ops/approvals?id=${c.budget_request_id}`}>APR-{c.budget_request_id}</PageLink>.
                 </p>
               ) : null}
             </div>

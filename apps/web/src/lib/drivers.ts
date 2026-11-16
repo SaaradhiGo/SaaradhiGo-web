@@ -30,6 +30,8 @@ export type DriverFilters = {
   joinedTo: string;
   suspended: boolean;
   flagged: boolean;
+  /** 12 Nov: "Low rating" -- an average below the setting from enough ratings (server-side). */
+  lowRating: boolean;
   /** Kept for the Command Centre's links. */
   approved: '' | 'true' | 'false';
   status: string;
@@ -41,7 +43,7 @@ export type DriverFilters = {
 
 export const DEFAULT_DRIVER_FILTERS: DriverFilters = {
   tab: 'all', kycState: [], scope: '', online: false, vehicleType: '', expiringWithin: '',
-  ratingMin: '', ratingMax: '', joinedFrom: '', joinedTo: '', suspended: false, flagged: false,
+  ratingMin: '', ratingMax: '', joinedFrom: '', joinedTo: '', suspended: false, flagged: false, lowRating: false,
   approved: '', status: '', id: '', ordering: '-id', page: 1, pageSize: 50,
 };
 
@@ -110,6 +112,7 @@ export function driverFiltersFromSearch(params: URLSearchParams): DriverFilters 
     joinedTo: date(params.get('joined_to')),
     suspended: params.get('suspended') === 'true',
     flagged: params.get('flagged') === 'true',
+    lowRating: params.get('low_rating') === 'true',
     approved: approved === 'true' || approved === 'false' ? approved : '',
     status: /^[a-z ]{1,20}$/.test(params.get('status') ?? '') ? (params.get('status') as string) : '',
     id: ID.test(params.get('id') ?? '') ? (params.get('id') as string) : '',
@@ -137,6 +140,7 @@ export function driverFiltersToQuery(f: DriverFilters): string {
   if (f.joinedTo) q.set('joined_to', f.joinedTo);
   if (f.suspended) q.set('suspended', 'true');
   if (f.flagged) q.set('flagged', 'true');
+  if (f.lowRating) q.set('low_rating', 'true');
   if (f.approved) q.set('approved', f.approved);
   if (f.status) q.set('status', f.status);
   if (f.id.trim()) q.set('id', f.id.trim());
@@ -168,7 +172,7 @@ export function activeDriverFilterCount(f: DriverFilters): number {
   return [
     f.kycState.length > 0, Boolean(f.scope), f.online, Boolean(f.vehicleType.trim()),
     Boolean(f.expiringWithin), Boolean(f.ratingMin || f.ratingMax),
-    Boolean(f.joinedFrom || f.joinedTo), f.suspended, f.flagged, Boolean(f.approved),
+    Boolean(f.joinedFrom || f.joinedTo), f.suspended, f.flagged, f.lowRating, Boolean(f.approved),
     Boolean(f.status), Boolean(f.id.trim()),
   ].filter(Boolean).length;
 }
@@ -292,6 +296,11 @@ export function documentViewPath(
   return doc.vehicle_id ? `${base}?vehicle_id=${encodeURIComponent(String(doc.vehicle_id))}` : base;
 }
 
+/** The checklist in numbers and labels (servers/driver/requirements.py `summary`). */
+export type RequirementsSummary = {
+  done: number; total: number; blocking: string[]; outstanding: string[]; expiring: string[];
+};
+
 /**
  * Warnings to draw beside an "Approved" chip. Approval is a decision; the
  * driver can still be missing paperwork or a vehicle, and the chip alone
@@ -303,12 +312,15 @@ export function approvedCaveats(d: {
   vehicles?: Array<{ is_active_vehicle: boolean }>;
   vehicle_number?: string | null;
   approval_blockers?: unknown[];
+  requirements?: unknown;
 }): string[] {
   if (d.kyc_state !== 'approved') return [];
   const out: string[] = [];
-  const docsOpen = d.documents_expired
-    || (d.documents ?? []).some((x) => x.review_state !== 'approved')
-    || (d.approval_blockers ?? []).length > 0;
+  // 12 Nov: the shared checklist (the driver's own pages and the approval gate) decides, when sent.
+  const summary = (d.requirements as { summary?: RequirementsSummary } | null | undefined)?.summary;
+  const docsOpen = d.documents_expired || (summary
+    ? summary.outstanding.length > 0 || summary.blocking.length > 0
+    : (d.documents ?? []).some((x) => x.review_state !== 'approved') || (d.approval_blockers ?? []).length > 0);
   if (docsOpen) out.push('Documents outstanding');
   const noVehicle = d.vehicles ? !d.vehicles.some((v) => v.is_active_vehicle) : d.vehicle_number === null;
   if (noVehicle) out.push('No vehicle');

@@ -1,9 +1,10 @@
 'use client';
 
+import { oneLine } from '@/lib/money';
 import { useEffect, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
-import { PAGE_SIZE, balance as loadBalance, payoutPage, period as loadPeriod } from '@/lib/area/driver';
+import { PAGE_SIZE, type Withdrawal, balance as loadBalance, payoutPage, period as loadPeriod } from '@/lib/area/driver';
 import { listWhen, money, setMarketZone } from '@/lib/area/format';
 import { useLoad } from '@/lib/area/useLoad';
 import { LoadError, Skel } from '../states';
@@ -46,6 +47,8 @@ export function DriverPayouts() {
 
   const words = { today: tr('Today'), yesterday: tr('Yesterday') };
   const tz = today?.timezone ?? null;
+  // Idaho bans cash (49-3712): no cash wording where the market says so.
+  const cashOk = today?.cash_allowed !== false;
 
   return (
     <>
@@ -59,7 +62,7 @@ export function DriverPayouts() {
             ) : <Skel h={40} w={140} />}
             {today && (
               <div className="a14">
-                {tr('You earned {earned} today and collected {cash} in cash.')
+                {(cashOk ? tr('You earned {earned} today and collected {cash} in cash.') : tr('You earned {earned} today.'))
                   .replace('{earned}', money(today.net, today.currency, locale) ?? '—')
                   .replace('{cash}', money(today.cash_collected, today.currency, locale) ?? '—')}
               </div>
@@ -85,17 +88,31 @@ export function DriverPayouts() {
               {list?.map((w) => {
                 const when = listWhen(w.processed_at ?? w.requested_at, locale, tz, words);
                 const [cls, label] = STATUS[(w.status ?? '').toLowerCase()] ?? ['apill--neu', w.status ?? ''];
+                const cur = w.currency ?? bal?.currency;
+                const fee = (w.fee_minor ?? 0) / 100;
+                const instant = w.origin === 'instant';
                 return (
-                  <div key={w.id} className="arow" style={{ padding: '14px 0', borderTop: '1px solid var(--c-border)' }}>
+                  <div key={w.id}>
+                  {/* 13 Nov: on phones, one card per payout with each amount on its own line. */}
+                  <div className="acards a-phone" style={{ padding: '10px 0', borderTop: '1px solid var(--c-border)' }} data-testid="payout-card">
+                    <div className="arow"><span className="a14 amut">{when ? `${when.first} · ${when.second}` : ''}</span><span className={`apill ${cls}`}>{tr(label)}</span></div>
+                    <div className="a20 amoney">{money(w.amount, cur, locale)}</div>
+                    <Outcome w={w} />
+                    {instant && (
+                      <>
+                        <div className="arow a14"><span className="amut">{tr('Provider fee')}</span><span className="amoney">{oneLine(`−${money(fee, cur, locale)}`)}</span></div>
+                        <div className="arow a14"><span className="amut">{tr('You received')}</span><span className="ab amoney">{money(Math.max(0, Number(w.amount ?? 0) - fee), cur, locale)}</span></div>
+                      </>
+                    )}
+                  </div>
+                  <div className="arow a-wide" style={{ padding: '14px 0', borderTop: '1px solid var(--c-border)' }}>
                     <div className="ab" style={{ width: 180 }}>
                       {when?.first}<div className="a14 amut" style={{ fontWeight: 400 }}>{when?.second}</div>
                     </div>
                     <span className="ab agrow">
                       {money(w.amount, w.currency ?? bal?.currency, locale)}
-                      {w.origin === 'instant' ? (() => {
+                      {instant ? (() => {
                         // Withdraw now (10 Nov): the provider fee on the statement line.
-                        const cur = w.currency ?? bal?.currency;
-                        const fee = (w.fee_minor ?? 0) / 100;
                         return (
                           <div className="a14 amut" style={{ fontWeight: 400 }} data-testid="instant-fee-line">
                             {tr('Withdrawn {amount} · provider fee {fee} · received {received}')
@@ -105,20 +122,42 @@ export function DriverPayouts() {
                           </div>
                         );
                       })() : null}
+                      <Outcome w={w} />
                     </span>
                     <span className={`apill ${cls}`}>{tr(label)}</span>
+                  </div>
                   </div>
                 );
               })}
             </div>
             <Pager page={page} count={count} size={PAGE_SIZE} noun={tr(count === 1 ? '{n} payout' : '{n} payouts').replace('{n}', String(count))} onPage={setPage} />
-            <p className="a14 amut" style={{ marginTop: 12 }}>
-              {tr('If you collected more cash than you earned, the commission you owe is taken from your next payout. It is never charged twice.')}
-            </p>
+            {cashOk && (
+              <p className="a14 amut" style={{ marginTop: 12 }}>
+                {tr('If you collected more cash than you earned, the commission you owe is taken from your next payout. It is never charged twice.')}
+              </p>
+            )}
           </section>
         </div>
         <PayoutMethodCard />
       </main>
     </>
+  );
+}
+
+/**
+ * A rejected or failed payout (14 Nov): one line of why, then where the money went, from the
+ * server's `outcome` (the refund on the wallet, never assumed).
+ */
+function Outcome({ w }: { w: Withdrawal }) {
+  const tr = useTr();
+  const o = w.outcome;
+  if (!o) return null;
+  return (
+    <div className="a14" data-testid="payout-outcome" style={{ fontWeight: 400 }}>
+      {o.reason && <div className="amut" style={{ overflowWrap: 'anywhere' }}>{o.reason}</div>}
+      <div className={o.money === 'returned' ? 'agrn' : 'amut'}>
+        {tr(o.money === 'returned' ? 'Returned to your balance' : 'Not returned to your balance yet. Support can tell you where it is.')}
+      </div>
+    </div>
   );
 }

@@ -96,7 +96,9 @@ export const RETRY_NOTE = 'The money was approved already, so a retry does not n
 
 export const ADJUST_REASONS: Record<string, string> = {
   correction: 'Correction', goodwill: 'Goodwill', chargeback: 'Chargeback',
-  damage_recovery: 'Damage recovery', other: 'Other',
+  damage_recovery: 'Damage recovery',
+  // 13 Nov: what a closing driver owes, written off so the account can close. Credit only; always a checker.
+  closure_write_off: 'Write-off on account closure', other: 'Other',
 };
 export const CREDIT_REASONS: Record<string, string> = {
   service_recovery: 'Service recovery', goodwill: 'Goodwill', correction: 'Correction', other: 'Other',
@@ -351,5 +353,5 @@ export function perCurrency(values: Record<string, number> | undefined): Array<[
  */
 export function reconciliationHref(block: Pick<FinanceBlock, 'reconciliation_link'>,
   access: AdminAccess | null): string | undefined {
-  return block.reconciliation_link && can(access, 'finance.read') ? '/finance/reconciliation' : undefined;
+  return block.reconciliation_link && can(access, 'finance.read') ? '/ops/finance/reconciliation' : undefined;
 }

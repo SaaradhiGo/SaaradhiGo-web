@@ -1,4 +1,5 @@
 import { localized } from '@/i18n/server';
+import { CompanyBlock } from '@/components/pages/CompanyBlock';
 import { ContactContent } from '@/components/pages/ContactContent';
 
 export const generateMetadata = localized({
@@ -10,5 +11,10 @@ export const generateMetadata = localized({
 });
 
 export default function ContactPage() {
-  return <ContactContent />;
+  return (
+    <>
+      <ContactContent />
+      <CompanyBlock />
+    </>
+  );
 }
