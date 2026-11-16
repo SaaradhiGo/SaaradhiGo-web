@@ -140,6 +140,7 @@
 }
 .achoice--pay { min-height: 52px; }
 .achoose__go { margin-top: auto; }
+.achoose__go:empty { display: none; }
 
 /* A place suggestion (14 Nov): two lines, the name then where it is; never a 3-line address. */
 .asuggest {
@@ -319,6 +320,8 @@
   .ar-split { flex-direction: column-reverse; height: auto; }
   .ar-panel { width: 100%; border-right: 0; padding: 20px 16px; }
   .ar-map { min-height: 320px; }
+  /* A short choose page (outside the area, 16 Nov) left an empty band above the map. */
+  .ar-split--choose { min-height: 0; }
   .ar-split--choose .ar-map { min-height: 180px; height: 180px; flex: none; }
   /* The panel must not be its own scroller on a phone, or Book would stick inside it. */
   .ar-split--choose .ar-panel { overflow: visible; }
