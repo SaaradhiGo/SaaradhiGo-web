@@ -7,7 +7,11 @@ const nextConfig = {
   // CSP, HSTS, framing, referrer and sniffing rules on every route (AUDIT
   // 27.78, M4). What the CSP allows, and why, is in security-headers.js.
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders() }];
+    return [
+      { source: '/:path*', headers: securityHeaders() },
+      // The console is never indexed: robots.txt alone still lets a linked URL appear in results.
+      { source: '/ops/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }] },
+    ];
   },
   // The backend serves all data via the existing REST API; we run as a
   // pure SPA-style client app, no server-side data fetching for now.
