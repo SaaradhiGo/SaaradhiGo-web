@@ -130,7 +130,7 @@ export function FaresContent() {
         ) : (
           <div className="sg-legal-doc__block" key={c.zone} data-testid="fares-city">
             <h2>{c.city}</h2>
-            <div className="sg-legal-doc__table">
+            <div className="sg-legal-doc__table" tabIndex={0} role="region" aria-label={`Rates in ${c.city}`}>
               <table>
                 <caption className="sr-only">Rates in {c.city}</caption>
                 <thead>
