@@ -381,7 +381,7 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
           </div>
         )}
         {freed && !noneFree && <p className="a14 agrn ab" role="status" data-testid="driver-free">{tr('A driver is free now. Your fare is ready to book.')}</p>}
-        {(extra || guest) && <fieldset className="acol" style={{ gap: 6, border: 0, padding: 0, margin: 0 }}>
+        {(extra || guest) && !outsideArea && <fieldset className="acol" style={{ gap: 6, border: 0, padding: 0, margin: 0 }}>
           <legend className="albl">{tr('Pay by')}</legend>
           <div className="acol" style={{ gap: 8 }} role="radiogroup" aria-label={tr('Pay by')}>
             {methods.map((m) => (
@@ -399,10 +399,10 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
           {us && <p className="a14 amut">{tr('Cash is not accepted here. Your card is held for the locked fare and charged only when the trip ends.')}</p>}
           {testMode && <p className="a14 ab" role="status" data-testid="test-card">{tr('Test payment: no card is charged.')}</p>}
         </fieldset>}
-        <div className="arow a14 agrn" style={{ gap: 8, padding: '10px 12px', borderRadius: 12, background: 'var(--c-green-bg)' }}>
+        {!outsideArea && <div className="arow a14 agrn" style={{ gap: 8, padding: '10px 12px', borderRadius: 12, background: 'var(--c-green-bg)' }}>
           <ILock size={16} />{tr('The fare you book is the fare you pay.')}
           {holdMin !== null && <> {tr('Held for {n} minutes.').replace('{n}', `${holdMin}`)}</>}
-        </div>
+        </div>}
         {chosen?.quote ? <FareWorkings quote={chosen.quote} /> : null}
         {error && <p className="a14 ared" role="alert">{error}</p>}
         {unpaid && <UnpaidTripCard trip={unpaid} onPaid={() => {
@@ -432,7 +432,7 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
                   </button>
                 )}
             </div>
-          ) : noneFree ? null : (
+          ) : noneFree || outsideArea ? null : (
             <button type="button" className="abtn abtn--pri abtn--block"
               disabled={!chosenFare || busy || !!unpaid} onClick={() => book()} data-testid="book">
               {busy ? tr('Booking…') : chosenFare ? `${tr('Book')} ${className(chosen?.type)} · ${chosenFare}` : tr('Book')}
