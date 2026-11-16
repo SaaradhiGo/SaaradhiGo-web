@@ -145,3 +145,17 @@ describe('a failing API shows the error, and Try again works', () => {
     expect(container.textContent).not.toMatch(PLACEHOLDER);
   });
 });
+
+describe('owner ruling, 16 Nov: drive before payout setup', () => {
+  it('dashboard: "Waiting for payout setup" and a link to set up payouts', async () => {
+    api.get.mockImplementation(async (p: string) => (p.startsWith('/driver/requirements/')
+      ? { payout_method: { kind: 'stripe', stripe_status: 'not_started', held_until: null, ready: false } }
+      : newDriver(p)));
+    const { container } = page(<DriverDashboard />);
+    await settle();
+    expect(container.querySelector('[data-testid="balance-label"]')?.textContent).toBe('Waiting for payout setup');
+    const banner = container.querySelector('[data-testid="payout-setup-banner"]');
+    expect(banner?.textContent).toContain('Set up payouts to get paid');
+    expect(banner?.getAttribute('href')).toContain('/driver/setup/payouts');
+  });
+});

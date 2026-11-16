@@ -137,6 +137,13 @@ export function DriverDashboard() {
       <DriverTop title={tr('Dashboard')} me={me} />
       <main className="dr-main">
         {req.data?.paused ? <PausedCard paused={req.data.paused} /> : <SetupCard data={req.data} />}
+        {req.data && !req.data.paused && req.data.payout_method?.ready === false && (
+          <a href={setupHref('payouts')} className="acard arow" data-testid="payout-setup-banner"
+            style={{ padding: 16, gap: 12, justifyContent: 'space-between', textDecoration: 'none', color: 'inherit', minHeight: 44 }}>
+            <span className="ab">{tr('Set up payouts to get paid')}</span>
+            <span className="a14 amut">{tr('Your earnings wait in your wallet until then.')}</span>
+          </a>
+        )}
         {soon && (
           <div className="anote">
             <span className="anote__icon"><IAlert /></span>
@@ -171,7 +178,9 @@ export function DriverDashboard() {
             ) : <Skel h={40} w={140} />}
           </div>
           <div className="acard dr-stat">
-            <div className="albl">{tr('Ready to withdraw')}</div>
+            <div className="albl" data-testid="balance-label">
+              {req.data && req.data.payout_method?.ready === false ? tr('Waiting for payout setup') : tr('Ready to withdraw')}
+            </div>
             {bal.state === 'error' ? <LoadError what="balance" retry={bal.retry} /> : b ? (
               <div className="a40">{money(b.available_balance ?? 0, b.currency ?? cur, locale)}</div>
             ) : <Skel h={40} w={140} />}
