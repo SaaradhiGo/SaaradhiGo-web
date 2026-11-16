@@ -33,7 +33,7 @@
     "shoot:reports": "node scripts/shoot-reports.mjs"
   },
   "dependencies": {
-    "next": "15.5.26",
+    "next": "15.5.29",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
@@ -55,5 +55,11 @@
     "tailwindcss": "3.4.4",
     "typescript": "5.4.5",
     "vitest": "3.2.7"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.28"
+    },
+    "source-map-js": "1.2.2"
   }
 }
