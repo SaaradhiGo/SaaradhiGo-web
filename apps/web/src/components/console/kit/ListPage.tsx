@@ -117,13 +117,16 @@ export function ListPage<T>({
         {actionsSlot ? <div className="ops-list__actions">{actionsSlot}</div> : null}
       </header>
 
-      <div className="ops-list__views" role="tablist" aria-label="Saved views">
+      {/* A tablist holds only tabs (axe aria-required-children); saved views sit beside it. */}
+      <div className="ops-list__views">
+        <div role="tablist" aria-label="Saved views" style={{ display: 'contents' }}>
         {views.map((v) => (
           <button key={v.key} type="button" role="tab" aria-selected={view === v.key}
             className="ops-view" onClick={() => onView(v.key)}>
             {v.label}{typeof v.count === 'number' ? <span className="sg-num"> {v.count.toLocaleString('en-IN')}</span> : null}
           </button>
         ))}
+        </div>
         {saved.map((s) => (
           <button key={s.query} type="button" className="ops-view ops-view--saved"
             onClick={() => onSavedView?.(s.query)} title="Saved view">{s.name}</button>

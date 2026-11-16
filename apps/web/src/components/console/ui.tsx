@@ -282,7 +282,7 @@ export function Table({
   children: ReactNode;
 }) {
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div style={{ overflowX: 'auto' }} tabIndex={0} role="region" aria-label="Table">
       <table className="ops-table">
         <thead>
           <tr>{head}</tr>
@@ -680,7 +680,8 @@ export function DataTable<T>({
   ].filter(Boolean).join(' ') || undefined;
 
   return (
-    <div className={`ops-table-wrap ${maxHeight ? 'ops-table-wrap--tall' : ''}`}>
+    <div className={`ops-table-wrap ${maxHeight ? 'ops-table-wrap--tall' : ''}`} tabIndex={0} role="region"
+      aria-label={typeof caption === 'string' ? caption : 'Table'}>
       <table className={`ops-table ops-table--${density} ${onRow ? 'ops-table--rows' : ''}`}>
         <caption className="sr-only">{caption}</caption>
         <thead>
