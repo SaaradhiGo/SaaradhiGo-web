@@ -18,6 +18,7 @@ import { rideBlurbKey } from '@/lib/vehicles';
 import { rideGlyph } from '@/components/home/RideGlyphs';
 import { LOAD_TIMEOUT_MS } from '@/lib/area/useLoad';
 import { tellMeAtLaunch } from '@/lib/booking';
+import { ApiError } from '@/lib/api';
 import { IBack, ICar, ICheck, ILock, IUser } from '../icons';
 import { Skel } from '../states';
 import { FareWorkings } from './FareWorkings';
@@ -51,6 +52,15 @@ type Option = { type: string; quote: FareQuote | null };
  * distance and time once; minutes to a driver per class (none nearby: not bookable); how to pay,
  * defaulting to the last method; the mobile is verified once before the first booking.
  */
+
+/** "This place is outside our service area (Treasure Valley)." in the rider's language. */
+export function outsideAreaLine(message: string, tr: (english: string) => string): string {
+  const area = /\(([^()]+)\)\.?\s*$/.exec(message)?.[1]?.trim();
+  return area
+    ? `${tr('This place is outside our service area')} (${area}).`
+    : `${tr('This place is outside our service area')}.`;
+}
+
 export function RideChoose({ guest = false }: { guest?: boolean }) {
   const tr = useTr();
   const { locale } = useLocale();
@@ -72,6 +82,7 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
   const [askPhone, setAskPhone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [outsideArea, setOutsideArea] = useState(false);
   // 13 Nov: a city that has not launched yet: fares show, Book offers "Tell me when we launch".
   const [launch, setLaunch] = useState<string | null>(null);
   const [launchSaved, setLaunchSaved] = useState(false);
@@ -90,8 +101,10 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
   useEffect(() => {
     if (!from || !to) return;
     let live = true;
+    let outside: string | null = null;
     setOptions(null);
     setError(null);
+    setOutsideArea(false);
     // Never "Getting fares…" for ever (8 Nov): ten seconds, then an error with Try again.
     const timer = setTimeout(() => {
       if (live) { live = false; setOptions([]); setError(tr('We could not load fares. Try again.')); }
@@ -109,12 +122,22 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
         const [quotes, opts] = await Promise.all([
           Promise.all(types.map(async (type) => ({
             type,
-            quote: await quoteFare({ pickup: from, destination: to, distanceKm: km, durationMin: min, vehicleType: type }).catch(() => null),
+            quote: await quoteFare({ pickup: from, destination: to, distanceKm: km, durationMin: min, vehicleType: type }).catch((e) => {
+              // Round 3: a drop just outside the zone's outline. The server names the area.
+              if (e instanceof ApiError && e.code === 'OUT_OF_SERVICE_AREA') outside = e.message || ' ';
+              return null;
+            }),
           }))),
           guest ? Promise.resolve(null) : bookingOptions(from).catch(() => null),
         ]);
         if (!live) return;
         clearTimeout(timer);
+        if (outside && !quotes.some((x) => x.quote)) {
+          setOptions([]);
+          setOutsideArea(true);
+          setError(outsideAreaLine(outside, tr));
+          return;
+        }
         setOptions(quotes);
         setLaunch(quotes.map((x) => x.quote?.launching?.message).find(Boolean) ?? null);
         setExtra(opts);
@@ -304,7 +327,7 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
         </p>
         <div className="acol" style={{ gap: 8 }} role="radiogroup" aria-label={tr('Choose a ride')}>
           {options === null && [0, 1, 2].map((i) => <Skel key={i} h={72} />)}
-          {options?.length === 0 && error && (
+          {options?.length === 0 && error && !outsideArea && (
             <button type="button" className="abtn abtn--ghost" onClick={() => setAttempt((n) => n + 1)}>{tr('Try again')}</button>
           )}
           {options?.map((o) => {
