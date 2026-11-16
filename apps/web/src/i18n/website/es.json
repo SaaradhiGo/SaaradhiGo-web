@@ -214,5 +214,13 @@
   "Forgot password?": "¿Olvidaste tu contraseña?",
   "Creating your account…": "Creando tu cuenta…",
   "Standard and XL, each with its own price.": "Standard y XL, cada uno con su precio.",
-  "By card in the app. The fare is held on your card when you book and charged when the trip ends.": "Con tarjeta en la aplicación. La tarifa se retiene en tu tarjeta al reservar y se cobra al terminar el viaje."
+  "By card in the app. The fare is held on your card when you book and charged when the trip ends.": "Con tarjeta en la aplicación. La tarifa se retiene en tu tarjeta al reservar y se cobra al terminar el viaje.",
+  "Rider sign-up opens soon, when we launch in Hyderabad.": "El registro de pasajeros abre pronto, cuando lancemos en Hyderabad.",
+  "We could not send your application. Try again.": "No pudimos enviar tu solicitud. Inténtalo de nuevo.",
+  "Thank you. We have your application": "Gracias. Recibimos tu solicitud",
+  "We will call you when driver sign-up opens.": "Te llamaremos cuando abra el registro de conductores.",
+  "Driver sign-up opens soon. Leave your details and we will call you.": "El registro de conductores abre pronto. Deja tus datos y te llamaremos.",
+  "Choose a city": "Elige una ciudad",
+  "Choose a vehicle": "Elige un vehículo",
+  "Email (optional)": "Correo electrónico (opcional)"
 }
