@@ -43,6 +43,8 @@ export type Zone = {
   country: string;
   currency: string;
   timezone?: string;
+  /** 'live' once the city takes bookings, 'soon' before (17 Nov). */
+  city_status?: string;
 };
 
 export async function fetchZones(): Promise<Zone[]> {
