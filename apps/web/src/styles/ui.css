@@ -198,3 +198,8 @@
 .ui-choose .achoose__route, .ui-choose .achoose__route * { line-height: 1.5; }
 /* A device frame keeps its own width in a row; it never stretches to fill. */
 .ui-split > .ui-device, .ui-devices > .ui-device, .ui-side > .ui-device { flex: 0 1 var(--ui-device-w, 300px); }
+/* The no-drivers note on the standard: an attention alert, the main action gold, the other secondary. */
+.ui-choose .anote { background: var(--ui-warn-bg); color: var(--ui-text); border: 0; border-radius: 12px; padding: 16px; }
+.ui-choose .anote .abtn { min-height: 48px; border-radius: 12px; font-size: 16px; font-weight: 600; padding: 12px 20px; }
+.ui-choose .anote .abtn--dark { background: var(--ui-gold); color: var(--ui-on-gold); border: 0; }
+.ui-choose .anote .abtn--ghost { background: var(--ui-surface); color: var(--ui-text); border: 1px solid var(--ui-line-strong); }
