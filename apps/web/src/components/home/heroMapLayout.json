@@ -1,0 +1,74 @@
+{
+  "hyderabad": {
+    "from": "HITEC City",
+    "to": "Charminar",
+    "deskCard": [
+      -280,
+      90
+    ],
+    "labels": {
+      "pickup": "above",
+      "drop": "below"
+    },
+    "desk": {
+      "w": 1600,
+      "h": 640,
+      "pickup": [
+        588,
+        138
+      ],
+      "drop": [
+        996,
+        512
+      ]
+    },
+    "phone": {
+      "w": 440,
+      "h": 260,
+      "pickup": [
+        125,
+        48
+      ],
+      "drop": [
+        308,
+        216
+      ]
+    }
+  },
+  "boise": {
+    "from": "Boise State University",
+    "to": "The Village at Meridian",
+    "deskCard": [
+      -280,
+      70
+    ],
+    "labels": {
+      "pickup": "below",
+      "drop": "above"
+    },
+    "desk": {
+      "w": 1600,
+      "h": 640,
+      "pickup": [
+        1033,
+        336
+      ],
+      "drop": [
+        555,
+        306
+      ]
+    },
+    "phone": {
+      "w": 440,
+      "h": 260,
+      "pickup": [
+        360,
+        140
+      ],
+      "drop": [
+        73,
+        121
+      ]
+    }
+  }
+}

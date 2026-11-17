@@ -365,7 +365,7 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
         {noneFree && (
           <div className="anote acol" style={{ alignItems: 'stretch', gap: 10 }} data-testid="no-drivers" role="status">
             <p className="ab">{tr('No drivers nearby right now')}</p>
-            <p className="a14">{watching !== null
+            <p className="a16">{watching !== null
               ? tr('We are checking every 30 seconds while this page is open, for 10 minutes. Keep it open and we will tell you.')
               : tr('Drivers come free all the time. Try again in a minute, or we can keep checking for you.')}</p>
             <div className="arow" style={{ gap: 8, flexWrap: 'wrap' }}>

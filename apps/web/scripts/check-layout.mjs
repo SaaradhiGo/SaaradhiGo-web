@@ -100,7 +100,7 @@ async function open(p, width, height, { theme = 'light', lang = 'en' } = {}) {
   // An Indian browser, so sign-up preselects +91 as in the reference, and the
   // two public lookups the forms make answered from a fixture: the gate runs
   // without a backend.
-  const ctx = await browser.newContext({ viewport: { width, height }, locale: 'en-IN' });
+  const ctx = await browser.newContext({ viewport: { width, height }, locale: 'en-IN', timezoneId: 'Asia/Kolkata' });
   await ctx.route('**/pricing/countries/**', (r) => r.fulfill({ json: COUNTRIES }));
   await ctx.route('**/pricing/zones/**', (r) => r.fulfill({ json: { zones: [] } }));
   await ctx.addCookies([{ name: 'sg-language', value: lang, url: SITE }]);
