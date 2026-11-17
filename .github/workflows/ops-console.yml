@@ -169,3 +169,26 @@ jobs:
           name: v2-diff
           path: apps/web/v2-diff/
           if-no-files-found: ignore
+
+  deploy-railway:
+    # PROD on Railway (17 Nov, production round 1). Runs here, on the push to main itself, after
+    # both gates pass: a workflow_run job runs with the default branch (develop) as its ref, and the
+    # GitHub `production` environment (limited to main) refuses it. Deploys only from main, only
+    # when PRODUCTION_DEPLOY_ENABLED is 'true'; Railway PROD has no trigger of its own.
+    name: deploy production (Railway PROD, Singapore)
+    needs: [secret-scan, verify]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.PRODUCTION_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: production
+    concurrency:
+      group: production-web-railway
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: web (Railway PROD, Singapore)
+        env:
+          RAILWAY_PROD_TOKEN: ${{ secrets.RAILWAY_PROD_TOKEN }}
+        run: python .github/scripts/railway_deploy.py "${{ github.sha }}" 3388a36e-f311-4a80-9dc0-83752c3266ab
