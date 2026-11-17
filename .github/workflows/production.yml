@@ -70,3 +70,26 @@ jobs:
             aws autoscaling start-instance-refresh --auto-scaling-group-name "$ASG" \
               --preferences '{"MinHealthyPercentage": 50}'
           fi
+
+  deploy-railway:
+    # 17 Nov (owner brief, production round 1): PROD runs on Railway. Same gate as above: the
+    # ops-console CI finished green for a push to main, PRODUCTION_DEPLOY_ENABLED is 'true', and the
+    # GitHub `production` environment (limited to main) holds the PROD project token. Railway has
+    # no deployment trigger on PROD, so nothing else can deploy it.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      vars.PRODUCTION_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - name: web (Railway PROD, Singapore)
+        env:
+          RAILWAY_PROD_TOKEN: ${{ secrets.RAILWAY_PROD_TOKEN }}
+        run: python .github/scripts/railway_deploy.py "${{ github.event.workflow_run.head_sha }}" 3388a36e-f311-4a80-9dc0-83752c3266ab

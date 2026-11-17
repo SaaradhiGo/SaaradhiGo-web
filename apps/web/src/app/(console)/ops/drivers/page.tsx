@@ -293,7 +293,7 @@ function DriversInner() {
         <ListPage<DriverRow>
           pageKey="drivers"
           title="Drivers"
-          summary="Contact details are masked. Times are in each driver's home city."
+          summary={<>Contact details are masked. Times are in each driver&apos;s home city. <Link href="/ops/drivers/applications">Applications before sign-up</Link></>}
           views={VIEWS.map((v) => ({ key: v.key, label: v.label, count: counts[v.key] ?? null }))}
           view={view}
           onView={setView}
