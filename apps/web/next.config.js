@@ -11,6 +11,9 @@ const nextConfig = {
       { source: '/:path*', headers: securityHeaders() },
       // The console is never indexed: robots.txt alone still lets a linked URL appear in results.
       { source: '/ops/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }] },
+      // 17 Nov: the signed-in rider and driver areas too (the driver's public sign-up stays indexable).
+      ...['/rider/:path*', '/driver', '/driver/(documents|earnings|payouts|profile|ready|setup|support|trips)/:path*']
+        .map((source) => ({ source, headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }] })),
     ];
   },
   // The backend serves all data via the existing REST API; we run as a

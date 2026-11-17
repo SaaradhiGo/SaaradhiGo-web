@@ -13,7 +13,9 @@ import { SITE_URL } from '@/lib/support';
  * the content changed when it did not; leaving it out says nothing false.
  */
 const PAGES = ['', '/ride', '/drive', '/fares', '/safety', '/about', '/help', '/contact', '/privacy', '/terms',
-  '/driver-terms', '/refunds', '/text-messages', '/grievance', '/cookies', '/delete-account'];
+  '/driver-terms', '/refunds', '/text-messages', '/grievance', '/cookies', '/delete-account',
+  // 17 Nov: footer pages that were missing, and the driver application (open before launch).
+  '/zero-tolerance', '/accessibility', '/driver/sign-up'];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return PAGES.map((path) => ({
