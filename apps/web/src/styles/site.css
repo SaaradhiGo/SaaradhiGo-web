@@ -161,7 +161,10 @@
 /* 13 Nov (owner): text and links only. Brand and tagline top-left, three columns aligned to the
    top, a rule, then the copyright row for the country chosen in the header or detected. */
 .s-footer { background: var(--c-noir); color: var(--d-ink-text-2); border-top: 1px solid rgba(214, 168, 62, 0.35); }
-.s-footer__top { padding-top: 48px; padding-bottom: 40px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 32px 64px; }
+.s-footer__top { padding-top: 48px; padding-bottom: 40px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 32px 64px; }
+/* Brand and links side by side while both fit; the links go under the brand when they do not. */
+.s-footer__top > :first-child { flex: 1 1 16em; min-width: 0; }
+.s-footer__top > .s-footer__cols { flex: 1 1 26rem; max-width: 40rem; min-width: 0; }
 .s-footer__brand { display: grid; gap: 10px; max-width: 340px; }
 .s-footer__name { display: inline-flex; align-items: center; gap: 10px; color: var(--d-ivory); font-weight: 600; font-size: var(--text-body); letter-spacing: 0.02em; }
 .s-footer__mark { width: 28px; height: 25px; display: block; flex-shrink: 0; }
@@ -171,8 +174,9 @@
   justify-content: space-between; gap: 10px; font-size: var(--text-small); line-height: var(--leading-small); color: var(--d-ash);
 }
 /* Columns sized by their text (17 Nov): with large text they fall to fewer, never off the screen. */
-.s-footer__cols { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px 56px; }
-.s-footer__cols > * { flex: 0 1 auto; min-width: min(100%, 9em); }
+/* As many columns as fit, each at least 9em (so very large text gets fewer), in up to 40rem beside
+   the brand (17 Nov: auto-sized wrapping columns came out too narrow and dropped the third). */
+.s-footer__cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9em), 1fr)); gap: 24px 40px; }
 .s-footer__colhead { font-size: var(--text-small); line-height: var(--leading-small); color: var(--d-ash); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin: 0 0 12px; }
 .s-footer__col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .site .s-footer__col a { color: var(--d-ivory); text-decoration: none; }
@@ -180,7 +184,7 @@
 .s-footer__entity { display: grid; gap: 4px; min-width: 0; }
 .s-footer__details { color: var(--d-ash); overflow-wrap: anywhere; }
 @media (max-width: 767px) {
-  .s-footer__top { padding-top: 32px; padding-bottom: 28px; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .s-footer__top { padding-top: 32px; padding-bottom: 28px; gap: 28px; }
   .s-footer__line { font-size: var(--text-small); line-height: var(--leading-small); }
   .s-footer__cols { gap: 24px 16px; }
   .s-footer__base { padding-top: 16px; padding-bottom: 24px; }
