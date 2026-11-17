@@ -98,9 +98,11 @@
 .apill--err { background: var(--c-red-bg); color: var(--c-red); }
 .apill--neu { background: var(--c-muted); color: var(--c-text-2); }
 .aico {
-  width: 44px; height: 44px; margin: -2px; border-radius: 12px; display: flex; align-items: center;
+  width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center;
   justify-content: center; flex-shrink: 0; background: var(--c-muted); color: var(--c-text-2);
 }
+/* A tappable tile (the Back link) is 44px, inside the same 40px footprint. */
+a.aico { width: 44px; height: 44px; margin: -2px; }
 .adot { width: 8px; height: 8px; border-radius: 4px; background: var(--c-dot); flex-shrink: 0; }
 .adot--on { background: var(--c-green); }
 .asep > * + * { border-top: 1px solid var(--c-border); }
