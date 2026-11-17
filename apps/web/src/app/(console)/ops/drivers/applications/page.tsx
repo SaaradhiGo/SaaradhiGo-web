@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { messageOf } from '@/components/console/notifications';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { Revealable } from '@/components/console/Revealable';
 
 /**
  * Drivers › Applications (17 Nov): people who applied to drive before sign-up opened, in your
@@ -16,10 +17,15 @@ type Application = {
 
 const COLUMNS: ListColumn<Application>[] = [
   { key: 'name', label: 'Name', primary: true, render: (a) => a.full_name },
-  { key: 'phone', label: 'Mobile', render: (a) => a.phone_number },
+  { key: 'phone', label: 'Mobile', render: (a) => (
+    <Revealable value={a.phone_number} label="applicant phone" target={{ type: 'driver_application', id: a.id }} field="phone_number" compact
+      render={(v) => (v ? <a href={`tel:${String(v)}`}>{String(v)}</a> : 'Not on file')} />
+  ) },
   { key: 'city', label: 'City', render: (a) => a.city },
   { key: 'vehicle', label: 'Vehicle', render: (a) => a.vehicle_type },
-  { key: 'email', label: 'Email', render: (a) => a.email || '—' },
+  { key: 'email', label: 'Email', render: (a) => (a.email
+    ? <Revealable value={a.email} label="applicant email" target={{ type: 'driver_application', id: a.id }} field="email" compact />
+    : '—') },
   { key: 'when', label: 'Applied', render: (a) => new Date(a.created_at).toLocaleString() },
 ];
 
@@ -40,7 +46,7 @@ export default function DriverApplicationsPage() {
     <ListPage<Application>
       pageKey="driver-applications"
       title="Driver applications"
-      summary="People who applied to drive before sign-up opened. They have no account yet: call them when driver sign-up opens."
+      summary="People who applied to drive before sign-up opened. They have no account yet: call them when driver sign-up opens. Numbers are masked; Reveal is logged with your name."
       views={[{ key: 'all', label: 'All', count: total }]}
       view="all"
       onView={() => undefined}

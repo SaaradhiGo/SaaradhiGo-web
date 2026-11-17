@@ -22,7 +22,8 @@ import { useSyncExternalStore } from 'react';
 import { ApiError, api } from '@/lib/api';
 
 export type RevealTargetType =
-  | 'driver' | 'user' | 'rider' | 'trip' | 'support_ticket' | 'withdrawal' | 'payment';
+  | 'driver' | 'user' | 'rider' | 'trip' | 'support_ticket' | 'withdrawal' | 'payment'
+  | 'driver_application';
 
 /** What the generic endpoint hands back. `fields` carries the values. */
 export type RevealResult = {
