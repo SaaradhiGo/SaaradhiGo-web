@@ -620,7 +620,7 @@
 
 /* Phone pass (17 Nov): every control is at least 44px tall, and a text link that stands on its
    own line is a 44px row; the site underline replaces sg-link's border, so it is not doubled. */
-.s-icon-btn { width: 44px; height: 44px; }
+.site .s-icon-btn { width: 44px; height: 44px; }
 .site .s-header__login { height: 44px; }
 .s-seg button { height: 44px; }
 .site a.sg-link { border-bottom: 0; }
