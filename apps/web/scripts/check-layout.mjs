@@ -29,7 +29,7 @@
 //
 //   SITE=http://localhost:3100 npm run check-layout
 //   SHOTS=dir also saves the contact sheet (1440x900 and 390x844: en light
-//   and dark; te, hi and es light). BASELINE=1 rewrites baseline/Home.png.
+//   and dark; te, hi and es light). BASELINE=1 rewrites the standard pages' baselines.
 import { chromium } from 'playwright-core';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
@@ -51,8 +51,12 @@ const LEAKS = Object.fromEntries(LANGS.map((l) => {
   return [l, Object.keys(english).filter((k) => tr[k] && tr[k] !== k)];
 }));
 const MISSING_PAGE = '/this-page-does-not-exist';
-const FIT = ['/ride', '/drive', '/safety', '/about', '/help', '/sign-up', '/sign-in'];
-const PAGES = ['/', ...FIT];
+// 17 Nov: pages rebuilt to the product standard are compared with their own approved shots
+// (design/standard-2026-11-17/baseline, BASELINE=1 rewrites them) and need not fit one screen.
+const STANDARD = { '/': 'home.png', '/safety': 'safety.png' };
+const STD = path.resolve('../../design/standard-2026-11-17/baseline');
+const FIT = ['/ride', '/drive', '/about', '/help', '/sign-up', '/sign-in'];
+const PAGES = ['/', '/safety', ...FIT];
 const REF_FOR = {
   '/': '../baseline/Home.png', '/ride': 'Ride.png', '/drive': 'Drive.png', '/safety': 'Safety.png',
   '/about': 'About.png', '/help': 'Help.png', '/sign-up': 'SignUp.png',
@@ -316,18 +320,19 @@ for (const { p, w, h, lang } of RUNS) {
         return [Math.floor(r.left), Math.floor(r.top + scrollY), Math.ceil(r.width), Math.ceil(r.height)];
       }, p === '/drive' ? '.s-request-wrap' : '.s-stack'));
     }
-    if (p === '/' && process.env.BASELINE) {
-      mkdirSync(BASE, { recursive: true });
-      writeFileSync(path.join(BASE, 'Home.png'), shot);
+    if (STANDARD[p] && process.env.BASELINE) {
+      mkdirSync(STD, { recursive: true });
+      writeFileSync(path.join(STD, STANDARD[p]), shot);
     }
-    if (existsSync(path.join(REF, REF_FOR[p]))) {
-      const d = diff(shot, path.join(REF, REF_FOR[p]), REF_CUT[p], [...(REF_MASK[p] || []), ...emblems]);
+    const refFile = STANDARD[p] ? path.join(STD, STANDARD[p]) : path.join(REF, REF_FOR[p]);
+    if (existsSync(refFile)) {
+      const d = diff(shot, refFile, REF_CUT[p], [...(REF_MASK[p] || []), ...emblems]);
       mkdirSync(DIFFS, { recursive: true });
       const base = p === '/' ? 'home' : p.slice(1);
       writeFileSync(path.join(DIFFS, `${base}-diff.png`), d.png);
       writeFileSync(path.join(DIFFS, `${base}-ours.png`), shot);
       heights[`${p} diff`] = Number((d.share * 100).toFixed(2));
-      if (d.share > MAX_DIFF) fail(`${at}: ${(d.share * 100).toFixed(1)}% of pixels differ from ${REF_FOR[p]} (max 3%)`);
+      if (d.share > MAX_DIFF) fail(`${at}: ${(d.share * 100).toFixed(1)}% of pixels differ from ${STANDARD[p] ?? REF_FOR[p]} (max 3%)`);
     } else fail(`${at}: reference ${REF_FOR[p]} is missing`);
   }
   await ctx.close();

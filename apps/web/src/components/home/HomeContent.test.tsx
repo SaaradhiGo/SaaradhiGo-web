@@ -37,15 +37,12 @@ describe('HomeContent', () => {
     expect(screen.getByText('Fair for drivers.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'See fares' })).toBeTruthy();
     expect(screen.getByText('Honest for the rider. Honest for the driver.')).toBeTruthy();
-    expect(screen.getAllByText('Trip fare').length).toBeGreaterThan(0);
-    // 13 Nov (owner): the request mock shows example numbers that add up, marked Example, and
-    // they are the only numbers (and the only city) on the page.
-    const example = screen.getByTestId('example-request');
-    expect(example.textContent).toContain('₹183.00');
-    expect(example.textContent).toContain('₹27.45');
-    expect(example.textContent).toContain('₹155.55');
-    expect(screen.getAllByText('Example · Sedan, Hyderabad').length).toBe(1);
-    const text = (document.body.textContent || '').replace(example.textContent || '', '').replace('Example · Sedan, Hyderabad', '');
+    // 17 Nov standard: the two sides show the real product in phone frames, not drawn mock-ups.
+    expect(document.querySelectorAll('.ui-device img').length).toBe(2);
+    expect(document.querySelector('[data-testid="example-request"]')).toBeNull();
+    // No pastel icon tiles on the safety strip.
+    expect(document.querySelector('.s-tile')).toBeNull();
+    const text = document.body.textContent || '';
     expect(/[₹$€£]\s?\d|\d{4,6}/.test(text)).toBe(false);
     expect(/Hyderabad|UPI|Aadhaar/.test(text)).toBe(false);
     expect(/surge|coming soon/i.test(text)).toBe(false);

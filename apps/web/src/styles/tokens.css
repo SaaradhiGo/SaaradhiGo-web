@@ -456,3 +456,71 @@
   --c-area: #0B0B0B;
   --c-focus: #F5C451;
 }
+
+/* ---------------------------------------------------------------------------
+   The product standard (owner brief, 17 Nov 2026): one set of tokens for every
+   screen. White ground, very light grey bands, three text greys, black header
+   and footer, gold only for the primary action and key highlights, status
+   colours only for status. Light unless the person chooses dark.
+   Components read only these (src/styles/ui.css, src/components/ui).
+   --------------------------------------------------------------------------- */
+:root {
+  --ui-bg: #FFFFFF;
+  --ui-band: #F6F6F6;
+  --ui-surface: #FFFFFF;
+  --ui-raised: #FFFFFF;
+  --ui-line: #E4E4E4;
+  --ui-line-strong: #BDBDBD;
+  --ui-text: #121212;
+  --ui-text-2: #4A4A4A;
+  --ui-text-3: #6B6B6B;
+  --ui-ink: #000000;
+  --ui-on-ink: #FFFFFF;
+  --ui-on-ink-2: #BDBDBD;
+  --ui-gold: #F5A623;
+  --ui-gold-hover: #E0951A;
+  --ui-on-gold: #121212;
+  --ui-gold-text: #8A5A00;
+  --ui-ok: #0D7762;
+  --ui-ok-bg: #E8F3F0;
+  --ui-warn: #8A5A00;
+  --ui-warn-bg: #FFF4DC;
+  --ui-bad: #B3261E;
+  --ui-bad-bg: #FCECEB;
+  --ui-focus: #121212;
+  --ui-scrim: rgba(0, 0, 0, 0.48);
+  --ui-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
+  --ui-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.16);
+  --ui-skeleton: #EDEDED;
+  --ui-device: #121212;
+}
+[data-theme="dark"] {
+  --ui-bg: #0B0B0B;
+  --ui-band: #141414;
+  --ui-surface: #161616;
+  --ui-raised: #1E1E1E;
+  --ui-line: #2C2C2C;
+  --ui-line-strong: #4A4A4A;
+  --ui-text: #F2F2F2;
+  --ui-text-2: #C4C4C4;
+  --ui-text-3: #9A9A9A;
+  --ui-ink: #000000;
+  --ui-on-ink: #FFFFFF;
+  --ui-on-ink-2: #BDBDBD;
+  --ui-gold: #F5A623;
+  --ui-gold-hover: #FFB743;
+  --ui-on-gold: #121212;
+  --ui-gold-text: #F5C451;
+  --ui-ok: #3CC29E;
+  --ui-ok-bg: #0F2A23;
+  --ui-warn: #F5C451;
+  --ui-warn-bg: #2B2210;
+  --ui-bad: #F2867E;
+  --ui-bad-bg: #2E1412;
+  --ui-focus: #F2F2F2;
+  --ui-scrim: rgba(0, 0, 0, 0.64);
+  --ui-shadow: 0 0 0 1px #2C2C2C;
+  --ui-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+  --ui-skeleton: #222222;
+  --ui-device: #000000;
+}

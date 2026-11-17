@@ -8,7 +8,7 @@
     ],
     "labels": {
       "pickup": "above",
-      "drop": "below"
+      "drop": "left"
     },
     "desk": {
       "w": 1600,
