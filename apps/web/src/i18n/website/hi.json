@@ -214,5 +214,13 @@
   "Forgot password?": "पासवर्ड भूल गए?",
   "Creating your account…": "आपका खाता बना रहे हैं…",
   "Standard and XL, each with its own price.": "Standard, XL, हर एक का अपना दाम।",
-  "By card in the app. The fare is held on your card when you book and charged when the trip ends.": "ऐप में कार्ड से। बुक करते समय किराया आपके कार्ड पर रोका जाता है और ट्रिप खत्म होने पर लिया जाता है।"
+  "By card in the app. The fare is held on your card when you book and charged when the trip ends.": "ऐप में कार्ड से। बुक करते समय किराया आपके कार्ड पर रोका जाता है और ट्रिप खत्म होने पर लिया जाता है।",
+  "Rider sign-up opens soon, when we launch in Hyderabad.": "हैदराबाद में लॉन्च होते ही राइडर साइन-अप जल्द खुलेगा।",
+  "We could not send your application. Try again.": "हम आपका आवेदन नहीं भेज सके। फिर से कोशिश करें।",
+  "Thank you. We have your application": "धन्यवाद। हमें आपका आवेदन मिल गया है",
+  "We will call you when driver sign-up opens.": "ड्राइवर साइन-अप खुलने पर हम आपको कॉल करेंगे।",
+  "Driver sign-up opens soon. Leave your details and we will call you.": "ड्राइवर साइन-अप जल्द खुलेगा। अपना विवरण दें, हम आपको कॉल करेंगे।",
+  "Choose a city": "शहर चुनें",
+  "Choose a vehicle": "वाहन चुनें",
+  "Email (optional)": "ईमेल (वैकल्पिक)"
 }

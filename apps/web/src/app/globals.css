@@ -209,3 +209,9 @@ body {
 
 /* 16 Nov sweep: inline links on the sign-in forms were 21px tall; give them a 44px target. */
 p.text-sm > a.sg-link, p.text-sm > button.sg-link { display: inline-flex; align-items: center; min-height: 44px; }
+
+/* 16 Nov sweep: dense console tables are used on phones too; every control there is 44px tall. */
+@media (max-width: 768px) {
+  .ops-table input[type='checkbox'] { width: 44px; height: 44px; margin: 0; }
+  .ops-table .ops-sort, .ops-chip, .ops-view, .ops-table td a, .ops-linkbtn { min-height: 44px; display: inline-flex; align-items: center; }
+}

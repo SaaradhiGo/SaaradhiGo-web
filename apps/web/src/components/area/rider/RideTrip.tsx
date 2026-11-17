@@ -375,6 +375,7 @@ export function RideTrip({ id }: { id: string }) {
         )}
         {cancelling && (
           <div className="acard acol" style={{ padding: 16, gap: 10, marginTop: 'auto' }}>
+            <h2 className="a20" style={{ margin: 0 }}>{tr('Cancel this trip?')}</h2>
             {costs && (costs.free ? (
               <p className="a14 agrn" style={{ margin: 0 }}>
                 {costs.free_until

@@ -38,6 +38,8 @@ export type Zone = {
   code: string;
   name: string;
   city?: string;
+  /** The city's display name (13 Nov). */
+  city_name?: string;
   country: string;
   currency: string;
   timezone?: string;

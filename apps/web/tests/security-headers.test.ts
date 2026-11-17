@@ -64,3 +64,9 @@ test('KYC document images from R2 are allowed as images only', () => {
   assert.ok(directive(policy, 'img-src').includes('https://*.r2.cloudflarestorage.com'));
   assert.ok(!directive(policy, 'connect-src').includes('https://*.r2.cloudflarestorage.com'));
 });
+
+test('the console is never indexed', async () => {
+  const rules = await nextConfig.headers();
+  const ops = rules.find((r: { source: string }) => r.source === '/ops/:path*');
+  assert.deepEqual(ops.headers, [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }]);
+});

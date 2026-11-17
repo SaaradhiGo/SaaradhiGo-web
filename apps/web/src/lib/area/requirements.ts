@@ -42,6 +42,8 @@ export type Identity = {
   pan_masked: string | null; police_verification_status: string; background_check_status: string;
 };
 export type PayoutMethod = {
+  /** 16 Nov: payouts can go out (Stripe- or RazorpayX-confirmed); false: earnings wait in the wallet. */
+  ready?: boolean;
   kind: 'bank' | 'upi' | 'stripe' | null; held_until: string | null; stripe_status?: 'not_started' | 'in_progress' | 'ready';
   bank?: { holder_name: string; account_masked: string; ifsc: string; bank_name: string; branch: string; verification_status: string } | null;
   upi_masked?: string | null;

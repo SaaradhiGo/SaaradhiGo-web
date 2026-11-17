@@ -853,5 +853,10 @@
   "Refunded to your wallet": "Reembolsado a tu monedero",
   "Refunded to your card": "Reembolsado a tu tarjeta",
   "Refund on its way to your card": "Reembolso en camino a tu tarjeta",
-  "Net charged": "Cargo neto"
+  "Net charged": "Cargo neto",
+  "Waiting for payout setup": "Esperando la configuración de pagos",
+  "Set up payouts to get paid": "Configura los pagos para cobrar",
+  "Your earnings wait in your wallet until then.": "Tus ganancias esperan en tu monedero hasta entonces.",
+  "Cancel this trip?": "¿Cancelar este viaje?",
+  "This place is outside our service area": "Este lugar está fuera de nuestra zona de servicio"
 }
