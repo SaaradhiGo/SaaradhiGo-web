@@ -623,7 +623,8 @@
 .s-icon-btn { width: 44px; height: 44px; }
 .site .s-header__login { height: 44px; }
 .s-seg button { height: 44px; }
-.site a.sg-link { border-bottom: 0; display: inline-flex; align-items: center; min-height: 44px; }
+.site a.sg-link { border-bottom: 0; }
+@media (max-width: 767px) { .site a.sg-link { display: inline-flex; align-items: center; min-height: 44px; } }
 
 /* The hero map (17 Nov): a real city map built once (scripts/hero-map), never under the booking
    card. 1200px and up it fills the band right of the card; below that it is a card after it. */
@@ -637,7 +638,7 @@
 .hmap-pin--below { transform: translate(-50%, 24px); }
 .hmap-pin--dark { background: var(--d-ink); color: var(--d-white); }
 .hmap-pin--dark b { color: var(--d-gold-2); }
-.hmap-card { position: absolute; left: max(24px, calc(50% + var(--cx))); top: calc(50% + var(--cy)); width: 270px; padding: 16px;
+.hmap-card { --cx: -280px; --cy: 90px; position: absolute; left: max(24px, calc(50% + var(--cx))); top: calc(50% + var(--cy)); width: 270px; padding: 16px;
   border-radius: 18px; background: var(--c-surface); box-shadow: 0 20px 48px rgba(27, 26, 23, 0.18); }
 .hmap-credit { position: absolute; right: 8px; bottom: 6px; padding: 0 6px; border-radius: 4px; background: rgba(var(--c-fade), 0.8);
   color: var(--c-text-2); font-size: var(--text-small); line-height: var(--leading-small); }
@@ -677,4 +678,4 @@
 }
 /* The SMS consent is read before agreeing, so it is body size; the company block's link is a 44px row. */
 .s-consent p.caption { font-size: var(--text-body); line-height: var(--leading-body); }
-.sg-company a { display: inline-flex; align-items: center; min-height: 44px; }
+@media (max-width: 767px) { .sg-company a { display: inline-flex; align-items: center; min-height: 44px; } }
