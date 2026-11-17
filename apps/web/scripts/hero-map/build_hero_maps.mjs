@@ -146,12 +146,25 @@ function stitch(features) {
   return out;
 }
 
-/** Drops a loop the route makes around its own end (a roundabout at the landmark). */
-function trimEnds(route) {
-  const near = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]) < 4;
-  const end = route.at(-1);
-  const i = route.findIndex((p) => near(p, end));
-  return route.slice(0, i + 1);
+/** Shortcuts a loop the route makes around its own end (a U-turn at the landmark): from the first
+ *  point within 300 m of the end, it goes straight to the end. The pin stays at the true end. */
+function trimEnds(routeM) {
+  const end = routeM.at(-1);
+  const i = routeM.findIndex((p) => Math.hypot(p[0] - end[0], p[1] - end[1]) < 300);
+  return [...routeM.slice(0, i + 1), end];
+}
+
+/** The point `dist` px along a polyline from its start, facing back toward the start. */
+function backFrom(pts, dist) {
+  for (let i = 1, run = 0; i < pts.length; i++) {
+    const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+    if (run + l >= dist) {
+      const f = (dist - run) / l, a = pts[i - 1], b = pts[i];
+      return { x: a[0] + (b[0] - a[0]) * f, y: a[1] + (b[1] - a[1]) * f, ang: (Math.atan2(a[1] - b[1], a[0] - b[0]) * 180) / Math.PI + 90 };
+    }
+    run += l;
+  }
+  return null;
 }
 
 function build(key, city, vname, v, tname, t) {
@@ -216,7 +229,7 @@ function build(key, city, vname, v, tname, t) {
   }
 
   // The route, its casing, and the pins at its own two ends.
-  const route = trimEnds(routeM.map(P));
+  const route = trimEnds(routeM).map(P);
   const rd = pathD(route, v);
   const rw = vname === 'desk' ? 5 : 4.2;
   parts.push(`<path d="${rd}" fill="none" stroke="${t.routeCase}" stroke-width="${rw + 5}" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>`);
@@ -226,7 +239,7 @@ function build(key, city, vname, v, tname, t) {
   // others on main roads away from the pins and from each other.
   const [ax, ay] = route[0], [bx, by] = route.at(-1);
   const cars = [];
-  const mine = along(route.slice(0, Math.ceil(route.length * 0.3)).reverse(), 0.55);
+  const mine = backFrom(route, v.carLen * 2.6);
   if (mine) cars.push({ ...mine, mine: true });
   const rand = rng(vname === 'desk' ? 17 : 23);
   const zone = vname === 'desk'

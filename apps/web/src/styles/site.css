@@ -648,7 +648,7 @@
 @media (max-width: 1199px) {
   .hmap-side { display: none; }
   .hmap-below { display: block; padding-bottom: 32px; }
-  .s-hero { height: auto; }
+  .s-hero { height: auto; border-bottom: 0; }
   .s-hero__inner { padding-top: 48px; padding-bottom: 32px; }
 }
 @media (max-width: 767px) {

@@ -59,7 +59,7 @@
       70
     ],
     "labels": {
-      "pickup": "above",
+      "pickup": "below",
       "drop": "above"
     }
   }
