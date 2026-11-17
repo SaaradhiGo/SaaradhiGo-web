@@ -288,4 +288,5 @@ for (const [key, city] of Object.entries(CITIES)) {
     }
   }
 }
+if (!Object.keys(layout).length) { console.log('no city data in scripts/hero-map/data: run fetch_osm.py first'); process.exit(1); }
 fs.writeFileSync(path.join(HERE, '..', '..', 'src', 'components', 'home', 'heroMapLayout.json'), JSON.stringify(layout, null, 2) + '\n');

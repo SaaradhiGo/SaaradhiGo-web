@@ -29,7 +29,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         // 17 Nov: '/ops' (not '/ops/') so the console root is covered too; the signed-in rider and
         // driver areas join the account pages. /driver/sign-up and /driver/sign-in stay crawlable.
-        disallow: ['/my-trips', '/ride/choose', '/ride/trip/', '/trips', '/account', '/ops', '/rider/',
+        disallow: ['/my-trips', '/ride/choose', '/ride/trip/', '/trips', '/account', '/ops', '/design', '/rider/',
           ...PRIVATE_DRIVER, '/role-gate', '/verify-email', '/reset-password'],
       },
     ],

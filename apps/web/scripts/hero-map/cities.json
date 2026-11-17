@@ -28,7 +28,7 @@
     ],
     "labels": {
       "pickup": "above",
-      "drop": "below"
+      "drop": "left"
     }
   },
   "boise": {

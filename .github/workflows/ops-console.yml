@@ -168,6 +168,19 @@ jobs:
           path: apps/web/areas-diff/
           if-no-files-found: ignore
 
+      # Any size (owner, 17 Nov): every width 320-1920 in 10px steps at 568/844/1200 high, phone
+      # landscape, 200% zoom and the largest phone text. No sideways scroll, overlap, cut-off text,
+      # stretched image or small tap target at any step. Gates the pages built to the standard.
+      - name: Responsive sweep
+        run: SITE=http://localhost:3100 FIXTURES=1 SWEEP_OUT=sweep-out node scripts/sweep-responsive.mjs
+      - name: Upload sweep failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sweep-out
+          path: apps/web/sweep-out/
+          if-no-files-found: ignore
+
       # Driver area v2 (10 Nov): axe contrast in both themes, one primary button, the focus ring,
       # date order by market, file statuses and the four design screenshots.
       - name: Driver v2 gate

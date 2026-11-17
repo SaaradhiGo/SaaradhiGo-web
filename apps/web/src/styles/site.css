@@ -89,7 +89,7 @@
 .s-btn:disabled, .s-btn[aria-disabled="true"] { background: var(--c-muted); color: var(--c-text-2); border: 1px solid var(--c-field-border); cursor: not-allowed; }
 
 /* ---------------------------------------------------------------- header */
-.s-header { background: var(--c-noir); color: var(--d-ivory); border-bottom: 1px solid rgba(214, 168, 62, 0.35); position: relative; z-index: 40; }
+.s-header { container: hdr / inline-size; background: var(--c-noir); color: var(--d-ivory); border-bottom: 1px solid rgba(214, 168, 62, 0.35); position: relative; z-index: 40; }
 .s-header__bar { height: 84px; display: flex; align-items: center; gap: 32px; }
 .site .s-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; flex-shrink: 0; color: var(--c-gold); }
 .s-brand__mark { width: 76px; height: 66px; display: block; object-fit: contain; }
@@ -148,9 +148,10 @@
 .s-drawer__end { margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 
 @media (max-width: 1099px) {
-  .s-header__bar { height: 68px; gap: 10px; padding: 0 12px; }
+  .s-header__bar { height: auto; min-height: 68px; flex-wrap: wrap; gap: 8px 10px; padding: 8px 12px; box-sizing: border-box; }
   .s-brand__mark { width: 56px; height: 49px; }
-  .s-brand { flex-grow: 1; gap: 10px; }
+  .site .s-brand { flex: 1 1 auto; min-width: 0; gap: 10px; }
+  .s-header__phone { margin-left: auto; }
   .s-nav, .s-header__end { display: none; }
   .s-header__phone { display: flex; align-items: center; gap: 10px; }
   .s-header__phone .s-icon-btn { width: 44px; height: 44px; }
@@ -169,7 +170,9 @@
   padding-top: 20px; padding-bottom: 28px; border-top: 1px solid var(--d-rule); display: flex; flex-wrap: wrap;
   justify-content: space-between; gap: 10px; font-size: var(--text-small); line-height: var(--leading-small); color: var(--d-ash);
 }
-.s-footer__cols { display: grid; grid-template-columns: repeat(3, minmax(0, auto)); align-items: start; gap: 24px 56px; }
+/* Columns sized by their text (17 Nov): with large text they fall to fewer, never off the screen. */
+.s-footer__cols { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px 56px; }
+.s-footer__cols > * { flex: 0 1 auto; min-width: min(100%, 9em); }
 .s-footer__colhead { font-size: var(--text-small); line-height: var(--leading-small); color: var(--d-ash); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin: 0 0 12px; }
 .s-footer__col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .site .s-footer__col a { color: var(--d-ivory); text-decoration: none; }
@@ -179,7 +182,7 @@
 @media (max-width: 767px) {
   .s-footer__top { padding-top: 32px; padding-bottom: 28px; grid-template-columns: minmax(0, 1fr); gap: 28px; }
   .s-footer__line { font-size: var(--text-small); line-height: var(--leading-small); }
-  .s-footer__cols { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; }
+  .s-footer__cols { gap: 24px 16px; }
   .s-footer__base { padding-top: 16px; padding-bottom: 24px; }
 }
 
@@ -626,56 +629,50 @@
 .site a.sg-link { border-bottom: 0; }
 @media (max-width: 767px) { .site a.sg-link { display: inline-flex; align-items: center; min-height: 44px; } }
 
-/* The hero map (17 Nov): a real city map built once (scripts/hero-map), never under the booking
-   card. 1200px and up it fills the band right of the card; below that it is a card after it. */
-.hmap-side { position: absolute; top: 0; bottom: 0; right: 0; left: calc(max(32px, (100% - 1240px) / 2) + 520px);
-  overflow: hidden; background: var(--c-map); border-left: 1px solid var(--c-border); }
-.hmap-stage { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background-size: 100% 100%; }
+/* The hero map (17 Nov): a real city map built once (scripts/hero-map). Fluid: the wide drawing
+   with labelled pins while its panel is 720px or wider; the compact drawing below that. */
+.hmap { display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; border: 1px solid var(--ui-line); background: var(--ui-surface); min-width: 0; }
+.hmap__view { position: relative; overflow: hidden; container: hmap / inline-size; background: var(--ui-band); }
+.hmap-stage { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background-size: 100% 100%; display: none; }
+.hmap-photo { aspect-ratio: 440 / 260; width: 100%; background-size: cover; background-position: center; }
+@container hmap (min-width: 720px) {
+  .hmap-stage { display: block; }
+  .hmap-photo { aspect-ratio: auto; height: 560px; background-image: none !important; }
+}
 .hmap-pin { position: absolute; transform: translate(-50%, calc(-100% - 22px)); white-space: nowrap; padding: 8px 12px;
-  border-radius: 10px; background: var(--c-surface); color: var(--c-text); font-size: var(--text-small); line-height: var(--leading-small);
-  box-shadow: 0 8px 20px rgba(27, 26, 23, 0.16); }
-.hmap-pin b { font-weight: 600; color: var(--c-green-ink); margin-right: 4px; }
+  border-radius: 10px; background: var(--ui-surface); color: var(--ui-text); font-size: var(--text-small); line-height: var(--leading-small);
+  box-shadow: var(--ui-shadow); }
+.hmap-pin b { font-weight: 600; color: var(--ui-ok); margin-right: 4px; }
 .hmap-pin--below { transform: translate(-50%, 24px); }
-.hmap-pin--dark { background: var(--d-ink); color: var(--d-white); }
-.hmap-pin--dark b { color: var(--d-gold-2); }
-.hmap-card { --cx: -280px; --cy: 90px; position: absolute; left: max(24px, calc(50% + var(--cx))); top: calc(50% + var(--cy)); width: 270px; padding: 16px;
-  border-radius: 18px; background: var(--c-surface); box-shadow: 0 20px 48px rgba(27, 26, 23, 0.18); }
-.hmap-credit { position: absolute; right: 8px; bottom: 6px; padding: 0 6px; border-radius: 4px; background: rgba(var(--c-fade), 0.8);
-  color: var(--c-text-2); font-size: var(--text-small); line-height: var(--leading-small); }
-.hmap-below { display: none; }
-.hmap-cardwrap { border-radius: 22px; overflow: hidden; border: 1px solid var(--c-border); background: var(--c-surface); }
-.hmap-photo { position: relative; height: 400px; background-color: var(--c-map); background-size: cover; background-position: center; }
-.hmap-foot { padding: 16px; }
-@media (max-width: 1199px) {
-  .hmap-side { display: none; }
-  .hmap-below { display: block; padding-bottom: 32px; }
-  .s-hero { height: auto; border-bottom: 0; }
-  .s-hero__inner { padding-top: 48px; padding-bottom: 32px; }
-}
-@media (max-width: 767px) {
-  .hmap-below { padding-bottom: 8px; }
-  .s-hero__inner { padding-top: 28px; padding-bottom: 20px; }
-}
-@media (max-width: 599px) { .hmap-photo { height: 240px; } }
+.hmap-pin--dark { background: var(--ui-ink); color: var(--ui-on-ink); }
+.hmap-pin--dark b { color: var(--ui-gold); }
+.hmap-credit { position: absolute; right: 8px; bottom: 6px; padding: 0 6px; border-radius: 4px; background: var(--ui-surface);
+  color: var(--ui-text-2); font-size: var(--text-small); line-height: var(--leading-small); }
+.hmap__foot { padding: 16px; border-top: 1px solid var(--ui-line); }
+.hmap-status { align-items: center; }
+.hmap-status .ui-small { display: inline-flex; align-items: center; gap: 6px; color: var(--ui-ok); font-weight: 600; }
+.hmap-status__lock { color: var(--ui-ok); }
 .hmap--hyderabad-desk { background-image: image-set(url('/hero-map/hyderabad-desk-light@1x.webp') 1x, url('/hero-map/hyderabad-desk-light@2x.webp') 2x); }
-@media (min-width: 600px) { .hmap--hyderabad-card { background-image: image-set(url('/hero-map/hyderabad-desk-light@1x.webp') 1x, url('/hero-map/hyderabad-desk-light@2x.webp') 2x); } }
-@media (max-width: 599px) { .hmap--hyderabad-card { background-image: image-set(url('/hero-map/hyderabad-phone-light@2x.webp') 2x, url('/hero-map/hyderabad-phone-light@3x.webp') 3x); } }
-:root[data-theme="dark"] .hmap--hyderabad-desk { background-image: image-set(url('/hero-map/hyderabad-desk-dark@1x.webp') 1x, url('/hero-map/hyderabad-desk-dark@2x.webp') 2x); }
-@media (min-width: 600px) { :root[data-theme="dark"] .hmap--hyderabad-card { background-image: image-set(url('/hero-map/hyderabad-desk-dark@1x.webp') 1x, url('/hero-map/hyderabad-desk-dark@2x.webp') 2x); } }
-@media (max-width: 599px) { :root[data-theme="dark"] .hmap--hyderabad-card { background-image: image-set(url('/hero-map/hyderabad-phone-dark@2x.webp') 2x, url('/hero-map/hyderabad-phone-dark@3x.webp') 3x); } }
+.hmap--hyderabad-photo { background-image: image-set(url('/hero-map/hyderabad-phone-light@2x.webp') 2x, url('/hero-map/hyderabad-phone-light@3x.webp') 3x); }
+[data-theme="dark"] .hmap--hyderabad-desk { background-image: image-set(url('/hero-map/hyderabad-desk-dark@1x.webp') 1x, url('/hero-map/hyderabad-desk-dark@2x.webp') 2x); }
+[data-theme="dark"] .hmap--hyderabad-photo { background-image: image-set(url('/hero-map/hyderabad-phone-dark@2x.webp') 2x, url('/hero-map/hyderabad-phone-dark@3x.webp') 3x); }
 .hmap--boise-desk { background-image: image-set(url('/hero-map/boise-desk-light@1x.webp') 1x, url('/hero-map/boise-desk-light@2x.webp') 2x); }
-@media (min-width: 600px) { .hmap--boise-card { background-image: image-set(url('/hero-map/boise-desk-light@1x.webp') 1x, url('/hero-map/boise-desk-light@2x.webp') 2x); } }
-@media (max-width: 599px) { .hmap--boise-card { background-image: image-set(url('/hero-map/boise-phone-light@2x.webp') 2x, url('/hero-map/boise-phone-light@3x.webp') 3x); } }
-:root[data-theme="dark"] .hmap--boise-desk { background-image: image-set(url('/hero-map/boise-desk-dark@1x.webp') 1x, url('/hero-map/boise-desk-dark@2x.webp') 2x); }
-@media (min-width: 600px) { :root[data-theme="dark"] .hmap--boise-card { background-image: image-set(url('/hero-map/boise-desk-dark@1x.webp') 1x, url('/hero-map/boise-desk-dark@2x.webp') 2x); } }
-@media (max-width: 599px) { :root[data-theme="dark"] .hmap--boise-card { background-image: image-set(url('/hero-map/boise-phone-dark@2x.webp') 2x, url('/hero-map/boise-phone-dark@3x.webp') 3x); } }
-
-/* About on a phone (17 Nov): the heading and story come first; the lockup follows as a short band. */
-@media (max-width: 767px) {
-  .s-about { gap: 24px; }
-  .s-about__logo { order: 2; min-height: 0; padding: 20px; border-radius: 20px; }
-  .s-about__logo img { max-width: 112px; top: 0; }
-}
+.hmap--boise-photo { background-image: image-set(url('/hero-map/boise-phone-light@2x.webp') 2x, url('/hero-map/boise-phone-light@3x.webp') 3x); }
+[data-theme="dark"] .hmap--boise-desk { background-image: image-set(url('/hero-map/boise-desk-dark@1x.webp') 1x, url('/hero-map/boise-desk-dark@2x.webp') 2x); }
+[data-theme="dark"] .hmap--boise-photo { background-image: image-set(url('/hero-map/boise-phone-dark@2x.webp') 2x, url('/hero-map/boise-phone-dark@3x.webp') 3x); }
 /* The SMS consent is read before agreeing, so it is body size; the company block's link is a 44px row. */
 .s-consent p.caption { font-size: var(--text-body); line-height: var(--leading-body); }
 @media (max-width: 767px) { .sg-company a { display: inline-flex; align-items: center; min-height: 44px; } }
+
+/* 17 Nov (any width): in a very narrow header the mark and wordmark step down instead of overflowing;
+   with very large text the controls wrap under the brand. */
+@container hdr (max-width: 379px) {
+  .s-brand__mark { width: 44px; height: 39px; }
+  .s-brand__name { font-size: var(--text-body); line-height: var(--leading-body); }
+}
+/* Pin labels sit beside their pin, toward the middle of the map, so a narrow panel never cuts them. */
+.hmap-pin--right { transform: translate(22px, -50%); }
+.hmap-pin--left { transform: translate(calc(-100% - 22px), -50%); }
+/* The brand link is a 44px target at any header width; with very large text its name may wrap. */
+.site .s-brand { min-height: 44px; }
+.s-brand__name { white-space: normal; min-width: 0; }
