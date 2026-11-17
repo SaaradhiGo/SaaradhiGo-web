@@ -28,7 +28,11 @@ export function RideContent() {
   useEffect(() => {
     let on = true;
     fetchZones()
-      .then((zones) => { if (on) setLive(zones.some((z) => z.city_status === 'live')); })
+      .then((zones) => {
+        // Launching soon only when the server names every city's status and none is live.
+        const soon = zones.length > 0 && zones.every((z) => z.city_status && z.city_status !== 'live');
+        if (on) setLive(!soon);
+      })
       .catch(() => { if (on) setLive(true); });
     return () => { on = false; };
   }, []);

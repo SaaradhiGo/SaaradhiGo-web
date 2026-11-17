@@ -38,4 +38,10 @@ describe('Book before launch', () => {
     expect(screen.getByRole('link', { name: 'Book a ride' }).getAttribute('href')).toBe('/ride/choose');
     expect(screen.queryByTestId('launching-soon')).toBeNull();
   });
+
+  it('zones without a status (older servers) keep the Book button', async () => {
+    zones = [{ code: 'IN-TG-HYD', country: 'IN' }];
+    await at('IN');
+    expect(screen.getByRole('link', { name: 'Book a ride' })).toBeTruthy();
+  });
 });
