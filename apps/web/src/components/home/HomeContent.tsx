@@ -6,7 +6,7 @@ import { useLegal } from '@/components/sg/LegalProvider';
 
 import Link from 'next/link';
 import { HeroBooking } from '@/components/home/HeroBooking';
-import { HeroMapArt } from '@/components/art/HeroMapArt';
+import { HeroCityMapCard, HeroCityMapSide } from '@/components/home/HeroCityMap';
 import { RideMiniMap } from '@/components/art/MiniMaps';
 import {
   BigLockIcon, CarIcon, LockIcon, PhoneDeviceIcon, PinIcon, ShieldAlertIcon, ShieldIcon,
@@ -17,14 +17,14 @@ import { useSite } from '@/i18n/site';
  * The homepage, as approved on 2026-11-07 (design/website-2026-11-07,
  * Home.html and HomePhone.html).
  *
- * Desktop: a 640px hero over the illustrated map, then "Honest for the rider.
+ * Desktop: a 640px hero beside a real city map (HeroCityMap), then "Honest for the rider.
  * Honest for the driver." with two phone mock-ups, the safety row and, once
  * the apps are in the stores, the app band.
  *
  * Phone: the headline, the lead and the booking panel, then the map as a
  * card, then the two sides and safety as plain cards.
  *
- * The map is a drawing: no tiles, no location prompt on load. The mock-ups
+ * The map is an image built once from OpenStreetMap: no tiles, no location prompt. The mock-ups
  * are HTML, so they stay sharp, and they carry no numbers: the driver's
  * request shows its fare, commission and earning as bars.
  */
@@ -41,11 +41,23 @@ export function HomeContent() {
     { icon: <ShieldAlertIcon />, tone: 's-tile--red' },
   ];
 
+  const market = useLegal().market;
+  const statusCard = (
+    <>
+      <div className="s-hero__card-top">
+        <span className="s-hero__card-icon"><CarIcon /></span>
+        <span>
+          <b className="t-strong" style={{ display: 'block' }}>{h.cardTitle}</b>
+          <span className="t-small t-muted">{h.cardBody}</span>
+        </span>
+      </div>
+      <div className="s-lockline"><LockIcon />{h.cardLocked}</div>
+    </>
+  );
+
   return (
     <div className="s-cb">
       <section className="s-hero" aria-labelledby="hero-title">
-        <HeroMapArt className="s-hero__map s-only-desk" />
-        <div className="s-hero__fade s-only-desk" aria-hidden="true" />
         <div className="s-wrap s-hero__inner">
           <div className="s-hero__copy">
             <h1 id="hero-title" className="t-display">
@@ -64,28 +76,12 @@ export function HomeContent() {
             </div>
           </div>
         </div>
-        <div className="s-only-desk" aria-hidden="true">
-          <div className="s-hero__pin s-hero__pin--drop">{h.pinDrop}</div>
-          <div className="s-hero__pin s-hero__pin--pickup">{h.pinPickup}</div>
-          <div className="s-hero__card">
-            <div className="s-hero__card-top">
-              <span className="s-hero__card-icon"><CarIcon /></span>
-              <span>
-                <b className="t-strong" style={{ display: 'block' }}>{h.cardTitle}</b>
-                <span className="t-small t-muted">{h.cardBody}</span>
-              </span>
-            </div>
-            <div className="s-lockline"><LockIcon />{h.cardLocked}</div>
-          </div>
-        </div>
+        <HeroCityMapSide market={market} pickup={h.pinPickup} drop={h.pinDrop} card={statusCard} />
       </section>
 
-      {/* Phone: the map follows the panel, as a card. */}
-      <div className="s-only-phone" aria-hidden="true">
-        <div className="s-mapcard">
-          <HeroMapArt viewBox="720 80 540 430" fit="xMidYMid meet" />
-        </div>
-        <div className="s-mapcard__foot"><LockIcon />{h.phoneMapNote}</div>
+      {/* Below 1200px the map follows the booking panel as a card, the status card as its foot. */}
+      <div className="s-wrap hmap-below">
+        <HeroCityMapCard market={market} card={statusCard} />
       </div>
 
       {/* Desktop: the two sides with their phone mock-ups. */}
@@ -158,7 +154,7 @@ export function HomeContent() {
         {h.safetyPhone.map((s) => (
           <div key={s.title} className="s-pcard s-pcard--sm">
             <b className="t-strong">{s.title}</b>
-            <div className="t-small">{s.body}</div>
+            <div>{s.body}</div>
           </div>
         ))}
       </section>

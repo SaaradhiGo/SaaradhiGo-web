@@ -1,0 +1,66 @@
+{
+  "hyderabad": {
+    "from": {
+      "lat": 17.4474,
+      "lng": 78.37622,
+      "name": "HITEC City"
+    },
+    "to": {
+      "lat": 17.36159,
+      "lng": 78.47466,
+      "name": "Charminar"
+    },
+    "bbox": [
+      17.27,
+      78.15,
+      17.54,
+      78.7
+    ],
+    "layers": {
+      "major": "way[\"highway\"~\"^(motorway|trunk|primary|secondary|tertiary)(_link)?$\"];",
+      "minor": "way[\"highway\"~\"^(residential|unclassified|living_street)$\"](17.33,78.33,17.48,78.52);",
+      "water": "way[\"natural\"=\"water\"](17.30,78.25,17.50,78.62);relation[\"natural\"=\"water\"](17.30,78.25,17.50,78.62);way[\"waterway\"~\"^(river|riverbank)$\"](17.30,78.25,17.50,78.62);",
+      "green": "way[\"leisure\"~\"^(park|golf_course)$\"](17.30,78.25,17.50,78.62);way[\"landuse\"~\"^(forest|recreation_ground)$\"](17.30,78.25,17.50,78.62);"
+    },
+    "deskCard": [
+      -280,
+      90
+    ],
+    "labels": {
+      "pickup": "above",
+      "drop": "below"
+    }
+  },
+  "boise": {
+    "from": {
+      "lat": 43.6018,
+      "lng": -116.2006,
+      "name": "Boise State University"
+    },
+    "to": {
+      "lat": 43.6105,
+      "lng": -116.3916,
+      "name": "The Village at Meridian"
+    },
+    "bbox": [
+      43.5,
+      -116.8,
+      43.72,
+      -115.98
+    ],
+    "layers": {
+      "major": "way[\"highway\"~\"^(motorway|trunk|primary|secondary|tertiary)(_link)?$\"];",
+      "minor": "way[\"highway\"~\"^(residential|unclassified|living_street)$\"](43.56,-116.44,43.65,-116.15);",
+      "water": "way[\"natural\"=\"water\"](43.54,-116.55,43.68,-116.05);relation[\"natural\"=\"water\"](43.54,-116.55,43.68,-116.05);way[\"waterway\"~\"^(river|riverbank)$\"](43.54,-116.55,43.68,-116.05);",
+      "green": "way[\"leisure\"~\"^(park|golf_course)$\"](43.54,-116.55,43.68,-116.05);way[\"landuse\"~\"^(forest|recreation_ground)$\"](43.54,-116.55,43.68,-116.05);"
+    },
+    "deskCard": [
+      -280,
+      70
+    ],
+    "labels": {
+      "pickup": "above",
+      "drop": "above"
+    }
+  }
+}

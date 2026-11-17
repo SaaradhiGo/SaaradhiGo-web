@@ -99,6 +99,9 @@ function money(v: string, currency: string) {
 }
 
 /** /fares: how a fare is worked out, then each city's rate cards and cancellation rule, live. */
+/** The rider-facing class names (src/lib/vehicles.ts: `hatchback` is sold as Mini). */
+const VEHICLE_NAME: Record<string, string> = { auto: 'Auto', hatchback: 'Mini', mini: 'Mini', sedan: 'Sedan', suv: 'SUV', bike: 'Bike' };
+
 export function FaresContent() {
   const { market } = useLegal();
   const cities = useFares(market);
@@ -141,9 +144,11 @@ export function FaresContent() {
                 <tbody>
                   {c.vehicles.map((v) => (
                     <tr key={v.vehicle}>
-                      <th scope="row">{v.vehicle}</th>
-                      <td>{money(v.base_fare, c.currency)}</td><td>{money(v.per_distance, c.currency)}</td>
-                      <td>{money(v.per_minute, c.currency)}</td><td>{money(v.minimum_fare, c.currency)}</td>
+                      <th scope="row">{VEHICLE_NAME[v.vehicle] ?? v.vehicle}</th>
+                      <td data-label="Base fare">{money(v.base_fare, c.currency)}</td>
+                      <td data-label={`Per ${c.distance_unit === 'mi' ? 'mile' : 'km'}`}>{money(v.per_distance, c.currency)}</td>
+                      <td data-label="Per minute">{money(v.per_minute, c.currency)}</td>
+                      <td data-label="Minimum fare">{money(v.minimum_fare, c.currency)}</td>
                     </tr>
                   ))}
                 </tbody>

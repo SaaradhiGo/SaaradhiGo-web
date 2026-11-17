@@ -1,0 +1,38 @@
+{
+  "hyderabad": {
+    "from": "HITEC City",
+    "to": "Charminar",
+    "deskCard": [
+      -280,
+      90
+    ],
+    "labels": {
+      "pickup": "above",
+      "drop": "below"
+    },
+    "desk": {
+      "w": 1600,
+      "h": 640,
+      "pickup": [
+        588,
+        138
+      ],
+      "drop": [
+        996,
+        512
+      ]
+    },
+    "phone": {
+      "w": 440,
+      "h": 260,
+      "pickup": [
+        125,
+        48
+      ],
+      "drop": [
+        308,
+        216
+      ]
+    }
+  }
+}
