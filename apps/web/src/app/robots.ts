@@ -14,6 +14,10 @@ import { IS_PUBLIC_SITE, SITE_URL } from '@/lib/support';
  * they are either internal or private to a signed-in rider, and neither has
  * anything a search result should lead to.
  */
+/** The signed-in driver area (app/(driver)/driver); the public sign-up and sign-in sit beside it. */
+const PRIVATE_DRIVER = ['/driver$', '/driver/documents', '/driver/earnings', '/driver/payouts', '/driver/profile',
+  '/driver/ready', '/driver/setup', '/driver/support', '/driver/trips'];
+
 export default function robots(): MetadataRoute.Robots {
   if (!IS_PUBLIC_SITE) {
     return { rules: [{ userAgent: '*', disallow: '/' }] };
@@ -23,7 +27,10 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/my-trips', '/ride/choose', '/ride/trip/', '/trips', '/account', '/ops/', '/role-gate', '/verify-email', '/reset-password'],
+        // 17 Nov: '/ops' (not '/ops/') so the console root is covered too; the signed-in rider and
+        // driver areas join the account pages. /driver/sign-up and /driver/sign-in stay crawlable.
+        disallow: ['/my-trips', '/ride/choose', '/ride/trip/', '/trips', '/account', '/ops', '/rider/',
+          ...PRIVATE_DRIVER, '/role-gate', '/verify-email', '/reset-password'],
       },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,

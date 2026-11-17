@@ -67,6 +67,16 @@ jobs:
       WEB_SESSION_SECRET: ci-area-gate-session-key-not-a-secret-value
 
     steps:
+      # 17 Nov (PROD round 2): CI never loads real Google Maps. The map components draw nothing
+      # without a browser key; this fails the run if one is ever wired into CI.
+      - name: No real Google Maps key in CI
+        working-directory: ${{ github.workspace }}
+        env:
+          MAPS_KEY: ${{ vars.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY }}${{ secrets.NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY }}
+        run: |
+          if [ -n "$MAPS_KEY" ] || [ -n "${NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY:-}" ]; then
+            echo "A Google Maps browser key is set in CI; CI and e2e runs must never call real Maps."; exit 1
+          fi
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
