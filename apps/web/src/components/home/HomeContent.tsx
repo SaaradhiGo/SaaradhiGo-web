@@ -23,6 +23,8 @@ export function HomeContent() {
   const h = useSite().home;
   const market = useLegal().market;
   const safetyIcons = [IconKey, IconShare, IconSos];
+  // Each market sees its own product: a Boise trip in dollars for the US, Hyderabad in rupees for India.
+  const shot = (name: string) => `/product/${name}${market === 'US' ? '-us' : ''}.webp`;
 
   const driverCard = (
     <div className="ui-feature hmap-status">
@@ -72,7 +74,7 @@ export function HomeContent() {
                 <ul className="ui-list">{h.rideList.map((x) => <li key={x}>{x}</li>)}</ul>
                 <div><Button kind="secondary" href="/ride">{h.rideCta}</Button></div>
               </div>
-              <Device src="/product/home-rider-choose.webp" alt={h.rideTitle} width={240} />
+              <Device src={shot('home-rider-choose')} alt={h.rideTitle} width={240} />
             </div>
             <div className="ui-card ui-side">
               <div className="ui-stack">
@@ -81,7 +83,7 @@ export function HomeContent() {
                 <ul className="ui-list">{h.driveList.map((x) => <li key={x}>{x}</li>)}</ul>
                 <div><Button kind="secondary" href="/drive">{h.driveCta}</Button></div>
               </div>
-              <Device src="/product/home-driver-earnings.webp" alt={h.driveTitle} width={240} />
+              <Device src={shot('home-driver-earnings')} alt={h.driveTitle} width={240} />
             </div>
           </div>
         </div>

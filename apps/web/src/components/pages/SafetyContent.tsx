@@ -3,6 +3,7 @@
 import { Button, Device, Section } from '@/components/ui';
 import { IconPhone, IconShieldCheck } from '@/components/ui/icons';
 import { useSite } from '@/i18n/site';
+import { useLegal } from '@/components/sg/LegalProvider';
 
 /**
  * /safety to the product standard (17 Nov 2026): each safety feature shows the real product in a
@@ -14,6 +15,9 @@ export function SafetyContent() {
   const s = site.safety;
   const [code, live, sos] = site.home.safety;
   const checked = s.cards[3];
+  // Each market sees its own trip: Boise in dollars with 911, Hyderabad in rupees with 112.
+  const us = useLegal().market === 'US';
+  const shot = (name: string) => `/product/${name}${us ? '-us' : ''}.webp`;
 
   return (
     <div className="ui ui-safety">
@@ -30,7 +34,7 @@ export function SafetyContent() {
             <h2 id="safety-code" className="ui-heading">{code.title}</h2>
             <p className="ui-body">{code.body}</p>
           </div>
-          <Device src="/product/safety-ride-code.webp" alt={code.title} />
+          <Device src={shot('safety-ride-code')} alt={code.title} />
         </div>
       </Section>
 
@@ -40,7 +44,7 @@ export function SafetyContent() {
             <h2 id="safety-live" className="ui-heading">{live.title}</h2>
             <p className="ui-body">{live.body}</p>
           </div>
-          <Device src="/product/safety-share-live.webp" alt={live.title} />
+          <Device src={shot('safety-share-live')} alt={live.title} />
         </div>
       </Section>
 
@@ -51,8 +55,8 @@ export function SafetyContent() {
             <p className="ui-body">{sos.body}</p>
           </div>
           <div className="ui-devices">
-            <Device src="/product/safety-sos.webp" alt={sos.title} width={260} />
-            <Device src="/product/safety-sos-sent.webp" alt={s.sos} width={260} />
+            <Device src={shot('safety-sos')} alt={sos.title} width={260} />
+            <Device src={shot('safety-sos-sent')} alt={s.sos} width={260} />
           </div>
         </div>
       </Section>
