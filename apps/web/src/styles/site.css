@@ -440,7 +440,7 @@
 .s-request__note { margin-top: 10px; text-align: center; color: var(--d-slate); font-size: var(--text-small); line-height: var(--leading-small); }
 /* 13 Nov: every example amount carries this tag. */
 .s-example { display: inline-flex; padding: 2px 8px; border-radius: 999px; background: var(--d-ivory); color: var(--d-slate); border: 1px solid var(--d-line); font-size: var(--text-small); line-height: var(--leading-small); font-weight: 600; white-space: nowrap; }
-.s-ticket__fare { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.s-ticket__fare { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
 .s-ticket__fare b { font-size: var(--text-title); font-weight: 600; font-variant-numeric: tabular-nums; }
 .s-gate { max-width: 640px; }
 .s-gate .t-heading { margin-top: 8px; }
