@@ -93,6 +93,9 @@ function check({ touch }) {
     texts.push(el);
     const r = el.getBoundingClientRect();
     if ((r.right > vw + 1 || r.left < -1) && !inScroller(el)) out.push(`text off screen: ${name(el)} at ${Math.round(r.left)}..${Math.round(r.right)}`);
+    // Text squeezed into a column a letter or two wide (a flex item with no width left), 18 Nov.
+    const fs = parseFloat(getComputedStyle(el).fontSize) || 16;
+    if (n.textContent.trim().length >= 6 && r.width > 0 && r.width < fs * 2 && r.height > fs * 5) out.push(`squeezed text: ${name(el)} is ${Math.round(r.width)}px wide and ${Math.round(r.height)}px tall`);
     // Text running past the edge of a box that clips (a map panel, a card).
     for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
       const o = getComputedStyle(p);
