@@ -2525,3 +2525,19 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .ops__content table, .ops__content table * { overflow-wrap: break-word; }
 .ops__content td, .ops__content th { min-width: 6em; }
 .ops__content td.num, .ops__content th.num, .ops__content td:has(> .ops-check), .ops__content th:has(> .ops-check) { min-width: 0; }
+
+/* 18 Nov, round 3 (re-score): one header height on short pages, one row of section tabs on a phone,
+   small checkboxes (the 44px is the label around them), grey disabled buttons. */
+@media (max-width: 900px) {
+  .ops { align-content: start; }
+  .ops .sg-on-noir.ops__side:not([data-open='true']) { align-self: start; }
+  .ops-subnav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .ops-subnav > * { flex: none; }
+}
+.ops input[type='checkbox'], .ops input[type='radio'] { width: 18px; height: 18px; min-width: 0; min-height: 0; margin: 0; accent-color: var(--ui-ink); }
+.ops .sg-btn:disabled, .ops .sg-btn[disabled] { background: var(--ui-band); color: var(--ui-text-3); border-color: var(--ui-line); }
+/* Table cells wrap at their cap (fee plan "per class" text ran into the next column). */
+.ops-table td { white-space: normal; }
+/* One typeface across the product: the console and staff sign-in use the site's Inter. */
+.ops, .login { --font-sans: "Inter", "Noto Sans Telugu", "Noto Sans Devanagari", system-ui, sans-serif; }
+@media (max-width: 1024px), (pointer: coarse) { .ops .ops-crumbs__link { min-width: 44px; justify-content: center; } }

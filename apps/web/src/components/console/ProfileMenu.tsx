@@ -55,7 +55,8 @@ export function ProfileMenu({
 
   const name = (access?.full_name || operator?.full_name || '').trim() || 'Operator';
   const handle = access?.email || operator?.email || operator?.phone_number || '';
-  const initials = name.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('') || 'OP';
+  // 18 Nov: letters only ("Claude (QA operator)" read "C(").
+  const initials = name.split(/\s+/).filter((w) => /^\p{L}/u.test(w)).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'OP';
   const roles = access?.roles?.map((r) => r.role_name) ?? [];
   const roleLine = [...new Set(roles)].join(', ');
   const breakGlass = Boolean(access?.is_break_glass);
