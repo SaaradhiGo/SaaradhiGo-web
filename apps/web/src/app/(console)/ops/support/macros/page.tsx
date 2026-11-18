@@ -53,6 +53,7 @@ export default function MacrosPage() {
   const [density, setDensity] = useDensity();
   const [macros, setMacros] = useState<Macro[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [forbidden, setForbidden] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -63,6 +64,8 @@ export default function MacrosPage() {
       const r = await api.get<{ results: Macro[] }>('/support/admin/macros/?include_inactive=1');
       setMacros(r.results ?? []);
     } catch (err) {
+      // 18 Nov: a role without macros sees that, not "could not be loaded" with Try again.
+      if (err instanceof ApiError && err.status === 403) { setForbidden(true); setMacros([]); return; }
       setError(failure(err, 'We could not load the macros.'));
       setMacros([]);
     }
@@ -112,6 +115,8 @@ export default function MacrosPage() {
             <span className="sr-only">Loading macros</span>
             <Skeleton kind="row" count={5} />
           </div>
+        ) : forbidden ? (
+          <div className="p-4"><Empty title="Macros are not available to your role" detail="Reading saved replies needs the support macro permission. Ask a Super Admin (Govern › Staff and roles)." /></div>
         ) : error ? (
           <div className="p-4"><ErrorState title="The macros could not be loaded" detail={error} onRetry={() => void load()} /></div>
         ) : macros.length === 0 ? (

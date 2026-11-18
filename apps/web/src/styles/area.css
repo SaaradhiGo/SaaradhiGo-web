@@ -769,3 +769,7 @@ button.er-bar { cursor: pointer; }
 /* 18 Nov (largest text): a notice drops its button under the text rather than squeezing the text. */
 .anote { flex-wrap: wrap; }
 .anote > .agrow { min-width: min(12em, 100%); }
+
+/* 18 Nov round 3: a notice is a white card with a hairline; the warning colour is its icon only. */
+.anote { background: var(--c-surface); border-color: var(--c-border); }
+.anote__icon { color: var(--c-warn-ink); }
