@@ -232,7 +232,7 @@ function EntryRecord({ id, onClose }: { id: number; onClose: () => void }) {
           key: 'diff', label: 'Before and after', content: rows.length === 0 ? (
             <p className="ops-record__empty">This entry records that something happened, not what changed.</p>
           ) : (
-            <table className="ps-diff">
+            <div className="ops-table-wrap"><table className="ps-diff">
               <caption className="ops-form__label">Before and after (personal details masked)</caption>
               <thead><tr><th scope="col">Field</th><th scope="col">Before</th><th scope="col">After</th></tr></thead>
               <tbody>
@@ -242,7 +242,7 @@ function EntryRecord({ id, onClose }: { id: number; onClose: () => void }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           ),
         },
       ]}
