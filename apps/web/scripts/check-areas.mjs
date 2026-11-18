@@ -383,8 +383,9 @@ for (const [role, pages] of process.env.STATES_ONLY === '1' ? [] : [['rider', RI
         mkdirSync(SHOTS, { recursive: true });
         await page.screenshot({ path: path.join(SHOTS, `${name}${lang === 'en' ? '' : `-${lang}`}.png`) });
       }
-      if (w === 1440 && lang === 'en' && !QA && !V2.has(name)) {
-        const ref = path.join(REF, `${name}.png`);
+      // 17 Nov (Phase 2): every signed-in screen at 390 as well as 1440.
+      if ((w === 1440 || w === 390) && lang === 'en' && !QA && !V2.has(name)) {
+        const ref = path.join(REF, `${name}${w === 390 ? '-390' : ''}.png`);
         const shot = await page.screenshot();
         const boxes = await page.evaluate((sel) => [...document.querySelectorAll(sel)].map((e) => {
           const r = e.getBoundingClientRect();
@@ -394,9 +395,10 @@ for (const [role, pages] of process.env.STATES_ONLY === '1' ? [] : [['rider', RI
         if (existsSync(ref)) {
           const d = diff(shot, ref, boxes);
           mkdirSync(DIFFS, { recursive: true });
-          writeFileSync(path.join(DIFFS, `${name}-diff.png`), d.png);
-          writeFileSync(path.join(DIFFS, `${name}-ours.png`), shot);
-          results[name] = Number((d.share * 100).toFixed(2));
+          const tag = `${name}${w === 390 ? '-390' : ''}`;
+          writeFileSync(path.join(DIFFS, `${tag}-diff.png`), d.png);
+          writeFileSync(path.join(DIFFS, `${tag}-ours.png`), shot);
+          results[tag] = Number((d.share * 100).toFixed(2));
           const [max, why] = ALLOW[name] ?? [MAX_DIFF, null];
           if (d.share > max) fail(`${at}: ${(d.share * 100).toFixed(1)}% of pixels differ from ${name}.png (max ${max * 100}%${why ? `: ${why}` : ''})`);
         } else fail(`${at}: reference ${name}.png is missing`);

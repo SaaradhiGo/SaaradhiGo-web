@@ -172,6 +172,7 @@ jobs:
       # landscape, 200% zoom and the largest phone text. No sideways scroll, overlap, cut-off text,
       # stretched image or small tap target at any step. Gates the pages built to the standard.
       - name: Responsive sweep
+        timeout-minutes: 35
         run: SITE=http://localhost:3100 FIXTURES=1 SWEEP_OUT=sweep-out node scripts/sweep-responsive.mjs
       - name: Upload sweep failures
         if: always()

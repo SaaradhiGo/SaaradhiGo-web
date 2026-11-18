@@ -697,11 +697,13 @@ button.er-bar { cursor: pointer; }
   content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px);
   transform: translate(-50%, -50%);
 }
-.aemail { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+/* 17 Nov: a long address wraps rather than being cut with an ellipsis. */
+.aemail { display: inline-block; max-width: 100%; overflow-wrap: anywhere; vertical-align: bottom; }
 /* 14 Nov: on a phone every tappable thing in the areas has a 44x44 hit area. Zero specificity, so
    any element that already sets its position keeps it; the pseudo-element widens what a finger hits
-   without changing what is drawn. */
-@media (max-width: 767px) {
+   without changing what is drawn. 17 Nov: every touch screen and anything up to tablet width, not
+   just phones. */
+@media (max-width: 1024px), (pointer: coarse) {
   :where(.ar) :where(a[href], button, summary, [role="switch"], [role="tab"], [role="radio"], [role="menuitem"]) { position: relative; }
   :where(.ar) :where(a[href], button, summary, [role="switch"], [role="tab"], [role="radio"], [role="menuitem"])::before {
     content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px);
@@ -721,3 +723,43 @@ button.er-bar { cursor: pointer; }
   .er-files .su-link { min-width: 44px; min-height: 44px; }
   .ar-top > a:first-child { min-width: 44px; min-height: 44px; }
 }
+
+/* 17 Nov (any size): row buttons are 44px targets; a short map drops its long fallback line. */
+.tr-open__btn { display: inline-flex; align-items: center; min-height: 44px; }
+.ar-map { container: armap / size; }
+@container armap (max-height: 380px) { .ar-map .map-surface p { display: none; } }
+
+/* 17 Nov (any size): a document tile wraps its button under the text when the text is large,
+   rather than letting the button sit on the status pill. */
+.su-tile { flex-wrap: wrap; }
+.su-tile > .agrow { flex: 1 1 12em; min-width: 0; }
+.su-tile__meta { flex-wrap: wrap; }
+.su-pill { height: auto; min-height: 24px; }
+.ar .su-tbtn { height: auto; min-height: 44px; }
+
+/* 17 Nov (any size, largest text): the rider header wraps onto a second line rather than pushing
+   Account off the screen, and Go online wraps rather than cutting its label. */
+.ar-top { flex-wrap: wrap; height: auto; min-height: 72px; padding-block: 8px; row-gap: 4px; }
+.ar-nav { flex-wrap: wrap; min-width: 0; }
+.ar-tools { flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+@media (max-width: 767px) {
+  .ar .dr-head .dr-go { height: auto; white-space: normal; overflow: visible; text-align: center; }
+}
+/* 17 Nov (largest text): a row lets its amount or status drop under its title instead of running
+   off the screen; the legal links wrap; each dashboard column is at least as wide as its amount,
+   and the chart scrolls inside its card when they do not all fit. */
+.ar .arow { flex-wrap: wrap; }
+.sg-legal-line__links { flex-wrap: wrap; }
+.dr-chart { overflow-x: auto; padding-bottom: 4px; }
+.dr-chart > div { min-width: max-content; }
+.ar .arow > .agrow { flex: 1 1 min(10em, 100%); }
+/* 17 Nov (any size): status pills wrap long words; the period switcher wraps a chip to a second row
+   at the largest text; the month name shares its row with the arrows; a payouts search shrinks with
+   the screen; a card never grows past its column for the chart inside it. */
+.apill { white-space: normal; height: auto; min-height: 28px; text-align: center; }
+.er-tabs { flex-wrap: wrap; }
+.er-tabs .achip { flex: 1 1 auto; }
+.er-label { min-width: 0; flex: 1 1 0; overflow-wrap: anywhere; }
+.pay-period .er-search { flex: 1 1 12em; min-width: 0; }
+.ar .acard, .dr-chart { min-width: 0; }
+.pay-period { grid-template-columns: minmax(0, 1fr); }

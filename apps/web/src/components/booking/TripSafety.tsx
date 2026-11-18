@@ -39,6 +39,8 @@ type Props = {
   pickup?: { lat: number; lng: number } | null;
   /** Share the trip's live link instead of a text summary (rider area, 9 Nov). */
   onShare?: () => Promise<void> | void;
+  /** Opened from the trip's own Safety button (17 Nov): start open, without a second Share/Safety row. */
+  embedded?: boolean;
 };
 
 type Sos =
@@ -52,7 +54,7 @@ type Sos =
 
 export function TripSafety(props: Props) {
   const { tripId, country } = props;
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!!props.embedded);
   const [numbers, setNumbers] = useState<SafetyNumbers | null>(null);
   const [sos, setSos] = useState<Sos>({ kind: 'idle' });
   const [shareNote, setShareNote] = useState<string | null>(null);
@@ -152,7 +154,7 @@ export function TripSafety(props: Props) {
 
   return (
     <div className="grid gap-sg-3">
-      <div className="grid grid-cols-2 gap-sg-3">
+      {!props.embedded && <div className="grid grid-cols-2 gap-sg-3">
         <button type="button" className="sg-btn sg-btn--secondary" onClick={share}>
           <Share />
           Share trip
@@ -167,7 +169,7 @@ export function TripSafety(props: Props) {
           <Shield />
           Safety
         </button>
-      </div>
+      </div>}
       {shareNote && (
         <p className="caption text-ink-muted m-0" role="status">
           {shareNote}
