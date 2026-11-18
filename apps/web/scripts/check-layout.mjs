@@ -118,6 +118,12 @@ async function open(p, width, height, { theme = 'light', lang = 'en' } = {}) {
   const page = await ctx.newPage();
   await page.goto(SITE + p, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => {});
   await answers(page, page.evaluate(() => document.fonts.ready));
+  // 18 Nov: lazy images (the phone frames) load before the shot, so the diff is the same every run.
+  await page.evaluate(async () => {
+    const imgs = [...document.images];
+    imgs.forEach((i) => { i.loading = 'eager'; });
+    await Promise.all(imgs.map((i) => (i.complete ? i.decode().catch(() => {}) : new Promise((r) => { i.onload = i.onerror = r; setTimeout(r, 8000); }))));
+  }).catch(() => {});
   return { page, ctx };
 }
 
