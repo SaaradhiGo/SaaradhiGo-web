@@ -82,7 +82,7 @@ function Chart({ h, locale, label }: { h: History; locale: string; label: string
                 </span>
               )}
               {h.chart.unit === 'day' ? (
-                <button type="button" className={`er-bar${b.key === h.today ? ' er-bar--today' : ''}`} style={{ height: px }} aria-label={name} {...show}
+                <button type="button" data-chart-mark className={`er-bar${b.key === h.today ? ' er-bar--today' : ''}`} style={{ height: px }} aria-label={name} {...show}
                   // A tap also focuses the bar (which opens its tip), so what counts is whether the tip was open
                   // before this touch began: the first tap shows it, the second opens the day's trips.
                   onPointerDown={(e) => { touch.current = e.pointerType === 'touch'; openBefore.current = tip === i; }}

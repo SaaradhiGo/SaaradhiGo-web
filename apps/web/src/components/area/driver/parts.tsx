@@ -49,9 +49,12 @@ export function DriverTop({ title, sub, me }: { title: string; sub?: string | nu
           <span className={`adot${on ? ' adot--on' : ''}`} aria-hidden="true" />{tr(on ? 'Online' : me.status ? 'Offline' : 'Status unknown')}
         </span>
       )}
-      <span className="abtn abtn--dark dr-go" role="note"><IPower size={18} />
-        <span className="dr-go__long">{tr('Go online in the driver app')}</span><span className="dr-go__short">{tr('Go online in the app')}</span>
-      </span>
+      {/* Only while offline: online drivers were told to go online (17 Nov). */}
+      {!on && (
+        <span className="abtn abtn--dark dr-go" role="note"><IPower size={18} />
+          <span className="dr-go__long">{tr('Go online in the driver app')}</span><span className="dr-go__short">{tr('Go online in the app')}</span>
+        </span>
+      )}
       <ProfileMenu links={DRIVER_MENU} onSignOut={() => signOut()} extra={both && (
         <button type="button" role="menuitem" onClick={() => switchTo('rider')}>
           <ISwitch size={18} />{tr('Switch to rider')}

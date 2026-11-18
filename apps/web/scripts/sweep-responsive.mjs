@@ -13,13 +13,27 @@
  */
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
+import { webcrypto } from 'node:crypto';
 import path from 'node:path';
 
 const SITE = (process.env.SITE || 'http://localhost:3100').replace(/\/$/, '');
 const OUT = process.env.SWEEP_OUT || 'sweep-out';
 const STEP = Number(process.env.STEP || 10);
-// The screens built to the standard. Phase 2 adds every screen here as it is rebuilt.
-const GATED = ['/', '/safety', '/ride/choose?d=gate', '/design'];
+// Every public page, and the signed-in rider and driver pages ("role:/path", answered from the CI
+// fixtures with a signed session, as in check-areas). Phase 2 (17 Nov): every screen.
+const GATED = ['/', '/safety', '/ride/choose?d=gate', '/design', '/ride', '/drive', '/fares', '/about', '/help', '/contact',
+  '/sign-in', '/sign-up', '/driver/sign-in', '/driver/sign-up', '/forgot-password', '/reset-password', '/privacy', '/terms',
+  '/driver-terms', '/refunds', '/text-messages', '/grievance', '/cookies', '/delete-account', '/zero-tolerance', '/accessibility',
+  'rider:/ride', 'rider:/trips', 'rider:/trips/101', 'rider:/account', 'rider:/ride/trip/201',
+  'driver:/driver', 'driver:/driver/earnings', 'driver:/driver/trips', 'driver:/driver/payouts', 'driver:/driver/documents', 'driver:/driver/profile'];
+const CONCURRENCY = Number(process.env.CONCURRENCY || 3);
+const enc = new TextEncoder();
+const b64 = (bytes) => Buffer.from(bytes).toString('base64url');
+async function signedSession(role) {
+  const key = await webcrypto.subtle.importKey('raw', enc.encode(process.env.WEB_SESSION_SECRET || ''), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const body = b64(enc.encode(JSON.stringify({ uid: '7', roles: [role], role, exp: Math.floor(Date.now() / 1000) + 3600 })));
+  return `${body}.${b64(new Uint8Array(await webcrypto.subtle.sign('HMAC', key, enc.encode(body))))}`;
+}
 const PAGES = (process.env.PAGES ? process.env.PAGES.split(',') : GATED);
 const MARKETS = (process.env.MARKETS || 'IN,US').split(',');
 const REPORT = process.env.REPORT === '1';
@@ -34,7 +48,9 @@ for (const [w, h] of [[1280, 800], [1366, 768], [1440, 900], [1920, 1080]]) size
 function check({ touch }) {
   const vw = innerWidth, vh = innerHeight;
   const out = [];
-  const skip = (el) => el.closest('.sr-only, .skip-link, .gm-style, [aria-hidden="true"], script, style, noscript, template');
+  // The answer inside a closed <details> is not shown, though Chrome still gives it a box.
+  const skip = (el) => el.closest('.sr-only, .skip-link, .gm-style, [aria-hidden="true"], script, style, noscript, template')
+    || (el.closest('details:not([open])') && !el.closest('summary'));
   // Visually hidden content (clip rect or a 1px box) is for screen readers only.
   const hidden = (el) => {
     for (let p = el; p && p !== document.body; p = p.parentElement) {
@@ -105,12 +121,17 @@ function check({ touch }) {
   const min = touch ? 44 : 24;
   for (const el of ctrls) {
     if (el.matches('input[type=checkbox], input[type=radio]') && el.closest('label')) continue;
+    // A chart bar's height is the data; each day is also a full-size row in the list below the chart.
+    if (el.hasAttribute('data-chart-mark')) continue;
     const r = el.getBoundingClientRect();
     const inline = el.tagName === 'A' && getComputedStyle(el).display === 'inline' && el.closest('p, li, td, .ui-body, .ui-small');
     if (inline) continue;
     const host = el.parentElement?.closest('a[href], button, label');
     const hr = host?.getBoundingClientRect();
-    if ((r.width < min || r.height < min) && !(hr && hr.width >= min && hr.height >= min)) out.push(`tap target ${Math.round(r.width)}x${Math.round(r.height)}: ${name(el)}`);
+    // A transparent ::before that widens the hit area (area.css, 14 Nov) counts: it is what a finger hits.
+    const pb = getComputedStyle(el, '::before');
+    const pad = pb.content !== 'none' && pb.position === 'absolute' && parseFloat(pb.width) >= min && parseFloat(pb.height) >= min;
+    if ((r.width < min || r.height < min) && !pad && !(hr && hr.width >= min && hr.height >= min)) out.push(`tap target ${Math.round(r.width)}x${Math.round(r.height)}: ${name(el)}`);
     if (r.right > vw + 1 && !inScroller(el)) out.push(`control off screen: ${name(el)}`);
   }
   // Images keep their own shape.
@@ -126,7 +147,19 @@ function check({ touch }) {
   const boxes = [...new Set([...ctrls, ...texts.filter((el) => el.matches('h1, h2, h3, h4, p, li, label, td, th, b, strong, span, div')), ...document.querySelectorAll('img, .ui-card, .ui-device')])]
     .filter(shown).filter((el) => !ctrls.some((c) => c !== el && c.contains(el)));
   // A wrapped inline element is several line boxes, not one rectangle across both lines.
-  const rects = boxes.map((el) => (getComputedStyle(el).display === 'inline' ? [...el.getClientRects()] : [el.getBoundingClientRect()]));
+  // Only the part a person can see: a box scrolled out of its scroller (a chart that scrolls inside
+  // its card) is cut to that scroller's visible area.
+  const visible = (el, r) => {
+    let { left, right, top, bottom } = r;
+    for (let q = el.parentElement; q && q !== document.body; q = q.parentElement) {
+      const cs = getComputedStyle(q);
+      if (cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
+      const c = q.getBoundingClientRect();
+      left = Math.max(left, c.left); right = Math.min(right, c.right); top = Math.max(top, c.top); bottom = Math.min(bottom, c.bottom);
+    }
+    return { left, right, top, bottom };
+  };
+  const rects = boxes.map((el) => (getComputedStyle(el).display === 'inline' ? [...el.getClientRects()] : [el.getBoundingClientRect()]).map((r) => visible(el, r)));
   const hit = (ra, rb) => {
     for (const a of ra) for (const b of rb) {
       const x = Math.min(a.right, b.right) - Math.max(a.left, b.left);
@@ -167,11 +200,15 @@ function bigText() {
   }
 }
 
-async function open(browser, url, market, w, h, dpr = 1) {
+async function open(browser, target, market, w, h, dpr = 1) {
+  const [role, url] = target.includes(':/') ? target.split(/:(?=\/)/) : [null, target];
   const touch = w <= 1024;
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: dpr, isMobile: false, hasTouch: touch,
     locale: market === 'US' ? 'en-US' : 'en-IN', timezoneId: market === 'US' ? 'America/Boise' : 'Asia/Kolkata', colorScheme: 'light' });
   await ctx.addCookies([{ name: 'sg-market', value: market, url: SITE }]);
+  if (role) {
+    await ctx.addCookies([{ name: 'sg-session', value: await signedSession(role), url: SITE }, { name: 'sg-rider-in', value: '1', url: SITE }]);
+  }
   await ctx.addInitScript(() => {
     try {
       const from = { lat: 17.3616, lng: 78.4747, label: 'Charminar', short: 'Charminar' };
@@ -200,8 +237,7 @@ async function open(browser, url, market, w, h, dpr = 1) {
 const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : { channel: 'chrome' });
 const results = [];
 let failures = 0;
-for (const url of PAGES) {
-  for (const market of MARKETS) {
+async function sweepOne(url, market) {
     const label = `${url} [${market}]`;
     const found = new Map();
     const note = async (page, s, issues) => {
@@ -243,7 +279,7 @@ for (const url of PAGES) {
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', locale: 'en-IN' });
       await ctx.addCookies([{ name: 'sg-market', value: market, url: SITE }]);
       const page = await ctx.newPage();
-      await page.goto(SITE + url, { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
+      await page.goto(SITE + url.replace(/^\w+:(?=\/)/, ''), { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
       const theme = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
       if (theme !== 'light') found.set('dark device', { issue: `dark device: the page opened in "${theme}", not light`, kind: 'device dark', at: ['390x844'] });
       await ctx.close();
@@ -253,8 +289,15 @@ for (const url of PAGES) {
     results.push({ page: url, market, issues: list });
     console.log(`${list.length ? 'FAIL' : 'PASS'}  ${label}: ${list.length} issue(s) over ${sizes.length + 12} sizes`);
     for (const f of list.slice(0, 12)) console.log(`        ${f.issue}  [${f.kind}; ${f.at.length} size(s), e.g. ${f.at.slice(0, 3).join(', ')}]`);
-  }
 }
+const jobs = PAGES.flatMap((url) => MARKETS.map((market) => [url, market]));
+let next = 0;
+await Promise.all(Array.from({ length: Math.min(CONCURRENCY, jobs.length) }, async () => {
+  while (next < jobs.length) {
+    const [url, market] = jobs[next++];
+    await sweepOne(url, market);
+  }
+}));
 await browser.close();
 fs.writeFileSync(path.join(OUT, 'sweep.json'), JSON.stringify(results, null, 1));
 console.log(failures ? `responsive sweep: ${failures} issue(s)` : 'responsive sweep: pass');

@@ -319,7 +319,7 @@ export function RideTrip({ id }: { id: string }) {
           <div className="site">
             <TripSafety tripId={id} driverName={t?.driver_name} plate={plate} pickupLabel={t?.pickup_address}
               destinationLabel={t?.destination_address} position={driverAt} pickup={pickup}
-              onShare={AREA_FLAGS.shareLink ? share : undefined} />
+              onShare={AREA_FLAGS.shareLink ? share : undefined} embedded />
           </div>
         )}
 
@@ -369,7 +369,7 @@ export function RideTrip({ id }: { id: string }) {
         )}
         {!over && !cancelling && (
           <button type="button" className="a14 amut" onClick={() => setCancelling(true)}
-            style={{ marginTop: 'auto', textAlign: 'center', textDecoration: 'underline', background: 'none', border: 0, cursor: 'pointer', font: 'inherit' }}>
+            style={{ marginTop: 'auto', minHeight: 44, textAlign: 'center', textDecoration: 'underline', background: 'none', border: 0, cursor: 'pointer', font: 'inherit' }}>
             {tr('Cancel ride')}
           </button>
         )}

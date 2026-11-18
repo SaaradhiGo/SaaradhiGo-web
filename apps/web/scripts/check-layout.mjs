@@ -290,7 +290,9 @@ for (const { p, w, h, lang } of RUNS) {
     const wrong = await families(page);
     if (wrong.length) fail(`${at}: text not drawn in Inter or Noto: ${wrong.join('; ')}`);
   }
-  if (w === 1440 && lang === 'en' && REF_FOR[p]) {
+  // 17 Nov (Phase 2): the standard's pages are compared at 390 as well as 1440.
+  if ((w === 1440 || (w === 390 && STANDARD[p])) && lang === 'en' && REF_FOR[p]) {
+    const stdName = STANDARD[p] && (w === 390 ? STANDARD[p].replace('.png', '-390.png') : STANDARD[p]);
     const shot = await page.screenshot({ fullPage: true });
     const emblems = await page.evaluate(() => ['.s-brand__mark', '.s-footer__mark'].map((q) => {
       const r = document.querySelector(q).getBoundingClientRect();
@@ -323,17 +325,17 @@ for (const { p, w, h, lang } of RUNS) {
     }
     if (STANDARD[p] && process.env.BASELINE) {
       mkdirSync(STD, { recursive: true });
-      writeFileSync(path.join(STD, STANDARD[p]), shot);
+      writeFileSync(path.join(STD, stdName), shot);
     }
-    const refFile = STANDARD[p] ? path.join(STD, STANDARD[p]) : path.join(REF, REF_FOR[p]);
+    const refFile = stdName ? path.join(STD, stdName) : path.join(REF, REF_FOR[p]);
     if (existsSync(refFile)) {
       const d = diff(shot, refFile, REF_CUT[p], [...(REF_MASK[p] || []), ...emblems]);
       mkdirSync(DIFFS, { recursive: true });
-      const base = p === '/' ? 'home' : p.slice(1);
+      const base = (p === '/' ? 'home' : p.slice(1)) + (w === 390 ? '-390' : '');
       writeFileSync(path.join(DIFFS, `${base}-diff.png`), d.png);
       writeFileSync(path.join(DIFFS, `${base}-ours.png`), shot);
       heights[`${p} diff`] = Number((d.share * 100).toFixed(2));
-      if (d.share > MAX_DIFF) fail(`${at}: ${(d.share * 100).toFixed(1)}% of pixels differ from ${STANDARD[p] ?? REF_FOR[p]} (max 3%)`);
+      if (d.share > MAX_DIFF) fail(`${at}: ${(d.share * 100).toFixed(1)}% of pixels differ from ${stdName ?? REF_FOR[p]} (max 3%)`);
     } else fail(`${at}: reference ${REF_FOR[p]} is missing`);
   }
   await ctx.close();

@@ -630,8 +630,7 @@
 .site .s-icon-btn { width: 44px; height: 44px; }
 .site .s-header__login { height: 44px; }
 .s-seg button { height: 44px; }
-.site a.sg-link { border-bottom: 0; }
-@media (max-width: 767px) { .site a.sg-link { display: inline-flex; align-items: center; min-height: 44px; } }
+.site a.sg-link { border-bottom: 0; display: inline-flex; align-items: center; min-height: 44px; }
 
 /* The hero map (17 Nov): a real city map built once (scripts/hero-map). Fluid: the wide drawing
    with labelled pins while its panel is 720px or wider; the compact drawing below that. */
@@ -666,7 +665,7 @@
 [data-theme="dark"] .hmap--boise-photo { background-image: image-set(url('/hero-map/boise-phone-dark@2x.webp') 2x, url('/hero-map/boise-phone-dark@3x.webp') 3x); }
 /* The SMS consent is read before agreeing, so it is body size; the company block's link is a 44px row. */
 .s-consent p.caption { font-size: var(--text-body); line-height: var(--leading-body); }
-@media (max-width: 767px) { .sg-company a { display: inline-flex; align-items: center; min-height: 44px; } }
+.sg-company a { display: inline-flex; align-items: center; min-height: 44px; }
 
 /* 17 Nov (any width): in a very narrow header the mark and wordmark step down instead of overflowing;
    with very large text the controls wrap under the brand. */
@@ -680,3 +679,10 @@
 /* The brand link is a 44px target at any header width; with very large text its name may wrap. */
 .site .s-brand { min-height: 44px; }
 .s-brand__name { white-space: normal; min-width: 0; }
+
+/* 17 Nov (any size, largest text): example chips, bars and buttons wrap instead of running off screen. */
+.s-example { white-space: normal; max-width: 100%; }
+.s-bar { flex-wrap: wrap; column-gap: 8px; }
+.site .sg-btn { height: auto; min-height: 48px; white-space: normal; overflow-wrap: anywhere; text-align: center; max-width: 100%; }
+.site input[type="search"], .site .s-help-search input { min-width: 0; max-width: 100%; }
+.s-search { min-width: 0; max-width: 100%; height: auto; min-height: 54px; }
