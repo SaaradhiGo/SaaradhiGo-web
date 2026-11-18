@@ -538,9 +538,9 @@
 .s-phonebox { display: flex; height: 48px; border-radius: 10px; border: 1px solid var(--c-field-border); overflow: hidden; background: var(--c-surface); }
 .s-phonebox select { height: 100%; width: auto; border: 0; border-right: 1px solid var(--c-border); border-radius: 0; background: var(--c-muted); padding: 0 8px; }
 .s-phonebox input { height: auto; border: 0; border-radius: 0; padding: 0 12px; flex-grow: 1; }
-.s-submit { height: 52px; width: 100%; margin-top: 4px; padding: 0; }
+.s-submit { box-sizing: border-box; height: 52px; min-height: 52px; width: 100%; margin-top: 4px; padding: 0; }
 .s-alert { margin: 0; padding: 12px 14px; border-radius: 12px; font-size: var(--text-small); line-height: var(--leading-small); }
-.s-alert--error { background: var(--c-red-bg); color: var(--c-red); }
+.s-alert--error { background: var(--c-surface); border: 1px solid var(--c-red); color: var(--c-red); }
 .s-alert--success { background: var(--c-green-bg); color: var(--c-green-ink); }
 .s-alert--info { background: var(--c-muted); color: var(--c-text); }
 @media (max-width: 767px) {
@@ -590,7 +590,7 @@
 /* Phones: a label longer than the screen (Spanish, Hindi, Telugu) wraps
    inside its button instead of pushing the page sideways. */
 @media (max-width: 767px) {
-  .s-btn { white-space: normal; height: auto; min-height: 48px; padding-top: 12px; padding-bottom: 12px; text-align: center; max-width: 100%; }
+  .s-btn { box-sizing: border-box; white-space: normal; height: auto; min-height: 48px; padding-top: 12px; padding-bottom: 12px; text-align: center; max-width: 100%; }
 }
 
 /* ---------------------------------------------------------------- policy pages (13 Nov) */
