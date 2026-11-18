@@ -2390,3 +2390,138 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
   }
   .ops .ops-chip button { min-width: 44px; }
 }
+
+/* 18 Nov (Phase 2): staff sign-in opens light. The brand panel is a short black band (logo and the
+   page title), not half the screen; the form sits on white. Same on the help page. */
+.login { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; background: var(--ui-bg); }
+.login__brand {
+  flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 8px 16px;
+  min-height: 64px; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+  border: 0; background: var(--ui-ink);
+}
+.login__brand::before, .login__brand::after { display: none; }
+.login__lockup .sg-logo { width: 36px; }
+.login__hero { max-width: none; }
+.login__hero h1, .login .login__hero h1 { font-size: 20px; line-height: 28px; font-weight: 600; margin: 0; color: var(--ui-on-ink); }
+.login__hero p, .login__caps { display: none; }
+.login__panel { justify-content: flex-start; padding: 48px 16px 64px; background: var(--ui-bg); }
+@media (max-width: 860px) { .login__brand { padding-block: 10px; } .login__panel { padding-top: 32px; } }
+
+/* ===========================================================================
+   18 Nov (Phase 2, owner): the console at any width, 320 to 1920.
+   =========================================================================== */
+/* Counts read "All · 10" (the space before a count in a flex chip collapsed: "All10"). */
+.ops-view__n::before { content: '·'; margin: 0 6px; color: var(--ops-ink-4); }
+/* One header height. The top bar is one row at every width; the place picker gives way first, and
+   on a phone the freshness line becomes its dot (the text stays for screen readers). */
+.ops__top { display: flex; align-items: center; gap: 12px; height: var(--ops-top-h); min-height: var(--ops-top-h); }
+.ops__top-left { flex: 1 1 auto; min-width: min(8.5rem, 40%); }
+.ops__top > .ops__search { flex: 0 1 420px; min-width: 0; }
+.ops__top-right { flex: 0 0 auto; gap: 6px; }
+.ops__top-left .ops-picker, .ops__top-left .ops__scope { min-width: 0; max-width: 100%; }
+.ops-picker__button { max-width: 100%; min-width: 0; min-height: 44px; align-items: center; }
+.ops-picker__button b { min-width: 0; overflow-wrap: anywhere; white-space: normal; text-align: left; line-height: 1.15; }
+@media (max-width: 1180px) { .ops__top > .ops__search { flex-basis: 260px; } }
+@media (max-width: 640px) {
+  .ops__top { gap: 6px; padding-inline: 12px; }
+  .ops__top-right { gap: 2px; }
+  .ops-picker__trail { display: none; }
+  .ops-fresh__text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .ops__profile-caret, .ops__profile-btn svg:last-child { display: none; }
+  .ops-picker__button { padding: 4px 10px; }
+}
+/* The phone's black bar is one height whenever its menu is closed. */
+@media (max-width: 900px) {
+  .ops .sg-on-noir.ops__side:not([data-open='true']) { min-height: 60px; flex-wrap: nowrap; padding-block: 8px; }
+}
+/* Tables never squeeze headings to letters: columns take their content's width and the table
+   scrolls inside its card when it is wider than the card. */
+.ops-table, .ops-table--auto { table-layout: auto; width: max-content; min-width: 100%; }
+.ops-table th { white-space: nowrap; overflow: visible; text-overflow: clip; }
+.ops-table td { overflow: visible; text-overflow: clip; overflow-wrap: break-word; }
+.ops-table td:not(.num) { max-width: 28rem; }
+.ops-card:has(> .ops-table), .ops-panel:has(> .ops-table), .ops-section:has(> .ops-table), section:has(> .ops-table), div:has(> table.ops-table) { overflow-x: auto; max-width: 100%; }
+.ops-list__table { overflow-x: auto; max-width: 100%; }
+.ops-list__table td { white-space: normal; overflow: visible; text-overflow: clip; }
+/* Long titles wrap instead of being cut. */
+.ops-inbox__title { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+/* Touch screens: every link and button in the console is at least 44px. */
+@media (max-width: 1024px), (pointer: coarse) {
+  .ops .ops__link, .ops .ops-subnav__link, .ops .ops__brand, .ops .ops-crumbs__link, .ops summary { min-height: 44px; display: inline-flex; align-items: center; }
+  .ops .ops__link, .ops .ops__brand { display: flex; }
+}
+/* Grid items and record sections shrink to the screen; what is wider scrolls inside them. */
+.ops__content .grid > *, .ops__content > * { min-width: 0; }
+.ops-recsec { min-width: 0; max-width: 100%; overflow-x: auto; }
+.ops-list__head, .ops-list__actions, .ops-form__row, .ops-filters, .lo-strip { flex-wrap: wrap; min-width: 0; }
+/* A row's checkbox sits in a 44px label on touch screens (24px with a mouse). */
+.ops-check { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; cursor: pointer; }
+@media (max-width: 1024px), (pointer: coarse) {
+  .ops-check { min-width: 44px; min-height: 44px; margin: -10px; }
+  .ops .ops-th-sort, .ops .ops-inbox__title, .ops .ops-table a, .ops .ops-banner a { min-height: 44px; display: inline-flex; align-items: center; }
+}
+/* The collapsed sidebar (900-1060px) is wide enough for 44px targets. */
+@media (max-width: 1060px) and (min-width: 901px) { .ops { --ops-side-w: 76px; } }
+/* Environment: in the top bar from 641px, in the black bar on a phone. */
+.ops__side-env { display: none; }
+@media (max-width: 640px) {
+  .ops__top-env { display: none; }
+  .ops .ops__side .ops__side-env { display: inline-flex; margin-left: auto; }
+  .ops .ops__side .ops__brand { min-width: 0; flex: 0 1 auto; }
+  .ops .ops__side .ops__wordmark { min-width: 0; overflow-wrap: anywhere; }
+  .ops__top-left { min-width: min(6rem, 40%); }
+}
+@media (max-width: 1024px), (pointer: coarse) {
+  .ops .ops__profile-btn, .ops .ops-th-sort, .ops .ops-table a { min-width: 44px; justify-content: center; }
+}
+.ops-search { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.ops-search > input, .ops-search .input { flex: 1 1 10rem; min-width: 0; }
+.ops .input, .ops input, .ops select, .ops textarea { max-width: 100%; }
+.ops-head, .cc-head, .ops-hero { min-width: 0; flex-wrap: wrap; }
+.ops-head h1, .ops-hero h1 { overflow-wrap: anywhere; min-width: 0; }
+/* Largest text and the last small targets (18 Nov sweep). */
+.ops__menu { flex: none; }
+.ops-empty, .ops-empty b, .ops-empty span, .ops__content h1, .ops__content p { overflow-wrap: anywhere; min-width: 0; }
+.ops-pill, .ops__content p.sg-num, .lo-link, .ops .sg-btn { white-space: normal; }
+.ops .sg-btn { height: auto; min-height: 32px; text-align: center; }
+.ops-linkbtn { min-height: 24px; }
+.ops-form__row > *, .ops-filters > * { min-width: 0; }
+@media (max-width: 1024px), (pointer: coarse) {
+  .ops .sg-btn { min-height: 44px; }
+  .ops .ops-view, .ops .ops-tab, .ops .ops-linkbtn, .ops .ops-sort, .ops .lo-queue__toggle { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; height: auto; }
+  .ops input.input { min-width: 44px; min-height: 44px; }
+}
+/* Phone: the map's floating panels stack around the map instead of covering each other. */
+@media (max-width: 720px) {
+  .lo-float, .lo-notes, .lo-legend--float { position: static; max-width: none; margin: 8px; }
+}
+/* Below 420px the black bar shows the mark, the environment and the menu (the words do not fit). */
+@media (max-width: 420px) { .ops .ops__side .ops__wordmark { display: none; } }
+.ops .ops__side .ops__brand { flex: none; }
+.zn-tester__row { grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); }
+/* A list's filters wrap within the list at any width and text size. */
+.ops-list__chips, .ops-list__filters { flex-wrap: wrap; min-width: 0; max-width: 100%; }
+.ops-list__filters > *, .ops-list__chips > * { min-width: 0; max-width: 100%; }
+/* The map's notes and legend sit under the map at every width (they covered each other when a note wrapped). */
+.lo-notes, .lo-legend--float { position: static; max-width: none; margin: 8px; }
+.lo-link { display: inline-block; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.ops .ops__side .ops__brand { min-width: 44px; justify-content: center; }
+.ops__side-env { min-width: 0; }
+.ops__side-env .ops-env { white-space: normal; text-align: center; }
+/* The live canvas is a column: the map takes the room left after its notes and key (18 Nov). */
+.lo-canvas { display: flex; flex-direction: column; }
+.lo-canvas > .lo-map--fill, .lo-canvas > .ops-empty { flex: 1 1 auto; min-height: 260px; height: auto; }
+.lo-canvas > .lo-notes, .lo-canvas > .lo-legend--float { flex: none; }
+@media (max-width: 720px) { .lo-canvas > .lo-float { position: static; } }
+@media (max-width: 900px) {
+  .ops .sg-on-noir.ops__side:not([data-open='true']) { flex-wrap: wrap; }
+}
+.lo-strip .lo-link { white-space: normal; max-width: 100%; overflow-wrap: anywhere; }
+.lo-float .ops-select, .lo-field, .lo-field .ops-select { max-width: 100%; min-width: 0; }
+/* Long words (uppercase stat labels at the largest text) break rather than run out of their tile. */
+.ops__content { overflow-wrap: anywhere; }
+.ops-list__head > .flex, .ops-head .flex, .ops-list__head .flex { flex-wrap: wrap; min-width: 0; }
+/* Tables keep their words whole (they scroll in their card); "anywhere" let cells collapse to a letter. */
+.ops__content table, .ops__content table * { overflow-wrap: break-word; }
+.ops__content td, .ops__content th { min-width: 6em; }
+.ops__content td.num, .ops__content th.num, .ops__content td:has(> .ops-check), .ops__content th:has(> .ops-check) { min-width: 0; }

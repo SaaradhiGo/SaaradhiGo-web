@@ -215,7 +215,8 @@ export function DriverEarnings() {
               <Stat ink label={tr('You earned')} value={m(s.earned)}
                 sub={`${tr('{n} trips').replace('{n}', String(s.trips))} · ${tr(s.days_driven === 1 ? '{n} day driven' : '{n} days driven').replace('{n}', String(s.days_driven))}`} />
               <Stat label={tr('Trip fares')} value={m(s.fares)} sub={tr('Avg {a} per trip').replace('{a}', m(s.avg_fare))} />
-              <Stat label={tr('Platform fee')} value={fee.text} tone={fee.red && 'red'} sub={s.fee_note ? tr(s.fee_note) : tr('From your trip ledger')} />
+              {/* 18 Nov: a week with no fee says so, rather than "$0.00" (Treasure Valley has no fee plan). */}
+              <Stat label={tr('Platform fee')} value={Number(s.platform_fee ?? 0) === 0 ? tr('No platform fee') : fee.text} tone={fee.red && 'red'} sub={s.fee_note ? tr(s.fee_note) : tr('From your trip ledger')} />
               <Stat label={tr('Tips')} value={addition(s.tips, cur, locale)} sub={s.tips_enabled ? tr('From {n} riders').replace('{n}', String(s.tip_riders)) : tr('Tips are not on yet')} />
               <Stat label={tr('Paid to your bank')} value={m(s.paid_to_bank)}
                 sub={tr(s.payouts === 1 ? '{n} payout' : '{n} payouts').replace('{n}', String(s.payouts)) + (Number(s.cash_collected) > 0 ? ` · ${tr('rest in cash')}` : '')} />

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ComponentType } from 'react';
 import { Logo } from '@/components/sg/Logo';
+import { EnvBadge } from '@/components/console/EnvBadge';
 import { ChevronLeft, Close, Menu, PanelLeft } from '@/components/console/icons';
 
 export type NavItem = {
@@ -75,6 +76,9 @@ export function Sidebar({
           <small>Admin</small>
         </span>
       </Link>
+
+      {/* 18 Nov: on a phone the environment sits in the black bar, so the top bar fits one row. */}
+      <span className="ops__side-env"><EnvBadge size="sm" /></span>
 
       <button
         type="button"

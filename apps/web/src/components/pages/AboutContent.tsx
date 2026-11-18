@@ -12,15 +12,16 @@ export function AboutContent() {
 
   return (
     <section className="s-wrap s-page s-cb">
+      {/* 18 Nov (owner): the heading first, the logo a short band beneath it. */}
       <div className="s-about">
-        <div className="s-about__logo">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/lockup-gold.svg" alt={a.logoAlt} width={212} height={230} />
-        </div>
         <div>
           <div className="t-label">{a.label}</div>
           <h1 className="t-heading">{a.title}</h1>
           <p>{a.body}</p>
+        </div>
+        <div className="s-about__logo">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/lockup-gold.svg" alt={a.logoAlt} width={212} height={230} />
         </div>
       </div>
       <div className="s-cards3">

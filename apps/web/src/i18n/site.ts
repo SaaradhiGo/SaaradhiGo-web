@@ -310,8 +310,8 @@ const en: SiteCopy = {
   },
   about: {
     label: 'About SaaradhiGo',
-    title: 'Saaradhi means the charioteer: the one who drives you, steadily and honestly.',
-    body: 'We started SaaradhiGo because a ride should not end in an argument about the price, and a driver should not work without knowing their pay. So we show every fare before you choose, lock the one you book, and show drivers what they will earn before they accept.',
+    title: 'Saaradhi means the charioteer',
+    body: 'The one who drives you, steadily and honestly. We started SaaradhiGo because a ride should not end in an argument about the price, and a driver should not work without knowing their pay. So we show every fare before you choose, lock the one you book, and show drivers what they will earn before they accept.',
     logoAlt: 'SaaradhiGo logo: a charioteer driving a horse-drawn chariot, the road rising into a sail, a location pin, in a gold ring',
     cards: [
       { title: 'The fare, agreed first', body: 'Rider and driver see the same price before the trip, and settle on that number.' },

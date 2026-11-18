@@ -135,8 +135,6 @@
   "Then press SOS in the app, so our team can see your trip and help you and the emergency services.": "Luego pulsa SOS en la app, para que nuestro equipo vea tu viaje y te ayude a ti y a los servicios de emergencia.",
   "Report a safety issue": "Reportar un problema de seguridad",
   "About SaaradhiGo": "Sobre SaaradhiGo",
-  "Saaradhi means the charioteer: the one who drives you, steadily and honestly.": "Saaradhi significa auriga: quien te lleva con firmeza y honestidad.",
-  "We started SaaradhiGo because a ride should not end in an argument about the price, and a driver should not work without knowing their pay. So we show every fare before you choose, lock the one you book, and show drivers what they will earn before they accept.": "Creamos SaaradhiGo porque un viaje no debería terminar en una discusión por el precio, y un conductor no debería trabajar sin saber cuánto gana. Por eso mostramos cada tarifa antes de elegir, fijamos la que reservas y mostramos a los conductores lo que ganarán antes de aceptar.",
   "The fare, agreed first": "La tarifa, acordada primero",
   "Rider and driver see the same price before the trip, and settle on that number.": "Pasajero y conductor ven el mismo precio antes del viaje, y se quedan con ese número.",
   "Fair to drivers": "Justo con los conductores",
@@ -224,5 +222,7 @@
   "Choose a vehicle": "Elige un vehículo",
   "Email (optional)": "Correo electrónico (opcional)",
   "We're launching soon. Booking opens when we go live.": "Lanzamos pronto. Las reservas abren cuando empecemos.",
-  "See the fares": "Ver las tarifas"
+  "See the fares": "Ver las tarifas",
+  "Saaradhi means the charioteer": "Saaradhi significa auriga",
+  "The one who drives you, steadily and honestly. We started SaaradhiGo because a ride should not end in an argument about the price, and a driver should not work without knowing their pay. So we show every fare before you choose, lock the one you book, and show drivers what they will earn before they accept.": "Quien te lleva con firmeza y honestidad. Creamos SaaradhiGo porque un viaje no debería terminar en una discusión por el precio, y un conductor no debería trabajar sin saber cuánto gana. Por eso mostramos cada tarifa antes de elegir, fijamos la que reservas y mostramos a los conductores lo que ganarán antes de aceptar."
 }
