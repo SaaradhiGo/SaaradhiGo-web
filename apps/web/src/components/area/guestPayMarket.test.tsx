@@ -3,7 +3,7 @@
  * under "Cash is not accepted here". A visitor's methods are the pickup's own (Idaho: card only),
  * and the footer names DeepTrics LLC whatever the header says.
  */
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { LegalProvider, useLegal } from '@/components/sg/LegalProvider';
@@ -64,6 +64,8 @@ describe('a visitor booking from Boise with India in the header', () => {
     expect(screen.getByTestId('trip-line').textContent).toContain('12.8 mi');
     expect(screen.queryByTestId('pay-cash')).toBeNull();
     expect(screen.getByTestId('pay-card').textContent).toContain('Card, Apple Pay or Google Pay');
-    expect(screen.getByTestId('company').textContent).toBe('DeepTrics LLC');
+    // The footer names the pickup's market a tick after the fares land (the on-screen market effect):
+    // wait for it rather than read it at once (it failed CI intermittently, 17 Nov).
+    await waitFor(() => expect(screen.getByTestId('company').textContent).toBe('DeepTrics LLC'));
   });
 });
