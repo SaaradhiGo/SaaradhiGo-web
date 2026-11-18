@@ -732,7 +732,7 @@ button.er-bar { cursor: pointer; }
 /* 17 Nov (any size): a document tile wraps its button under the text when the text is large,
    rather than letting the button sit on the status pill. */
 .su-tile { flex-wrap: wrap; }
-.su-tile > .agrow { flex: 1 1 12em; min-width: 0; }
+.su-tile > .agrow { flex: 1 1 0; min-width: min(7em, 100%); } /* 18 Nov: wraps the button only below 7em */
 .su-tile__meta { flex-wrap: wrap; }
 .su-pill { height: auto; min-height: 24px; }
 .ar .su-tbtn { height: auto; min-height: 44px; }
