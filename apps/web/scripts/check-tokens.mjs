@@ -94,6 +94,30 @@ for (const full of [...walk(path.join(root, 'src')), ...walk(path.join(root, 'pu
   });
 }
 
+// Pixel sizes (Phase 2, 18 Nov): text is set on the standard's one scale. A font size outside
+// tokens.css is either a --text-* token or one of 14/16/20/28/40 px; anything else fails, in CSS and
+// in inline styles. (Spacing and radii are not checked here: they are reviewed on the 8 px grid.)
+const SCALE = new Set([14, 16, 20, 28, 40]);
+const sizes = [];
+for (const full of walk(path.join(root, 'src'))) {
+  const rel = path.relative(root, full);
+  if (rel === TOKEN_FILE) continue;
+  const css = full.endsWith('.css');
+  readFileSync(full, 'utf8').split(/\r?\n/).forEach((line, i) => {
+    const re = css ? /font-size:\s*([0-9.]+)(px|rem|em|pt)\b/g : /fontSize:\s*['"]?([0-9.]+)(px|rem|em|pt)?['"]?/g;
+    for (const m of line.matchAll(re)) {
+      const unit = m[2] || 'px';
+      const px = unit === 'px' ? Number(m[1]) : unit === 'pt' ? (Number(m[1]) * 4) / 3 : NaN;
+      if (!SCALE.has(px)) sizes.push(`${rel}:${i + 1}: ${m[0]}`);
+    }
+  });
+}
+if (sizes.length > 0) {
+  console.error('Font sizes off the type scale (use a --text-* token or 14/16/20/28/40 px):\n');
+  for (const p of sizes) console.error(`  ${p}`);
+  process.exit(1);
+}
+
 if (problems.length > 0) {
   console.error('Colour literals found outside src/styles/tokens.css:\n');
   for (const p of problems) console.error(`  ${p}`);
@@ -106,5 +130,5 @@ if (problems.length > 0) {
 
 console.log(
   `Token check passed: no colour literals outside ${TOKEN_FILE}`
-  + ` (${ALLOWED.length} documented exemptions).`,
+  + ` (${ALLOWED.length} documented exemptions); every font size is on the type scale.`,
 );
