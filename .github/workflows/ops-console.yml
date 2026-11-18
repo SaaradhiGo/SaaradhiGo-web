@@ -199,7 +199,7 @@ jobs:
   # (scripts/fixtures/console). Its own job so the site gates do not wait for it.
   console-sweep:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 70
     defaults:
       run:
         working-directory: apps/web
@@ -216,12 +216,13 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+      # 18 Nov: 15 min on a PR, over 35 on a slow develop runner; four pages at a time and room to finish.
       - name: Console sweep (every role, 320-1920)
-        timeout-minutes: 35
+        timeout-minutes: 60
         run: |
           npx next start -p 3100 &
           npx --yes wait-on@8.0.1 -t 60000 http://localhost:3100/
-          SITE=http://localhost:3100 PAGES=console MARKETS=US SWEEP_OUT=console-sweep-out node scripts/sweep-responsive.mjs
+          SITE=http://localhost:3100 PAGES=console MARKETS=US CONCURRENCY=4 SWEEP_OUT=console-sweep-out node scripts/sweep-responsive.mjs
       - name: Upload console sweep failures
         if: always()
         uses: actions/upload-artifact@v4
