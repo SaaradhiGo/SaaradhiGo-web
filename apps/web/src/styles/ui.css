@@ -203,3 +203,7 @@
 .ui-choose .anote .abtn { min-height: 48px; border-radius: 12px; font-size: 16px; font-weight: 600; padding: 12px 20px; }
 .ui-choose .anote .abtn--dark { background: var(--ui-gold); color: var(--ui-on-gold); border: 0; }
 .ui-choose .anote .abtn--ghost { background: var(--ui-surface); color: var(--ui-text); border: 1px solid var(--ui-line-strong); }
+/* A feature list: a check per line, flush with the heading above it (no list indent). */
+.ui-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ui-checks li { display: flex; align-items: flex-start; gap: 8px; color: var(--ui-text-2); }
+.ui-checks .ui-icon { color: var(--ui-ok); margin-top: 2px; }
