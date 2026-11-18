@@ -34,7 +34,12 @@ async function signedSession(role) {
   const body = b64(enc.encode(JSON.stringify({ uid: '7', roles: [role], role, exp: Math.floor(Date.now() / 1000) + 3600 })));
   return `${body}.${b64(new Uint8Array(await webcrypto.subtle.sign('HMAC', key, enc.encode(body))))}`;
 }
-const PAGES = (process.env.PAGES ? process.env.PAGES.split(',') : GATED);
+// PAGES=console: the console, signed in, every staff role on the pages recorded for it (18 Nov).
+async function consoleTargets() {
+  const { ROLES, consolePages } = await import('./fixtures/console.mjs');
+  return ROLES.flatMap((role) => consolePages(role).map((p) => `staff-${role}:${p}`));
+}
+const PAGES = process.env.PAGES === 'console' ? await consoleTargets() : (process.env.PAGES ? process.env.PAGES.split(',') : GATED);
 const MARKETS = (process.env.MARKETS || 'IN,US').split(',');
 const REPORT = process.env.REPORT === '1';
 fs.mkdirSync(OUT, { recursive: true });
@@ -209,7 +214,12 @@ async function open(browser, target, market, w, h, dpr = 1) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: dpr, isMobile: false, hasTouch: touch,
     locale: market === 'US' ? 'en-US' : 'en-IN', timezoneId: market === 'US' ? 'America/Boise' : 'Asia/Kolkata', colorScheme: 'light' });
   await ctx.addCookies([{ name: 'sg-market', value: market, url: SITE }]);
-  if (role) {
+  const staff = role?.startsWith('staff-') ? role.slice(6) : null;
+  if (staff) {
+    // The console is signed in when its marker cookie is set; every call it makes is answered below.
+    await ctx.addCookies([{ name: 'sg-staff-in', value: '1', url: SITE }, { name: 'sg-area', value: 'console', url: SITE }]);
+    await ctx.addInitScript(() => { try { localStorage.setItem('saaradhi_console_theme', 'light'); } catch {} });
+  } else if (role) {
     await ctx.addCookies([{ name: 'sg-session', value: await signedSession(role), url: SITE }, { name: 'sg-rider-in', value: '1', url: SITE }]);
   }
   await ctx.addInitScript(() => {
@@ -228,6 +238,15 @@ async function open(browser, target, market, w, h, dpr = 1) {
       try { body = req.postDataJSON(); } catch {}
       const data = fixture(req.method(), api, body);
       await route.fulfill(data === null ? { status: 404, json: { error: 'no fixture' } } : { json: data });
+    });
+  }
+  if (staff) {
+    const { consoleAnswer } = await import('./fixtures/console.mjs');
+    await ctx.route(/\/api\/staff\?to=/, async (route) => {
+      const req = route.request();
+      const to = new URL(req.url()).searchParams.get('to') || '';
+      const a = consoleAnswer(staff, req.method(), to);
+      await route.fulfill(a ? { status: a.status, json: a.body } : { status: 404, json: { error: 'no fixture' } });
     });
   }
   const page = await ctx.newPage();
@@ -279,11 +298,12 @@ async function sweepOne(url, market) {
     }
     // Light by default: a phone set to dark still gets the light site unless the person chose dark.
     {
-      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: 'dark', locale: 'en-IN' });
-      await ctx.addCookies([{ name: 'sg-market', value: market, url: SITE }]);
-      const page = await ctx.newPage();
-      await page.goto(SITE + url.replace(/^\w+:(?=\/)/, ''), { waitUntil: 'domcontentloaded', timeout: 60000 }).catch(() => {});
-      const theme = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+      // Signed in as the page needs (18 Nov: the console too), then the device switches to dark.
+      const { ctx, page } = await open(browser, url, market, 390, 844);
+      await page.emulateMedia({ colorScheme: 'dark' });
+      await page.reload({ waitUntil: 'networkidle', timeout: 60000 }).catch(() => {});
+      // The console keeps its theme on its own wrapper (.ops / .login), the site on <html>.
+      const theme = await page.evaluate(() => document.documentElement.getAttribute('data-theme') ?? document.querySelector('.ops[data-theme], .login[data-theme]')?.getAttribute('data-theme') ?? null);
       if (theme !== 'light') found.set('dark device', { issue: `dark device: the page opened in "${theme}", not light`, kind: 'device dark', at: ['390x844'] });
       await ctx.close();
     }

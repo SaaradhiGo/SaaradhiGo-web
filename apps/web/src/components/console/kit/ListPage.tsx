@@ -123,7 +123,7 @@ export function ListPage<T>({
         {views.map((v) => (
           <button key={v.key} type="button" role="tab" aria-selected={view === v.key}
             className="ops-view" onClick={() => onView(v.key)}>
-            {v.label}{typeof v.count === 'number' ? <span className="sg-num"> {v.count.toLocaleString('en-IN')}</span> : null}
+            {v.label}{typeof v.count === 'number' ? <span className="ops-view__n sg-num">{v.count.toLocaleString('en-IN')}</span> : null}
           </button>
         ))}
         </div>
@@ -175,8 +175,10 @@ export function ListPage<T>({
             <tr>
               {selectable ? (
                 <th scope="col" style={{ width: '2.2rem' }}>
-                  <input type="checkbox" aria-label="Select all on this page" checked={allOn}
-                    onChange={() => onSelected?.(allOn ? selected.filter((k) => !allKeys.includes(k)) : Array.from(new Set([...selected, ...allKeys])))} />
+                  <label className="ops-check">
+                    <input type="checkbox" aria-label="Select all on this page" checked={allOn}
+                      onChange={() => onSelected?.(allOn ? selected.filter((k) => !allKeys.includes(k)) : Array.from(new Set([...selected, ...allKeys])))} />
+                  </label>
                 </th>
               ) : null}
               {columns.map((c) => {
@@ -207,8 +209,10 @@ export function ListPage<T>({
                   onKeyDown={(e) => { if (onRow && (e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onRow(row); } }}>
                   {selectable ? (
                     <td>
-                      <input type="checkbox" aria-label="Select row" checked={selected.includes(k)}
-                        onChange={() => onSelected?.(selected.includes(k) ? selected.filter((x) => x !== k) : [...selected, k])} />
+                      <label className="ops-check">
+                        <input type="checkbox" aria-label="Select row" checked={selected.includes(k)}
+                          onChange={() => onSelected?.(selected.includes(k) ? selected.filter((x) => x !== k) : [...selected, k])} />
+                      </label>
                     </td>
                   ) : null}
                   {columns.map((c) => (

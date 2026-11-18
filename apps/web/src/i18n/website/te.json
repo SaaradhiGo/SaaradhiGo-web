@@ -135,8 +135,6 @@
   "Then press SOS in the app, so our team can see your trip and help you and the emergency services.": "తర్వాత యాప్‌లో SOS నొక్కండి, మా బృందం మీ ప్రయాణం చూసి మీకు, అత్యవసర సేవలకు సహాయం చేస్తుంది.",
   "Report a safety issue": "భద్రతా సమస్యను తెలియజేయండి",
   "About SaaradhiGo": "SaaradhiGo గురించి",
-  "Saaradhi means the charioteer: the one who drives you, steadily and honestly.": "సారథి అంటే రథాన్ని నడిపేవాడు: మిమ్మల్ని స్థిరంగా, నిజాయితీగా తీసుకెళ్ళేవాడు.",
-  "We started SaaradhiGo because a ride should not end in an argument about the price, and a driver should not work without knowing their pay. So we show every fare before you choose, lock the one you book, and show drivers what they will earn before they accept.": "ఒక రైడ్ ధరపై వాదనతో ముగియకూడదు, డ్రైవర్ తన సంపాదన తెలియకుండా పనిచేయకూడదు, అందుకే SaaradhiGo మొదలుపెట్టాం. మీరు ఎంచుకునే ముందే ప్రతి ఛార్జీ చూపిస్తాం, బుక్ చేసినదాన్ని లాక్ చేస్తాం, డ్రైవర్లు అంగీకరించే ముందే వారి సంపాదన చూపిస్తాం.",
   "The fare, agreed first": "ఛార్జీ, ముందే ఖరారు",
   "Rider and driver see the same price before the trip, and settle on that number.": "ప్రయాణానికి ముందే రైడర్, డ్రైవర్ ఇద్దరూ ఒకే ధర చూస్తారు, దానికే కట్టుబడతారు.",
   "Fair to drivers": "డ్రైవర్లకు న్యాయం",
@@ -224,5 +222,7 @@
   "Choose a vehicle": "వాహనాన్ని ఎంచుకోండి",
   "Email (optional)": "ఇమెయిల్ (ఐచ్ఛికం)",
   "We're launching soon. Booking opens when we go live.": "మేము త్వరలో ప్రారంభిస్తున్నాం. ప్రారంభమైనప్పుడు బుకింగ్ తెరుచుకుంటుంది.",
-  "See the fares": "ఛార్జీలు చూడండి"
+  "See the fares": "ఛార్జీలు చూడండి",
+  "Saaradhi means the charioteer": "సారథి అంటే రథాన్ని నడిపేవాడు",
+  "The one who drives you, steadily and honestly. We started SaaradhiGo because a ride should not end in an argument about the price, and a driver should not work without knowing their pay. So we show every fare before you choose, lock the one you book, and show drivers what they will earn before they accept.": "మిమ్మల్ని స్థిరంగా, నిజాయితీగా తీసుకెళ్ళేవాడు. ఒక రైడ్ ధరపై వాదనతో ముగియకూడదు, డ్రైవర్ తన సంపాదన తెలియకుండా పనిచేయకూడదు, అందుకే SaaradhiGo మొదలుపెట్టాం. మీరు ఎంచుకునే ముందే ప్రతి ఛార్జీ చూపిస్తాం, బుక్ చేసినదాన్ని లాక్ చేస్తాం, డ్రైవర్లు అంగీకరించే ముందే వారి సంపాదన చూపిస్తాం."
 }

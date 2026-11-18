@@ -686,3 +686,9 @@
 .site .sg-btn { height: auto; min-height: 48px; white-space: normal; overflow-wrap: anywhere; text-align: center; max-width: 100%; }
 .site input[type="search"], .site .s-help-search input { min-width: 0; max-width: 100%; }
 .s-search { min-width: 0; max-width: 100%; height: auto; min-height: 54px; }
+
+/* 18 Nov (owner): About opens with its heading; the logo is a short black band, not a tall tile. */
+.s-about { grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+.s-about > div:first-child { max-width: 46rem; }
+.s-about__logo, .site .s-about__logo { min-height: 0; height: clamp(96px, 14vw, 140px); padding: 12px; border-radius: 16px; }
+.s-about__logo img, .site .s-about__logo img { width: auto; height: 100%; max-width: none; top: 0; }

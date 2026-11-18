@@ -1,0 +1,77 @@
+{
+  "_why": "18 Nov (owner): marketing numbers must never contradict approved plans. scripts/marketing-frames.mjs captures the frames from this data; marketingFrames.test.ts recomputes the fee from APPROVED_FEE_PLANS.",
+  "approved_fee_plans": {
+    "IN": {
+      "source": "QA /driver/fee-plan/ on 18 Nov: plan 1 v1, 'India cars: Rs 10 a trip, cap Rs 149 a day, floor Rs 1,000'",
+      "per_trip": 10,
+      "daily_cap": 149,
+      "daily_floor": 1000,
+      "note": "₹10.00 a trip, at most ₹149.00 a day"
+    },
+    "US": {
+      "source": "QA /driver/fee-plan/ on 18 Nov: no plan for Treasure Valley (plan: null)",
+      "per_trip": 0,
+      "daily_cap": 0,
+      "daily_floor": 0,
+      "note": "No fee plan in Treasure Valley"
+    }
+  },
+  "week": {
+    "IN": {
+      "currency": "INR",
+      "fares_per_day": [
+        2410,
+        2780,
+        2650,
+        0,
+        2890,
+        3870,
+        4000
+      ],
+      "trips_per_day": [
+        5,
+        6,
+        6,
+        0,
+        6,
+        7,
+        8
+      ],
+      "platform_fee": 380,
+      "earned": 18220,
+      "paid_to_bank": 12000,
+      "payouts": 2
+    },
+    "US": {
+      "currency": "USD",
+      "fares_per_day": [
+        148,
+        172,
+        165,
+        0,
+        181,
+        236,
+        238
+      ],
+      "trips_per_day": [
+        5,
+        6,
+        6,
+        0,
+        6,
+        7,
+        8
+      ],
+      "platform_fee": 0,
+      "earned": 1140,
+      "paid_to_bank": 1140,
+      "payouts": 1
+    }
+  },
+  "choose_eta_min": [
+    3,
+    4,
+    4,
+    3
+  ]
+}

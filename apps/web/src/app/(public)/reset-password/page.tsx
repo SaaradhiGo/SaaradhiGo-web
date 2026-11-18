@@ -61,16 +61,22 @@ function ResetPasswordInner() {
         title="Set a new password"
         footer={
           <p>
-            <Link href="/forgot-password" className="sg-link">
-              Ask for a new link
+            <Link href="/sign-in" className="sg-link">
+              Back to sign in
             </Link>
           </p>
         }
       >
-        <Alert kind="error">
-          This link is incomplete. Open the most recent link from your email, or
-          request a new one.
-        </Alert>
+        {/* 18 Nov (owner): an error state always offers the next step as a button. */}
+        <div className="space-y-4">
+          <Alert kind="error">
+            This link is incomplete. Open the most recent link from your email, or
+            request a new one.
+          </Alert>
+          <Link href="/forgot-password" className="s-btn s-btn--primary s-submit" data-testid="next-step">
+            Ask for a new link
+          </Link>
+        </div>
       </AuthShell>
     );
   }
@@ -85,7 +91,7 @@ function ResetPasswordInner() {
           <Alert kind="success">
             Your password is set, and you have been signed out everywhere else.
           </Alert>
-          <Link href="/sign-in" className="btn-primary w-full">
+          <Link href="/sign-in" className="s-btn s-btn--primary s-submit">
             Log in
           </Link>
         </div>

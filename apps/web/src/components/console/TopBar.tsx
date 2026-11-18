@@ -53,7 +53,7 @@ export function TopBar({
       <div className="ops__top-right">
         <SuperAdminChip access={access} />
         <Freshness />
-        <EnvBadge />
+        <span className="ops__top-env"><EnvBadge /></span>
         {inbox && (
           <Link
             href="/ops/support/inbox"

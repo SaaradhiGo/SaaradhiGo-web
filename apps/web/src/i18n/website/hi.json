@@ -135,8 +135,6 @@
   "Then press SOS in the app, so our team can see your trip and help you and the emergency services.": "फिर ऐप में SOS दबाएँ, ताकि हमारी टीम आपका सफ़र देखकर आपकी और आपातकालीन सेवाओं की मदद कर सके।",
   "Report a safety issue": "सुरक्षा से जुड़ी समस्या बताएँ",
   "About SaaradhiGo": "SaaradhiGo के बारे में",
-  "Saaradhi means the charioteer: the one who drives you, steadily and honestly.": "सारथी यानी रथ चलाने वाला: जो आपको स्थिरता और ईमानदारी से ले जाए।",
-  "We started SaaradhiGo because a ride should not end in an argument about the price, and a driver should not work without knowing their pay. So we show every fare before you choose, lock the one you book, and show drivers what they will earn before they accept.": "हमने SaaradhiGo इसलिए शुरू किया क्योंकि सफ़र किराए की बहस पर ख़त्म नहीं होना चाहिए, और ड्राइवर को अपनी कमाई जाने बिना काम नहीं करना चाहिए। इसलिए हम चुनने से पहले हर किराया दिखाते हैं, बुक किया किराया लॉक करते हैं, और ड्राइवर को स्वीकार करने से पहले उनकी कमाई दिखाते हैं।",
   "The fare, agreed first": "किराया, पहले से तय",
   "Rider and driver see the same price before the trip, and settle on that number.": "सफ़र से पहले राइडर और ड्राइवर एक ही दाम देखते हैं, और उसी पर तय होता है।",
   "Fair to drivers": "ड्राइवर के साथ इंसाफ़",
@@ -224,5 +222,7 @@
   "Choose a vehicle": "वाहन चुनें",
   "Email (optional)": "ईमेल (वैकल्पिक)",
   "We're launching soon. Booking opens when we go live.": "हम जल्द लॉन्च कर रहे हैं। शुरू होते ही बुकिंग खुलेगी।",
-  "See the fares": "किराए देखें"
+  "See the fares": "किराए देखें",
+  "Saaradhi means the charioteer": "सारथी यानी रथ चलाने वाला",
+  "The one who drives you, steadily and honestly. We started SaaradhiGo because a ride should not end in an argument about the price, and a driver should not work without knowing their pay. So we show every fare before you choose, lock the one you book, and show drivers what they will earn before they accept.": "जो आपको स्थिरता और ईमानदारी से ले जाए। हमने SaaradhiGo इसलिए शुरू किया क्योंकि सफ़र किराए की बहस पर ख़त्म नहीं होना चाहिए, और ड्राइवर को अपनी कमाई जाने बिना काम नहीं करना चाहिए। इसलिए हम चुनने से पहले हर किराया दिखाते हैं, बुक किया किराया लॉक करते हैं, और ड्राइवर को स्वीकार करने से पहले उनकी कमाई दिखाते हैं।"
 }

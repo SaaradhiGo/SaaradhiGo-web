@@ -832,7 +832,7 @@
   "Since {date}. You cannot go online until this is resolved.": "{date} నుండి. ఇది పరిష్కారమయ్యే వరకు మీరు ఆన్‌లైన్‌కు వెళ్లలేరు.",
   "{n} day driven": "{n} రోజు నడిపారు",
   "Every trip and payout is listed under Trips and Payouts, filterable by any date range. Your yearly earnings summary is ready in January; your 1099 tax form is issued through Stripe.": "ప్రతి ట్రిప్ మరియు చెల్లింపు ట్రిప్‌లు, చెల్లింపులలో ఉంటాయి, ఏ తేదీ పరిధితోనైనా చూడవచ్చు. మీ వార్షిక సంపాదన సారాంశం జనవరిలో సిద్ధమవుతుంది; మీ 1099 పన్ను ఫారం Stripe ద్వారా జారీ అవుతుంది.",
-  "No platform fee": "ప్లాట్‌ఫారమ్ రుసుము లేదు",
+  "No platform fee": "ప్లాట్‌ఫామ్ ఫీజు లేదు",
   "Payment not collected": "చెల్లింపు అందలేదు",
   "Tip": "టిప్",
   "The rider's card payment was not collected, so this trip is not in your earnings yet.": "రైడర్ కార్డు చెల్లింపు అందలేదు, కాబట్టి ఈ ట్రిప్ ఇంకా మీ సంపాదనలో లేదు.",
