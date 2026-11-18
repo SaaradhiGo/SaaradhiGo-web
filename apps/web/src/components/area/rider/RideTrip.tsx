@@ -268,7 +268,7 @@ export function RideTrip({ id }: { id: string }) {
             </div>
             {code && (
               <div className="arow" style={{ justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, background: 'var(--c-gold-bg)' }}>
-                <div>
+                <div className="agrow">
                   <div className="a14 ab aacc">{tr('Your ride code')}</div>
                   <div className="a14 amut">{tr('Tell the driver in person')}</div>
                 </div>

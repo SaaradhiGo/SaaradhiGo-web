@@ -732,7 +732,7 @@ button.er-bar { cursor: pointer; }
 /* 17 Nov (any size): a document tile wraps its button under the text when the text is large,
    rather than letting the button sit on the status pill. */
 .su-tile { flex-wrap: wrap; }
-.su-tile > .agrow { flex: 1 1 12em; min-width: 0; }
+.su-tile > .agrow { flex: 1 1 0; min-width: min(7em, 100%); } /* 18 Nov: wraps the button only below 7em */
 .su-tile__meta { flex-wrap: wrap; }
 .su-pill { height: auto; min-height: 24px; }
 .ar .su-tbtn { height: auto; min-height: 44px; }
@@ -752,14 +752,20 @@ button.er-bar { cursor: pointer; }
 .sg-legal-line__links { flex-wrap: wrap; }
 .dr-chart { overflow-x: auto; padding-bottom: 4px; }
 .dr-chart > div { min-width: max-content; }
-.ar .arow > .agrow { flex: 1 1 min(10em, 100%); }
+/* 18 Nov: a row's title takes what is left, and the row wraps only once it would drop under 6em
+   (a 10em basis wrapped the ride code's Hide button at phone width). */
+.ar .arow > .agrow { flex: 1 1 0; min-width: min(6em, 100%); }
 /* 17 Nov (any size): status pills wrap long words; the period switcher wraps a chip to a second row
    at the largest text; the month name shares its row with the arrows; a payouts search shrinks with
    the screen; a card never grows past its column for the chart inside it. */
 .apill { white-space: normal; height: auto; min-height: 28px; text-align: center; }
 .er-tabs { flex-wrap: wrap; }
 .er-tabs .achip { flex: 1 1 auto; }
-.er-label { min-width: 0; flex: 1 1 0; overflow-wrap: anywhere; }
+/* 18 Nov: sized by its text (a zero basis let the month collapse to one letter per line). */
+.er-label { min-width: 0; flex: 0 1 auto; overflow-wrap: break-word; }
 .pay-period .er-search { flex: 1 1 12em; min-width: 0; }
 .ar .acard, .dr-chart { min-width: 0; }
 .pay-period { grid-template-columns: minmax(0, 1fr); }
+/* 18 Nov (largest text): a notice drops its button under the text rather than squeezing the text. */
+.anote { flex-wrap: wrap; }
+.anote > .agrow { min-width: min(12em, 100%); }
