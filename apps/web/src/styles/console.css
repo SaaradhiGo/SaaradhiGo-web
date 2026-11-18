@@ -2521,3 +2521,7 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 /* Long words (uppercase stat labels at the largest text) break rather than run out of their tile. */
 .ops__content { overflow-wrap: anywhere; }
 .ops-list__head > .flex, .ops-head .flex, .ops-list__head .flex { flex-wrap: wrap; min-width: 0; }
+/* Tables keep their words whole (they scroll in their card); "anywhere" let cells collapse to a letter. */
+.ops__content table, .ops__content table * { overflow-wrap: break-word; }
+.ops__content td, .ops__content th { min-width: 6em; }
+.ops__content td.num, .ops__content th.num, .ops__content td:has(> .ops-check), .ops__content th:has(> .ops-check) { min-width: 0; }
