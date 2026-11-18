@@ -53,7 +53,8 @@ const LEAKS = Object.fromEntries(LANGS.map((l) => {
 const MISSING_PAGE = '/this-page-does-not-exist';
 // 17 Nov: pages rebuilt to the product standard are compared with their own approved shots
 // (design/standard-2026-11-17/baseline, BASELINE=1 rewrites them) and need not fit one screen.
-const STANDARD = { '/': 'home.png', '/safety': 'safety.png' };
+const STANDARD = { '/': 'home.png', '/safety': 'safety.png', '/ride': 'ride.png', '/drive': 'drive.png', '/about': 'about.png',
+  '/help': 'help.png', '/sign-up': 'sign-up.png' };
 const STD = path.resolve('../../design/standard-2026-11-17/baseline');
 const FIT = ['/ride', '/drive', '/about', '/help', '/sign-up', '/sign-in'];
 const PAGES = ['/', '/safety', ...FIT];

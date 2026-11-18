@@ -40,7 +40,8 @@ function write(key: string, value: string | null) {
 }
 
 export function readTheme(): Theme {
-  return read(THEME_KEY) === 'light' ? 'light' : 'dark';
+  // 17 Nov standard: light unless the person chose dark.
+  return read(THEME_KEY) === 'dark' ? 'dark' : 'light';
 }
 export function writeTheme(theme: Theme) {
   write(THEME_KEY, theme);
@@ -62,12 +63,12 @@ export function writeSidebarCollapsed(collapsed: boolean) {
 }
 
 /**
- * The theme, as a hook. Dark until mounted, which is also the default, so
- * the first paint and the hydrated one agree for everyone who has not
- * chosen otherwise.
+ * The theme, as a hook. Light until mounted, which is also the default (the
+ * 17 Nov standard), so the first paint and the hydrated one agree for everyone
+ * who has not chosen dark.
  */
 export function useTheme(): [Theme, (t: Theme) => void] {
-  const [theme, setThemeState] = useState<Theme>('dark');
+  const [theme, setThemeState] = useState<Theme>('light');
   useEffect(() => setThemeState(readTheme()), []);
   const setTheme = useCallback((t: Theme) => {
     writeTheme(t);

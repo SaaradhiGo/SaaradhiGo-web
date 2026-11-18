@@ -59,21 +59,21 @@
   --noir: #000000;
   --on-noir: #f3eee6;
   --on-noir-muted: #b4ada2;
-  --bg-000: #faf7f2;
+  --bg-000: #ffffff;
   --bg-100: #ffffff;
-  --bg-200: #f3eee6;
-  --bg-300: #e9e3d9;
-  --line: #e7e1d7;
-  --line-strong: #8c8579;
-  --ink: #1b1a17;
-  --ink-muted: #57524a;
-  --ink-subtle: #6b655b;
+  --bg-200: #f6f6f6;
+  --bg-300: #e4e4e4;
+  --line: #e4e4e4;
+  --line-strong: #8a8a8a;
+  --ink: #121212;
+  --ink-muted: #4a4a4a;
+  --ink-subtle: #6b6b6b;
   /* Marigold fills with ink text; gold as text and links is #8a5300. */
   --gold-500: #f5a623;
   --gold-300: #f7b84a;
   --gold-700: #d98e12;
-  --on-gold: #1b1a17;
-  --gold-text: #8a5300;
+  --on-gold: #121212;
+  --gold-text: #8a5a00;
   --gold-soft: rgba(245,166,35,0.16);
   --gold-line: rgba(138,83,0,0.28);
   --logo-classic: #d6a83e;
@@ -87,7 +87,7 @@
   --map-water: #cfe0e6;
   --map-park: #dce8d2;
   --map-label: #6b655b;
-  --route: #1b1a17;
+  --route: #121212;
   --logo: #7a6000;
   --brand-gold: #ffd700;
   --champagne: #fff4bf;
@@ -95,7 +95,7 @@
   --success: #0b6b57;
   --danger: #b3261e;
   --on-danger: #ffffff;
-  --focus-ring: #7a6000;
+  --focus-ring: #121212;
   --class-bike: #1d4ed8;
   --class-auto: #0b6b57;
   --class-car: #8a5300;
@@ -301,20 +301,20 @@
   --noir: #000000;
   --on-noir: #f1f5f9;
   --on-noir-muted: #94a3b8;
-  --bg-000: #fafafa;
+  --bg-000: #ffffff;
   --bg-100: #ffffff;
-  --bg-200: #f4f4f5;
-  --bg-300: #e4e4e7;
-  --line: #e4e4e7;
-  --line-strong: #71717a;
-  --ink: #0a0a0a;
-  --ink-muted: #475569;
-  --ink-subtle: #5b6577;
-  --gold-500: #ffd700;
-  --gold-300: #ffe34d;
-  --gold-700: #d4b200;
-  --on-gold: #000000;
-  --gold-text: #7a6000;
+  --bg-200: #f6f6f6;
+  --bg-300: #e4e4e4;
+  --line: #e4e4e4;
+  --line-strong: #8a8a8a;
+  --ink: #121212;
+  --ink-muted: #4a4a4a;
+  --ink-subtle: #6b6b6b;
+  --gold-500: #f5a623;
+  --gold-300: #f7b84a;
+  --gold-700: #e0951a;
+  --on-gold: #121212;
+  --gold-text: #8a5a00;
   --gold-soft: rgba(255,215,0,0.18);
   --gold-line: rgba(122,96,0,0.28);
   --bg-glass: rgba(255,255,255,0.86);
@@ -330,7 +330,7 @@
   --pickup: #1d7a4e;
   --success: #1d7a4e;
   --danger: #b83a1e;
-  --focus-ring: #7a6000;
+  --focus-ring: #121212;
   --shadow-panel: 0 24px 56px rgba(10,10,10,0.12), 0 0 0 1px rgba(10,10,10,0.06);
   --shadow-glow: 0 8px 24px rgba(212,178,0,0.30);
   --shadow-sheen: inset 0 1px 0 rgba(255,255,255,0.38), inset 0 -2px 0 rgba(0,0,0,0.16);
@@ -354,7 +354,7 @@
   --d-amber-hover: #E0951A;
   --d-ring: #3A3A3A;
   --d-ash: #A8A29A;
-  --d-map: #EEE8DD;
+  --d-map: #F6F6F6;
   --d-gold-2: #F5C451;
   --d-red: #B3261E;
   --d-ring-2: #5A564E;
@@ -362,54 +362,54 @@
   --d-dots: #B8AE9E;
   --d-page: #FAF7F2;
   --d-bar: #D9D1C3;
-  --d-green-bg: #DDF1E6;
+  --d-green-bg: #F6F6F6;
   --d-green-ink: #0B6B57;
   --d-noir: #0B0B0B;
   --d-map-2: #EFEAE1;
-  --d-violet-bg: #ECE6F8;
-  --d-steel-bg: #E4E8EE;
+  --d-violet-bg: #F6F6F6;
+  --d-steel-bg: #F6F6F6;
 }
 /* Its colour roles: Daylight is the reference; black and gold maps onto it. */
 :root {
-  --c-page: #FAF7F2;
+  --c-page: #FFFFFF;
   --c-surface: #FFFFFF;
-  --c-muted: #F3EEE6;
-  --c-border: #E7E1D7;
-  --c-field-border: #8C8579;
-  --c-text: #1B1A17;
-  --c-text-2: #57524A;
-  --c-text-3: #4A453E;
-  --c-text-4: #3F3B35;
-  --c-accent: #8A5300;
-  --c-accent-hover: #5E3900;
+  --c-muted: #F6F6F6;
+  --c-border: #E4E4E4;
+  --c-field-border: #8A8A8A;
+  --c-text: #121212;
+  --c-text-2: #4A4A4A;
+  --c-text-3: #4A4A4A;
+  --c-text-4: #4A4A4A;
+  --c-accent: #8A5A00;
+  --c-accent-hover: #5E3D00;
   --c-primary: #F5A623;
-  --c-primary-ink: #1B1A17;
+  --c-primary-ink: #121212;
   --c-green: #0D7762;
   --c-green-ink: #0B6B57;
-  --c-green-bg: #DDF1E6;
-  --c-gold-bg: #F6EBD3;
+  --c-green-bg: #E8F3F0;
+  --c-gold-bg: #F6F6F6;
   --c-red: #B3261E;
-  --c-red-bg: #FBE3E1;
+  --c-red-bg: #FCECEB;
   --c-violet: #5B3FA8;
-  --c-violet-bg: #ECE6F8;
-  --c-bar: #D9D1C3;
-  --c-ink: #1B1A17;        /* the dark cards and buttons */
+  --c-violet-bg: #F6F6F6;
+  --c-bar: #E4E4E4;
+  --c-ink: #121212;        /* the dark cards and buttons */
   --c-ink-text: #F3EEE6;
   --c-ink-text-2: #D8D2C6;
   --c-noir: #0B0B0B;       /* header and footer */
   --c-gold: #E4B24C;
   --c-gold-2: #F5C451;
-  --c-map: #EEE8DD;
-  --c-photo: #E9DCC4;
-  --c-photo-border: #C9A86A;
-  --c-photo-text: #6B5320;
-  --c-shadow: rgba(27, 26, 23, 0.12);
-  --c-fade: 250, 247, 242;
+  --c-map: #F6F6F6;
+  --c-photo: #F6F6F6;
+  --c-photo-border: #E4E4E4;
+  --c-photo-text: #4A4A4A;
+  --c-shadow: rgba(0, 0, 0, 0.10);
+  --c-fade: 255, 255, 255;
   /* The signed-in areas (design/signed-in-2026-11-08). */
-  --c-warn-bg: #FCEFD3;
-  --c-warn-border: #F0D9A8;
+  --c-warn-bg: #FFF4DC;
+  --c-warn-border: #F0DDB0;
   --c-warn-ink: #7A4A00;
-  --c-area: #F5F2EC;        /* the driver area behind its cards */
+  --c-area: #F6F6F6;        /* the driver area behind its cards */
   --c-side: #0B0B0B;        /* the driver sidebar, in both themes */
   --c-side-card: #1B1A17;
   --c-side-line: #2E2C28;
@@ -417,9 +417,9 @@
   --c-side-text-2: #D8D2C6;
   --c-side-text-3: #A8A29A;
   --c-side-active: rgba(245, 166, 35, 0.14);
-  --c-dot: #8A857C;
+  --c-dot: #8A8A8A;
   /* Focus (10 Nov v2): a 2px ring around the whole field plus a soft 4px glow. */
-  --c-focus: #8A5300;
+  --c-focus: #121212;
   --c-focus-glow: rgba(245, 166, 35, 0.25);
 }
 [data-theme="dark"] {
@@ -470,7 +470,7 @@
   --ui-surface: #FFFFFF;
   --ui-raised: #FFFFFF;
   --ui-line: #E4E4E4;
-  --ui-line-strong: #BDBDBD;
+  --ui-line-strong: #8A8A8A;
   --ui-text: #121212;
   --ui-text-2: #4A4A4A;
   --ui-text-3: #6B6B6B;

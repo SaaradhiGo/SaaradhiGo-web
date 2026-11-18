@@ -50,7 +50,9 @@ import { emptyAccount, incompleteAccount, usAccount } from './fixtures/empty-acc
 
 const SITE = process.env.SITE || 'http://localhost:3100';
 const QA = process.env.QA === '1';
-const REF = path.resolve('../../design/signed-in-2026-11-08/screenshots');
+// 17 Nov (product standard, Phase 2): compared with the approved shots of the standard; BASELINE=1
+// re-records them from this build (only for a reviewed design change).
+const REF = path.resolve('../../design/standard-2026-11-17/areas');
 const DIFFS = process.env.DIFFS || 'areas-diff';
 const SHOTS = process.env.SHOTS || null;
 const MAX_DIFF = 0.03;
@@ -388,6 +390,7 @@ for (const [role, pages] of process.env.STATES_ONLY === '1' ? [] : [['rider', RI
           const r = e.getBoundingClientRect();
           return [Math.floor(r.left) - 2, Math.floor(r.top) - 2, Math.ceil(r.width) + 4, Math.ceil(r.height) + 4];
         }), MASK);
+        if (process.env.BASELINE) { mkdirSync(REF, { recursive: true }); writeFileSync(ref, shot); }
         if (existsSync(ref)) {
           const d = diff(shot, ref, boxes);
           mkdirSync(DIFFS, { recursive: true });

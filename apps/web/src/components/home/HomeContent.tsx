@@ -71,7 +71,7 @@ export function HomeContent() {
               <div className="ui-stack">
                 <p className="ui-label">{h.rideLabel}</p>
                 <h3 className="ui-title">{h.rideTitle}</h3>
-                <ul className="ui-list">{h.rideList.map((x) => <li key={x}>{x}</li>)}</ul>
+                <ul className="ui-checks">{h.rideList.map((x) => <li key={x}><IconCheck className="ui-icon ui-icon--sm" /><span>{x}</span></li>)}</ul>
                 <div><Button kind="secondary" href="/ride">{h.rideCta}</Button></div>
               </div>
               <Device src={shot('home-rider-choose')} alt={h.rideTitle} width={240} />
@@ -80,7 +80,7 @@ export function HomeContent() {
               <div className="ui-stack">
                 <p className="ui-label">{h.driveLabel}</p>
                 <h3 className="ui-title">{h.driveTitle}</h3>
-                <ul className="ui-list">{h.driveList.map((x) => <li key={x}>{x}</li>)}</ul>
+                <ul className="ui-checks">{h.driveList.map((x) => <li key={x}><IconCheck className="ui-icon ui-icon--sm" /><span>{x}</span></li>)}</ul>
                 <div><Button kind="secondary" href="/drive">{h.driveCta}</Button></div>
               </div>
               <Device src={shot('home-driver-earnings')} alt={h.driveTitle} width={240} />
