@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import type { ComponentType } from 'react';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState, type ComponentType } from 'react';
 import { Logo } from '@/components/sg/Logo';
-import { ChevronLeft, PanelLeft } from '@/components/console/icons';
+import { ChevronLeft, Close, Menu, PanelLeft } from '@/components/console/icons';
 
 export type NavItem = {
   href: string;
@@ -58,8 +59,12 @@ export function Sidebar({
    */
   home?: string;
 }) {
+  // Phone width (CSS, under 900px): the nav sits behind a menu button; a new page closes it.
+  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  useEffect(() => { setOpen(false); }, [pathname]);
   return (
-    <aside className="ops__side sg-on-noir" aria-label="Sidebar">
+    <aside className="ops__side sg-on-noir" aria-label="Sidebar" data-open={open ? 'true' : undefined}>
       {/* Named by its own text while that text is visible; only the
           collapsed rail, where the words are hidden, needs a label. */}
       {/* 14 Nov: named at every width; at phone width the CSS hides the words (axe link-name). */}
@@ -71,7 +76,18 @@ export function Sidebar({
         </span>
       </Link>
 
-      <nav aria-label="Console" className="ops__nav">
+      <button
+        type="button"
+        className="ops__menu"
+        aria-expanded={open}
+        aria-controls="ops-nav"
+        aria-label={open ? 'Close the menu' : 'Open the menu'}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {open ? <Close /> : <Menu />}
+      </button>
+
+      <nav aria-label="Console" className="ops__nav" id="ops-nav">
         {groups.map((group) => (
           <div className="ops__group" key={group.label} role="group" aria-label={group.label}>
             <div className="ops__group-label">{group.label}</div>

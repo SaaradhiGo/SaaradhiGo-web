@@ -243,7 +243,7 @@ function OverviewInner() {
               },
               {
                 key: 'days', label: 'By day', content: (
-                  <table className="ops-table ops-table--compact">
+                  <div className="ops-table-wrap"><table className="ops-table ops-table--compact">
                     <caption className="sr-only">{cityName(open.city)} by day</caption>
                     <thead><tr><th scope="col">Day</th><th scope="col" className="num">Gross</th><th scope="col" className="num">Commission</th><th scope="col" className="num">Payouts pending</th></tr></thead>
                     <tbody>
@@ -256,7 +256,7 @@ function OverviewInner() {
                         </tr>
                       ))}
                     </tbody>
-                  </table>
+                  </table></div>
                 ),
               },
             ]}

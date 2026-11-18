@@ -175,7 +175,7 @@ export default function SafetyConfigPage() {
                     {row.active.created_by.label ? ` · set by ${row.active.created_by.label}` : ''}.
                     {row.active.reason ? ` ${row.active.reason}` : ''}
                   </p>
-                  <table className="ops-config__table">
+                  <div className="ops-table-wrap"><table className="ops-config__table">
                     <caption className="sr-only">{row.name} safety settings</caption>
                     <thead><tr><th scope="col">Setting</th><th scope="col">Value</th></tr></thead>
                     <tbody>
@@ -193,7 +193,7 @@ export default function SafetyConfigPage() {
                         <td>{emergencyLine({ country: row.country, configured: row.active.emergency_numbers.length > 0, numbers: row.active.emergency_numbers })}</td>
                       </tr>
                     </tbody>
-                  </table>
+                  </table></div>
                 </>
               )}
               {row.history.length > 1 && (

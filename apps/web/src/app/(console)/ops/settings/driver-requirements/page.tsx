@@ -118,7 +118,7 @@ function EditDrawer({ row, onClose, onDone }: { row: Row; onClose: () => void; o
   return (
     <Drawer open wide title={`Driver requirements · ${where(row)}`} onClose={onClose}>
       <form onSubmit={send} className="ops-form">
-        <table className="ops-table ops-table--compact">
+        <div className="ops-table-wrap"><table className="ops-table ops-table--compact">
           <thead><tr><th>Item</th><th>Asked</th><th>Keeps offline until approved</th></tr></thead>
           <tbody>
             {ITEMS.map(([k, label]) => (
@@ -139,7 +139,7 @@ function EditDrawer({ row, onClose, onDone }: { row: Row; onClose: () => void; o
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
         <label className="form-label" htmlFor="dr-age">Minimum driver age</label>
         <input id="dr-age" className="input" type="number" min={16} max={30} value={age} onChange={(e) => setAge(e.target.value)} />
         <label className="form-label" htmlFor="dr-vage">Oldest vehicle allowed (years)</label>
