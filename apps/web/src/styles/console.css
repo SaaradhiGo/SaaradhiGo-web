@@ -2579,15 +2579,18 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
     position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); border: 0;
   }
   .ops-list__table .ops-table tbody { display: flex; flex-direction: column; gap: 10px; }
+  /* A card is a wrapping row: the box, the title and the pill share the first line when they
+     fit; a long pill moves to its own line rather than squeezing the title. Fields take a
+     full line each, in cardOrder. */
   .ops-list__table .ops-table tr {
-    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 10px; row-gap: 6px;
+    display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; row-gap: 6px;
     padding: 14px 16px; border: 1px solid var(--ui-line); border-radius: var(--ops-radius); background: var(--ui-bg);
   }
   .ops-list__table .ops-table tr.is-active { border-color: var(--ui-ink); }
   .ops-list__table .ops-table td {
-    grid-column: 1 / -1; order: var(--card-order);
+    flex: 0 0 100%; order: var(--card-order);
     display: block; position: relative; padding: 0 0 0 7rem; min-height: 20px;
-    min-width: 0; max-width: none; border: 0; text-align: left; white-space: normal;
+    min-width: 0; max-width: 100%; border: 0; text-align: left; white-space: normal;
     font: 400 14px/1.45 var(--font-sans); color: var(--ui-ink); overflow-wrap: anywhere;
   }
   /* The label sits in its own column; the value flows as text, so "$37 est." stays one value. */
@@ -2597,18 +2600,16 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
   }
   .ops-list__table .ops-table td .ops-pill { display: inline-flex; width: auto; max-width: 100%; }
   .ops-list__table .ops-table td.num { text-align: left; }
-  .ops-list__table .ops-table td[data-card="select"] { grid-column: 1; grid-row: 1; order: 0; padding: 0; }
+  .ops-list__table .ops-table td[data-card="select"] { flex: none; order: 0; padding: 0; }
   .ops-list__table .ops-table td[data-card="title"] {
-    grid-column: 2; grid-row: 1; order: 0; padding: 0; font: 600 16px/1.35 var(--font-sans);
+    flex: 1 1 9rem; order: 0; padding: 0; font: 600 16px/1.35 var(--font-sans);
   }
-  .ops-list__table .ops-table td[data-card="badge"] { grid-column: 3; grid-row: 1; order: 0; padding: 0; justify-self: end; overflow-wrap: normal; }
+  .ops-list__table .ops-table td[data-card="badge"] { flex: 0 0 auto; max-width: 100%; order: 0; padding: 0; margin-left: auto; overflow-wrap: normal; }
   .ops-list__table .ops-table td[data-card="title"]::before,
   .ops-list__table .ops-table td[data-card="badge"]::before,
   .ops-list__table .ops-table td[data-card="select"]::before { content: none; }
   .ops-list__table .ops-table td[data-card="hide"] { display: none; }
-  .ops-list__table .ops-table td[data-card="badge"] .ops-pill,
-  .ops-list__table .ops-table td[data-card="badge"] > * { white-space: nowrap; max-width: none; }
-  /* A row without a selectable box: the title takes the first column too. */
-  .ops-list__table .ops-table tr:not(:has(> td[data-card="select"])) > td[data-card="title"] { grid-column: 1 / 3; }
-  .ops-list__table .ops-table tr:not(:has(> td[data-card="title"])) > td[data-card="badge"] { grid-column: 1 / -1; justify-self: start; }
+  /* The pill never shrinks to fit beside the title: it takes its own line instead, and only a
+     pill wider than the whole card wraps, inside itself. */
+  .ops-list__table .ops-table td[data-card="badge"] .ops-pill { white-space: normal; text-align: left; }
 }
