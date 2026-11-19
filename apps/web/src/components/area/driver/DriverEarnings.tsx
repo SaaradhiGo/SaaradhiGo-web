@@ -6,7 +6,7 @@ import { useLocale } from '@/i18n/LocaleProvider';
 import { useTr } from '@/i18n/website';
 import { type History, type MonthRow, downloadStatement, months as loadMonths } from '@/lib/area/earnings';
 import { areaGet } from '@/lib/area/api';
-import { addition, dateLabel, dateLocale, dateOrder, deduction, money, month3, shownDate } from '@/lib/area/format';
+import { addition, dateLabel, dateLocale, dateOrder, deduction, fare, month3, shownDate } from '@/lib/area/format';
 import { useLoad } from '@/lib/area/useLoad';
 import { messageFor } from '@/lib/publicAuth';
 import { IDoc } from '../icons';
@@ -56,7 +56,7 @@ function Chart({ h, locale, label }: { h: History; locale: string; label: string
     : dateLabel(noon(key), locale, 'UTC', new Date(), false));
   const empty = bars.every((b) => b.trips === 0 && Number(b.earned) === 0);
   const across = !empty && h.chart.unit !== 'hour' && bars.length <= 12;
-  const m = (v: string | number | undefined) => money(v ?? 0, h.currency, locale) ?? '';
+  const m = (v: string | number | undefined) => fare(v ?? 0, h.currency, locale) ?? '';
   return (
     <div className={h.chart.unit === 'month' ? 'er-scrollx' : 'er-chart'} onMouseLeave={() => setTip(null)}
       style={{ '--n': bars.length } as React.CSSProperties} tabIndex={0} role="group" aria-label={tr('Earnings by day')}>
@@ -125,7 +125,7 @@ function StatementSheet({ month, onClose }: { month: string; onClose: () => void
   const { locale } = useLocale();
   const st = useLoad(() => areaGet<Statement>(`/driver/earnings/statement/?month=${month}`), [month]);
   const s = st.data;
-  const m = (v: string | null | undefined) => money(v ?? 0, s?.currency, locale) ?? '';
+  const m = (v: string | null | undefined) => fare(v ?? 0, s?.currency, locale) ?? '';
   const d = (iso: string) => shownDate(iso, dateOrder(s?.country));
   return (
     <Sheet label={tr('Statement, {m}').replace('{m}', ymLabel(month, locale))} onClose={onClose} testid="statement-sheet">
@@ -187,7 +187,7 @@ export function DriverEarnings() {
   const [fileErr, setFileErr] = useState<string | null>(null);
   const all = useLoad(loadMonths);
   const h = hist.data;
-  const m = (v: string | number | null | undefined) => money(v ?? 0, h?.currency ?? all.data?.currency, locale) ?? '';
+  const m = (v: string | number | null | undefined) => fare(v ?? 0, h?.currency ?? all.data?.currency, locale) ?? '';
   const label = h ? periodLabel(h, locale) : '';
   const s = h?.summary;
   const cur = h?.currency ?? all.data?.currency;

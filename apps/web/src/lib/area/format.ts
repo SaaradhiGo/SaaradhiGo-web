@@ -53,14 +53,15 @@ export function fare(amount: string | number | null | undefined, currency: strin
  * zero; nothing taken is a plain "₹0.00" in the normal colour, never "− ₹0.00".
  */
 export function deduction(amount: string | number | null | undefined, currency: string | null | undefined, locale: string): { text: string; red: boolean } {
-  const text = money(Math.abs(Number(amount ?? 0)) || 0, currency, locale) ?? '';
+  // 19 Nov (owner): India's fees read in whole rupees ("− ₹10"); anything with paise keeps them.
+  const text = fare(Math.abs(Number(amount ?? 0)) || 0, currency, locale) ?? '';
   const red = Number(amount ?? 0) > 0;
   return { text: red ? oneLine(`− ${text}`) : text, red };
 }
 
 /** An amount added (tips): "+ ₹20.00" only when above zero, else a plain "₹0.00". */
 export function addition(amount: string | number | null | undefined, currency: string | null | undefined, locale: string): string {
-  const text = money(amount ?? 0, currency, locale) ?? '';
+  const text = fare(amount ?? 0, currency, locale) ?? '';
   return Number(amount ?? 0) > 0 ? oneLine(`+ ${text}`) : text;
 }
 

@@ -138,7 +138,7 @@ export function DriverPayouts() {
             <Pager page={page} count={count} size={PAGE_SIZE} noun={tr(count === 1 ? '{n} payout' : '{n} payouts').replace('{n}', String(count))} onPage={setPage} />
             {cashOk && (
               <p className="a14 amut" style={{ marginTop: 12 }}>
-                {tr('If you collected more cash than you earned, the commission you owe is taken from your next payout. It is never charged twice.')}
+                {tr('If you collected more cash than you earned, the platform fee you owe is taken from your next payout. It is never charged twice.')}
               </p>
             )}
           </section>

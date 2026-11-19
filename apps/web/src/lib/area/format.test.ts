@@ -66,13 +66,16 @@ describe('zero amounts (11 Nov)', () => {
     expect(money('abc', 'INR', 'en-IN')).toBeNull();
   });
   it('a fee shows the minus and red only above zero', () => {
-    expect(deduction('0.00', 'INR', 'en-IN')).toEqual({ text: '₹0.00', red: false });
-    expect(deduction(null, 'INR', 'en-IN')).toEqual({ text: '₹0.00', red: false });
+    expect(deduction('0.00', 'INR', 'en-IN')).toEqual({ text: '₹0', red: false });
+    expect(deduction(null, 'INR', 'en-IN')).toEqual({ text: '₹0', red: false });
+    // 19 Nov (owner): a whole-rupee fee reads "− ₹10"; paise stay when there are any.
+    expect(deduction('10.00', 'INR', 'en-IN')).toEqual({ text: oneLine('− ₹10'), red: true });
     expect(deduction('45.5', 'INR', 'en-IN')).toEqual({ text: oneLine('− ₹45.50'), red: true });
   });
   it('a tip shows the plus only above zero', () => {
-    expect(addition('0.00', 'INR', 'en-IN')).toBe('₹0.00');
-    expect(addition('20', 'INR', 'en-IN')).toBe(oneLine('+ ₹20.00'));
+    expect(addition('0.00', 'INR', 'en-IN')).toBe('₹0');
+    expect(addition('20', 'INR', 'en-IN')).toBe(oneLine('+ ₹20'));
+    expect(addition('20.5', 'INR', 'en-IN')).toBe(oneLine('+ ₹20.50'));
   });
 });
 
