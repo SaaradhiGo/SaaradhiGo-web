@@ -705,3 +705,9 @@
   .s-about--shot .s-about__shot { align-self: center; }
   .s-about--shot .s-about__shot .ui-device { --ui-device-w: 200px; }
 }
+
+/* 19 Nov: the plan under the fee line on the example request (Hyderabad: Rs 10 a trip, at most Rs 149 a day). */
+.s-request .s-bar { flex-wrap: nowrap; gap: 12px; }
+.s-request .s-bar > span { flex: 1 1 auto; min-width: 0; }
+.s-request .s-bar > b { flex: none; white-space: nowrap; }
+.s-bar__note { display: block; font-size: var(--text-small); line-height: var(--leading-small); color: var(--c-text-4); }
