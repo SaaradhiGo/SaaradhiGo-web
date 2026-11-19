@@ -187,7 +187,7 @@ for (const [role, pages] of [['driver', DRIVER], ['rider', RIDER]]) {
       for (const x of v) {
         if (x.id === 'color-contrast' || x.impact === 'critical' || x.impact === 'serious') fail(`${at}: axe ${x.id} (${x.impact}) on ${x.nodes.join(' | ')}`);
       }
-      const minusZero = await page.evaluate(() => (document.body.innerText.match(/[−-]\s*(?:₹|\$|Rs\.?|INR|USD)\s*0[.,]00(?!\d)/g) ?? []));
+      const minusZero = await page.evaluate(() => (document.body.innerText.match(/[−-]\s*(?:₹|\$|Rs\.?|INR|USD)\s*0(?:[.,]00)?(?![\d.,])/g) ?? []));
       if (minusZero.length) fail(`${at}: a minus on a zero amount (${minusZero.slice(0, 3).join(', ')})`);
       const primaries = await page.evaluate(() => [...document.querySelectorAll('.abtn--pri')].filter((e) => e.getBoundingClientRect().width > 0).length);
       if (primaries > 1) fail(`${at}: ${primaries} orange buttons (one at most)`);

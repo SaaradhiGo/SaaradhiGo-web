@@ -102,11 +102,13 @@ describe('1.5 public content follows the market', () => {
   it('India keeps the Hyderabad example in rupees', () => {
     at('IN', <><ExampleTag /><ExampleLines fare="Trip fare" commission="Commission" earn="You earn" /></>);
     const text = document.body.textContent ?? '';
-    expect(text).toContain('₹183.00');
+    expect(text).toContain('₹183');
     // 19 Nov (owner): the Hyderabad plan, Rs 10 a trip, at most Rs 149 a day; no commission.
-    expect(text).toContain('−₹10.00');
-    expect(text).toContain('₹173.00');
-    expect(text).toContain('₹10.00 a trip, at most ₹149.00 a day');
+    expect(text).toContain('−₹10');
+    expect(text).toContain('₹173');
+    expect(text).toContain('₹10 a trip, at most ₹149 a day');
+    // 19 Nov (owner): whole rupees in marketing, never '₹10.00'.
+    expect(text).not.toMatch(/₹[0-9,]+\.00/);
     expect(text).not.toContain('15%');
   });
 
