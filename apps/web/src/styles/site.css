@@ -692,3 +692,16 @@
 .s-about > div:first-child { max-width: 46rem; }
 .s-about__logo, .site .s-about__logo { min-height: 0; height: clamp(96px, 14vw, 140px); padding: 12px; border-radius: 16px; }
 .s-about__logo img, .site .s-about__logo img { width: auto; height: 100%; max-width: none; top: 0; }
+
+/* 18 Nov close-out: /about shows the rider app in a phone frame. Phones: heading, picture,
+   promises. Desktop: copy and promises on the left, the phone on the right, all on one screen. */
+.s-about.s-about--shot { grid-template-areas: "text" "shot" "cards"; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+.s-about--shot .s-about__text { grid-area: text; max-width: 46rem; }
+.s-about--shot .s-about__shot { grid-area: shot; display: flex; justify-content: center; }
+.s-about--shot .s-about__shot .ui-device { --ui-device-w: 240px; }
+.s-about--shot .s-about__cards { grid-area: cards; margin-top: 0; }
+@media (min-width: 900px) {
+  .s-about.s-about--shot { grid-template-areas: "text shot" "cards shot"; grid-template-columns: minmax(0, 1fr) 220px; column-gap: 56px; row-gap: 28px; }
+  .s-about--shot .s-about__shot { align-self: center; }
+  .s-about--shot .s-about__shot .ui-device { --ui-device-w: 200px; }
+}

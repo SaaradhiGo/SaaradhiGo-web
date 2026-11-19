@@ -288,7 +288,7 @@ function EditDrawer({ editing, onClose, onDone }: { editing: Editing; onClose: (
             <input id="cfg-hours" className="input" inputMode="numeric" value={hours} onChange={(e) => setHours(e.target.value)} />
             <p className="help m-0">
               Whole numbers. Auto-close must come after the reminder. The rider sees
-              {' '}{configValid && rh >= 48 ? `${Math.ceil(rh / 24)} days` : configValid ? `${rh} hour${rh === 1 ? '' : 's'}` : 'the time you give'}.
+              {' '}{configValid && rh >= 48 ? `${Math.ceil(rh / 24)} day${Math.ceil(rh / 24) === 1 ? '' : 's'}` : configValid ? `${rh} hour${rh === 1 ? '' : 's'}` : 'the time you give'}.
               Safety tickets are never reminded or closed.
             </p>
           </>

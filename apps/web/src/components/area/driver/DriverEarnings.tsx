@@ -67,7 +67,7 @@ function Chart({ h, locale, label }: { h: History; locale: string; label: string
         {bars.map((b, i) => {
           const v = Number(b.earned);
           const px = top > 0 && v > 0 ? Math.max(4, Math.round((v / top) * 120)) : 0;
-          const name = `${when(b.key)}: ${m(b.earned)} · ${tr('{n} trips').replace('{n}', String(b.trips))}`;
+          const name = `${when(b.key)}: ${m(b.earned)} · ${tr(Number(b.trips) === 1 ? '{n} trip' : '{n} trips').replace('{n}', String(b.trips))}`;
           const show = { onMouseEnter: () => setTip(i), onFocus: () => setTip(i), onBlur: () => setTip(null) };
           return (
             <span key={b.key} role="listitem" className="er-col">
@@ -76,7 +76,7 @@ function Chart({ h, locale, label }: { h: History; locale: string; label: string
                 <span className="er-tip a14" role="tooltip" data-testid="chart-tip" style={i > bars.length / 2 ? { right: 0 } : { left: 0 }}>
                   <span className="ab">{when(b.key)}</span>
                   <span>{tr('You earned')} <span className="ab">{m(b.earned)}</span></span>
-                  <span>{tr('{n} trips').replace('{n}', String(b.trips))}</span>
+                  <span>{tr(Number(b.trips) === 1 ? '{n} trip' : '{n} trips').replace('{n}', String(b.trips))}</span>
                   {b.fares !== undefined && <span>{tr('Trip fares')} {m(b.fares)}</span>}
                   {b.platform_fee !== undefined && <span>{tr('Platform fee')} {deduction(b.platform_fee, h.currency, locale).text}</span>}
                 </span>
@@ -213,7 +213,7 @@ export function DriverEarnings() {
           {s && h ? (
             <>
               <Stat ink label={tr('You earned')} value={m(s.earned)}
-                sub={`${tr('{n} trips').replace('{n}', String(s.trips))} · ${tr(s.days_driven === 1 ? '{n} day driven' : '{n} days driven').replace('{n}', String(s.days_driven))}`} />
+                sub={`${tr(Number(s.trips) === 1 ? '{n} trip' : '{n} trips').replace('{n}', String(s.trips))} · ${tr(s.days_driven === 1 ? '{n} day driven' : '{n} days driven').replace('{n}', String(s.days_driven))}`} />
               <Stat label={tr('Trip fares')} value={m(s.fares)} sub={tr('Avg {a} per trip').replace('{a}', m(s.avg_fare))} />
               {/* 18 Nov: a week with no fee says so, rather than "$0.00" (Treasure Valley has no fee plan). */}
               <Stat label={tr('Platform fee')} value={Number(s.platform_fee ?? 0) === 0 ? tr('No platform fee') : fee.text} tone={fee.red && 'red'} sub={s.fee_note ? tr(s.fee_note) : tr('From your trip ledger')} />
@@ -266,7 +266,7 @@ export function DriverEarnings() {
                   <li key={row.month} data-card-month={row.month}>
                     <div className="arow">
                       <span className="ab">{ymLabel(row.month, locale)}{row.so_far ? ` ${tr('(so far)')}` : ''}</span>
-                      <span className="a14 amut">{tr('{n} trips').replace('{n}', String(row.trips))}</span>
+                      <span className="a14 amut">{tr(Number(row.trips) === 1 ? '{n} trip' : '{n} trips').replace('{n}', String(row.trips))}</span>
                     </div>
                     <div className="arow a14"><span className="amut">{tr('Fares')}</span><span className="amoney">{m(row.fares)}</span></div>
                     <div className="arow a14"><span className="amut">{tr('Platform fee')}</span><span className={`amoney${f.red ? ' ared' : ''}`}>{f.text}</span></div>

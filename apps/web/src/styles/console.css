@@ -2548,3 +2548,68 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .ops-table td.primary { min-width: 14rem; }
 .login__lockup > span { display: none; }
 .login__brand { flex-wrap: nowrap; }
+
+/* ===========================================================================
+   18 Nov close-out (owner): console lists on phones.
+   The list measures itself (a container query), so a list in a narrow panel turns
+   into cards too. Below ~640 px each row is one card: the title and the status pill
+   on the first line (the pill is never cut), then each field with its label.
+   Desktop keeps the table. Views and filter chips stay on one line that scrolls
+   sideways, with a fade at the edge.
+   =========================================================================== */
+.ops-list { container: opslist / inline-size; }
+/* A column's cardOrder sets this inline; 10 keeps the others in column order after it. */
+.ops-list__table td { --card-order: 10; }
+.ops-list__chipset { display: contents; }
+
+@container opslist (max-width: 640px) {
+  .ops-list__views, .ops-list__chipset {
+    display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; overscroll-behavior-x: contain;
+    scrollbar-width: none; max-width: 100%; min-width: 0; padding-right: 28px;
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  }
+  .ops-list__views::-webkit-scrollbar, .ops-list__chipset::-webkit-scrollbar { display: none; }
+  .ops-list__views > *, .ops-list__views [role="tablist"] > *, .ops-list__chipset > * { flex: none; white-space: nowrap; }
+  .ops-list__chipset { flex: 1 0 100%; }
+
+  .ops-list__table { overflow: visible; }
+  .ops-list__table .ops-table { display: block; width: 100%; min-width: 0; table-layout: auto; border: 0; background: none; }
+  .ops-list__table .ops-table thead {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); border: 0;
+  }
+  .ops-list__table .ops-table tbody { display: flex; flex-direction: column; gap: 10px; }
+  /* A card is a wrapping row: the box, the title and the pill share the first line when they
+     fit; a long pill moves to its own line rather than squeezing the title. Fields take a
+     full line each, in cardOrder. */
+  .ops-list__table .ops-table tr {
+    display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; row-gap: 6px;
+    padding: 14px 16px; border: 1px solid var(--ui-line); border-radius: var(--ops-radius); background: var(--ui-bg);
+  }
+  .ops-list__table .ops-table tr.is-active { border-color: var(--ui-ink); }
+  .ops-list__table .ops-table td {
+    flex: 0 0 100%; order: var(--card-order);
+    display: block; position: relative; padding: 0 0 0 7rem; min-height: 20px;
+    min-width: 0; max-width: 100%; border: 0; text-align: left; white-space: normal;
+    font: 400 14px/1.45 var(--font-sans); color: var(--ui-ink); overflow-wrap: anywhere;
+  }
+  /* The label sits in its own column; the value flows as text, so "$37 est." stays one value. */
+  .ops-list__table .ops-table td::before {
+    content: attr(data-label); position: absolute; left: 0; top: 0; width: 6.5rem;
+    font: 500 13px/1.55 var(--font-sans); color: var(--ops-ink-2); overflow-wrap: break-word;
+  }
+  .ops-list__table .ops-table td .ops-pill { display: inline-flex; width: auto; max-width: 100%; }
+  .ops-list__table .ops-table td.num { text-align: left; }
+  .ops-list__table .ops-table td[data-card="select"] { flex: none; order: 0; padding: 0; }
+  .ops-list__table .ops-table td[data-card="title"] {
+    flex: 1 1 9rem; order: 0; padding: 0; font: 600 16px/1.35 var(--font-sans);
+  }
+  .ops-list__table .ops-table td[data-card="badge"] { flex: 0 0 auto; max-width: 100%; order: 0; padding: 0; margin-left: auto; overflow-wrap: normal; }
+  .ops-list__table .ops-table td[data-card="title"]::before,
+  .ops-list__table .ops-table td[data-card="badge"]::before,
+  .ops-list__table .ops-table td[data-card="select"]::before { content: none; }
+  .ops-list__table .ops-table td[data-card="hide"] { display: none; }
+  /* The pill never shrinks to fit beside the title: it takes its own line instead, and only a
+     pill wider than the whole card wraps, inside itself. */
+  .ops-list__table .ops-table td[data-card="badge"] .ops-pill { white-space: normal; text-align: left; }
+}
