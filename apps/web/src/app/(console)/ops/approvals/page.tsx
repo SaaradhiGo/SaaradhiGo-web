@@ -8,7 +8,7 @@ import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import { formatMinor, formatWhole } from '@/lib/trips';
 import { downloadCsv, fetchAllPages, toCsv, useViewCounts } from '@/lib/listViews';
 import { PageLink } from '@/components/console/PageLink';
-import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { ListPage, plural, type ListColumn } from '@/components/console/kit/ListPage';
 import { History, RecordPanel, RecordStat, type HistoryEntry } from '@/components/console/kit/RecordPanel';
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
 import { ActionNotice, RecordFacts, RecordFailed, RecordLoading, RecordSection } from '@/components/console/kit/ListBits';
@@ -195,7 +195,7 @@ function ApprovalsPage() {
         r.checker?.label || r.checker?.email || '', r.decision_reason,
       ]);
       downloadCsv(`approvals-${view}.csv`, toCsv(header, body));
-      if (truncated) setNotice({ kind: 'done', text: `Exported the first ${rows.length.toLocaleString('en-IN')} requests.` });
+      if (truncated) setNotice({ kind: 'done', text: `Exported the first ${plural(rows.length, 'request')}.` });
     } catch (err) {
       setNotice({ kind: 'done', text: err instanceof ApiError && err.fromServer ? err.message : 'The export did not complete.' });
     } finally {

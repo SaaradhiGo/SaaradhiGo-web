@@ -56,8 +56,8 @@ function VerifyEmailInner() {
       footer={
         state === 'bad' ? (
           <p>
-            <Link href="/forgot-password" className="sg-link">
-              Ask for a new link
+            <Link href="/contact" className="sg-link">
+              Contact us
             </Link>
           </p>
         ) : undefined
@@ -73,12 +73,20 @@ function VerifyEmailInner() {
           <Alert kind="success">
             Your email address is confirmed. You can sign in now.
           </Alert>
-          <Link href="/sign-in" className="btn-primary w-full">
+          <Link href="/sign-in" className="s-btn s-btn--primary s-submit">
             Log in
           </Link>
         </div>
       )}
-      {state === 'bad' && <Alert kind="error">{message}</Alert>}
+      {/* 18 Nov (owner): an error state always offers the next step as a button. */}
+      {state === 'bad' && (
+        <div className="space-y-4">
+          <Alert kind="error">{message}</Alert>
+          <Link href="/sign-in" className="s-btn s-btn--primary s-submit" data-testid="next-step">
+            Sign in
+          </Link>
+        </div>
+      )}
     </AuthShell>
   );
 }

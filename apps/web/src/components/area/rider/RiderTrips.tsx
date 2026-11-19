@@ -108,7 +108,7 @@ export function RiderTrips() {
                     {when && <div className="ab">{when.first}<div className="a14 amut" style={{ fontWeight: 400 }}>{when.second}</div></div>}
                   </td>
                   <td>
-                    <Link href={href} className="ab" style={{ color: "inherit", display: "block" }}>{to}</Link>
+                    <Link href={href} className="ab" style={{ color: "inherit", display: "flex", alignItems: "center", minHeight: 44 }}>{to}</Link>
                     {from && <div className="a14 amut">{tr('from')} {from}</div>}
                   </td>
                   <td>{className(t.vehicle_info?.type ?? t.requested_vehicle_type)}</td>
@@ -141,7 +141,7 @@ export function RiderTrips() {
                     {tr(done ? 'Completed' : cancelled ? 'Cancelled' : 'In progress')}
                   </span>
                 </div>
-                <Link href={href} className="ab" style={{ color: 'inherit' }}>{from ? `${from} → ${to}` : to}</Link>
+                <Link href={href} className="ab" style={{ color: 'inherit', display: 'inline-flex', alignItems: 'center', minHeight: 44 }}>{from ? `${from} → ${to}` : to}</Link>
                 <div className="arow a14">
                   <span className="amut">{className(t.vehicle_info?.type ?? t.requested_vehicle_type)}</span>
                   <span className="ab amoney">{fare}</span>

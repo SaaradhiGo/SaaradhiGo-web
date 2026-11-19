@@ -26,7 +26,7 @@ export default function LoginHelpPage() {
           <span>Saaradhi Go</span>
         </Link>
         <div className="login__hero">
-          <h1>Getting back <em>in</em></h1>
+          <h1>SaaradhiGo <em>Admin</em></h1>
           <p>Staff access is granted by your administrator. Nothing on this
             page can look an account up, and that is on purpose.</p>
         </div>

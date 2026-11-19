@@ -20,7 +20,7 @@ import { ActionTiles } from '@/components/console/kit/ActionTiles';
 import { NeedsActionInbox } from '@/components/console/kit/NeedsActionInbox';
 import { SuperAdminBanner } from '@/components/console/command-centre/SuperAdminBanner';
 import { SelfApprovalNotice } from '@/components/console/SelfApprovalNotice';
-import { ErrorState, Skeleton } from '@/components/console/ui';
+import { Empty, ErrorState, Skeleton } from '@/components/console/ui';
 
 /**
  * The Overview (owner, 2026-11-03; design boards C and D). One page, three
@@ -49,12 +49,16 @@ export function goToPlace(code: string | null) {
 function usePlaces() {
   const [data, setData] = useState<PlacesResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [forbidden, setForbidden] = useState(false);
   const load = useCallback(async () => {
     try {
       setData(await api.get<PlacesResponse>(withScope('/command-centre/admin/places/?window=today')));
       setError(null);
     } catch (e) {
-      setError(e instanceof ApiError && e.fromServer ? e.message : 'The overview could not be loaded.');
+      // 18 Nov: a role without the overview (support, safety) is told so, not shown an error.
+      if (e instanceof ApiError && e.status === 403) { setForbidden(true); return; }
+      // The title already says it failed; the detail gives the next step.
+      setError(e instanceof ApiError && e.fromServer ? e.message : 'Check your connection, then try again.');
     }
   }, []);
   useEffect(() => {
@@ -62,11 +66,12 @@ function usePlaces() {
     const t = window.setInterval(load, 30_000);
     return () => window.clearInterval(t);
   }, [load]);
-  return { data, error, reload: load };
+  return { data, error, forbidden, reload: load };
 }
 
 export function Overview({ access }: { access: AdminAccess | null }) {
-  const { data, error, reload } = usePlaces();
+  const { data, error, forbidden, reload } = usePlaces();
+  if (forbidden && !data) return <Empty title="The overview is not available to your role" detail="Your work starts from the menu. Ask a Super Admin (Govern › Staff and roles) if you need the overview." />;
   if (error && !data) return <ErrorState title="The overview could not be loaded" detail={error} onRetry={() => void reload()} />;
   if (!data) return <Skeleton kind="block" count={3} />;
   if (data.node?.kind === 'city') return <CityWorkspace access={access} places={data} />;
@@ -125,7 +130,7 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
           <p className="sg-num">
             {t.live_cities} live {t.live_cities === 1 ? 'city' : 'cities'}
             {t.paused_cities ? ` · ${t.paused_cities} not live` : ''}
-            {` · ${fmt(t.requests)} requests today · ${fmt(t.drivers_online)} drivers online`}
+            {` · ${fmt(t.requests)} ${t.requests === 1 ? 'request' : 'requests'} today · ${fmt(t.drivers_online)} ${t.drivers_online === 1 ? 'driver' : 'drivers'} online`}
             {t.sos_active ? ` · ${t.sos_active} SOS active` : ''}
           </p>
         </div>
@@ -300,7 +305,7 @@ function HourlyLine({ hours }: { hours: PulseResponse['hourly'] }) {
   const line = (key: 'requests' | 'completed') => hours.map((x, i) => `${((i * w) / (hours.length - 1)).toFixed(1)},${(h - 4 - (x[key] / hi) * (h - 8)).toFixed(1)}`).join(' ');
   return (
     <svg className="ops-hourly" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" role="img"
-      aria-label={`Requests and completed trips by hour today, peak ${hi} requests in an hour`}>
+      aria-label={`Requests and completed trips by hour today, peak ${hi} ${hi === 1 ? 'request' : 'requests'} in an hour`}>
       <polyline points={line('requests')} fill="none" className="ops-hourly__req" strokeWidth="1.5" />
       <polyline points={line('completed')} fill="none" className="ops-hourly__done" strokeWidth="1.75" />
     </svg>

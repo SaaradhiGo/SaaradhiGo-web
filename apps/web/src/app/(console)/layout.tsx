@@ -74,7 +74,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
     const root = document.documentElement;
     const before = root.getAttribute('data-theme');
     root.setAttribute('data-theme', theme);
-    return () => { root.setAttribute('data-theme', before ?? 'dark'); };
+    return () => { root.setAttribute('data-theme', before ?? 'light'); };
   }, [theme]);
 
   useEffect(() => {

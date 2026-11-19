@@ -302,12 +302,12 @@ function TripsInner() {
   const columns: ListColumn<TripRow>[] = [
     { key: 'id', label: 'Trip', primary: true, sortKey: 'id', render: (t) => <span className="sg-num">{t.ref ?? `T-${t.id}`}</span> },
     { key: 'status', label: 'Status', sortKey: 'status', render: (t) => <TripStatus t={t} /> },
-    { key: 'city', label: 'City', render: (t) => t.city?.name ?? '—' },
-    { key: 'rider', label: 'Rider', render: (t) => t.user || '—' },
-    { key: 'driver', label: 'Driver', render: (t) => driverOf(t) ?? <span className="muted">Unassigned</span> },
-    { key: 'route', label: 'From → to', render: (t) => { const r = routeOf(t); return <span title={r}>{r}</span>; } },
+    { key: 'city', label: 'City', card: 'hide', render: (t) => t.city?.name ?? '—' },
+    { key: 'rider', label: 'Rider', cardOrder: 4, render: (t) => t.user || '—' },
+    { key: 'driver', label: 'Driver', cardOrder: 5, render: (t) => driverOf(t) ?? <span className="muted">Unassigned</span> },
+    { key: 'route', label: 'From → to', cardOrder: 2, render: (t) => { const r = routeOf(t); return <span title={r}>{r}</span>; } },
     ...(showMoney ? [{
-      key: 'fare', label: 'Fare', num: true, sortKey: 'fare',
+      key: 'fare', label: 'Fare', num: true, sortKey: 'fare', cardOrder: 3,
       render: (t: TripRow) => (
         <>
           {formatWhole(t.charged_fare_minor ?? null, t.currency)}
@@ -315,7 +315,7 @@ function TripsInner() {
         </>
       ),
     }] : []),
-    { key: 'time', label: 'Requested', num: true, sortKey: 'requested_at', render: (t) => cityTime(t.requested_at, t.city?.timezone, { zone: true }) },
+    { key: 'time', label: 'Requested', num: true, sortKey: 'requested_at', cardOrder: 1, render: (t) => cityTime(t.requested_at, t.city?.timezone, { zone: true }) },
   ];
 
   async function exportView() {

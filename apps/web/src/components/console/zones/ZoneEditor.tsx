@@ -286,7 +286,7 @@ export function ZoneEditor({ zone, zones, cities, onSent, onCancel }: {
               />
               {shapeProblem && draft.rows.length > 0 ? <p className="help m-0" role="status">{shapeProblem}</p> : null}
               <div className="zn-corners">
-                <table className="ops-table ops-table--compact ops-table--auto">
+                <div className="ops-table-wrap"><table className="ops-table ops-table--compact ops-table--auto">
                   <caption>Corners ({draft.rows.length})</caption>
                   <thead>
                     <tr><th scope="col">#</th><th scope="col">Latitude</th><th scope="col">Longitude</th><th scope="col"><span className="sr-only">Remove</span></th></tr>
@@ -304,7 +304,7 @@ export function ZoneEditor({ zone, zones, cities, onSent, onCancel }: {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </table></div>
                 <div className="zn-corners__actions">
                   <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={addRow}>Add a corner</button>
                   {zone ? <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={reset}>Reset to the current shape</button> : null}

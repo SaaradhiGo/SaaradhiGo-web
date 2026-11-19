@@ -108,11 +108,11 @@ describe('1.5 public content follows the market', () => {
     expect(document.body.textContent).not.toMatch(/₹|Hyderabad/);
   });
 
-  it('the home phone mock-up books a Standard in the USA, never an Auto', async () => {
+  it('the home map shows a Boise trip in the USA, never an Auto', async () => {
     at('US', <HomeContent />);
     await act(async () => { await vi.advanceTimersByTimeAsync(100); });
     const text = document.body.textContent ?? '';
-    expect(text).toContain('Book Standard');
-    expect(text).not.toMatch(/Auto/);
+    expect(text).toContain('The Village at Meridian');
+    expect(text).not.toMatch(/Auto|Charminar/);
   });
 });

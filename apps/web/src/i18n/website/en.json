@@ -135,8 +135,6 @@
   "Then press SOS in the app, so our team can see your trip and help you and the emergency services.": "Then press SOS in the app, so our team can see your trip and help you and the emergency services.",
   "Report a safety issue": "Report a safety issue",
   "About SaaradhiGo": "About SaaradhiGo",
-  "Saaradhi means the charioteer: the one who drives you, steadily and honestly.": "Saaradhi means the charioteer: the one who drives you, steadily and honestly.",
-  "We started SaaradhiGo because a ride should not end in an argument about the price, and a driver should not work without knowing their pay. So we show every fare before you choose, lock the one you book, and show drivers what they will earn before they accept.": "We started SaaradhiGo because a ride should not end in an argument about the price, and a driver should not work without knowing their pay. So we show every fare before you choose, lock the one you book, and show drivers what they will earn before they accept.",
   "The fare, agreed first": "The fare, agreed first",
   "Rider and driver see the same price before the trip, and settle on that number.": "Rider and driver see the same price before the trip, and settle on that number.",
   "Fair to drivers": "Fair to drivers",
@@ -224,5 +222,9 @@
   "Choose a vehicle": "Choose a vehicle",
   "Email (optional)": "Email (optional)",
   "We're launching soon. Booking opens when we go live.": "We're launching soon. Booking opens when we go live.",
-  "See the fares": "See the fares"
+  "See the fares": "See the fares",
+  "Saaradhi means the charioteer": "Saaradhi means the charioteer",
+  "The SaaradhiGo rider app on a map of HITEC City, Hyderabad": "The SaaradhiGo rider app on a map of HITEC City, Hyderabad",
+  "The SaaradhiGo rider app on a map of Boise, Idaho": "The SaaradhiGo rider app on a map of Boise, Idaho",
+  "The one who drives you, steadily and honestly. We started SaaradhiGo because a ride should not end in an argument about the price, and a driver should not work without knowing their pay. So we show every fare before you choose, lock the one you book, and show drivers what they will earn before they accept.": "The one who drives you, steadily and honestly. We started SaaradhiGo because a ride should not end in an argument about the price, and a driver should not work without knowing their pay. So we show every fare before you choose, lock the one you book, and show drivers what they will earn before they accept."
 }

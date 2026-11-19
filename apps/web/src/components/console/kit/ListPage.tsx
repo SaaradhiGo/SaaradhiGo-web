@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useState } from 'react';
+import { type CSSProperties, type ReactNode, useEffect, useState } from 'react';
 
 /**
  * The everyday pattern, list half (design board B): saved views with counts,
@@ -28,7 +28,27 @@ export type ListColumn<T> = {
   width?: string;
   /** The name column: bold, and the row's accessible label. */
   primary?: boolean;
+  /**
+   * 18 Nov (owner): on a phone (the list narrower than ~640 px) each row is a card.
+   * 'title' heads the card (default for the primary column), 'badge' sits top right and
+   * is never cut (default for a status or state column), 'hide' leaves a column off the
+   * card; anything else is a labelled field. `cardOrder` sorts the fields.
+   */
+  card?: 'title' | 'badge' | 'field' | 'hide';
+  cardOrder?: number;
 };
+
+/** "1 match", "12 matches": every count in the console reads as English. */
+export function plural(n: number, one: string, many = `${one}s`): string {
+  return `${n.toLocaleString('en-IN')} ${n === 1 ? one : many}`;
+}
+
+function cardRole<T>(c: ListColumn<T>): string {
+  if (c.card) return c.card;
+  if (c.primary) return 'title';
+  if (c.key === 'status' || c.key === 'state') return 'badge';
+  return 'field';
+}
 export type BulkAction = { key: string; label: string; onRun: () => void; tone?: 'danger' };
 export type SavedView = { name: string; query: string };
 
@@ -123,7 +143,7 @@ export function ListPage<T>({
         {views.map((v) => (
           <button key={v.key} type="button" role="tab" aria-selected={view === v.key}
             className="ops-view" onClick={() => onView(v.key)}>
-            {v.label}{typeof v.count === 'number' ? <span className="sg-num"> {v.count.toLocaleString('en-IN')}</span> : null}
+            {v.label}{typeof v.count === 'number' ? <span className="ops-view__n sg-num">{v.count.toLocaleString('en-IN')}</span> : null}
           </button>
         ))}
         </div>
@@ -137,15 +157,19 @@ export function ListPage<T>({
       </div>
 
       <div className="ops-list__chips">
-        {chips.map((c) => (
-          <span key={c.key} className="ops-chip">
-            {c.label}
-            <button type="button" aria-label="Remove filter" onClick={c.onRemove}>×</button>
-          </span>
-        ))}
+        {chips.length ? (
+          <div className="ops-list__chipset">
+            {chips.map((c) => (
+              <span key={c.key} className="ops-chip">
+                {c.label}
+                <button type="button" aria-label="Remove filter" onClick={c.onRemove}>×</button>
+              </span>
+            ))}
+          </div>
+        ) : null}
         {filterSlot}
         <span className="ops-list__count sg-num">
-          {total === null ? '' : total === 0 ? 'No matches' : `${total.toLocaleString('en-IN')} match · showing ${from}–${to}`}
+          {total === null ? '' : total === 0 ? 'No matches' : `${plural(total, 'match', 'matches')} · showing ${from}–${to}`}
         </span>
         {exportHref ? <a className="sg-btn sg-btn--ghost sg-btn--sm" href={exportHref}>Export CSV</a> : null}
         {onExport ? <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={onExport}>Export CSV</button> : null}
@@ -175,8 +199,10 @@ export function ListPage<T>({
             <tr>
               {selectable ? (
                 <th scope="col" style={{ width: '2.2rem' }}>
-                  <input type="checkbox" aria-label="Select all on this page" checked={allOn}
-                    onChange={() => onSelected?.(allOn ? selected.filter((k) => !allKeys.includes(k)) : Array.from(new Set([...selected, ...allKeys])))} />
+                  <label className="ops-check">
+                    <input type="checkbox" aria-label="Select all on this page" checked={allOn}
+                      onChange={() => onSelected?.(allOn ? selected.filter((k) => !allKeys.includes(k)) : Array.from(new Set([...selected, ...allKeys])))} />
+                  </label>
                 </th>
               ) : null}
               {columns.map((c) => {
@@ -206,13 +232,19 @@ export function ListPage<T>({
                   }}
                   onKeyDown={(e) => { if (onRow && (e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onRow(row); } }}>
                   {selectable ? (
-                    <td>
-                      <input type="checkbox" aria-label="Select row" checked={selected.includes(k)}
-                        onChange={() => onSelected?.(selected.includes(k) ? selected.filter((x) => x !== k) : [...selected, k])} />
+                    <td data-card="select">
+                      <label className="ops-check">
+                        <input type="checkbox" aria-label="Select row" checked={selected.includes(k)}
+                          onChange={() => onSelected?.(selected.includes(k) ? selected.filter((x) => x !== k) : [...selected, k])} />
+                      </label>
                     </td>
                   ) : null}
                   {columns.map((c) => (
-                    <td key={c.key} className={`${c.num ? 'num' : ''}${c.primary ? ' primary' : ''}`}>{c.render(row)}</td>
+                    <td key={c.key} className={`${c.num ? 'num' : ''}${c.primary ? ' primary' : ''}`}
+                      data-label={c.label} data-card={cardRole(c)}
+                      style={c.cardOrder !== undefined ? ({ '--card-order': c.cardOrder } as CSSProperties) : undefined}>
+                      {c.render(row)}
+                    </td>
                   ))}
                 </tr>
               );

@@ -10,16 +10,15 @@ import {
   type FareQuote, type RouteLine, RideSocket, type SocketEvent, type VehicleCategory,
   quoteFare, routeBetween, serviceabilityAt,
 } from '@/lib/booking';
-import { money } from '@/lib/area/format';
+import { fare as money } from '@/lib/area/format';
 import { type BookingOptions, type PayMethod, bookingOptions, className, holdCard, holdStatus, readDraft, updateDraft } from '@/lib/area/rider';
 import { CardHoldSheet, type StripeSetup } from './CardHoldSheet';
 import { shortPlace } from '@/lib/area/places';
-import { rideBlurbKey } from '@/lib/vehicles';
-import { rideGlyph } from '@/components/home/RideGlyphs';
+import { IconAuto, IconBike, IconCar, IconSuv } from '@/components/ui/icons';
 import { LOAD_TIMEOUT_MS } from '@/lib/area/useLoad';
 import { tellMeAtLaunch } from '@/lib/booking';
 import { ApiError } from '@/lib/api';
-import { IBack, ICar, ICheck, ILock, IUser } from '../icons';
+import { IBack, ICheck, ILock, IUser } from '../icons';
 import { Skel } from '../states';
 import { FareWorkings } from './FareWorkings';
 import { PhoneStep } from './PhoneStep';
@@ -28,7 +27,8 @@ import { useOnScreenMarket } from '@/components/sg/LegalProvider';
 
 /** Seats per class, as the rider app shows them (lib/booking.ts). */
 const SEATS: Record<string, number> = { auto: 3, mini: 4, hatchback: 4, sedan: 4, suv: 6, bike: 1 };
-const TINT: Record<string, string> = { auto: 'var(--c-warn-bg)', mini: 'var(--c-green-bg)', hatchback: 'var(--c-green-bg)', sedan: 'var(--c-violet-bg)', suv: 'var(--d-steel-bg)' };
+/** One icon set for every class (17 Nov standard): no tinted tiles. */
+const CLASS_ICON: Record<string, typeof IconCar> = { auto: IconAuto, bike: IconBike, suv: IconSuv };
 const PAY_LABEL: Record<PayMethod, string> = { upi: 'UPI', card: 'Card', netbanking: 'Netbanking', cash: 'Cash' };
 /** Pay by as choice rows (14 Nov), each saying when and how the money moves. */
 const PAY_NOTE: Record<PayMethod, string> = {
@@ -307,7 +307,8 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
   const fromShort = draft.from.short || shortPlace(draft.from.label);
   const toShort = draft.to.short || shortPlace(draft.to.label);
   return (
-    <div className="ar-split ar-split--choose">
+    <div className="ui-choose-host">
+    <div className="ar-split ar-split--choose ui-choose">
       <aside className="ar-panel">
         <div className="arow" style={{ gap: 8 }}>
           <Link href="/ride" className="aico" aria-label={tr('Back')}><IBack /></Link>
@@ -337,14 +338,12 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
             const usable = Boolean(fare) && !none;
             const on = usable && o.type === picked;
             const seats = SEATS[o.type.toLowerCase()];
-            const glyph = rideGlyph(rideBlurbKey(o.type));
+            const Glyph = CLASS_ICON[o.type.toLowerCase()] ?? IconCar;
             return (
               <button key={o.type} type="button" role="radio" aria-checked={on} disabled={!usable}
                 onClick={() => setPicked(o.type)} className="achoice" data-on={on ? 'true' : undefined}
                 data-testid={`class-${o.type}`}>
-                <span className="aico achoice__glyph" style={{ background: TINT[o.type.toLowerCase()] ?? 'var(--c-muted)' }}>
-                  {glyph ?? <ICar />}
-                </span>
+                <span className="achoice__glyph"><Glyph className="ui-icon" /></span>
                 <span className="agrow">
                   <span className="ab" style={{ display: 'block' }}>
                     {className(o.type)}
@@ -365,7 +364,7 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
         {noneFree && (
           <div className="anote acol" style={{ alignItems: 'stretch', gap: 10 }} data-testid="no-drivers" role="status">
             <p className="ab">{tr('No drivers nearby right now')}</p>
-            <p className="a14">{watching !== null
+            <p className="a16">{watching !== null
               ? tr('We are checking every 30 seconds while this page is open, for 10 minutes. Keep it open and we will tell you.')
               : tr('Drivers come free all the time. Try again in a minute, or we can keep checking for you.')}</p>
             <div className="arow" style={{ gap: 8, flexWrap: 'wrap' }}>
@@ -448,6 +447,7 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
         <PhoneStep country={country} onClose={() => setAskPhone(false)}
           onDone={() => { setAskPhone(false); setExtra((x) => (x ? { ...x, phone_required: false } : x)); setTimeout(() => book(true), 0); }} />
       )}
+    </div>
     </div>
   );
 }

@@ -39,7 +39,8 @@ import { usAccount } from './fixtures/empty-account.mjs';
 
 const SITE = process.env.SITE || 'http://localhost:3100';
 const QA = process.env.QA === '1';
-const REF = path.resolve('../../design/driver-v2-2026-11-10/screenshots');
+// 17 Nov (product standard): the approved shots of the standard; BASELINE=1 re-records them.
+const REF = path.resolve('../../design/standard-2026-11-17/driver-v2');
 const DIFFS = process.env.V2_DIFFS || 'v2-diff';
 const MAX_DIFF = 0.03;
 const AXE = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8');
@@ -199,6 +200,7 @@ for (const [role, pages] of [['driver', DRIVER], ['rider', RIDER]]) {
           return [Math.floor(r.left) - 2, Math.floor(r.top + window.scrollY) - 2, Math.ceil(r.width) + 4, Math.ceil(r.height) + 4];
         }), MASK);
         const ref = path.join(REF, `${name}.png`);
+        if (process.env.BASELINE) { mkdirSync(REF, { recursive: true }); writeFileSync(ref, shot); }
         if (!existsSync(ref)) fail(`${name}.png is missing`);
         else {
           const d = diff(shot, ref, boxes);
@@ -232,8 +234,9 @@ for (const [role, p, sel] of [['driver', '/driver/setup/identity', '#su-lic'], [
       return { border: b.borderTopColor, width: b.borderTopWidth, shadow: b.boxShadow, outline: i.outlineStyle };
     }, target);
     // 2px around the outer box: a 2px border, or a 1px border plus a 1px ring; then the 4px glow.
-    const ring = s.width === '2px' ? /rgba\(245, 166, 35, 0\.25\) 0px 0px 0px 4px/ : /rgb\(138, 83, 0\) 0px 0px 0px 1px.*rgba\(245, 166, 35, 0\.25\) 0px 0px 0px 5px/;
-    if (s.border !== 'rgb(138, 83, 0)' || !ring.test(s.shadow) || s.outline !== 'none') {
+    // The ring colour is the standard's focus token (17 Nov: near-black, was brown).
+    const ring = s.width === '2px' ? /rgba\(245, 166, 35, 0\.25\) 0px 0px 0px 4px/ : /rgb\(18, 18, 18\) 0px 0px 0px 1px.*rgba\(245, 166, 35, 0\.25\) 0px 0px 0px 5px/;
+    if (s.border !== 'rgb(18, 18, 18)' || !ring.test(s.shadow) || s.outline !== 'none') {
       fail(`${p}: focus ring not on the outer box (${JSON.stringify(s)})`);
     }
   } else if (sel) fail(`${p}: no field ${sel} to focus`);

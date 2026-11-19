@@ -50,7 +50,9 @@ import { emptyAccount, incompleteAccount, usAccount } from './fixtures/empty-acc
 
 const SITE = process.env.SITE || 'http://localhost:3100';
 const QA = process.env.QA === '1';
-const REF = path.resolve('../../design/signed-in-2026-11-08/screenshots');
+// 17 Nov (product standard, Phase 2): compared with the approved shots of the standard; BASELINE=1
+// re-records them from this build (only for a reviewed design change).
+const REF = path.resolve('../../design/standard-2026-11-17/areas');
 const DIFFS = process.env.DIFFS || 'areas-diff';
 const SHOTS = process.env.SHOTS || null;
 const MAX_DIFF = 0.03;
@@ -381,19 +383,22 @@ for (const [role, pages] of process.env.STATES_ONLY === '1' ? [] : [['rider', RI
         mkdirSync(SHOTS, { recursive: true });
         await page.screenshot({ path: path.join(SHOTS, `${name}${lang === 'en' ? '' : `-${lang}`}.png`) });
       }
-      if (w === 1440 && lang === 'en' && !QA && !V2.has(name)) {
-        const ref = path.join(REF, `${name}.png`);
+      // 17 Nov (Phase 2): every signed-in screen at 390 as well as 1440.
+      if ((w === 1440 || w === 390) && lang === 'en' && !QA && !V2.has(name)) {
+        const ref = path.join(REF, `${name}${w === 390 ? '-390' : ''}.png`);
         const shot = await page.screenshot();
         const boxes = await page.evaluate((sel) => [...document.querySelectorAll(sel)].map((e) => {
           const r = e.getBoundingClientRect();
           return [Math.floor(r.left) - 2, Math.floor(r.top) - 2, Math.ceil(r.width) + 4, Math.ceil(r.height) + 4];
         }), MASK);
+        if (process.env.BASELINE) { mkdirSync(REF, { recursive: true }); writeFileSync(ref, shot); }
         if (existsSync(ref)) {
           const d = diff(shot, ref, boxes);
           mkdirSync(DIFFS, { recursive: true });
-          writeFileSync(path.join(DIFFS, `${name}-diff.png`), d.png);
-          writeFileSync(path.join(DIFFS, `${name}-ours.png`), shot);
-          results[name] = Number((d.share * 100).toFixed(2));
+          const tag = `${name}${w === 390 ? '-390' : ''}`;
+          writeFileSync(path.join(DIFFS, `${tag}-diff.png`), d.png);
+          writeFileSync(path.join(DIFFS, `${tag}-ours.png`), shot);
+          results[tag] = Number((d.share * 100).toFixed(2));
           const [max, why] = ALLOW[name] ?? [MAX_DIFF, null];
           if (d.share > max) fail(`${at}: ${(d.share * 100).toFixed(1)}% of pixels differ from ${name}.png (max ${max * 100}%${why ? `: ${why}` : ''})`);
         } else fail(`${at}: reference ${name}.png is missing`);

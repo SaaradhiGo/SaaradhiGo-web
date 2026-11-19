@@ -22,6 +22,10 @@ type Public = {
   driver_first_name?: string | null;
   vehicle?: { brand: string; model: string; color: string; plate: string } | null;
   position?: { lat: number; lng: number } | null;
+  /** Where the car is heading (pickup, then destination), coarse; the map fits it and the car. */
+  target?: { lat: number; lng: number } | null;
+  /** 18 Nov: the road the car is on, trimmed short of the exact ends by the server. */
+  route?: string | null;
   arrive_at?: string | null;
   eta_min?: number | null;
 };
@@ -142,7 +146,9 @@ export function SharedTrip({ token }: { token: string }) {
             map's own fallback ("booking works normally") is not about this page. */}
         {data?.live && (
           <div className="ar-map">
-            <MapSurface driver={data.position ?? null} cityCentre={data.position ?? null}>
+            <MapSurface driver={data.position ?? null} cityCentre={data.position ?? data.target ?? null} routePolyline={data.route ?? null}
+              pickup={data.status === 'accepted' || data.status === 'reached' ? data.target ?? null : null}
+              destination={data.status === 'accepted' || data.status === 'reached' ? null : data.target ?? null}>
               {data.eta_min ? <span className="amaplabel">{tr('{n} min').replace('{n}', String(data.eta_min))}</span> : null}
             </MapSurface>
           </div>

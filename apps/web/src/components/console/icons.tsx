@@ -251,6 +251,15 @@ export function Close({ className }: Props) {
   );
 }
 
+/** The phone-width menu button: three lines. */
+export function Menu({ className }: Props) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
+}
+
 /** The sidebar's collapse handle: a panel with its left rail. */
 export function PanelLeft({ className }: Props) {
   return (

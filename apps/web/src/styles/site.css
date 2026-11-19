@@ -89,7 +89,7 @@
 .s-btn:disabled, .s-btn[aria-disabled="true"] { background: var(--c-muted); color: var(--c-text-2); border: 1px solid var(--c-field-border); cursor: not-allowed; }
 
 /* ---------------------------------------------------------------- header */
-.s-header { background: var(--c-noir); color: var(--d-ivory); border-bottom: 1px solid rgba(214, 168, 62, 0.35); position: relative; z-index: 40; }
+.s-header { container: hdr / inline-size; background: var(--c-noir); color: var(--d-ivory); border-bottom: 1px solid rgba(214, 168, 62, 0.35); position: relative; z-index: 40; }
 .s-header__bar { height: 84px; display: flex; align-items: center; gap: 32px; }
 .site .s-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; flex-shrink: 0; color: var(--c-gold); }
 .s-brand__mark { width: 76px; height: 66px; display: block; object-fit: contain; }
@@ -148,9 +148,10 @@
 .s-drawer__end { margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 
 @media (max-width: 1099px) {
-  .s-header__bar { height: 68px; gap: 10px; padding: 0 12px; }
+  .s-header__bar { height: auto; min-height: 68px; flex-wrap: wrap; gap: 8px 10px; padding: 8px 12px; box-sizing: border-box; }
   .s-brand__mark { width: 56px; height: 49px; }
-  .s-brand { flex-grow: 1; gap: 10px; }
+  .site .s-brand { flex: 1 1 auto; min-width: 0; gap: 10px; }
+  .s-header__phone { margin-left: auto; }
   .s-nav, .s-header__end { display: none; }
   .s-header__phone { display: flex; align-items: center; gap: 10px; }
   .s-header__phone .s-icon-btn { width: 44px; height: 44px; }
@@ -160,7 +161,10 @@
 /* 13 Nov (owner): text and links only. Brand and tagline top-left, three columns aligned to the
    top, a rule, then the copyright row for the country chosen in the header or detected. */
 .s-footer { background: var(--c-noir); color: var(--d-ink-text-2); border-top: 1px solid rgba(214, 168, 62, 0.35); }
-.s-footer__top { padding-top: 48px; padding-bottom: 40px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 32px 64px; }
+.s-footer__top { padding-top: 48px; padding-bottom: 40px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 32px 64px; }
+/* Brand and links side by side while both fit; the links go under the brand when they do not. */
+.s-footer__top > :first-child { flex: 1 1 16em; min-width: 0; }
+.s-footer__top > .s-footer__cols { flex: 1 1 26rem; max-width: 40rem; min-width: 0; }
 .s-footer__brand { display: grid; gap: 10px; max-width: 340px; }
 .s-footer__name { display: inline-flex; align-items: center; gap: 10px; color: var(--d-ivory); font-weight: 600; font-size: var(--text-body); letter-spacing: 0.02em; }
 .s-footer__mark { width: 28px; height: 25px; display: block; flex-shrink: 0; }
@@ -169,7 +173,10 @@
   padding-top: 20px; padding-bottom: 28px; border-top: 1px solid var(--d-rule); display: flex; flex-wrap: wrap;
   justify-content: space-between; gap: 10px; font-size: var(--text-small); line-height: var(--leading-small); color: var(--d-ash);
 }
-.s-footer__cols { display: grid; grid-template-columns: repeat(3, minmax(0, auto)); align-items: start; gap: 24px 56px; }
+/* Columns sized by their text (17 Nov): with large text they fall to fewer, never off the screen. */
+/* As many columns as fit, each at least 9em (so very large text gets fewer), in up to 40rem beside
+   the brand (17 Nov: auto-sized wrapping columns came out too narrow and dropped the third). */
+.s-footer__cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9em), 1fr)); gap: 24px 40px; }
 .s-footer__colhead { font-size: var(--text-small); line-height: var(--leading-small); color: var(--d-ash); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; margin: 0 0 12px; }
 .s-footer__col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .site .s-footer__col a { color: var(--d-ivory); text-decoration: none; }
@@ -177,36 +184,20 @@
 .s-footer__entity { display: grid; gap: 4px; min-width: 0; }
 .s-footer__details { color: var(--d-ash); overflow-wrap: anywhere; }
 @media (max-width: 767px) {
-  .s-footer__top { padding-top: 32px; padding-bottom: 28px; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .s-footer__top { padding-top: 32px; padding-bottom: 28px; gap: 28px; }
   .s-footer__line { font-size: var(--text-small); line-height: var(--leading-small); }
-  .s-footer__cols { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; }
+  .s-footer__cols { gap: 24px 16px; }
   .s-footer__base { padding-top: 16px; padding-bottom: 24px; }
 }
 
 /* ---------------------------------------------------------------- home */
 .s-hero { position: relative; height: 640px; overflow: hidden; border-bottom: 1px solid var(--c-border); }
-.s-hero__map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-:root[data-theme="dark"] .s-hero__map, :root[data-theme="dark"] .s-mapcard svg { filter: invert(0.9) hue-rotate(180deg) brightness(0.9); }
-.s-hero__fade {
-  position: absolute; inset: 0;
-  background: linear-gradient(90deg, rgba(var(--c-fade), 0.96) 0%, rgba(var(--c-fade), 0.85) 34%, rgba(var(--c-fade), 0) 52%);
-}
 .s-hero__inner { position: relative; height: 100%; display: flex; align-items: center; }
 .s-hero__copy { width: 480px; max-width: 100%; }
 .s-hero__lead { margin: 14px 0 0; color: var(--c-text-3); max-width: 470px; }
 .s-hero__ticks { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: var(--text-small); line-height: var(--leading-small); color: var(--c-text-3); }
 .s-hero__ticks span { display: flex; align-items: center; gap: 6px; }
 .s-hero__ticks svg { width: 16px; height: 16px; color: var(--c-green); }
-.s-hero__pin {
-  position: absolute; padding: 8px 12px; border-radius: 10px; font-size: var(--text-small); line-height: var(--leading-small);
-  font-weight: 600; box-shadow: 0 8px 20px rgba(27, 26, 23, 0.2);
-}
-.s-hero__pin--drop { left: calc(50% + 400px); top: 96px; background: var(--d-ink); color: var(--d-white); }
-.s-hero__pin--pickup { left: calc(50% + 40px); top: 492px; background: var(--d-white); color: var(--d-ink); box-shadow: 0 8px 20px rgba(27, 26, 23, 0.14); }
-.s-hero__card {
-  position: absolute; left: calc(50% + 200px); top: 372px; width: 270px; padding: 16px; border-radius: 18px;
-  background: var(--c-surface); box-shadow: 0 20px 48px rgba(27, 26, 23, 0.18);
-}
 .s-hero__card-top { display: flex; align-items: center; gap: 12px; }
 .s-hero__card-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--c-muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .s-hero__card-icon svg { width: 26px; height: 26px; }
@@ -215,7 +206,7 @@
   background: var(--c-green-bg); color: var(--c-green-ink); font-size: var(--text-small); line-height: var(--leading-small); font-weight: 600;
 }
 .s-lockline svg { width: 16px; height: 16px; flex-shrink: 0; }
-.s-hero__card .s-lockline { margin-top: 12px; }
+.hmap-card .s-lockline, .hmap-foot .s-lockline { margin-top: 12px; }
 
 /* The booking panel. */
 .s-book {
@@ -364,13 +355,6 @@
 .s-phone-hero .s-book { margin-top: 18px; padding: 14px; border-radius: 18px; box-shadow: none; }
 .s-phone-hero .s-book__box { height: 50px; padding: 0 14px; gap: 10px; }
 .s-phone-hero .s-book__go { height: 50px; }
-.s-mapcard { margin: 0 20px; height: 280px; border-radius: 22px 22px 0 0; overflow: hidden; border: 1px solid var(--c-border); background: var(--c-map); }
-.s-mapcard svg { display: block; width: 100%; height: 280px; }
-.s-mapcard__foot {
-  margin: 0 20px; padding: 14px 16px; border-radius: 0 0 22px 22px; border: 1px solid var(--c-border); border-top: 0;
-  background: var(--c-surface); display: flex; align-items: center; gap: 10px; font-size: var(--text-small); line-height: var(--leading-small); font-weight: 600;
-}
-.s-mapcard__foot svg { width: 18px; height: 18px; color: var(--c-green); flex-shrink: 0; }
 .s-pstack { padding: 32px 20px 0; display: flex; flex-direction: column; gap: 12px; }
 .s-pstack--last { padding-bottom: 32px; gap: 10px; }
 .s-pstack .t-title { margin-bottom: 4px; }
@@ -482,10 +466,7 @@
 .s-cards3 { margin-top: 32px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
 .s-card { padding: 22px; border-radius: 20px; background: var(--c-surface); border: 1px solid var(--c-border); }
 .s-card p { margin: 6px 0 0; color: var(--c-text-2); }
-@media (max-width: 767px) {
-  .s-about__logo { min-height: 0; }
-  .s-about__logo img { max-width: 200px; }
-}
+
 
 /* Help */
 .s-search {
@@ -557,9 +538,9 @@
 .s-phonebox { display: flex; height: 48px; border-radius: 10px; border: 1px solid var(--c-field-border); overflow: hidden; background: var(--c-surface); }
 .s-phonebox select { height: 100%; width: auto; border: 0; border-right: 1px solid var(--c-border); border-radius: 0; background: var(--c-muted); padding: 0 8px; }
 .s-phonebox input { height: auto; border: 0; border-radius: 0; padding: 0 12px; flex-grow: 1; }
-.s-submit { height: 52px; width: 100%; margin-top: 4px; padding: 0; }
+.s-submit { box-sizing: border-box; height: 52px; min-height: 52px; width: 100%; margin-top: 4px; padding: 0; }
 .s-alert { margin: 0; padding: 12px 14px; border-radius: 12px; font-size: var(--text-small); line-height: var(--leading-small); }
-.s-alert--error { background: var(--c-red-bg); color: var(--c-red); }
+.s-alert--error { background: var(--c-surface); border: 1px solid var(--c-red); color: var(--c-red); }
 .s-alert--success { background: var(--c-green-bg); color: var(--c-green-ink); }
 .s-alert--info { background: var(--c-muted); color: var(--c-text); }
 @media (max-width: 767px) {
@@ -609,7 +590,7 @@
 /* Phones: a label longer than the screen (Spanish, Hindi, Telugu) wraps
    inside its button instead of pushing the page sideways. */
 @media (max-width: 767px) {
-  .s-btn { white-space: normal; height: auto; min-height: 48px; padding-top: 12px; padding-bottom: 12px; text-align: center; max-width: 100%; }
+  .s-btn { box-sizing: border-box; white-space: normal; height: auto; min-height: 48px; padding-top: 12px; padding-bottom: 12px; text-align: center; max-width: 100%; }
 }
 
 /* ---------------------------------------------------------------- policy pages (13 Nov) */
@@ -623,6 +604,18 @@
 .sg-legal-doc__table table { border-collapse: collapse; min-width: 520px; width: 100%; font-size: var(--text-small); }
 .sg-legal-doc__table th, .sg-legal-doc__table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--c-border); color: var(--c-text); }
 .sg-legal-doc__table thead th { color: var(--c-text-2); font-weight: 600; }
+/* Phones: each vehicle is a card of four labelled rates, so nothing sits off screen (17 Nov). */
+@media (max-width: 599px) {
+  .sg-legal-doc__table { overflow: visible; }
+  .sg-legal-doc__table table { min-width: 0; font-size: var(--text-body); }
+  .sg-legal-doc__table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .sg-legal-doc__table tbody { display: grid; gap: 10px; }
+  .sg-legal-doc__table tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 16px;
+    padding: 14px 16px; border: 1px solid var(--c-border); border-radius: 14px; background: var(--c-surface); }
+  .sg-legal-doc__table tbody th { grid-column: 1 / -1; padding: 0 0 4px; border: 0; font-size: var(--text-title); line-height: var(--leading-title); }
+  .sg-legal-doc__table td { display: flex; flex-direction: column; padding: 4px 0; border: 0; font-weight: 600; }
+  .sg-legal-doc__table td::before { content: attr(data-label); font-size: var(--text-small); line-height: var(--leading-small); font-weight: 400; color: var(--c-text-2); }
+}
 .sg-company { margin-top: 28px; display: grid; gap: 6px; color: var(--c-text-2); }
 .sg-company__name { color: var(--c-text); font-weight: 600; }
 .s-consent { display: grid; gap: 10px; }
@@ -631,3 +624,84 @@
   min-height: 44px; padding: 10px 12px; margin: 0 -12px; border-radius: 10px; cursor: pointer; }
 .s-consent__check:hover { background: var(--c-muted); }
 .s-consent__check input { margin-top: 3px; width: 18px; height: 18px; flex: 0 0 auto; }
+
+/* Phone pass (17 Nov): every control is at least 44px tall, and a text link that stands on its
+   own line is a 44px row; the site underline replaces sg-link's border, so it is not doubled. */
+.site .s-icon-btn { width: 44px; height: 44px; }
+.site .s-header__login { height: 44px; }
+.s-seg button { height: 44px; }
+.site a.sg-link { border-bottom: 0; display: inline-flex; align-items: center; min-height: 44px; }
+
+/* The hero map (17 Nov): a real city map built once (scripts/hero-map). Fluid: the wide drawing
+   with labelled pins while its panel is 720px or wider; the compact drawing below that. */
+.hmap { display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; border: 1px solid var(--ui-line); background: var(--ui-surface); min-width: 0; }
+.hmap__view { position: relative; overflow: hidden; container: hmap / inline-size; background: var(--ui-band); }
+.hmap-stage { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background-size: 100% 100%; display: none; }
+.hmap-photo { aspect-ratio: 440 / 260; width: 100%; background-size: cover; background-position: center; }
+@container hmap (min-width: 720px) {
+  .hmap-stage { display: block; }
+  .hmap-photo { aspect-ratio: auto; height: 560px; background-image: none !important; }
+}
+.hmap-pin { position: absolute; transform: translate(-50%, calc(-100% - 22px)); white-space: nowrap; padding: 8px 12px;
+  border-radius: 10px; background: var(--ui-surface); color: var(--ui-text); font-size: var(--text-small); line-height: var(--leading-small);
+  box-shadow: var(--ui-shadow); }
+.hmap-pin b { font-weight: 600; color: var(--ui-ok); margin-right: 4px; }
+.hmap-pin--below { transform: translate(-50%, 24px); }
+.hmap-pin--dark { background: var(--ui-ink); color: var(--ui-on-ink); }
+.hmap-pin--dark b { color: var(--ui-gold); }
+.hmap-credit { position: absolute; right: 8px; bottom: 6px; padding: 0 6px; border-radius: 4px; background: var(--ui-surface);
+  color: var(--ui-text-2); font-size: var(--text-small); line-height: var(--leading-small); }
+.hmap__foot { padding: 16px; border-top: 1px solid var(--ui-line); }
+.hmap-status { align-items: center; }
+.hmap-status .ui-small { display: inline-flex; align-items: center; gap: 6px; color: var(--ui-ok); font-weight: 600; }
+.hmap-status__lock { color: var(--ui-ok); }
+.hmap--hyderabad-desk { background-image: image-set(url('/hero-map/hyderabad-desk-light@1x.webp') 1x, url('/hero-map/hyderabad-desk-light@2x.webp') 2x); }
+.hmap--hyderabad-photo { background-image: image-set(url('/hero-map/hyderabad-phone-light@2x.webp') 2x, url('/hero-map/hyderabad-phone-light@3x.webp') 3x); }
+[data-theme="dark"] .hmap--hyderabad-desk { background-image: image-set(url('/hero-map/hyderabad-desk-dark@1x.webp') 1x, url('/hero-map/hyderabad-desk-dark@2x.webp') 2x); }
+[data-theme="dark"] .hmap--hyderabad-photo { background-image: image-set(url('/hero-map/hyderabad-phone-dark@2x.webp') 2x, url('/hero-map/hyderabad-phone-dark@3x.webp') 3x); }
+.hmap--boise-desk { background-image: image-set(url('/hero-map/boise-desk-light@1x.webp') 1x, url('/hero-map/boise-desk-light@2x.webp') 2x); }
+.hmap--boise-photo { background-image: image-set(url('/hero-map/boise-phone-light@2x.webp') 2x, url('/hero-map/boise-phone-light@3x.webp') 3x); }
+[data-theme="dark"] .hmap--boise-desk { background-image: image-set(url('/hero-map/boise-desk-dark@1x.webp') 1x, url('/hero-map/boise-desk-dark@2x.webp') 2x); }
+[data-theme="dark"] .hmap--boise-photo { background-image: image-set(url('/hero-map/boise-phone-dark@2x.webp') 2x, url('/hero-map/boise-phone-dark@3x.webp') 3x); }
+/* The SMS consent is read before agreeing, so it is body size; the company block's link is a 44px row. */
+.s-consent p.caption { font-size: var(--text-body); line-height: var(--leading-body); }
+.sg-company a { display: inline-flex; align-items: center; min-height: 44px; }
+
+/* 17 Nov (any width): in a very narrow header the mark and wordmark step down instead of overflowing;
+   with very large text the controls wrap under the brand. */
+@container hdr (max-width: 379px) {
+  .s-brand__mark { width: 44px; height: 39px; }
+  .s-brand__name { font-size: var(--text-body); line-height: var(--leading-body); }
+}
+/* Pin labels sit beside their pin, toward the middle of the map, so a narrow panel never cuts them. */
+.hmap-pin--right { transform: translate(22px, -50%); }
+.hmap-pin--left { transform: translate(calc(-100% - 22px), -50%); }
+/* The brand link is a 44px target at any header width; with very large text its name may wrap. */
+.site .s-brand { min-height: 44px; }
+.s-brand__name { white-space: normal; min-width: 0; }
+
+/* 17 Nov (any size, largest text): example chips, bars and buttons wrap instead of running off screen. */
+.s-example { white-space: normal; max-width: 100%; }
+.s-bar { flex-wrap: wrap; column-gap: 8px; }
+.site .sg-btn { height: auto; min-height: 48px; white-space: normal; overflow-wrap: anywhere; text-align: center; max-width: 100%; }
+.site input[type="search"], .site .s-help-search input { min-width: 0; max-width: 100%; }
+.s-search { min-width: 0; max-width: 100%; height: auto; min-height: 54px; }
+
+/* 18 Nov (owner): About opens with its heading; the logo is a short black band, not a tall tile. */
+.s-about { grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+.s-about > div:first-child { max-width: 46rem; }
+.s-about__logo, .site .s-about__logo { min-height: 0; height: clamp(96px, 14vw, 140px); padding: 12px; border-radius: 16px; }
+.s-about__logo img, .site .s-about__logo img { width: auto; height: 100%; max-width: none; top: 0; }
+
+/* 18 Nov close-out: /about shows the rider app in a phone frame. Phones: heading, picture,
+   promises. Desktop: copy and promises on the left, the phone on the right, all on one screen. */
+.s-about.s-about--shot { grid-template-areas: "text" "shot" "cards"; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+.s-about--shot .s-about__text { grid-area: text; max-width: 46rem; }
+.s-about--shot .s-about__shot { grid-area: shot; display: flex; justify-content: center; }
+.s-about--shot .s-about__shot .ui-device { --ui-device-w: 240px; }
+.s-about--shot .s-about__cards { grid-area: cards; margin-top: 0; }
+@media (min-width: 900px) {
+  .s-about.s-about--shot { grid-template-areas: "text shot" "cards shot"; grid-template-columns: minmax(0, 1fr) 220px; column-gap: 56px; row-gap: 28px; }
+  .s-about--shot .s-about__shot { align-self: center; }
+  .s-about--shot .s-about__shot .ui-device { --ui-device-w: 200px; }
+}

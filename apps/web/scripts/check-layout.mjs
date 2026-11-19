@@ -29,7 +29,7 @@
 //
 //   SITE=http://localhost:3100 npm run check-layout
 //   SHOTS=dir also saves the contact sheet (1440x900 and 390x844: en light
-//   and dark; te, hi and es light). BASELINE=1 rewrites baseline/Home.png.
+//   and dark; te, hi and es light). BASELINE=1 rewrites the standard pages' baselines.
 import { chromium } from 'playwright-core';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
@@ -51,8 +51,13 @@ const LEAKS = Object.fromEntries(LANGS.map((l) => {
   return [l, Object.keys(english).filter((k) => tr[k] && tr[k] !== k)];
 }));
 const MISSING_PAGE = '/this-page-does-not-exist';
-const FIT = ['/ride', '/drive', '/safety', '/about', '/help', '/sign-up', '/sign-in'];
-const PAGES = ['/', ...FIT];
+// 17 Nov: pages rebuilt to the product standard are compared with their own approved shots
+// (design/standard-2026-11-17/baseline, BASELINE=1 rewrites them) and need not fit one screen.
+const STANDARD = { '/': 'home.png', '/safety': 'safety.png', '/ride': 'ride.png', '/drive': 'drive.png', '/about': 'about.png',
+  '/help': 'help.png', '/sign-up': 'sign-up.png' };
+const STD = path.resolve('../../design/standard-2026-11-17/baseline');
+const FIT = ['/ride', '/drive', '/about', '/help', '/sign-up', '/sign-in'];
+const PAGES = ['/', '/safety', ...FIT];
 const REF_FOR = {
   '/': '../baseline/Home.png', '/ride': 'Ride.png', '/drive': 'Drive.png', '/safety': 'Safety.png',
   '/about': 'About.png', '/help': 'Help.png', '/sign-up': 'SignUp.png',
@@ -100,7 +105,7 @@ async function open(p, width, height, { theme = 'light', lang = 'en' } = {}) {
   // An Indian browser, so sign-up preselects +91 as in the reference, and the
   // two public lookups the forms make answered from a fixture: the gate runs
   // without a backend.
-  const ctx = await browser.newContext({ viewport: { width, height }, locale: 'en-IN' });
+  const ctx = await browser.newContext({ viewport: { width, height }, locale: 'en-IN', timezoneId: 'Asia/Kolkata' });
   await ctx.route('**/pricing/countries/**', (r) => r.fulfill({ json: COUNTRIES }));
   await ctx.route('**/pricing/zones/**', (r) => r.fulfill({ json: { zones: [] } }));
   await ctx.addCookies([{ name: 'sg-language', value: lang, url: SITE }]);
@@ -113,6 +118,12 @@ async function open(p, width, height, { theme = 'light', lang = 'en' } = {}) {
   const page = await ctx.newPage();
   await page.goto(SITE + p, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => {});
   await answers(page, page.evaluate(() => document.fonts.ready));
+  // 18 Nov: lazy images (the phone frames) load before the shot, so the diff is the same every run.
+  await page.evaluate(async () => {
+    const imgs = [...document.images];
+    imgs.forEach((i) => { i.loading = 'eager'; });
+    await Promise.all(imgs.map((i) => (i.complete ? i.decode().catch(() => {}) : new Promise((r) => { i.onload = i.onerror = r; setTimeout(r, 8000); }))));
+  }).catch(() => {});
   return { page, ctx };
 }
 
@@ -285,7 +296,9 @@ for (const { p, w, h, lang } of RUNS) {
     const wrong = await families(page);
     if (wrong.length) fail(`${at}: text not drawn in Inter or Noto: ${wrong.join('; ')}`);
   }
-  if (w === 1440 && lang === 'en' && REF_FOR[p]) {
+  // 17 Nov (Phase 2): the standard's pages are compared at 390 as well as 1440.
+  if ((w === 1440 || (w === 390 && STANDARD[p])) && lang === 'en' && REF_FOR[p]) {
+    const stdName = STANDARD[p] && (w === 390 ? STANDARD[p].replace('.png', '-390.png') : STANDARD[p]);
     const shot = await page.screenshot({ fullPage: true });
     const emblems = await page.evaluate(() => ['.s-brand__mark', '.s-footer__mark'].map((q) => {
       const r = document.querySelector(q).getBoundingClientRect();
@@ -316,18 +329,19 @@ for (const { p, w, h, lang } of RUNS) {
         return [Math.floor(r.left), Math.floor(r.top + scrollY), Math.ceil(r.width), Math.ceil(r.height)];
       }, p === '/drive' ? '.s-request-wrap' : '.s-stack'));
     }
-    if (p === '/' && process.env.BASELINE) {
-      mkdirSync(BASE, { recursive: true });
-      writeFileSync(path.join(BASE, 'Home.png'), shot);
+    if (STANDARD[p] && process.env.BASELINE) {
+      mkdirSync(STD, { recursive: true });
+      writeFileSync(path.join(STD, stdName), shot);
     }
-    if (existsSync(path.join(REF, REF_FOR[p]))) {
-      const d = diff(shot, path.join(REF, REF_FOR[p]), REF_CUT[p], [...(REF_MASK[p] || []), ...emblems]);
+    const refFile = stdName ? path.join(STD, stdName) : path.join(REF, REF_FOR[p]);
+    if (existsSync(refFile)) {
+      const d = diff(shot, refFile, REF_CUT[p], [...(REF_MASK[p] || []), ...emblems]);
       mkdirSync(DIFFS, { recursive: true });
-      const base = p === '/' ? 'home' : p.slice(1);
+      const base = (p === '/' ? 'home' : p.slice(1)) + (w === 390 ? '-390' : '');
       writeFileSync(path.join(DIFFS, `${base}-diff.png`), d.png);
       writeFileSync(path.join(DIFFS, `${base}-ours.png`), shot);
       heights[`${p} diff`] = Number((d.share * 100).toFixed(2));
-      if (d.share > MAX_DIFF) fail(`${at}: ${(d.share * 100).toFixed(1)}% of pixels differ from ${REF_FOR[p]} (max 3%)`);
+      if (d.share > MAX_DIFF) fail(`${at}: ${(d.share * 100).toFixed(1)}% of pixels differ from ${stdName ?? REF_FOR[p]} (max 3%)`);
     } else fail(`${at}: reference ${REF_FOR[p]} is missing`);
   }
   await ctx.close();

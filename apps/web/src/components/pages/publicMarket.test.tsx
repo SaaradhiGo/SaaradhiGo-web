@@ -122,8 +122,8 @@ describe('public pages for an India visitor', () => {
   it('the ride page keeps the India classes', () => {
     expect(textOf(Ride, 'IN')).toMatch(/Auto.*Sedan|Sedan.*Auto/s);
   });
-  it('the home page still shows rupee examples', () => {
-    expect(textOf(Home, 'IN')).toMatch(/₹/);
+  it('the home page shows the Hyderabad trip on its map', () => {
+    expect(textOf(Home, 'IN')).toMatch(/HITEC City/);
   });
 });
 

@@ -377,7 +377,12 @@ export default function MapSurface({
     }
 
     if (anything && !bounds.isEmpty()) {
-      if (pickup && !destination && !driver && !routePolyline) {
+      // One point (a car alone) is not a bounds: fitting it zooms to the maximum (17 Nov).
+      const single = bounds.getNorthEast().equals(bounds.getSouthWest());
+      if (single) {
+        m.setCenter(bounds.getCenter());
+        m.setZoom(15);
+      } else if (pickup && !destination && !driver && !routePolyline) {
         m.setCenter(pickup);
         m.setZoom(15);
         // Centre in the free part of the map, clear of the panel or sheet.

@@ -101,6 +101,8 @@
   width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center;
   justify-content: center; flex-shrink: 0; background: var(--c-muted); color: var(--c-text-2);
 }
+/* A tappable tile (the Back link) is 44px, inside the same 40px footprint. */
+a.aico { width: 44px; height: 44px; margin: -2px; }
 .adot { width: 8px; height: 8px; border-radius: 4px; background: var(--c-dot); flex-shrink: 0; }
 .adot--on { background: var(--c-green); }
 .asep > * + * { border-top: 1px solid var(--c-border); }
@@ -695,11 +697,13 @@ button.er-bar { cursor: pointer; }
   content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px);
   transform: translate(-50%, -50%);
 }
-.aemail { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+/* 17 Nov: a long address wraps rather than being cut with an ellipsis. */
+.aemail { display: inline-block; max-width: 100%; overflow-wrap: anywhere; vertical-align: bottom; }
 /* 14 Nov: on a phone every tappable thing in the areas has a 44x44 hit area. Zero specificity, so
    any element that already sets its position keeps it; the pseudo-element widens what a finger hits
-   without changing what is drawn. */
-@media (max-width: 767px) {
+   without changing what is drawn. 17 Nov: every touch screen and anything up to tablet width, not
+   just phones. */
+@media (max-width: 1024px), (pointer: coarse) {
   :where(.ar) :where(a[href], button, summary, [role="switch"], [role="tab"], [role="radio"], [role="menuitem"]) { position: relative; }
   :where(.ar) :where(a[href], button, summary, [role="switch"], [role="tab"], [role="radio"], [role="menuitem"])::before {
     content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px);
@@ -719,3 +723,53 @@ button.er-bar { cursor: pointer; }
   .er-files .su-link { min-width: 44px; min-height: 44px; }
   .ar-top > a:first-child { min-width: 44px; min-height: 44px; }
 }
+
+/* 17 Nov (any size): row buttons are 44px targets; a short map drops its long fallback line. */
+.tr-open__btn { display: inline-flex; align-items: center; min-height: 44px; }
+.ar-map { container: armap / size; }
+@container armap (max-height: 380px) { .ar-map .map-surface p { display: none; } }
+
+/* 17 Nov (any size): a document tile wraps its button under the text when the text is large,
+   rather than letting the button sit on the status pill. */
+.su-tile { flex-wrap: wrap; }
+.su-tile > .agrow { flex: 1 1 0; min-width: min(7em, 100%); } /* 18 Nov: wraps the button only below 7em */
+.su-tile__meta { flex-wrap: wrap; }
+.su-pill { height: auto; min-height: 24px; }
+.ar .su-tbtn { height: auto; min-height: 44px; }
+
+/* 17 Nov (any size, largest text): the rider header wraps onto a second line rather than pushing
+   Account off the screen, and Go online wraps rather than cutting its label. */
+.ar-top { flex-wrap: wrap; height: auto; min-height: 72px; padding-block: 8px; row-gap: 4px; }
+.ar-nav { flex-wrap: wrap; min-width: 0; }
+.ar-tools { flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+@media (max-width: 767px) {
+  .ar .dr-head .dr-go { height: auto; white-space: normal; overflow: visible; text-align: center; }
+}
+/* 17 Nov (largest text): a row lets its amount or status drop under its title instead of running
+   off the screen; the legal links wrap; each dashboard column is at least as wide as its amount,
+   and the chart scrolls inside its card when they do not all fit. */
+.ar .arow { flex-wrap: wrap; }
+.sg-legal-line__links { flex-wrap: wrap; }
+.dr-chart { overflow-x: auto; padding-bottom: 4px; }
+.dr-chart > div { min-width: max-content; }
+/* 18 Nov: a row's title takes what is left, and the row wraps only once it would drop under 6em
+   (a 10em basis wrapped the ride code's Hide button at phone width). */
+.ar .arow > .agrow { flex: 1 1 0; min-width: min(6em, 100%); }
+/* 17 Nov (any size): status pills wrap long words; the period switcher wraps a chip to a second row
+   at the largest text; the month name shares its row with the arrows; a payouts search shrinks with
+   the screen; a card never grows past its column for the chart inside it. */
+.apill { white-space: normal; height: auto; min-height: 28px; text-align: center; }
+.er-tabs { flex-wrap: wrap; }
+.er-tabs .achip { flex: 1 1 auto; }
+/* 18 Nov: sized by its text (a zero basis let the month collapse to one letter per line). */
+.er-label { min-width: 0; flex: 0 1 auto; overflow-wrap: break-word; }
+.pay-period .er-search { flex: 1 1 12em; min-width: 0; }
+.ar .acard, .dr-chart { min-width: 0; }
+.pay-period { grid-template-columns: minmax(0, 1fr); }
+/* 18 Nov (largest text): a notice drops its button under the text rather than squeezing the text. */
+.anote { flex-wrap: wrap; }
+.anote > .agrow { min-width: min(12em, 100%); }
+
+/* 18 Nov round 3: a notice is a white card with a hairline; the warning colour is its icon only. */
+.anote { background: var(--c-surface); border-color: var(--c-border); }
+.anote__icon { color: var(--c-warn-ink); }

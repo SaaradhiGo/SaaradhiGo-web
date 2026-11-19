@@ -221,7 +221,7 @@ function CountryPanel({ cfg, matrix, onCell, onDefault, onEditConfig }: {
         title={`${cell.source ?? ''}, v${cell.version ?? ''} since ${stamp(cell.effective_from, tz)}${cell.next_change ? `; then ${pct(cell.next_change.percent)} on ${stamp(cell.next_change.effective_from, tz)}` : ''}`}
         aria-label={`${label}: ${pct(cell.percent)}, ${cell.source}, version ${cell.version}`}>
         {own ? <b>{pct(cell.percent)}</b> : <span className="muted">{pct(cell.percent)}</span>}
-        {cell.next_change ? <span className="block text-xs">then {pct(cell.next_change.percent)}</span> : null}
+        {cell.next_change ? <span className="block text-sm">then {pct(cell.next_change.percent)}</span> : null}
       </button>
     );
   };

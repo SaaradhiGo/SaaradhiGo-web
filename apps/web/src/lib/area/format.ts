@@ -31,6 +31,24 @@ export function money(amount: string | number | null | undefined, currency: stri
 }
 
 /**
+ * A fare (17 Nov standard): India's fares are whole rupees (the server rounds them, base/money.round_fare),
+ * so they read "₹393"; other currencies keep their cents ("$18.40"). Anything not whole keeps its decimals.
+ */
+export function fare(amount: string | number | null | undefined, currency: string | null | undefined, locale: string): string | null {
+  if (amount === null || amount === undefined || amount === '' || !currency) return null;
+  const raw = Number(amount);
+  if (!Number.isFinite(raw)) return null;
+  const n = raw || 0;
+  const whole = currency.toUpperCase() === 'INR' && Number.isInteger(n);
+  if (!whole) return money(amount, currency, locale);
+  try {
+    return oneLine(new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n));
+  } catch {
+    return null;
+  }
+}
+
+/**
  * A fee, commission or other amount taken off (11 Nov): "− ₹45.00" in red only when it is above
  * zero; nothing taken is a plain "₹0.00" in the normal colour, never "− ₹0.00".
  */

@@ -168,6 +168,20 @@ jobs:
           path: apps/web/areas-diff/
           if-no-files-found: ignore
 
+      # Any size (owner, 17 Nov): every width 320-1920 in 10px steps at 568/844/1200 high, phone
+      # landscape, 200% zoom and the largest phone text. No sideways scroll, overlap, cut-off text,
+      # stretched image or small tap target at any step. Gates the pages built to the standard.
+      - name: Responsive sweep
+        timeout-minutes: 35
+        run: SITE=http://localhost:3100 FIXTURES=1 SWEEP_OUT=sweep-out node scripts/sweep-responsive.mjs
+      - name: Upload sweep failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sweep-out
+          path: apps/web/sweep-out/
+          if-no-files-found: ignore
+
       # Driver area v2 (10 Nov): axe contrast in both themes, one primary button, the focus ring,
       # date order by market, file statuses and the four design screenshots.
       - name: Driver v2 gate
@@ -180,13 +194,50 @@ jobs:
           path: apps/web/v2-diff/
           if-no-files-found: ignore
 
+  # The console at any size (18 Nov, Phase 2): every console page, signed in as every staff role, at
+  # every width from 320 to 1920, answered from responses recorded on QA and scrubbed
+  # (scripts/fixtures/console). Its own job so the site gates do not wait for it.
+  console-sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      WEB_SESSION_SECRET: ci-area-gate-session-key-not-a-secret-value
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      # 18 Nov: 15 min on a PR, over 35 on a slow develop runner; four pages at a time and room to finish.
+      - name: Console sweep (every role, 320-1920)
+        timeout-minutes: 60
+        run: |
+          npx next start -p 3100 &
+          npx --yes wait-on@8.0.1 -t 60000 http://localhost:3100/
+          SITE=http://localhost:3100 PAGES=console MARKETS=US CONCURRENCY=4 SWEEP_OUT=console-sweep-out node scripts/sweep-responsive.mjs
+      - name: Upload console sweep failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: console-sweep-out
+          path: apps/web/console-sweep-out/
+          if-no-files-found: ignore
+
   deploy-railway:
     # PROD on Railway (17 Nov, production round 1). Runs here, on the push to main itself, after
     # both gates pass: a workflow_run job runs with the default branch (develop) as its ref, and the
     # GitHub `production` environment (limited to main) refuses it. Deploys only from main, only
     # when PRODUCTION_DEPLOY_ENABLED is 'true'; Railway PROD has no trigger of its own.
     name: deploy production (Railway PROD, Singapore)
-    needs: [secret-scan, verify]
+    needs: [secret-scan, verify, console-sweep]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.PRODUCTION_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 40

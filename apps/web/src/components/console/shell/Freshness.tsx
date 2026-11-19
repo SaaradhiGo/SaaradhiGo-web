@@ -32,7 +32,7 @@ export function Freshness() {
   return (
     <span className={`ops-fresh${stale ? ' ops-fresh--stale' : ''}`} role="status" aria-live="off">
       <span className="ops-fresh__dot" aria-hidden="true" />
-      {text}
+      <span className="ops-fresh__text">{text}</span>
     </span>
   );
 }
