@@ -28,6 +28,15 @@ describe('marketing frames agree with the approved fee plans', () => {
   it('India: Rs 10 a trip, at most Rs 149 a day', () => {
     expect(frames.approved_fee_plans.IN).toMatchObject({ per_trip: 10, daily_cap: 149, daily_floor: 1000 });
   });
+  it('the /drive example request charges the plan, never a commission (19 Nov)', async () => {
+    const { exampleFor, planSplitOf } = await import('@/lib/exampleFare');
+    const india = planSplitOf(exampleFor('IN'));
+    expect(india.fee).toBe(frames.approved_fee_plans.IN.per_trip * 100);
+    expect(india.earn).toBe(india.fare - india.fee);
+    const us = planSplitOf(exampleFor('US'));
+    expect(us.fee).toBe(0);
+    expect(us.earn).toBe(us.fare);
+  });
   it('every class shows a driver a few minutes away', () => {
     for (const m of frames.choose_eta_min) expect(m).toBeGreaterThanOrEqual(2);
   });
