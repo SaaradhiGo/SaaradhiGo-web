@@ -130,7 +130,7 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
           <p className="sg-num">
             {t.live_cities} live {t.live_cities === 1 ? 'city' : 'cities'}
             {t.paused_cities ? ` · ${t.paused_cities} not live` : ''}
-            {` · ${fmt(t.requests)} requests today · ${fmt(t.drivers_online)} drivers online`}
+            {` · ${fmt(t.requests)} ${t.requests === 1 ? 'request' : 'requests'} today · ${fmt(t.drivers_online)} ${t.drivers_online === 1 ? 'driver' : 'drivers'} online`}
             {t.sos_active ? ` · ${t.sos_active} SOS active` : ''}
           </p>
         </div>
@@ -305,7 +305,7 @@ function HourlyLine({ hours }: { hours: PulseResponse['hourly'] }) {
   const line = (key: 'requests' | 'completed') => hours.map((x, i) => `${((i * w) / (hours.length - 1)).toFixed(1)},${(h - 4 - (x[key] / hi) * (h - 8)).toFixed(1)}`).join(' ');
   return (
     <svg className="ops-hourly" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" role="img"
-      aria-label={`Requests and completed trips by hour today, peak ${hi} requests in an hour`}>
+      aria-label={`Requests and completed trips by hour today, peak ${hi} ${hi === 1 ? 'request' : 'requests'} in an hour`}>
       <polyline points={line('requests')} fill="none" className="ops-hourly__req" strokeWidth="1.5" />
       <polyline points={line('completed')} fill="none" className="ops-hourly__done" strokeWidth="1.75" />
     </svg>

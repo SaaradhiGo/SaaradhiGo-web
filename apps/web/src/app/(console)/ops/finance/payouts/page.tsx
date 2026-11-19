@@ -18,7 +18,7 @@ import { useFinanceList } from '@/lib/useFinanceList';
 import { PageLink } from '@/components/console/PageLink';
 import { Revealable } from '@/components/console/Revealable';
 import { ExportButton, FinanceNav, RangeBar } from '@/components/console/finance';
-import { ListPage, type FilterChip, type ListColumn } from '@/components/console/kit/ListPage';
+import { ListPage, plural, type FilterChip, type ListColumn } from '@/components/console/kit/ListPage';
 import { History, RecordPanel, RecordStat } from '@/components/console/kit/RecordPanel';
 import { StatusChip } from '@/components/console/kit/StatusChip';
 import {
@@ -247,7 +247,7 @@ function PayoutsInner() {
       }>('/payments/admin/payouts/bulk-action/', { action: kind, withdrawal_ids: ids, reason: bulkNote.trim() });
       const request = body?.approval_request;
       setNotice(request
-        ? { kind: 'pending', text: aprNotice(request.id, `${body?.requested_count ?? ids.length} payouts as one run. Nothing is released until a second finance admin decides it.`) }
+        ? { kind: 'pending', text: aprNotice(request.id, `${plural(body?.requested_count ?? ids.length, 'payout')} as one run. Nothing is released until a second finance admin decides it.`) }
         : { kind: 'done', text: `${body?.updated_count ?? ids.length} payout${(body?.updated_count ?? ids.length) === 1 ? '' : 's'} ${kind === 'reject' ? 'rejected' : 'released'}${body?.skipped_count ? `; ${body.skipped_count} skipped` : ''}.` });
       setPicked([]);
       setBulk(null);
@@ -288,7 +288,7 @@ function PayoutsInner() {
       key: 'payouts', label: 'Payouts',
       render: (r) => (r.subjects.length === 1
         ? <span>{r.subjects[0].ref} · {r.subjects[0].driver_name} <span className="ops-ref sg-num">{r.subjects[0].driver_ref}</span></span>
-        : `${r.subjects.length} payouts`),
+        : plural(r.subjects.length, 'payout')),
     },
     { key: 'amount', label: 'Amount', num: true, render: (r) => (r.amount != null && r.currency ? formatWhole(r.amount, r.currency) : '—') },
     { key: 'blocked', label: 'Can be approved', render: (r) => (r.blockers.length ? <StatusChip tone="caution">Blocked</StatusChip> : <StatusChip tone="info">Waiting</StatusChip>) },
@@ -316,7 +316,7 @@ function PayoutsInner() {
 
       {bulk && (
         <div className="ops-confirm mb-4" role="region" aria-label="Confirm the bulk action">
-          <b>{bulk === 'approve' ? `Ask to release ${toApprove.length} payouts as one run` : `Reject ${toReject.length} payouts`}</b>
+          <b>{bulk === 'approve' ? `Ask to release ${plural(toApprove.length, 'payout')} as one run` : `Reject ${plural(toReject.length, 'payout')}`}</b>
           <span>
             {bulk === 'approve'
               ? 'This raises ONE request for the whole batch. Nothing is released until a different finance admin approves it. A country with no approval policy is blocked.'

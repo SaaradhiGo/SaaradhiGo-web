@@ -1,27 +1,31 @@
 'use client';
 
+import { useLegal } from '@/components/sg/LegalProvider';
+import { Device } from '@/components/ui';
 import { useSite } from '@/i18n/site';
 
 /**
- * /about (approved design, 2026-11-07; About.html): the full logo on black,
- * what "Saaradhi" means and why the company exists, then three promises.
+ * /about (approved design, 2026-11-07; About.html): what "Saaradhi" means and why the
+ * company exists, the product itself, then three promises.
  * No founder name, no quotes.
  */
 export function AboutContent() {
   const a = useSite().about;
+  const us = useLegal().market === 'US';
 
   return (
     <section className="s-wrap s-page s-cb">
-      {/* 18 Nov (owner): the heading first, the logo a short band beneath it. */}
+      {/* 18 Nov close-out (owner): the heading first, then a real product picture: the rider
+          app on the real Hyderabad map (Boise for the US), captured on QA. No stock photos. */}
       <div className="s-about">
         <div>
           <div className="t-label">{a.label}</div>
           <h1 className="t-heading">{a.title}</h1>
           <p>{a.body}</p>
         </div>
-        <div className="s-about__logo">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/lockup-gold.svg" alt={a.logoAlt} width={212} height={230} />
+        <div className="s-about__shot">
+          <Device src={us ? '/product/about-rider-app-us.webp' : '/product/about-rider-app.webp'}
+            alt={us ? a.pictureAltUs : a.pictureAlt} width={260} />
         </div>
       </div>
       <div className="s-cards3">

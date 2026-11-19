@@ -692,3 +692,7 @@
 .s-about > div:first-child { max-width: 46rem; }
 .s-about__logo, .site .s-about__logo { min-height: 0; height: clamp(96px, 14vw, 140px); padding: 12px; border-radius: 16px; }
 .s-about__logo img, .site .s-about__logo img { width: auto; height: 100%; max-width: none; top: 0; }
+
+/* 18 Nov close-out: /about shows the rider app in a phone frame, centred under the copy on phones. */
+.s-about__shot { display: flex; justify-content: center; }
+@media (min-width: 900px) { .s-about { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); } }

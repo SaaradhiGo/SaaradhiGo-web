@@ -164,7 +164,7 @@ export function DriverDashboard() {
             {today.state === 'error' ? <LoadError what="earnings" retry={today.retry} ink /> : t ? (
               <>
                 <div className="a40">{money(t.earned ?? t.net, t.currency, locale)}</div>
-                <div className="a14">{tr('{n} trips').replace('{n}', `${t.trips}`)}</div>
+                <div className="a14">{tr(Number(t.trips) === 1 ? '{n} trip' : '{n} trips').replace('{n}', `${t.trips}`)}</div>
               </>
             ) : <Skel h={40} w={140} />}
           </div>
@@ -173,7 +173,7 @@ export function DriverDashboard() {
             {week.state === 'error' ? <LoadError what="earnings" retry={week.retry} /> : w ? (
               <>
                 <div className="a40">{money(w.earned ?? w.net, w.currency, locale)}</div>
-                <div className="a14">{rangeLabel(w.start, w.end, locale)} · {tr('{n} trips').replace('{n}', `${w.trips}`)}</div>
+                <div className="a14">{rangeLabel(w.start, w.end, locale)} · {tr(Number(w.trips) === 1 ? '{n} trip' : '{n} trips').replace('{n}', `${w.trips}`)}</div>
               </>
             ) : <Skel h={40} w={140} />}
           </div>

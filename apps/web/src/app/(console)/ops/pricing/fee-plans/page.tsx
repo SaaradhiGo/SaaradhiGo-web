@@ -207,7 +207,7 @@ function Simulator() {
           <DataTable caption="Simulated plans" rows={sim.rows} rowKey={(r) => `${r.plan}-${r.preset}`} density="compact" maxHeight={false}
             columns={[
               { key: 'plan', label: 'Plan', render: (r) => TYPE_WORDS[r.plan] ?? r.plan },
-              { key: 'preset', label: 'Day', render: (r) => `${r.preset} (${r.trips_per_day} trips)` },
+              { key: 'preset', label: 'Day', render: (r) => `${r.preset} (${r.trips_per_day} ${r.trips_per_day === 1 ? 'trip' : 'trips'})` },
               { key: 'pays', label: 'Driver pays a day', num: true, render: (r) => rupees(r.driver_pays_day_minor, cur) },
               { key: 'month', label: 'A month', num: true, render: (r) => rupees(r.driver_pays_month_minor, cur) },
               { key: 'share', label: 'Driver keeps', num: true, render: (r) => (r.driver_share_percent == null ? '—' : `${r.driver_share_percent}%`) },
