@@ -2589,22 +2589,22 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
   .ops-list__table .ops-table tr.is-active { border-color: var(--ui-ink); }
   .ops-list__table .ops-table td {
     flex: 0 0 100%; order: var(--card-order);
-    display: block; position: relative; padding: 0 0 0 7rem; min-height: 20px;
+    display: flow-root; padding: 0 0 0 7rem; min-height: 20px;
     min-width: 0; max-width: 100%; border: 0; text-align: left; white-space: normal;
     font: 400 14px/1.45 var(--font-sans); color: var(--ui-ink); overflow-wrap: anywhere;
   }
   /* The label sits in its own column; the value flows as text, so "$37 est." stays one value. */
   .ops-list__table .ops-table td::before {
-    content: attr(data-label); position: absolute; left: 0; top: 0; width: 6.5rem;
+    content: attr(data-label); float: left; margin-left: -7rem; width: 6.5rem;
     font: 500 13px/1.55 var(--font-sans); color: var(--ops-ink-2); overflow-wrap: break-word;
   }
   .ops-list__table .ops-table td .ops-pill { display: inline-flex; width: auto; max-width: 100%; }
   .ops-list__table .ops-table td.num { text-align: left; }
-  .ops-list__table .ops-table td[data-card="select"] { flex: none; order: 0; padding: 0; }
+  .ops-list__table .ops-table td[data-card="select"] { flex: none; order: -3; padding: 0; }
   .ops-list__table .ops-table td[data-card="title"] {
-    flex: 1 1 9rem; order: 0; padding: 0; font: 600 16px/1.35 var(--font-sans);
+    flex: 1 1 9rem; order: -2; padding: 0; font: 600 16px/1.35 var(--font-sans);
   }
-  .ops-list__table .ops-table td[data-card="badge"] { flex: 0 0 auto; max-width: 100%; order: 0; padding: 0; margin-left: auto; overflow-wrap: normal; }
+  .ops-list__table .ops-table td[data-card="badge"] { flex: 0 0 auto; max-width: 100%; order: -1; padding: 0; margin-left: auto; overflow-wrap: normal; }
   .ops-list__table .ops-table td[data-card="title"]::before,
   .ops-list__table .ops-table td[data-card="badge"]::before,
   .ops-list__table .ops-table td[data-card="select"]::before { content: none; }
@@ -2613,3 +2613,7 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
      pill wider than the whole card wraps, inside itself. */
   .ops-list__table .ops-table td[data-card="badge"] .ops-pill { white-space: normal; text-align: left; }
 }
+
+/* 19 Nov: the global search keeps its placeholder clear of the Ctrl K hint. */
+.ops .ops__search input { padding-right: 76px; text-overflow: ellipsis; }
+.ops .ops__search input:focus { padding-right: 12px; }
