@@ -2558,6 +2558,8 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
    sideways, with a fade at the edge.
    =========================================================================== */
 .ops-list { container: opslist / inline-size; }
+/* A column's cardOrder sets this inline; 10 keeps the others in column order after it. */
+.ops-list__table td { --card-order: 10; }
 .ops-list__chipset { display: contents; }
 
 @container opslist (max-width: 640px) {
@@ -2583,7 +2585,7 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
   }
   .ops-list__table .ops-table tr.is-active { border-color: var(--ui-ink); }
   .ops-list__table .ops-table td {
-    grid-column: 1 / -1; order: var(--card-order, 10);
+    grid-column: 1 / -1; order: var(--card-order);
     display: block; position: relative; padding: 0 0 0 7rem; min-height: 20px;
     min-width: 0; max-width: none; border: 0; text-align: left; white-space: normal;
     font: 400 14px/1.45 var(--font-sans); color: var(--ui-ink); overflow-wrap: anywhere;
