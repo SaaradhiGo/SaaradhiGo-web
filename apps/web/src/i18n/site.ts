@@ -291,7 +291,7 @@ const en: SiteCopy = {
     photoNote: 'A real SaaradhiGo driver beside their car, photographed with their consent.',
     requestLabel: 'New ride request',
     fare: 'Trip fare',
-    commission: 'Commission',
+    commission: 'Platform fee',
     earn: 'You earn',
     accept: 'Accept',
     requestNote: 'You see all three before you decide.',

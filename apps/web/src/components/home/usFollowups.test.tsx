@@ -93,13 +93,21 @@ describe('1.5 public content follows the market', () => {
     const text = document.body.textContent ?? '';
     expect(text).toContain('Standard, Treasure Valley');
     expect(text).toContain('$26.14');
-    expect(text).toContain('$22.22');
+    // 19 Nov (owner): Treasure Valley shows no platform fee; the driver keeps the fare.
+    expect(text).toContain('None');
+    expect(text).not.toContain('15%');
     expect(text).not.toMatch(/₹|Hyderabad|Auto/);
   });
 
   it('India keeps the Hyderabad example in rupees', () => {
     at('IN', <><ExampleTag /><ExampleLines fare="Trip fare" commission="Commission" earn="You earn" /></>);
-    expect(document.body.textContent).toContain('₹183.00');
+    const text = document.body.textContent ?? '';
+    expect(text).toContain('₹183.00');
+    // 19 Nov (owner): the Hyderabad plan, Rs 10 a trip, at most Rs 149 a day; no commission.
+    expect(text).toContain('−₹10.00');
+    expect(text).toContain('₹173.00');
+    expect(text).toContain('₹10.00 a trip, at most ₹149.00 a day');
+    expect(text).not.toContain('15%');
   });
 
   it('the Ride page ticket shows the USA example in dollars', () => {

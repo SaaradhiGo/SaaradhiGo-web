@@ -1,3 +1,5 @@
+import frames from '@/content/marketing-frames.json';
+
 /**
  * The example on the public request mock-ups (owner, 13 Nov: numbers, never grey bars).
  *
@@ -42,6 +44,18 @@ export type ExampleFare = { city: string; vehicle: string; currency: string; far
 
 export function exampleFor(market: string | null | undefined): ExampleFare {
   return market === 'US' ? EXAMPLE_FARE_US : EXAMPLE_FARE;
+}
+
+/**
+ * 19 Nov (owner): marketing numbers never contradict an approved plan. Hyderabad's Fair Share plan
+ * replaces the commission with a per-trip fee (Rs 10 a trip, at most Rs 149 a day); Treasure Valley
+ * shows no platform fee. The fee comes from content/marketing-frames.json, the same approved plans
+ * the Home and Safety frames use.
+ */
+export function planSplitOf(ex: ExampleFare) {
+  const plan = ex.currency === 'USD' ? frames.approved_fee_plans.US : frames.approved_fee_plans.IN;
+  const fee = Math.min(plan.per_trip, plan.daily_cap || plan.per_trip) * 100;
+  return { fare: ex.fareMinor, fee, earn: ex.fareMinor - fee, note: plan.per_trip ? plan.note : null };
 }
 
 export function splitOf(ex: ExampleFare) {
