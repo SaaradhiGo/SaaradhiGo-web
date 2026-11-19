@@ -6,7 +6,7 @@
       "per_trip": 10,
       "daily_cap": 149,
       "daily_floor": 1000,
-      "note": "₹10.00 a trip, at most ₹149.00 a day"
+      "note": "₹10 a trip, at most ₹149 a day"
     },
     "US": {
       "source": "QA /driver/fee-plan/ on 18 Nov: no plan for Treasure Valley (plan: null)",

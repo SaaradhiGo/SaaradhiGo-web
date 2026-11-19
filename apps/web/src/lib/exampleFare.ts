@@ -65,7 +65,9 @@ export function splitOf(ex: ExampleFare) {
 
 /** The amount in the example's own currency. */
 export function moneyOf(minor: number, currency: string) {
-  return new Intl.NumberFormat(currency === 'INR' ? 'en-IN' : 'en-US', { style: 'currency', currency, minimumFractionDigits: 2 }).format(minor / 100);
+  // 19 Nov (owner): India's marketing amounts read in whole rupees ("₹183"); dollars keep cents.
+  const digits = currency === 'INR' && minor % 100 === 0 ? 0 : 2;
+  return new Intl.NumberFormat(currency === 'INR' ? 'en-IN' : 'en-US', { style: 'currency', currency, minimumFractionDigits: digits, maximumFractionDigits: digits }).format(minor / 100);
 }
 
 /** The vehicle classes on the home page's phone: what the market's cities offer (no Auto in the USA). */

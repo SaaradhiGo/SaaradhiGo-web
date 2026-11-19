@@ -37,6 +37,17 @@ describe('marketing frames agree with the approved fee plans', () => {
     expect(us.fee).toBe(0);
     expect(us.earn).toBe(us.fare);
   });
+  it('public copy says "platform fee", never "commission", while no approved plan takes one (19 Nov)', async () => {
+    const en = (await import('@/i18n/website/en.json')).default as Record<string, string>;
+    const plans = Object.values(frames.approved_fee_plans) as Array<{ per_trip: number }>;
+    expect(plans.every((p) => p.per_trip >= 0)).toBe(true);
+    const said = Object.values(en).filter((v) => /commission/i.test(v));
+    expect(said).toEqual([]);
+  });
+  it('India amounts in the plan note are whole rupees (19 Nov)', () => {
+    expect(frames.approved_fee_plans.IN.note).toBe('₹10 a trip, at most ₹149 a day');
+    expect(frames.approved_fee_plans.IN.note).not.toMatch(/\.00/);
+  });
   it('every class shows a driver a few minutes away', () => {
     for (const m of frames.choose_eta_min) expect(m).toBeGreaterThanOrEqual(2);
   });

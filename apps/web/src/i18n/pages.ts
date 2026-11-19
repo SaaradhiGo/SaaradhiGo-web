@@ -78,7 +78,7 @@ const en: PagesCopy = {
     lead: 'Drive when it suits you, and see what a trip pays before you accept it.',
     sections: [
       { h: 'See the fare before you accept', p: 'Every offer shows its fare, so you decide with the number in front of you.' },
-      { h: 'Commission shown on every trip', p: 'Each completed trip lists the fare, the commission and what you keep.' },
+      { h: 'Platform fee shown on every trip', p: 'Each completed trip lists the fare, the platform fee and what you keep.' },
       { h: 'Paid to UPI or your bank', p: 'Withdraw your earnings from the app to UPI or a bank account.' },
     ],
     needHeading: 'What you need to apply',

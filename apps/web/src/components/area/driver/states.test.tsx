@@ -77,14 +77,15 @@ describe('a brand-new driver sees zeros, not dots', () => {
     expect(container.querySelector('.askel')).toBeNull();
   });
 
-  it('earnings: every amount ₹0.00 and "No platform fee", nothing left loading', async () => {
+  it('earnings: every amount ₹0 and "No platform fee", nothing left loading', async () => {
     const { container } = page(<DriverEarnings />);
     await settle();
     expect(container.textContent).not.toMatch(PLACEHOLDER);
     const lines = [...container.querySelectorAll('[data-stat]')].map((e) => e.textContent);
     expect(lines).toHaveLength(5);
     // 18 Nov: a zero fee reads "No platform fee" rather than an amount.
-    lines.forEach((l, i) => expect(l).toMatch(i === 2 ? /^No platform fee$/ : /₹0\.00/));
+    // 19 Nov (owner): India's earnings read in whole rupees.
+    lines.forEach((l, i) => expect(l).toMatch(i === 2 ? /^No platform fee$/ : /₹0(?!\.)/));
     expect(container.querySelector('.askel')).toBeNull();
   });
 
