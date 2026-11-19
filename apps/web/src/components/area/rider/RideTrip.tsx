@@ -12,7 +12,8 @@ import {
   CANCEL_BEFORE_DRIVER, CANCEL_WITH_DRIVER, type CancelPreview, RideSocket, type SocketEvent, cancelPreview, cancelTrip,
   formatPlate, routeBetween,
 } from '@/lib/booking';
-import { localClock, money } from '@/lib/area/format';
+// 19 Nov (owner): India in whole rupees, like Choose a ride (17 Nov standard); paise stay when there are any.
+import { fare as money, localClock } from '@/lib/area/format';
 import { AREA_FLAGS } from '@/lib/area/flags';
 import {
   type Call, type Eta, type Share, type Trip, className, endCall, lockedFare, startCall, startShare, stopShare,
