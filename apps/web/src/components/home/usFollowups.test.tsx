@@ -118,11 +118,10 @@ describe('1.5 public content follows the market', () => {
     expect(document.body.textContent).not.toMatch(/₹|Hyderabad/);
   });
 
-  it('the home map shows a Boise trip in the USA, never an Auto', async () => {
+  it('the home map shows Boise in the USA, never an Auto (20 Nov: the city, not a trip)', async () => {
     at('US', <HomeContent />);
     await act(async () => { await vi.advanceTimersByTimeAsync(100); });
     const text = document.body.textContent ?? '';
-    expect(text).toContain('The Village at Meridian');
     expect(text).not.toMatch(/Auto|Charminar/);
   });
 });

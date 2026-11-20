@@ -44,7 +44,7 @@ describe('HomeContent', () => {
     expect(document.querySelector('.s-tile')).toBeNull();
     const text = document.body.textContent || '';
     expect(/[₹$€£]\s?\d|\d{4,6}/.test(text)).toBe(false);
-    expect(/Hyderabad|UPI|Aadhaar/.test(text)).toBe(false);
+    expect(/UPI|Aadhaar/.test(text)).toBe(false); // 20 Nov: the hero map names the city
     expect(/surge|coming soon/i.test(text)).toBe(false);
     expect(screen.queryByText('Get the SaaradhiGo app')).toBeNull();
     // Scheduled rides do not exist yet: no Ride now / Schedule switch.

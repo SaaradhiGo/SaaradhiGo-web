@@ -8,6 +8,7 @@ import { usEnglish, usEnglishDeep } from '@/i18n/usEnglish';
 import * as content from '@/lib/legalContent';
 import type { Ctx, Doc } from '@/lib/legalContent';
 import { Masthead } from './PageShell';
+import { useTr } from '@/i18n/website';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000/api/v1';
 
@@ -38,32 +39,98 @@ export function useFares(country: string) {
   return cities;
 }
 
-export function DocBody({ doc }: { doc: Doc }) {
+/** The other policies, listed under every document so a reader never hunts the footer. */
+const POLICIES: { href: string; label: string; only?: 'IN' | 'US' }[] = [
+  { href: '/terms', label: 'Rider terms' },
+  { href: '/driver-terms', label: 'Driver terms' },
+  { href: '/privacy', label: 'Privacy policy' },
+  { href: '/cookies', label: 'Cookie notice' },
+  { href: '/refunds', label: 'Refunds and cancellations' },
+  { href: '/text-messages', label: 'Text messages' },
+  { href: '/zero-tolerance', label: 'Zero tolerance', only: 'US' },
+  { href: '/accessibility', label: 'Accessibility', only: 'US' },
+  { href: '/grievance', label: 'Grievance redressal', only: 'IN' },
+  { href: '/delete-account', label: 'Delete your account' },
+];
+
+const slug = (h: string) => h.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+/**
+ * A policy document (20 Nov, owner: "basic UI sense"). One column the reader keeps: a masthead
+ * with who it applies to and when it changed, a numbered contents list (sticky beside the text
+ * on a wide screen, folded above it on a phone), numbered sections, then the other policies.
+ */
+export function DocBody({ doc, entityName, path, market }: { doc: Doc; entityName?: string; path?: string; market?: string }) {
+  const tr = useTr();
+  const sections = doc.sections
+    .map((s) => ({ ...s, lines: s.p.filter((x): x is string => Boolean(x)) }))
+    .filter((s) => s.lines.length);
+  const toc = (
+    <ol className="lg-toc__list">
+      {sections.map((s, i) => (
+        <li key={s.h}><a href={`#${slug(s.h)}`}><span className="lg-num">{i + 1}</span>{s.h}</a></li>
+      ))}
+    </ol>
+  );
   return (
-    <>
-      <Masthead title={doc.title} lead={doc.lead} />
-      <section className="hp hp-section sg-legal-doc">
-        {doc.sections.map((s) => {
-          const lines = s.p.filter((x): x is string => Boolean(x));
-          if (!lines.length) return null;
-          return (
-            <div className="sg-legal-doc__block" key={s.h}>
-              <h2>{s.h}</h2>
-              {lines.map((line) => (
+    <article className="lg">
+      <header className="lg-head">
+        <div className="hp">
+          <p className="lg-kicker">{tr('Legal')}</p>
+          <h1 className="lg-title">{doc.title}</h1>
+          <p className="lg-lead">{doc.lead}</p>
+          <p className="lg-meta">
+            <span>{tr('Last updated')} {doc.updated}</span>
+            {entityName && <span>{tr('Operated by')} {entityName}</span>}
+          </p>
+        </div>
+      </header>
+      <div className="hp lg-body">
+        {sections.length > 2 && (
+          <nav className="lg-toc" aria-label={tr('On this page')}>
+            <details className="lg-toc__fold">
+              <summary>{tr('On this page')}</summary>
+              {toc}
+            </details>
+            <div className="lg-toc__side">
+              <p className="lg-toc__title">{tr('On this page')}</p>
+              {toc}
+            </div>
+          </nav>
+        )}
+        <div className="lg-text">
+          {sections.map((s, i) => (
+            <section className="lg-sec" id={slug(s.h)} key={s.h}>
+              <h2><span className="lg-num" aria-hidden="true">{i + 1}</span>{s.h}</h2>
+              {s.lines.map((line) => (
                 <p key={line.slice(0, 48)}>
-                  {content.linkParts(line).map((part, i) => ('href' in part
-                    ? <Link key={i} href={part.href}>{part.label}</Link>
-                    : <span key={i}>{part.text}</span>))}
+                  {content.linkParts(line).map((part, j) => ('href' in part
+                    ? <Link key={j} href={part.href}>{part.label}</Link>
+                    : <span key={j}>{part.text}</span>))}
                 </p>
               ))}
-            </div>
-          );
-        })}
-        <p className="sg-legal-doc__updated">Last updated {doc.updated}</p>
-      </section>
-    </>
+            </section>
+          ))}
+          <aside className="lg-more" aria-label={tr('Other policies')}>
+            <p className="lg-more__title">{tr('Other policies')}</p>
+            <ul>
+              {POLICIES.filter((x) => x.href !== path && (!x.only || x.only === market)).map((x) => (
+                <li key={x.href}><Link href={x.href}>{tr(x.label)}</Link></li>
+              ))}
+            </ul>
+            <p className="lg-more__ask">{tr('Questions about this page? Write to')} <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.</p>
+          </aside>
+        </div>
+      </div>
+    </article>
   );
 }
+
+const PATH: Record<DocKind, string> = {
+  riderTerms: '/terms', driverTerms: '/driver-terms', privacy: '/privacy', refunds: '/refunds',
+  textMessages: '/text-messages', grievance: '/grievance', cookies: '/cookies', deleteAccount: '/delete-account',
+  zeroTolerance: '/zero-tolerance', accessibility: '/accessibility',
+};
 
 export function LegalDoc({ kind }: { kind: DocKind }) {
   const { market, entity, legal } = useLegal();
@@ -89,7 +156,7 @@ export function LegalDoc({ kind }: { kind: DocKind }) {
     }
   }
   // 14 Nov (owner): US spelling for US visitors only; spelling, never meaning. India keeps UK English.
-  return <DocBody doc={ctx.market === 'US' ? usEnglishDeep(doc) : doc} />;
+  return <DocBody doc={ctx.market === 'US' ? usEnglishDeep(doc) : doc} entityName={ctx.entity?.legal_name} path={PATH[kind]} market={ctx.market} />;
 }
 
 function money(v: string, currency: string) {

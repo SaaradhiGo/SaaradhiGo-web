@@ -20,19 +20,23 @@ export function cityForMarket(market: string): string {
 
 const CREDIT = '© OpenStreetMap contributors';
 
-export function HeroMapPanel({ market, pickup, drop, card }: { market: string; pickup: string; drop: string; card: ReactNode }) {
+const CITY_NAME: Record<string, string> = { hyderabad: 'Hyderabad', boise: 'Boise' };
+
+/**
+ * 20 Nov (owner: "why am I seeing this fixed route on prod?"): the panel shows the city itself,
+ * with no made-up trip, cars or "driver on the way". The visitor's own route appears on the real
+ * map once they choose places and press See fares.
+ */
+export function HeroMapPanel({ market, status, card }: { market: string; status: string; card: ReactNode }) {
   const key = cityForMarket(market);
-  const c = layout[key];
-  const d = c.desk;
-  const label = `Map of a trip from ${c.from} to ${c.to}`;
+  const d = layout[key].desk;
+  const city = CITY_NAME[key] ?? key;
   return (
     <div className="hmap">
-      <div className="hmap__view" role="img" aria-label={label}>
-        <div className={`hmap-stage hmap--${key}-desk`} style={{ width: d.w, height: d.h }} data-overlay-host="">
-          <span className={`hmap-pin hmap-pin--${c.labels?.pickup ?? 'above'}`} style={{ left: d.pickup[0], top: d.pickup[1] }}><b>{pickup}</b> {c.from}</span>
-          <span className={`hmap-pin hmap-pin--dark hmap-pin--${c.labels?.drop ?? 'above'}`} style={{ left: d.drop[0], top: d.drop[1] }}><b>{drop}</b> {c.to}</span>
-        </div>
-        <div className={`hmap-photo hmap--${key}-photo`} />
+      <div className="hmap__view" role="img" aria-label={`Map of ${city}`}>
+        <div className={`hmap-stage hmap--${key}-desk-city`} style={{ width: d.w, height: d.h }} />
+        <div className={`hmap-photo hmap--${key}-photo-city`} />
+        <span className="hmap-city"><span className="hmap-city__dot" aria-hidden="true" />{status}</span>
         <span className="hmap-credit">{CREDIT}</span>
       </div>
       <div className="hmap__foot">{card}</div>
