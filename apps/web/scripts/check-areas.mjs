@@ -63,7 +63,12 @@ const MAX_DIFF = 0.03;
 // one-source Documents), so no allowance is left.
 // 14 Nov (owner): rider-web-choose.png is the choose screen with a glyph per class and the selected
 // tick the owner asked for, taken from this build; the layout around them is the 8 Nov design.
-const ALLOW = {};
+const ALLOW = {
+  // 20 Nov: the trips list groups rows under Today / Yesterday / a date, so how many rows sit under
+  // each heading changes with the day the gate runs (3.3% after midnight IST). Dates are masked;
+  // the regrouping is not. Layout breaks still fail it.
+  'rider-web-trips': [0.05, 'rows regroup under Today/Yesterday with the run date'],
+};
 // Redesigned on 10 Nov (design/driver-v2-2026-11-10): compared with those screenshots by
 // check-driver-v2.mjs, in the design's own state, not here.
 const V2 = new Set(['driver-web-dashboard', 'driver-web-earnings', 'driver-web-profile', 'driver-v2-setup']);
