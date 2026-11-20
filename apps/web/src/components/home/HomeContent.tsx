@@ -7,6 +7,7 @@ import { useLegal } from '@/components/sg/LegalProvider';
 import { Button, Device, Section } from '@/components/ui';
 import { IconCar, IconCheck, IconKey, IconLock, IconShare, IconShieldCheck, IconSos } from '@/components/ui/icons';
 import { useSite } from '@/i18n/site';
+import { useTr } from '@/i18n/website';
 
 /**
  * The homepage to the product standard (owner brief, 17 Nov 2026). One fluid layout at every width:
@@ -26,11 +27,13 @@ export function HomeContent() {
   // Each market sees its own product: a Boise trip in dollars for the US, Hyderabad in rupees for India.
   const shot = (name: string) => `/product/${name}${market === 'US' ? '-us' : ''}.webp`;
 
-  const driverCard = (
-    <div className="ui-feature hmap-status">
-      <IconCar />
-      <b className="ui-strong">{h.cardTitle}</b>
-      <span className="ui-small"><IconLock className="ui-icon ui-icon--sm hmap-status__lock" />{h.cardLocked}</span>
+  const tr = useTr();
+  // 20 Nov (owner): facts about the service, not a pretend trip.
+  const cityCard = (
+    <div className="hmap-facts">
+      <span className="hmap-fact"><IconLock className="ui-icon ui-icon--sm" />{tr('Fare locked at booking')}</span>
+      <span className="hmap-fact"><IconCar className="ui-icon ui-icon--sm" />{market === 'US' ? 'Standard · XL' : 'Auto · Mini · Sedan · SUV'}</span>
+      <Link className="hmap-fact hmap-fact--link" href="/fares">{tr('See fares')} →</Link>
     </div>
   );
 
@@ -55,7 +58,7 @@ export function HomeContent() {
                 <span className="ui-small ui-row"><IconShieldCheck className="ui-icon ui-icon--sm" />{h.tickSafety}</span>
               </div>
             </div>
-            <HeroMapPanel market={market} pickup={h.pinPickup} drop={h.pinDrop} card={driverCard} />
+            <HeroMapPanel market={market} status={tr('Launching soon')} card={cityCard} />
           </div>
         </div>
       </section>
@@ -66,7 +69,7 @@ export function HomeContent() {
             <p className="ui-label">{h.sidesLabel}</p>
             <h2 id="sides" className="ui-heading">{h.sidesHeading}</h2>
           </div>
-          <div className="ui-grid" style={{ ['--ui-min' as string]: '320px', ['--ui-gap' as string]: '24px' }}>
+          <div className="ui-grid" style={{ ['--ui-min' as string]: '560px', ['--ui-gap' as string]: '24px' }}>
             <div className="ui-card ui-side">
               <div className="ui-stack">
                 <p className="ui-label">{h.rideLabel}</p>
@@ -74,7 +77,7 @@ export function HomeContent() {
                 <ul className="ui-checks">{h.rideList.map((x) => <li key={x}><IconCheck className="ui-icon ui-icon--sm" /><span>{x}</span></li>)}</ul>
                 <div><Button kind="secondary" href="/ride">{h.rideCta}</Button></div>
               </div>
-              <Device src={shot('home-rider-choose')} alt={h.rideTitle} width={240} />
+              <Device src={shot('home-rider-choose')} alt={h.rideTitle} width={300} />
             </div>
             <div className="ui-card ui-side">
               <div className="ui-stack">
@@ -83,7 +86,7 @@ export function HomeContent() {
                 <ul className="ui-checks">{h.driveList.map((x) => <li key={x}><IconCheck className="ui-icon ui-icon--sm" /><span>{x}</span></li>)}</ul>
                 <div><Button kind="secondary" href="/drive">{h.driveCta}</Button></div>
               </div>
-              <Device src={shot('home-driver-earnings')} alt={h.driveTitle} width={240} />
+              <Device src={shot('home-driver-earnings')} alt={h.driveTitle} width={300} />
             </div>
           </div>
         </div>

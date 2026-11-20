@@ -9,8 +9,10 @@ import { POLICY_PAGES as P } from '@/lib/legal';
  * then, when configured, the registered office, the CIN (India) or state file number (USA), phone
  * and email, and the Grievance Officer (India). An unset value is left out, never invented.
  */
-export function CompanyBlock() {
-  const { market, entity } = useLegal();
+type Entity = ReturnType<typeof useLegal>['entity'];
+
+/** The statutory rows for a market, each only when configured (shared with /contact, 20 Nov). */
+export function companyRows(market: string, entity: Entity): [string, string][] {
   const rows: [string, string | undefined][] = market === 'IN'
     ? [['Registered office', entity.registered_address], ['CIN', entity.cin],
        ['Phone', entity.support_phone], ['Email', entity.support_email],
@@ -19,10 +21,16 @@ export function CompanyBlock() {
     : [['Registered office', entity.registered_address],
        ['State of formation', entity.state_of_formation], ['File number', entity.file_number],
        ['Phone', entity.support_phone], ['Email', entity.support_email]];
+  return rows.filter((r): r is [string, string] => Boolean(r[1]));
+}
+
+export function CompanyBlock() {
+  const { market, entity } = useLegal();
+  const rows = companyRows(market, entity);
   return (
     <section className="s-wrap sg-company" aria-label="Company" data-testid="company-block">
       <span className="sg-company__name">SaaradhiGo is operated by {entity.legal_name}.</span>
-      {rows.filter(([, v]) => v).map(([k, v]) => <span key={k}>{k}: {v}</span>)}
+      {rows.map(([k, v]) => <span key={k}>{k}: {v}</span>)}
       {market === 'IN' && <span>Complaints: <Link href={P.grievance}>Grievance redressal</Link></span>}
     </section>
   );

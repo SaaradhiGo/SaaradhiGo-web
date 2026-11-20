@@ -1,10 +1,16 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE, sessionSecret, verifySession } from '@/lib/session/cookie';
 import { AREA_COOKIE, type AreaHint, decide } from '@/lib/session/routing';
+import { adminHostDecision, isRoutedPath } from '@/lib/session/adminHost';
 
 /** Routes riders and drivers to their own areas, on the server (owner, 2026-11-08). */
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
+  // 20 Nov: admin.saaradhigo.com serves the console only.
+  const host = adminHostDecision(req.headers.get('x-forwarded-host') ?? req.headers.get('host'), pathname, search);
+  if (host?.kind === 'redirect') return NextResponse.redirect(new URL(host.to, req.url));
+  if (host?.kind === 'next') return NextResponse.next();
+  if (!isRoutedPath(pathname)) return NextResponse.next();
   const session = await verifySession(req.cookies.get(SESSION_COOKIE)?.value, sessionSecret());
   const hint = req.cookies.get(AREA_COOKIE)?.value;
   const area: AreaHint = hint === 'rider' || hint === 'driver' || hint === 'console' ? hint : null;
@@ -15,13 +21,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/ride', '/ride/:path*', '/trips', '/trips/:path*', '/account', '/my-trips',
-    '/driver', '/driver/:path*', '/rider', '/rider/:path*', '/sign-in', '/book',
-    // The console's old paths (13 Nov: it moved under /ops); each redirects to its /ops twin.
-    '/approvals/:path*', '/dashboard/:path*', '/drivers/:path*', '/finance/:path*', '/fraud/:path*', '/kyc/:path*',
-    '/live-ops/:path*', '/notifications/:path*', '/pricing/:path*', '/promotions/:path*', '/reports/:path*',
-    '/riders/:path*', '/safety-ops/:path*', '/settings/:path*', '/sos/:path*', '/start/:path*', '/support/:path*',
-    '/withdrawals/:path*', '/zones/:path*', '/login/:path*',
-  ],
+  // Every page, so the admin host can be answered; the area routing still only acts on its own
+  // paths (`isRoutedPath`, the list this matcher used to hold).
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };

@@ -1,84 +1,102 @@
 'use client';
 
-import { Button, Device, Section } from '@/components/ui';
+import { Button, Device } from '@/components/ui';
 import { IconPhone, IconShieldCheck } from '@/components/ui/icons';
 import { useSite } from '@/i18n/site';
+import { useTr } from '@/i18n/website';
 import { useLegal } from '@/components/sg/LegalProvider';
 
 /**
- * /safety to the product standard (17 Nov 2026): each safety feature shows the real product in a
- * phone frame (the rider's trip screen with the ride code, a trip shared live, SOS and what happens
- * next), with a short heading and one line. No icon tiles. Screens: public/product, captured from QA.
+ * /safety (20 Nov 2026, owner: "safety page UI should be proper along with images").
+ * A masthead with the four protections as jump links, then one section per protection: what it
+ * is, how it works in three steps, and the real product screen beside it at a size you can read.
+ * Screens: public/product, captured from QA with sample people.
  */
 export function SafetyContent() {
   const site = useSite();
+  const tr = useTr();
   const s = site.safety;
-  const [code, live, sos] = site.home.safety;
-  const checked = s.cards[3];
-  // Each market sees its own trip: Boise in dollars with 911, Hyderabad in rupees with 112.
-  const us = useLegal().market === 'US';
+  const [code, live, sos, checked] = s.cards;
+  const market = useLegal().market;
+  const us = market === 'US';
+  const emergency = us ? '911' : '112';
   const shot = (name: string) => `/product/${name}${us ? '-us' : ''}.webp`;
 
+  const features = [
+    { id: 'ride-code', card: code, img: 'safety-ride-code', steps: [
+      tr('A ride code appears on your trip screen once a driver is on the way.'),
+      tr('Check the driver and the number plate, then tell the driver the code in person.'),
+      tr('The code is checked on our servers. Without it the trip cannot start.'),
+    ] },
+    { id: 'live-trip', card: live, img: 'safety-share-live', steps: [
+      tr('Your driver and route show on your map from pickup to drop.'),
+      tr('Tap Share to send the trip to family or a friend.'),
+      tr('They see the driver, the car and when you will arrive.'),
+    ] },
+    { id: 'sos', card: sos, img: 'safety-sos', after: 'safety-sos-sent', steps: [
+      tr('Press and hold SOS for two seconds during a ride.'),
+      tr('Our safety team gets your trip, driver and live location at once.'),
+      tr('If it was a mistake, one tap tells the team you are safe.'),
+    ] },
+  ];
+
   return (
-    <div className="ui ui-safety">
-      <Section tight labelledBy="safety-title">
-        <div className="ui-stack ui-measure">
-          <h1 id="safety-title" className="ui-display">{s.title}</h1>
-          <p className="ui-body">{s.lead}</p>
+    <div className="ui sf">
+      <header className="lg-head">
+        <div className="hp">
+          <p className="lg-kicker">{tr('Safety')}</p>
+          <h1 className="lg-title">{s.title}</h1>
+          <p className="lg-lead">{s.lead}</p>
+          <nav className="sf-jump" aria-label={tr('On this page')}>
+            {[...features.map((f) => ({ id: f.id, t: f.card.title })), { id: 'checked', t: checked.title }].map((f, i) => (
+              <a key={f.id} href={`#${f.id}`}><span className="lg-num">{i + 1}</span>{f.t}</a>
+            ))}
+          </nav>
         </div>
-      </Section>
+      </header>
 
-      <Section band labelledBy="safety-code">
-        <div className="ui-split ui-split--feature">
-          <div className="ui-stack ui-measure">
-            <h2 id="safety-code" className="ui-heading">{code.title}</h2>
-            <p className="ui-body">{code.body}</p>
-          </div>
-          <Device src={shot('safety-ride-code')} alt={code.title} />
-        </div>
-      </Section>
-
-      <Section labelledBy="safety-live">
-        <div className="ui-split ui-split--feature ui-split--flip">
-          <div className="ui-stack ui-measure">
-            <h2 id="safety-live" className="ui-heading">{live.title}</h2>
-            <p className="ui-body">{live.body}</p>
-          </div>
-          <Device src={shot('safety-share-live')} alt={live.title} />
-        </div>
-      </Section>
-
-      <Section band labelledBy="safety-sos">
-        <div className="ui-split ui-split--feature">
-          <div className="ui-stack ui-measure">
-            <h2 id="safety-sos" className="ui-heading">{sos.title}</h2>
-            <p className="ui-body">{sos.body}</p>
-          </div>
-          <div className="ui-devices">
-            <Device src={shot('safety-sos')} alt={sos.title} width={260} />
-            <Device src={shot('safety-sos-sent')} alt={s.sos} width={260} />
-          </div>
-        </div>
-      </Section>
-
-      <Section tight labelledBy="safety-more">
-        <h2 id="safety-more" className="sr-only">{s.emergencyTitle}</h2>
-        <div className="ui-grid" style={{ ['--ui-min' as string]: '300px' }}>
-          <div className="ui-feature">
-            <IconShieldCheck />
-            <b className="ui-title">{checked.title}</b>
-            <p className="ui-body">{checked.body}</p>
-          </div>
-          <div className="ui-feature">
-            <IconPhone />
-            <b className="ui-title">{s.emergencyTitle}</b>
-            <div className="ui-stack" style={{ ['--ui-gap' as string]: '16px' }}>
-              <p className="ui-body">{s.emergencyBody}</p>
-              <div><Button kind="secondary" href="/contact">{s.report}</Button></div>
+      {features.map((f, i) => (
+        <section className={`sf-sec${i % 2 ? '' : ' sf-sec--band'}`} id={f.id} key={f.id} aria-labelledby={`${f.id}-h`}>
+          <div className={`hp sf-row${i % 2 ? ' sf-row--flip' : ''}`}>
+            <div className="sf-text">
+              <p className="sf-num">{String(i + 1).padStart(2, '0')}</p>
+              <h2 id={`${f.id}-h`} className="sf-h2">{f.card.title}</h2>
+              <p className="sf-body">{f.card.body}</p>
+              <ol className="sf-steps">
+                {f.steps.map((st) => <li key={st}>{st}</li>)}
+              </ol>
+            </div>
+            <div className={`sf-shots${f.after ? ' sf-shots--two' : ''}`}>
+              <figure className="sf-fig">
+                <Device src={shot(f.img)} alt={f.card.title} width={f.after ? 280 : 320} />
+                {f.after && <figcaption>{tr('Hold to send')}</figcaption>}
+              </figure>
+              {f.after && (
+                <figure className="sf-fig">
+                  <Device src={shot(f.after)} alt={s.sos} width={280} />
+                  <figcaption>{tr('Alert sent')}</figcaption>
+                </figure>
+              )}
             </div>
           </div>
+        </section>
+      ))}
+
+      <section className="sf-sec" id="checked" aria-labelledby="checked-h">
+        <div className="hp sf-cards">
+          <div className="sf-card">
+            <span className="sf-card__icon"><IconShieldCheck /></span>
+            <h2 id="checked-h" className="sf-card__h">{checked.title}</h2>
+            <p className="sf-body">{checked.body}</p>
+          </div>
+          <div className="sf-card sf-card--urgent">
+            <span className="sf-card__icon"><IconPhone /></span>
+            <h2 className="sf-card__h">{tr('In danger right now? Call')} {emergency}</h2>
+            <p className="sf-body">{s.emergencyBody}</p>
+            <div><Button kind="secondary" href="/contact">{s.report}</Button></div>
+          </div>
         </div>
-      </Section>
+      </section>
     </div>
   );
 }
