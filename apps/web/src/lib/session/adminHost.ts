@@ -31,3 +31,16 @@ export function isRoutedPath(pathname: string): boolean {
   const p = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
   return EXACT.includes(p) || PREFIX.some((r) => p === r || p.startsWith(`${r}/`));
 }
+
+/**
+ * The public host's console paths move to the admin host once it has its certificate (20 Nov):
+ * switched on by ADMIN_HOST_LIVE=1, so nobody is sent to an address that does not answer yet.
+ */
+export function consoleOnPublicHost(host: string | null, pathname: string, search: string, live: boolean): HostDecision {
+  if (!live) return null;
+  const h = (host ?? '').toLowerCase().split(':')[0];
+  if (ADMIN_HOSTS.includes(h)) return null;
+  const p = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  if (p === '/ops' || p.startsWith('/ops/')) return { kind: 'redirect', to: `https://${ADMIN_HOSTS[0]}${p}${search}` };
+  return null;
+}

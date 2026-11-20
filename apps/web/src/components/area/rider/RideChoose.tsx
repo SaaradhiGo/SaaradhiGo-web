@@ -30,6 +30,17 @@ const SEATS: Record<string, number> = { auto: 3, mini: 4, hatchback: 4, sedan: 4
 /** One icon set for every class (17 Nov standard): no tinted tiles. */
 const CLASS_ICON: Record<string, typeof IconCar> = { auto: IconAuto, bike: IconBike, suv: IconSuv };
 const PAY_LABEL: Record<PayMethod, string> = { upi: 'UPI', card: 'Card', netbanking: 'Netbanking', cash: 'Cash' };
+/**
+ * The payment methods a trip may offer (20 Nov, owner). A signed-in rider gets the server's list;
+ * a visitor gets the pickup zone's. India falls back to cash when nothing is listed. The US is card
+ * only: cash is never offered there, and an empty list means no payment choice at all.
+ */
+export function payMethods(server: PayMethod[] | undefined, zone: PayMethod[] | null | undefined, us: boolean): PayMethod[] {
+  const listed = server ?? (zone && zone.length ? zone : null);
+  if (us) return (listed ?? []).filter((m) => m !== 'cash');
+  return listed ?? ['cash'];
+}
+
 /** Pay by as choice rows (14 Nov), each saying when and how the money moves. */
 const PAY_NOTE: Record<PayMethod, string> = {
   cash: 'Pay the driver at the end', upi: 'Pay online at the end of the trip',
@@ -143,8 +154,11 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
         setExtra(opts);
         const fromZone = (area.zone?.payment_methods ?? null) as PayMethod[] | null;
         if (guest) setVisitorPay(fromZone);
-        const methods = opts?.payment?.methods ?? (guest && fromZone?.length ? fromZone : ['cash']);
-        setPay((p) => p ?? (draft?.pay && methods.includes(draft.pay) ? draft.pay : opts?.payment?.default ?? methods[0] ?? 'cash'));
+        // 20 Nov (owner): the US is card only, never cash; with no live card provider the zone lists
+        // nothing, and the page shows the fares and "launching soon" with no payment choice.
+        const usZone = area.zone?.country === 'US';
+        const methods = payMethods(opts?.payment?.methods, guest ? fromZone : null, usZone);
+        setPay((p) => p ?? (draft?.pay && methods.includes(draft.pay) ? draft.pay : opts?.payment?.default && methods.includes(opts.payment.default) ? opts.payment.default : methods[0] ?? null));
         const bookable = (o: Option) => o.quote && o.quote.drivers_nearby !== false;
         // The class chosen before signing in comes back chosen.
         const kept = quotes.find((o) => o.type === draft?.pick && bookable(o))?.type;
@@ -303,7 +317,7 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
   }
 
   if (!draft) return null;
-  const methods = extra?.payment?.methods ?? (guest && visitorPay?.length ? visitorPay : ['cash']);
+  const methods = payMethods(extra?.payment?.methods, guest ? visitorPay : null, us);
   const fromShort = draft.from.short || shortPlace(draft.from.label);
   const toShort = draft.to.short || shortPlace(draft.to.label);
   return (
@@ -380,7 +394,7 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
           </div>
         )}
         {freed && !noneFree && <p className="a14 agrn ab" role="status" data-testid="driver-free">{tr('A driver is free now. Your fare is ready to book.')}</p>}
-        {(extra || guest) && !outsideArea && <fieldset className="acol" style={{ gap: 6, border: 0, padding: 0, margin: 0 }}>
+        {(extra || guest) && !outsideArea && methods.length > 0 && <fieldset className="acol" style={{ gap: 6, border: 0, padding: 0, margin: 0 }}>
           <legend className="albl">{tr('Pay by')}</legend>
           <div className="acol" style={{ gap: 8 }} role="radiogroup" aria-label={tr('Pay by')}>
             {methods.map((m) => (
