@@ -790,7 +790,8 @@
   .s-footer__cta { padding-top: 32px; }
   .site .s-footer__card { padding: 20px; }
   .s-footer__cardh { font-size: var(--text-title); }
-  .s-footer__cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Two columns while they fit; one at the largest text sizes (em, so it follows the text). */
+  .s-footer__cols { grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5em), 1fr)); }
 }
 
 /* ---- Contact (20 Nov, owner). ---- */
@@ -915,3 +916,11 @@
 .ct-urgent { flex-direction: column; }
 .ct-urgent__link { display: inline-flex; margin-top: 12px; color: var(--c-text); font-weight: 600; }
 .site .ct-company__links a, .site .lg-more li a, .site .sf-jump a, .site .lg-toc__list a, .site .ct-route a { text-decoration: none; }
+
+
+/* 20 Nov sweep: every new link is a 44px tap target. */
+.site .s-footer__quick a, .site .lg-more li a, .site .ct-company__links a, .site .sf-jump a, .site .lg-toc__list a,
+.site .hmap-fact--link, .site .s-footer__col a { min-height: 44px; display: inline-flex; align-items: center; }
+.s-footer__col ul { gap: 2px; }
+.s-footer__col a, .s-footer__card { overflow-wrap: anywhere; }
+.site .s-footer__quick a, .site .s-footer__col a, .site .ct-urgent__link { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; }
