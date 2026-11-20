@@ -907,10 +907,6 @@
 .ui-home .ui-side { align-items: center; justify-content: space-between; padding: 32px 40px; gap: 32px 56px; }
 .ui-home .ui-side > .ui-stack { max-width: 34rem; }
 @media (max-width: 599px) { .ui-home .ui-side { padding: 24px 20px; } .ui-home .ui-side > .ui-device { flex-basis: 100%; } }
-.s-about--shot .s-about__shot .ui-device { --ui-device-w: 280px; }
-@media (min-width: 900px) {
-  .s-about.s-about--shot { grid-template-columns: minmax(0, 1fr) 280px; }
-  .s-about--shot .s-about__shot .ui-device { --ui-device-w: 280px; }
 }
 
 
