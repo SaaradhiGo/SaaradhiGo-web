@@ -12,6 +12,8 @@ const nextConfig = {
       // The console is never indexed: robots.txt alone still lets a linked URL appear in results.
       { source: '/design', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }] },
       { source: '/ops/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }] },
+      // 20 Nov: nothing on the console's own host is ever indexed.
+      { source: '/:path*', has: [{ type: 'host', value: 'admin.saaradhigo.com' }], headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }] },
       // 17 Nov: the signed-in rider and driver areas too (the driver's public sign-up stays indexable).
       ...['/rider/:path*', '/driver', '/driver/(documents|earnings|payouts|profile|ready|setup|support|trips)/:path*']
         .map((source) => ({ source, headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }] })),
