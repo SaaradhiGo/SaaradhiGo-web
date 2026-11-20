@@ -1226,6 +1226,15 @@ a.ops-alert:hover { background: var(--ops-wash); }
 }
 
 .login__submit { width: 100%; }
+
+/* First sign-in: the authenticator is added here (20 Nov). The QR sits on
+   white in both themes so every phone camera reads it. */
+.login__setup { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; }
+.login__setup-title { font: 600 16px/1.3 var(--font-sans); color: var(--ink); margin: 0; }
+.login__setup-steps { margin: 0; padding-left: 20px; display: grid; gap: 4px; font: 400 14px/1.5 var(--font-sans); color: var(--ops-ink-4); }
+.login__qr { display: block; width: 196px; height: 196px; max-width: 100%; justify-self: center; background: var(--ops-qr-bg); border-radius: 8px; }
+.login__key { display: grid; gap: 4px; }
+.login__key-value { font: 600 16px/1.4 var(--font-sans); letter-spacing: 0.08em; font-variant-numeric: tabular-nums; color: var(--ink); overflow-wrap: anywhere; user-select: all; }
 /* The one disabled primary on this screen is the paused state, and a
    disabled gold at 45% opacity is olive mud. Flat and quiet instead. */
 .login .sg-btn--primary[disabled] {
