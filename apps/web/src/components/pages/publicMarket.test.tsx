@@ -122,8 +122,7 @@ describe('public pages for an India visitor', () => {
   it('the ride page keeps the India classes', () => {
     expect(textOf(Ride, 'IN')).toMatch(/Auto.*Sedan|Sedan.*Auto/s);
   });
-  it('the home page names Hyderabad on its map, with no made-up trip (20 Nov)', () => {
-    expect(textOf(Home, 'IN')).toMatch(/Hyderabad/);
+  it('the home map shows no made-up trip (20 Nov)', () => {
     expect(textOf(Home, 'IN')).not.toMatch(/HITEC City|Charminar/);
   });
 });

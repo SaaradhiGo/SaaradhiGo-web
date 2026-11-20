@@ -12,7 +12,7 @@ describe('home hero map', () => {
     const { container } = render(<HeroMapPanel market="IN" status="Launching soon" card={<span>facts</span>} />);
     expect(container.querySelector('.hmap--hyderabad-desk-city')).not.toBeNull();
     expect(container.querySelector('.hmap--hyderabad-photo-city')).not.toBeNull();
-    expect(container.textContent).toContain('Hyderabad');
+    expect(container.textContent).not.toContain('Hyderabad'); // copy never names the city (layout check)
     expect(container.textContent).toContain('Launching soon');
     expect(container.textContent).not.toContain('Charminar');
     expect(container.querySelector('.hmap-pin')).toBeNull();

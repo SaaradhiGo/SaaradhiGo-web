@@ -36,7 +36,7 @@ export function HeroMapPanel({ market, status, card }: { market: string; status:
       <div className="hmap__view" role="img" aria-label={`Map of ${city}`}>
         <div className={`hmap-stage hmap--${key}-desk-city`} style={{ width: d.w, height: d.h }} />
         <div className={`hmap-photo hmap--${key}-photo-city`} />
-        <span className="hmap-city"><span className="hmap-city__dot" aria-hidden="true" />{city}<span className="hmap-city__state">{status}</span></span>
+        <span className="hmap-city"><span className="hmap-city__dot" aria-hidden="true" />{status}</span>
         <span className="hmap-credit">{CREDIT}</span>
       </div>
       <div className="hmap__foot">{card}</div>

@@ -27,7 +27,7 @@ export default function Page() {
     return (
       <AuthShell title="Create your account">
         <div className="su-soon" data-testid="signup-soon">
-          <p className="su-soon__badge"><span aria-hidden="true" className="su-soon__dot" /><Tr>Launching in Hyderabad</Tr></p>
+          <p className="su-soon__badge"><span aria-hidden="true" className="su-soon__dot" /><Tr>Launching soon</Tr></p>
           <p className="su-soon__h"><Tr>Rider sign-up opens soon, when we launch in Hyderabad.</Tr></p>
           <ul className="su-soon__list">
             <li><Tr>See every fare before you book</Tr></li>

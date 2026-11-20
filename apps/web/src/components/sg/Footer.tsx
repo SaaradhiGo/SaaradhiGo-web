@@ -81,7 +81,6 @@ export function Footer() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="s-footer__logo" src="/brand/wordmark-gold.svg" alt="SaaradhiGo" width={180} height={32} />
           <span className="s-footer__line">{s.footer.line}</span>
-          {market === 'IN' && <span className="s-footer__city"><span className="s-footer__dot" aria-hidden="true" />{tr('Launching first in Hyderabad')}</span>}
         </div>
         <nav className="s-footer__cols" aria-label="Footer">
           {COLUMNS.map((col) => (

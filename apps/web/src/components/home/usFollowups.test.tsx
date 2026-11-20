@@ -122,7 +122,6 @@ describe('1.5 public content follows the market', () => {
     at('US', <HomeContent />);
     await act(async () => { await vi.advanceTimersByTimeAsync(100); });
     const text = document.body.textContent ?? '';
-    expect(text).toContain('Boise');
     expect(text).not.toMatch(/Auto|Charminar/);
   });
 });
