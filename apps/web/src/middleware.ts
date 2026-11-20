@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { SESSION_COOKIE, sessionSecret, verifySession } from '@/lib/session/cookie';
 import { AREA_COOKIE, type AreaHint, decide } from '@/lib/session/routing';
-import { adminHostDecision, isRoutedPath } from '@/lib/session/adminHost';
+import { adminHostDecision, consoleOnPublicHost, isRoutedPath } from '@/lib/session/adminHost';
 
 /** Routes riders and drivers to their own areas, on the server (owner, 2026-11-08). */
 export async function middleware(req: NextRequest) {
@@ -10,6 +10,9 @@ export async function middleware(req: NextRequest) {
   const host = adminHostDecision(req.headers.get('x-forwarded-host') ?? req.headers.get('host'), pathname, search);
   if (host?.kind === 'redirect') return NextResponse.redirect(new URL(host.to, req.url));
   if (host?.kind === 'next') return NextResponse.next();
+  const moved = consoleOnPublicHost(req.headers.get('x-forwarded-host') ?? req.headers.get('host'), pathname, search,
+    process.env.ADMIN_HOST_LIVE === '1');
+  if (moved?.kind === 'redirect') return NextResponse.redirect(moved.to, 308);
   if (!isRoutedPath(pathname)) return NextResponse.next();
   const session = await verifySession(req.cookies.get(SESSION_COOKIE)?.value, sessionSecret());
   const hint = req.cookies.get(AREA_COOKIE)?.value;
