@@ -230,6 +230,10 @@ function build(key, city, vname, v, tname, t) {
 
   // The route, its casing, and the pins at its own two ends.
   const route = trimEnds(routeM).map(P);
+  if (process.env.HERO_CITY_ONLY) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${v.w}" height="${v.h}" viewBox="0 0 ${v.w} ${v.h}">${parts.join('')}</svg>`;
+    return { svg, pins: { pickup: [0, 0], drop: [0, 0] } };
+  }
   const rd = pathD(route, v);
   const rw = vname === 'desk' ? 5 : 4.2;
   parts.push(`<path d="${rd}" fill="none" stroke="${t.routeCase}" stroke-width="${rw + 5}" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>`);
@@ -280,7 +284,7 @@ for (const [key, city] of Object.entries(CITIES)) {
       const { svg, pins } = build(key, city, vname, v, tname, t);
       layout[key][vname] = { w: v.w, h: v.h, ...pins };
       for (const s of v.scales) {
-        const file = path.join(OUT, `${key}-${vname}-${tname}@${s}x.webp`);
+        const file = path.join(OUT, `${key}-${vname}-${tname}${process.env.HERO_CITY_ONLY ? '-city' : ''}@${s}x.webp`);
         await sharp(Buffer.from(svg), { density: 72 * s }).webp({ quality: 82, effort: 6 }).toFile(file);
         console.log(path.basename(file), Math.round(fs.statSync(file).size / 1024) + ' KB');
       }
@@ -289,4 +293,4 @@ for (const [key, city] of Object.entries(CITIES)) {
   }
 }
 if (!Object.keys(layout).length) { console.log('no city data in scripts/hero-map/data: run fetch_osm.py first'); process.exit(1); }
-fs.writeFileSync(path.join(HERE, '..', '..', 'src', 'components', 'home', 'heroMapLayout.json'), JSON.stringify(layout, null, 2) + '\n');
+if (!process.env.HERO_CITY_ONLY) fs.writeFileSync(path.join(HERE, '..', '..', 'src', 'components', 'home', 'heroMapLayout.json'), JSON.stringify(layout, null, 2) + '\n');

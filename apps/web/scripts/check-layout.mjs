@@ -176,7 +176,7 @@ const measure = (page) => page.evaluate(({ phone }) => {
     notice: notice ? notice.getBoundingClientRect().height : 0,
     schedule: schedule ? (schedule.textContent || '').trim() : null,
     leaks: leaks.slice(0, 6),
-    footer: !!document.querySelector('footer .s-footer__mark'),
+    footer: !!document.querySelector('footer .s-footer__logo'),
     main: main ? main.getBoundingClientRect().height : 0,
     page: document.documentElement.scrollHeight,
     sideways: document.documentElement.scrollWidth > document.documentElement.clientWidth,
@@ -300,7 +300,7 @@ for (const { p, w, h, lang } of RUNS) {
   if ((w === 1440 || (w === 390 && STANDARD[p])) && lang === 'en' && REF_FOR[p]) {
     const stdName = STANDARD[p] && (w === 390 ? STANDARD[p].replace('.png', '-390.png') : STANDARD[p]);
     const shot = await page.screenshot({ fullPage: true });
-    const emblems = await page.evaluate(() => ['.s-brand__mark', '.s-footer__mark'].map((q) => {
+    const emblems = await page.evaluate(() => ['.s-brand__mark', '.s-footer__logo'].map((q) => {
       const r = document.querySelector(q).getBoundingClientRect();
       return [Math.floor(r.left), Math.floor(r.top + scrollY), Math.ceil(r.width), Math.ceil(r.height)];
     }));

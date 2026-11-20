@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Masthead } from './PageShell';
+import Link from 'next/link';
+import { companyRows } from './CompanyBlock';
+import { useTr } from '@/i18n/website';
+import { Alert, Card, CarGlyph, Shield, UserCheck } from '@/components/sg/icons';
 import { usePages } from '@/i18n/usePages';
 import { useLegal } from '@/components/sg/LegalProvider';
 import { type StateRules, fetchStateRules } from '@/lib/legal';
@@ -30,54 +33,91 @@ export function ContactContent() {
   useEffect(() => { if (market === 'US') void fetchStateRules().then(setRules); }, [market]);
   const agent = market === 'US' ? rules['US-ID']?.service_agent : undefined;
 
+  const tr = useTr();
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    void navigator.clipboard?.writeText(SUPPORT_EMAIL).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  };
+  const icons = [CarGlyph, Card, UserCheck, Shield];
+  const emergency = market === 'US' ? '911' : '112';
+
+  // 20 Nov (owner: "contact page is not coming properly"): one masthead band, the email as a
+  // card you can read, copy or open, the four routes as a grid of cards, and who runs the service.
   return (
     <>
-      <Masthead title={p.title} lead={p.lead} />
+      <header className="lg-head">
+        <div className="hp">
+          <p className="lg-kicker">{tr('Support')}</p>
+          <h1 className="lg-title">{p.title}</h1>
+          <p className="lg-lead">{p.lead}</p>
+        </div>
+      </header>
 
-      <section className="hp hp-section">
-        <div className="hp-block">
-          <h2>{p.emailHeading}</h2>
-          <div>
-            <p>{p.emailBody}</p>
-            <div className="hp-actions">
-              <a className="sg-btn sg-btn--primary sg-btn--lg" href={SUPPORT_MAILTO}>
-                {SUPPORT_EMAIL}
-              </a>
+      <section className="hp ct">
+        <div className="ct-main">
+          <div className="ct-email">
+            <p className="ct-label">{p.emailHeading}</p>
+            <p className="ct-email__body">{p.emailBody}</p>
+            <p className="ct-email__addr">{SUPPORT_EMAIL}</p>
+            <div className="ct-email__actions">
+              <a className="sg-btn sg-btn--primary sg-btn--lg" href={SUPPORT_MAILTO}>{tr('Write to us')}</a>
+              <button type="button" className="sg-btn sg-btn--secondary sg-btn--lg" onClick={copy} aria-live="polite">
+                {copied ? tr('Copied') : tr('Copy address')}
+              </button>
             </div>
-            <p className="hp-hint">{p.emailHint}</p>
+            <p className="ct-email__hint">{p.emailHint}</p>
+          </div>
+
+          <div className="ct-urgent" role="note">
+            <span className="ct-urgent__icon" aria-hidden="true"><Alert /></span>
+            <div>
+              <p className="ct-urgent__title">{tr('In danger right now? Call')} {emergency}.</p>
+              <p className="ct-urgent__body">{tr('Call the emergency services first. Then press SOS in the app, so our team sees your trip and location.')}</p>
+              <Link className="ct-urgent__link" href="/safety">{tr('How safety works')} →</Link>
+            </div>
           </div>
         </div>
 
-        {market === 'US' && (
-          <div className="hp-block" data-testid="us-legal-contact">
-            <h2>{entity.legal_name}</h2>
-            <div>
-              <p>SaaradhiGo in the United States is operated by {entity.legal_name}.</p>
-              {agent?.name ? (
-                <p data-testid="idaho-agent">
-                  Agent for service of process in Idaho: {agent.name}
-                  {agent.address ? `, ${agent.address}` : ''}{agent.phone ? `, ${agent.phone}` : ''}.
-                </p>
-              ) : null}
-            </div>
-          </div>
-        )}
-
-        <ul className="hp-topics">
-          {p.routes.map((r) => (
-            <li className="hp-topic" key={r.h}>
-              <h2>{r.h}</h2>
-              <p>{r.p}</p>
-            </li>
-          ))}
+        <h2 className="ct-h2">{tr('Find the right route')}</h2>
+        <ul className="ct-routes">
+          {p.routes.map((r, i) => {
+            const Icon = icons[i] ?? Shield;
+            return (
+              <li className="ct-route" key={r.h}>
+                <span className="ct-route__icon" aria-hidden="true"><Icon /></span>
+                <h3>{r.h}</h3>
+                <p>{r.p}</p>
+              </li>
+            );
+          })}
         </ul>
 
-        {/* NO OPERATOR SIGN-IN HERE.
-            The console is internal. Promoting its entrance on the page a
-            rider reaches when something has gone wrong with their trip
-            advertises a door they cannot open, and puts staff navigation in
-            front of customers. `/login` still exists and still works for the
-            people who need it; it is simply not sold to riders. */}
+        <div className="ct-company">
+          <div>
+            <p className="ct-label">{tr('Who runs SaaradhiGo')}</p>
+            <p className="ct-company__name">{entity.legal_name}</p>
+            {companyRows(market, entity).map(([k, v]) => <p className="ct-company__line" key={k}>{k}: {v}</p>)}
+            {market === 'US' ? (
+              <p className="ct-company__line" data-testid="us-legal-contact">SaaradhiGo in the United States is operated by {entity.legal_name}.</p>
+            ) : null}
+            {agent?.name ? (
+              <p className="ct-company__line" data-testid="idaho-agent">
+                Agent for service of process in Idaho: {agent.name}
+                {agent.address ? `, ${agent.address}` : ''}{agent.phone ? `, ${agent.phone}` : ''}.
+              </p>
+            ) : null}
+          </div>
+          <ul className="ct-company__links">
+            <li><Link href="/help">{tr('Help centre')}</Link></li>
+            <li><Link href="/safety">{tr('Safety')}</Link></li>
+            {market === 'IN' ? <li><Link href="/grievance">{tr('Grievance officer')}</Link></li> : null}
+            <li><Link href="/privacy">{tr('Privacy policy')}</Link></li>
+          </ul>
+        </div>
+        {/* NO OPERATOR SIGN-IN HERE: the console is internal and is not sold to riders. */}
       </section>
     </>
   );

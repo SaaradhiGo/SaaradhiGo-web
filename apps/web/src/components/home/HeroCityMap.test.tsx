@@ -8,21 +8,23 @@ describe('home hero map', () => {
     expect(cityForMarket('US')).toBe('boise');
   });
 
-  it('labels the pins with the real places and credits OpenStreetMap', () => {
-    const { container } = render(<HeroMapPanel market="IN" pickup="Pickup" drop="Drop" card={<span>status</span>} />);
-    expect(container.querySelector('.hmap--hyderabad-desk')).not.toBeNull();
-    expect(container.querySelector('.hmap--hyderabad-photo')).not.toBeNull();
-    expect(container.textContent).toContain('HITEC City');
-    expect(container.textContent).toContain('Charminar');
+  it('shows the city itself, named, with no made-up trip (20 Nov, owner)', () => {
+    const { container } = render(<HeroMapPanel market="IN" status="Launching soon" card={<span>facts</span>} />);
+    expect(container.querySelector('.hmap--hyderabad-desk-city')).not.toBeNull();
+    expect(container.querySelector('.hmap--hyderabad-photo-city')).not.toBeNull();
+    expect(container.textContent).not.toContain('Hyderabad'); // copy never names the city (layout check)
+    expect(container.textContent).toContain('Launching soon');
+    expect(container.textContent).not.toContain('Charminar');
+    expect(container.querySelector('.hmap-pin')).toBeNull();
     expect(container.textContent).toContain('© OpenStreetMap contributors');
   });
 
-  it('puts the driver card under the map, never over it', () => {
-    const { container } = render(<HeroMapPanel market="US" pickup="Pickup" drop="Drop" card={<span>status</span>} />);
+  it('puts the facts under the map, never over it', () => {
+    const { container } = render(<HeroMapPanel market="US" status="Launching soon" card={<span>facts</span>} />);
     const view = container.querySelector('.hmap__view');
     const foot = container.querySelector('.hmap__foot');
-    expect(container.querySelector('.hmap--boise-desk')).not.toBeNull();
-    expect(foot?.textContent).toBe('status');
+    expect(container.querySelector('.hmap--boise-desk-city')).not.toBeNull();
+    expect(foot?.textContent).toBe('facts');
     expect(view?.contains(foot as Node)).toBe(false);
   });
 });
