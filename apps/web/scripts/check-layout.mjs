@@ -176,7 +176,7 @@ const measure = (page) => page.evaluate(({ phone }) => {
     notice: notice ? notice.getBoundingClientRect().height : 0,
     schedule: schedule ? (schedule.textContent || '').trim() : null,
     leaks: leaks.slice(0, 6),
-    footer: !!document.querySelector('footer .s-footer__mark'),
+    footer: !!document.querySelector('footer .s-footer__logo'),
     main: main ? main.getBoundingClientRect().height : 0,
     page: document.documentElement.scrollHeight,
     sideways: document.documentElement.scrollWidth > document.documentElement.clientWidth,
