@@ -155,6 +155,7 @@
   --ops-bg-200: #181818;
   --ops-bg-300: #1f1f1f;
   --ops-bg-field: #12141a;
+  --ops-qr-bg: #ffffff;
   --ops-line-strong: #3a3a40;
   --ops-ink-1: #c6cedb;
   --ops-ink-2: #9aa6b6;
@@ -210,6 +211,7 @@
   --ops-bg-200: #ffffff;
   --ops-bg-300: #f4f4f5;
   --ops-bg-field: #ffffff;
+  --ops-qr-bg: #ffffff;
   --ops-line-strong: #c4c7cc;
   --ops-ink-1: #121212;
   --ops-ink-2: #4a4a4a;

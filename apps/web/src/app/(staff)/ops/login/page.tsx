@@ -9,6 +9,7 @@ import {
   adminLoginWithPassword,
   readToken,
   writeRecoveryLow,
+  type MfaSetup,
 } from '@/lib/api';
 import { RecoveryCodesScreen } from '@/components/console/RecoveryCodes';
 import { LOGIN_LOCK_AFTER, LOGIN_LOCK_MINUTES } from '@/lib/consoleEnv';
@@ -140,6 +141,11 @@ function LoginInner() {
   const [issued, setIssued] = useState<{ codes: string[]; notice: string | null } | null>(
     preview === 'codes' ? { codes: PREVIEW_CODES, notice: null } : null,
   );
+  // A NEW AUTHENTICATOR (20 Nov, owner): set at the first sign-in from the
+  // server's AUTH_MFA_REQUIRED answer while the device is unconfirmed, and
+  // shown above the code field so it is scanned here, not handed over.
+  const [setup, setSetup] = useState<MfaSetup | null>(null);
+  const [keyCopied, setKeyCopied] = useState(false);
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
 
@@ -280,6 +286,8 @@ function LoginInner() {
         // Not a failure: the first factor was accepted and the second is
         // now being asked for.
         setStep('totp');
+        setSetup(err instanceof ApiError ? err.detail?.setup ?? null : null);
+        setKeyCopied(false);
         setCode('');
         setRecovery('');
       } else if (errCode === 'AUTH_BREAK_GLASS_REASON_REQUIRED') {
@@ -537,6 +545,26 @@ function LoginInner() {
 
           {(step === 'totp' || step === 'recovery') && (
             <form className="login__form" onSubmit={onCode} noValidate>
+              {step === 'totp' && setup && (
+                <section className="login__setup" aria-labelledby="login-setup-title">
+                  <h2 id="login-setup-title" className="login__setup-title">Set up your authenticator</h2>
+                  <ol className="login__setup-steps">
+                    <li>Open Google Authenticator, Microsoft Authenticator or Authy on your phone.</li>
+                    <li>Add an account and scan this code.</li>
+                  </ol>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className="login__qr" src={setup.qr_svg} width={196} height={196}
+                    alt="QR code to add SaaradhiGo to your authenticator app" />
+                  <div className="login__key">
+                    <span className="login__hint">Can&rsquo;t scan? Enter this key instead:</span>
+                    <code className="login__key-value">{setup.secret.replace(/(.{4})/g, '$1 ').trim()}</code>
+                    <button type="button" className="login__link" onClick={() => {
+                      navigator.clipboard?.writeText(setup.secret).then(() => setKeyCopied(true), () => setKeyCopied(false));
+                    }}>{keyCopied ? 'Key copied' : 'Copy key'}</button>
+                  </div>
+                  <p className="login__hint">Then enter the 6-digit code the app shows for SaaradhiGo.</p>
+                </section>
+              )}
               <div className="login__field">
                 <label htmlFor="login-code">
                   {step === 'totp' ? 'Authenticator code' : 'Recovery code'}
@@ -590,7 +618,7 @@ function LoginInner() {
                 {!busy && <ArrowRight />}
               </button>
               <div className="login__links">
-                {step === 'totp' ? (
+                {step === 'totp' && setup ? null : step === 'totp' ? (
                   <button type="button" className="login__link" onClick={() => { setStep('recovery'); setCode(''); setError(null); }}>
                     Use a recovery code instead
                   </button>
