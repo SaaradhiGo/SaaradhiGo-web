@@ -234,3 +234,37 @@ describe('forced password change at sign-in', () => {
     });
   });
 });
+
+describe('first sign-in: the authenticator is set up on this screen (20 Nov)', () => {
+  const setupRequired: Reply = {
+    status: 401,
+    body: { error: {
+      code: 'AUTH_MFA_REQUIRED', message: 'An authentication code is required', field: 'mfa_code',
+      setup: {
+        method: 'totp', secret: 'JBSWY3DPEHPK3PXP', issuer: 'SaaradhiGo', account: EMAIL,
+        otpauth_uri: 'otpauth://totp/x?secret=JBSWY3DPEHPK3PXP&issuer=SaaradhiGo',
+        qr_svg: 'data:image/svg+xml;base64,PHN2Zy8+',
+      },
+    } },
+  };
+
+  it('shows the QR code and the key, and hides the recovery-code link', async () => {
+    serverAnswers(setupRequired);
+    render(<LoginPage />);
+    submitCredentials();
+
+    const qr = await screen.findByAltText(/QR code to add SaaradhiGo/);
+    expect(qr.getAttribute('src')).toBe('data:image/svg+xml;base64,PHN2Zy8+');
+    expect(screen.getByText('JBSW Y3DP EHPK 3PXP')).toBeTruthy();
+    expect(screen.queryByText('Use a recovery code instead')).toBeNull();
+  });
+
+  it('an enrolled account sees no setup, only the code field', async () => {
+    serverAnswers(mfaRequired);
+    render(<LoginPage />);
+    submitCredentials();
+
+    await screen.findByLabelText('Authenticator code');
+    expect(screen.queryByAltText(/QR code/)).toBeNull();
+  });
+});

@@ -238,10 +238,26 @@ export class ApiError extends Error {
      * the email box it was about was on a screen they had already left.
      */
     public field: string | null = null,
+    /**
+     * Extra data the server sent with the error. Today only the sign-in's
+     * `setup` (20 Nov): the QR code for a new operator's authenticator,
+     * sent with AUTH_MFA_REQUIRED after the password was proved.
+     */
+    public detail: { setup?: MfaSetup } | null = null,
   ) {
     super(message);
   }
 }
+
+/** A new operator's authenticator, shown once at the first sign-in. */
+export type MfaSetup = {
+  method: 'totp';
+  secret: string;
+  otpauth_uri: string;
+  qr_svg: string;
+  account: string;
+  issuer: string;
+};
 
 /**
  * `authToken` exists because this client serves TWO principals.
@@ -292,6 +308,7 @@ async function call<T>(
       authored ? err.message : `HTTP ${resp.status}`,
       authored,
       typeof err.field === 'string' && err.field !== 'general' ? err.field : null,
+      err.setup && typeof err.setup === 'object' ? { setup: err.setup as MfaSetup } : null,
     );
   }
   // Standard backend envelope: {status, data} for success
