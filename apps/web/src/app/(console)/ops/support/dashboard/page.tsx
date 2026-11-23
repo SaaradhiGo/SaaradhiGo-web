@@ -1,5 +1,6 @@
 'use client';
 
+import { DatePresets } from '@/components/console/kit/DatePresets';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
@@ -101,6 +102,8 @@ export default function DashboardPage() {
       />
 
       <Panel title="Range">
+        <DatePresets from={applied.from} to={applied.to} customFieldId="d-from" today={new Intl.DateTimeFormat('en-CA', { timeZone: marketTz }).format(new Date())}
+          onPick={(r) => { setDateFrom(r.from); setDateTo(r.to); setApplied(r); }} />
         <form
           className="ops-form" aria-label="Choose the range"
           onSubmit={(e) => { e.preventDefault(); if (!rangeError) setApplied({ from: dateFrom, to: dateTo }); }}
@@ -122,7 +125,7 @@ export default function DashboardPage() {
             <button type="submit" className="sg-btn sg-btn--primary sg-btn--sm" disabled={Boolean(rangeError)}>Show</button>
           </div>
           <p className="help m-0" id="d-help">
-            {rangeError ?? 'Leave both empty for the last 7 days. The range can be at most 92 days.'}
+            {rangeError ?? 'Leave both empty for the last 7 days. The range can be at most 12 months.'}
           </p>
         </form>
       </Panel>

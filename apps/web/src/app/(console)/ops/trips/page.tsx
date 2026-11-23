@@ -1,5 +1,6 @@
 'use client';
 
+import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
@@ -373,6 +374,9 @@ function TripsInner() {
           onView={setView}
           chips={chips}
           filterSlot={(
+            <>
+            <DatePresets from={filters.dateFrom} to={filters.dateTo} customFieldId="f-from"
+              onPick={(r) => apply({ dateFrom: r.from, dateTo: r.to })} />
             <MoreFilters count={active}>
               <form className="ops-form" aria-label="Filter trips" onSubmit={(e) => { e.preventDefault(); apply({}); }}>
                 <div className="ops-filters" role="group" aria-label="Status">
@@ -426,6 +430,7 @@ function TripsInner() {
                 </div>
               </form>
             </MoreFilters>
+            </>
           )}
           columns={columns}
           rows={rows}

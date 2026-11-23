@@ -143,7 +143,7 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
           ))}
         </nav>
       ) : null}
-      <TodayPanel data={today} placeName={node?.name} onOpenCountry={(code) => goToPlace(code)} />
+      <TodayPanel data={today.data} range={today.range} onRange={today.setRange} placeName={node?.name} onOpenCountry={(code) => goToPlace(code)} />
 
       <SuperAdminBanner access={access} />
       <SelfApprovalNotice approver={can(access, 'approval.check')} />
@@ -364,7 +364,7 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
         </div>
       </header>
 
-      <TodayPanel data={today} placeName={city.name} onOpenCountry={(code) => goToPlace(code)} />
+      <TodayPanel data={today.data} range={today.range} onRange={today.setRange} placeName={city.name} onOpenCountry={(code) => goToPlace(code)} />
       <SelfApprovalNotice approver={can(access, 'approval.check')} />
 
       <div className="ops-ws__grid ops-ws__grid--d">

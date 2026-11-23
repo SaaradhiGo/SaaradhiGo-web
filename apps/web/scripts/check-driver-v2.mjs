@@ -261,7 +261,8 @@ for (const [want, answer, label] of [['dd/mm/yyyy', null, 'DRIVER'], ['mm/dd/yyy
   const n = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('[data-stat]')]
     .map((e) => [e.getAttribute('data-stat'), Number((e.textContent ?? '').replace(/[^\d.]/g, ''))])));
   if (Object.keys(n).length !== 5) fail(`/driver/earnings: ${Object.keys(n).length} summary cards, want 5`);
-  else if (Math.abs(n['Trip fares'] - n['Platform fee'] + n['Tips'] - n['You earned']) > 0.005) fail(`/driver/earnings: cards do not add up ${JSON.stringify(n)}`);
+  // 23 Nov: India cards read whole rupees, each rounded on its own: within ₹2 of adding up.
+  else if (Math.abs(n['Trip fares'] - n['Platform fee'] + n['Tips'] - n['You earned']) > 2) fail(`/driver/earnings: cards do not add up ${JSON.stringify(n)}`);
   if (!(await page.$('[data-testid="all-months"] [data-month]'))) fail('/driver/earnings: no month in All months');
   await ctx.close();
 }
@@ -272,6 +273,9 @@ for (const [want, answer, label] of [['dd/mm/yyyy', null, 'DRIVER'], ['mm/dd/yyy
   for (const p of ['/driver/earnings', '/driver/trips', '/driver/payouts']) {
     const { ctx, page } = await open(browser, 'driver', p);
     tabs[p] = await page.evaluate(() => [...document.querySelectorAll('.er-tabs [role="tab"]')].map((t) => t.textContent.trim()).join(' | '));
+    // 23 Nov: the shared presets; Today steps back and forward a day at a time.
+    await page.click('.er-tabs [role="tab"][data-period="today"]').catch(() => undefined);
+    await page.waitForTimeout(600);
     const arrows = await page.evaluate(() => ['Previous', 'Next'].every((l) => document.querySelector(`.er-arrow[aria-label="${l}"]`)));
     if (!arrows) fail(`${p}: no previous and next period arrows`);
     if (p !== '/driver/earnings' && !(await page.$('.er-search input'))) fail(`${p}: no search`);
@@ -284,7 +288,7 @@ for (const [want, answer, label] of [['dd/mm/yyyy', null, 'DRIVER'], ['mm/dd/yyy
     }
     await ctx.close();
   }
-  if (tabs['/driver/earnings'] !== 'Day | Week | Month | Year | Custom range') fail(`/driver/earnings: periods "${tabs['/driver/earnings']}"`);
+  if (tabs['/driver/earnings'] !== 'Today | 7 days | 30 days | 90 days | 12 months | Custom') fail(`/driver/earnings: periods "${tabs['/driver/earnings']}"`);
   for (const p of ['/driver/trips', '/driver/payouts']) if (tabs[p] !== tabs['/driver/earnings']) fail(`${p}: periods "${tabs[p]}", Earnings has "${tabs['/driver/earnings']}"`);
 }
 

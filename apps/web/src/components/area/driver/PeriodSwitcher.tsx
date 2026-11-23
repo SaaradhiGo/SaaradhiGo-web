@@ -9,7 +9,25 @@ import { type Load, useLoad } from '@/lib/area/useLoad';
 import { IBack, ICalendar, IChevron, ISearch } from '../icons';
 import { useAccount } from '../ProfileMenu';
 
-const TABS: [HistoryPeriod, string][] = [['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['year', 'Year'], ['custom', 'Custom range']];
+// 23 Nov (owner): the same presets as every console page with a date range.
+export type Tab = 'today' | 'd7' | 'd30' | 'd90' | 'd365' | 'custom';
+const TABS: [Tab, string, number][] = [['today', 'Today', 1], ['d7', '7 days', 7], ['d30', '30 days', 30],
+  ['d90', '90 days', 90], ['d365', '12 months', 365], ['custom', 'Custom', 0]];
+/** Today in the driver's market, as YYYY-MM-DD. */
+function marketToday(tz: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date());
+}
+function daysBack(day: string, n: number): string {
+  const d = new Date(`${day}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - (n - 1));
+  return d.toISOString().slice(0, 10);
+}
+/** The range a rolling preset covers, ending today in the market (null for Today and Custom). */
+export function tabRange(t: Tab, tz?: string): { start: string; end: string } | null {
+  const days = TABS.find(([k]) => k === t)?.[2] ?? 0;
+  if (t === 'today' || t === 'custom' || !days) return null;
+  const end = tz ? marketToday(tz) : new Date().toLocaleDateString('en-CA');
+  return { start: daysBack(end, days), end };
+}
 const noon = (d: string) => `${d}T12:00:00Z`;
 export const ymLabel = (ym: string, locale: string) => monthYear(`${ym}-15T12:00:00Z`, locale) ?? ym;
 
@@ -23,6 +41,7 @@ export function periodLabel(h: History, locale: string): string {
 
 export type PeriodState = {
   period: HistoryPeriod; pick: (p: HistoryPeriod) => void; setAnchor: (d: string | undefined) => void;
+  tab: Tab; pickTab: (t: Tab, tz: string) => void;
   range: { start: string; end: string } | null; setRange: (r: { start: string; end: string }) => void;
   hist: Load<History | null>;
 };
@@ -33,15 +52,23 @@ export type PeriodState = {
  * totals come from the earnings history, so all three pages agree on what a period holds.
  */
 export function usePeriod(initial: HistoryPeriod, anchor0?: string): PeriodState {
-  const [period, setPeriod] = useState<HistoryPeriod>(initial);
+  // A calendar period asked for by a caller opens as the matching rolling preset (30 days by default).
+  const first: Tab = initial === 'day' ? 'today' : initial === 'week' ? 'd7' : initial === 'year' || initial === 'taxyear' ? 'd365' : 'd30';
+  const [period, setPeriod] = useState<HistoryPeriod>(first === 'today' ? 'day' : 'custom');
   const [anchor, setAnchor] = useState<string | undefined>(anchor0);
-  const [range, setRange] = useState<{ start: string; end: string } | null>(null);
-  useEffect(() => { if (anchor0) { setPeriod('day'); setAnchor(anchor0); } }, [anchor0]);
+  const [range, setRange] = useState<{ start: string; end: string } | null>(() => tabRange(first));
+  const [tab, setTab] = useState<Tab>(first);
+  useEffect(() => { if (anchor0) { setPeriod('day'); setAnchor(anchor0); setTab('today'); } }, [anchor0]);
   const hist = useLoad(() => (period === 'custom' && !range ? Promise.resolve(null)
     : loadHistory(period, anchor, period === 'custom' ? range ?? undefined : undefined)), [period, anchor, range]);
   setMarketZone(hist.data?.timezone);
   function pick(p: HistoryPeriod) { setPeriod(p); setAnchor(undefined); if (p !== 'custom') setRange(null); }
-  return { period, pick, setAnchor, range, setRange, hist };
+  function pickTab(t: Tab, tz: string) {
+    setTab(t);
+    if (t === 'today') { pick('day'); return; }
+    setPeriod('custom'); setAnchor(undefined); setRange(tabRange(t, tz));
+  }
+  return { period, pick, setAnchor, range, setRange, hist, tab, pickTab };
 }
 
 /** The tabs, the year type, previous and next with the period's name, and the custom range form. */
@@ -54,7 +81,8 @@ export function PeriodSwitcher({ s, children }: { s: PeriodState; children?: Rea
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [err, setErr] = useState<string | null>(null);
-  const { period, pick, hist, range } = s;
+  const { period, pick, hist, range, tab } = s;
+  const tz = hist.data?.timezone || (india ? 'Asia/Kolkata' : 'America/Boise');
   const h = hist.data;
   function apply() {
     const a = parseNumericDate(from, order); const b = parseNumericDate(to, order);
@@ -66,9 +94,9 @@ export function PeriodSwitcher({ s, children }: { s: PeriodState; children?: Rea
       <div className="er-top">
         <div className="er-tabs" role="tablist" aria-label={tr('Period')}>
           {TABS.map(([p, name]) => {
-            const on = period === p || (p === 'year' && period === 'taxyear');
+            const on = tab === p;
             return (
-              <button key={p} type="button" role="tab" aria-selected={on} className={`achip${on ? ' achip--on' : ' er-tab'}`} onClick={() => pick(p)}
+              <button key={p} type="button" role="tab" aria-selected={on} className={`achip${on ? ' achip--on' : ' er-tab'}`} onClick={() => s.pickTab(p, tz)}
                 aria-label={p === 'custom' ? tr(name) : undefined} data-period={p}>
                 {/* 14 Nov: on a phone Custom range is the calendar alone, so the five fit one row. */}
                 {p === 'custom' && <ICalendar size={18} />}<span className={p === 'custom' ? 'er-tab__word' : undefined}>{tr(name)}</span>
@@ -83,7 +111,7 @@ export function PeriodSwitcher({ s, children }: { s: PeriodState; children?: Rea
               <option value="taxyear">{tr('Tax year (April to March)')}</option>
             </select>
           )}
-          {period !== 'custom' && (
+          {period === 'day' && (
             <>
               <button type="button" className="er-arrow" aria-label={tr('Previous')} disabled={!h?.has_prev} onClick={() => h && s.setAnchor(h.prev)}><IBack size={18} /></button>
               <span className="a20 er-label" data-testid="period-label">{h ? periodLabel(h, locale) : ''}</span>
@@ -93,7 +121,7 @@ export function PeriodSwitcher({ s, children }: { s: PeriodState; children?: Rea
           {children}
         </div>
       </div>
-      {period === 'custom' && (
+      {tab === 'custom' && (
         <div className="acard er-range">
           <label className="su-field"><span className="a14 ab">{tr('From')}</span>
             <span className="ainput"><input value={from} placeholder={datePlaceholder(order)} inputMode="numeric" onChange={(e) => setFrom(e.target.value)} /></span></label>
@@ -101,7 +129,7 @@ export function PeriodSwitcher({ s, children }: { s: PeriodState; children?: Rea
             <span className="ainput"><input value={to} placeholder={datePlaceholder(order)} inputMode="numeric" onChange={(e) => setTo(e.target.value)} /></span></label>
           <button type="button" className="abtn abtn--dark" onClick={apply}>{tr('Show')}</button>
           {err && <p className="a14 ared" role="alert" style={{ width: '100%' }}>{err}</p>}
-          {range && <p className="a14 amut" style={{ width: '100%' }}>{shownDate(range.start, order)} – {shownDate(range.end, order)}</p>}
+          {range && tab === 'custom' && <p className="a14 amut" style={{ width: '100%' }}>{shownDate(range.start, order)} – {shownDate(range.end, order)}</p>}
         </div>
       )}
     </>

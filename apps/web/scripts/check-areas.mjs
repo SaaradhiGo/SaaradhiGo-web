@@ -487,7 +487,7 @@ async function settledText(page, want) {
 
 const EMPTY = {
   driver: [
-    ['/driver', /₹0\.00/], ['/driver/earnings', /₹0(?:\.00)?(?![\d.,])/], ['/driver/trips', /No trips yet/],
+    ['/driver', /₹0(?:\.00)?(?![\d.,])/], ['/driver/earnings', /₹0(?:\.00)?(?![\d.,])/], ['/driver/trips', /No trips yet/],
     ['/driver/documents', /Documents/], ['/driver/payouts', /No payouts yet/], ['/driver/profile', /Vehicle/],
   ],
   rider: [['/trips', /No trips yet/], ['/account', /Saved places/]],

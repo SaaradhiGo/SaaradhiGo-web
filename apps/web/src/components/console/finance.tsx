@@ -1,5 +1,6 @@
 'use client';
 
+import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -7,7 +8,7 @@ import { ApiError, apiDownload } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
 import { PageButtonLink } from '@/components/console/PageLink';
 import {
-  RANGE_PRESETS, canExport, presetRange, rangeProblem, todayLocal,
+  canExport, rangeProblem, todayLocal,
 } from '@/lib/finance';
 import { Download } from '@/components/console/icons';
 
@@ -89,12 +90,7 @@ export function RangeBar({
           max={todayLocal()} onChange={(e) => setDraftTo(e.target.value)} />
       </div>
       <button type="submit" className="sg-btn sg-btn--primary sg-btn--sm" disabled={Boolean(problem)}>Show</button>
-      <div className="ops-seg" role="group" aria-label="Date presets">
-        {RANGE_PRESETS.map((p) => (
-          <button key={p.days} type="button" className="ops-seg__btn"
-            onClick={() => onApply(presetRange(p.days))}>{p.label}</button>
-        ))}
-      </div>
+      <DatePresets from={from} to={to} onPick={onApply} customFieldId={`${idPrefix}-from`} />
       {showProblem ? <span className="ops-rangebar__problem" role="alert">{problem}</span> : null}
     </form>
   );

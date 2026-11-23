@@ -24,7 +24,7 @@ const OCTOBER = {
   joined: '2026-10-02', has_prev: false, has_next: true, prev: '2026-09-01', next: '2026-11-01',
   summary: { trips: 298, days_driven: 26, fares: '33995.50', avg_fare: '114.08', commission: '0.00', daily_fee: '2975.00',
     platform_fee: '2975.00', tips: '820.00', tip_riders: 41, earned: '31840.50', paid_to_bank: '18612.00', payouts: 6,
-    cash_collected: '13228.50', unresolved_trips: 0, fee_note: 'Capped at ₹149.00 a day', tips_enabled: true },
+    cash_collected: '13228.50', unresolved_trips: 0, fee_note: 'Capped at ₹149 a day', tips_enabled: true },
   chart: { unit: 'day', bars: [{ key: '2026-10-01', earned: '1200.00', trips: 11 }, { key: '2026-10-02', earned: '0.00', trips: 0 }] },
 };
 
@@ -60,9 +60,9 @@ describe('earnings', () => {
     await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
     const stat = (label: string) => amount(container.querySelector(`[data-stat="${label}"]`)?.textContent ?? '');
     expect(stat('You earned')).toBeCloseTo(stat('Trip fares') - stat('Platform fee') + stat('Tips'), 2);
-    expect(container.querySelector('[data-stat="You earned"]')?.textContent).toBe('₹31,840.50');
-    expect(container.querySelector('[data-testid="period-label"]')?.textContent).toBe('October 2026');
-    expect((container.querySelector('button[aria-label="Previous"]') as HTMLButtonElement).disabled).toBe(true);
+    expect(container.querySelector('[data-stat="You earned"]')?.textContent).toBe('₹31,841');
+    // 23 Nov: the shared presets; Earnings opens on the last 30 days.
+    expect(container.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe('30 days');
     const rows = [...container.querySelectorAll('[data-month]')].map((r) => r.getAttribute('data-month'));
     expect(rows).toEqual(['2026-11', '2026-10']);
     expect(container.querySelector('[data-month="2026-11"]')?.textContent).toContain('(so far)');

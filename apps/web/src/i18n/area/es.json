@@ -859,5 +859,10 @@
   "Set up payouts to get paid": "Configura los pagos para cobrar",
   "Your earnings wait in your wallet until then.": "Tus ganancias esperan en tu monedero hasta entonces.",
   "Cancel this trip?": "¿Cancelar este viaje?",
-  "This place is outside our service area": "Este lugar está fuera de nuestra zona de servicio"
+  "This place is outside our service area": "Este lugar está fuera de nuestra zona de servicio",
+  "7 days": "7 días",
+  "30 days": "30 días",
+  "90 days": "90 días",
+  "12 months": "12 meses",
+  "Custom": "Personalizado"
 }

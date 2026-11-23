@@ -77,7 +77,7 @@ export function todayLocal(now: Date = new Date()): string {
 }
 
 /** The longest range the server will aggregate in one request. */
-export const MAX_RANGE_DAYS = 92;
+export const MAX_RANGE_DAYS = 366; // 23 Nov: '12 months' is a preset on every page
 
 export function rangeDays(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000) + 1;
