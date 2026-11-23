@@ -16,7 +16,12 @@ type FeePlan = {
   plan: { plan_type: string; currency: string; earnings_floor_minor: number; daily_cap_minor: number | null;
     waiver_first_days: number | null } | null;
   applies_to_my_class: boolean;
-  my_amounts?: { per_trip_fee_minor?: number; daily_pass_minor?: number; fee_free_after_trips?: number };
+  my_amounts?: { per_trip_fee_minor?: number; daily_pass_minor?: number; fee_free_after_trips?: number;
+    commission_percent?: number };
+  /** 22 Nov: the driver's line, e.g. "₹49 daily fee, charged only if you complete a trip". */
+  fee_words?: string;
+  /** An approved change that has not started yet: "From 30 Nov: ...". */
+  notice?: string | null;
 };
 export type FeeDay = Day & { platform_fee?: string; platform_fee_note?: string; platform_fee_so_far?: boolean };
 
@@ -25,13 +30,15 @@ export function PlatformFeeCard({ days, currency }: { days: FeeDay[] | null; cur
   const { locale } = useLocale();
   const plan = useLoad(() => areaGet<FeePlan>('/driver/fee-plan/'));
   const p = plan.data?.plan;
-  if (!p || p.plan_type === 'percent_commission' || !plan.data?.applies_to_my_class) return null;
+  if (!p || !plan.data?.applies_to_my_class) return null;
   const a = plan.data.my_amounts ?? {};
+  if (p.plan_type === 'percent_commission' && a.commission_percent == null) return null;
   const m = (minor: number | null | undefined) => money((minor ?? 0) / 100, p.currency ?? currency, locale);
   const withFee = (days ?? []).filter((d) => d.platform_fee != null).slice().reverse();
   const how = [
     a.per_trip_fee_minor ? tr('{fee} for each trip.').replace('{fee}', m(a.per_trip_fee_minor) ?? '') : null,
     a.daily_pass_minor ? tr('{fee} for a day with at least one trip.').replace('{fee}', m(a.daily_pass_minor) ?? '') : null,
+    a.commission_percent != null ? tr('{pct}% of each fare.').replace('{pct}', `${a.commission_percent}`) : null,
     a.fee_free_after_trips ? tr('Trips after the first {n} in a day are free.').replace('{n}', `${a.fee_free_after_trips}`) : null,
     p.daily_cap_minor != null ? tr('Never more than {cap} in a day.').replace('{cap}', m(p.daily_cap_minor) ?? '') : null,
     p.earnings_floor_minor ? tr('No fee on a day when your fares are under {floor}.').replace('{floor}', m(p.earnings_floor_minor) ?? '') : null,
@@ -42,6 +49,8 @@ export function PlatformFeeCard({ days, currency }: { days: FeeDay[] | null; cur
   return (
     <section className="acard" style={{ padding: 20 }} data-testid="platform-fee">
       <h2 className="a20">{tr('Platform fee')}</h2>
+      {plan.data.fee_words ? <p className="a16 ab" data-testid="fee-line">{tr('Today')}: {plan.data.fee_words}</p> : null}
+      {plan.data.notice ? <p className="a14" data-testid="fee-notice" role="status">{plan.data.notice}</p> : null}
       {withFee.length === 0 ? <p className="a14 amut">{tr('No platform fee yet.')}</p> : withFee.map((d) => (
         <div key={d.date} className="arow" style={{ padding: '10px 0', borderTop: '1px solid var(--c-border)', gap: 12 }}>
           <span className="ab" style={{ width: 110 }}>{d.date}{d.platform_fee_so_far ? ` · ${tr('so far')}` : ''}</span>

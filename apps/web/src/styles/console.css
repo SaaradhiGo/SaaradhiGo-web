@@ -2675,3 +2675,10 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .ops-placechip:hover { border-color: var(--gold-500); }
 /* 22 Nov: the audit log's "show page views" switch. */
 .au-views { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; cursor: pointer; }
+
+/* 22 Nov: what each place pays -- overrides highlighted, inherited values say where from. */
+.rp-resolved td, .rp-resolved th { font-size: 14px; vertical-align: top; }
+.rp-resolved__own { background: var(--gold-soft); color: var(--ink); padding: 0 4px; border-radius: 4px; }
+.rp-resolved__state th, .rp-resolved__country th { font-weight: 600; }
+.rp-resolved__city .rp-resolved__place { padding-left: 12px; }
+.rp-resolved__zone .rp-resolved__place { padding-left: 24px; }
