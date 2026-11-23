@@ -23,6 +23,8 @@ type Plan = {
   amounts: Record<string, Record<string, number>>; earnings_floor_minor: number; daily_cap_minor: number | null;
   waiver_until: string | null; waiver_first_days: number | null; status: string; version: number;
   effective_from: string | null; effective_to: string | null; note: string;
+  /** 22 Nov: the place by name, from the server. */
+  scope_name?: string;
 };
 type SimRow = {
   plan: string; preset: string; trips_per_day: number; fares_per_day_minor: number; driver_pays_day_minor: number;
@@ -114,7 +116,7 @@ export default function FeePlansPage() {
         : plans === null ? <Skeleton kind="row" count={4} /> : (
           <DataTable caption="Driver fee plans" rows={plans} rowKey={(p) => p.id} maxHeight={false}
             columns={[
-              { key: 'where', label: 'Where', render: (p) => placeWord(p.scope_code, access, p.country === 'IN' ? 'India' : p.country === 'US' ? 'United States' : p.country) },
+              { key: 'where', label: 'Where', render: (p) => (p.scope_code ? p.scope_name ?? placeWord(p.scope_code, access) : `All of ${p.scope_name ?? placeWord(p.country, access)}`) },
               { key: 'type', label: 'Plan', render: (p) => `${TYPE_WORDS[p.plan_type] ?? p.plan_type} (version ${p.version})` },
               { key: 'status', label: 'Status', render: (p) => <StatusChip tone={TONE[p.status] ?? 'neutral'}>{STATUS_WORDS[p.status] ?? p.status.replace('_', ' ')}</StatusChip> },
               { key: 'amounts', label: 'Per class', render: (p) => amountsWords(p) },

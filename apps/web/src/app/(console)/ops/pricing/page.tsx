@@ -12,6 +12,7 @@ import {
 } from '@/lib/pricing';
 import { interpretWrite } from '@/lib/trips';
 import { PricingNav } from '@/components/console/pricing';
+import { classWord } from '@/lib/pricingWords';
 import { FeePlanNotes } from '@/components/console/pricing/FeePlanNotes';
 import { RegulationPanel } from '@/components/console/pricing/RegulationPanel';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
@@ -252,7 +253,7 @@ function CountryPanel({ cfg, matrix, onCell, onDefault, onEditConfig }: {
             <thead>
               <tr>
                 <th scope="col">Place</th>
-                {grid.classes.map((c) => <th scope="col" key={c.id} className="num">{c.name}</th>)}
+                {grid.classes.map((c) => <th scope="col" key={c.id} className="num">{classWord(c.name)}</th>)}
               </tr>
             </thead>
             <tbody>

@@ -54,8 +54,7 @@ export function SelfApprovalNotice({ approver = true }: { approver?: boolean } =
           {state.count} decision{state.count === 1 ? '' : 's'} self-approved
         </PageLink>
       </b>
-      <span>Until a second person can check requests, the one Super Admin decides their own, with a reason.</span>
-      {state.who ? <span data-testid="self-approval-who">{state.who}</span> : null}
+      {state.who ? <span className="muted" data-testid="self-approval-who" title="Until a second person can check requests, the one Super Admin decides their own, with a reason.">{state.who}</span> : null}
     </div>
   );
 }

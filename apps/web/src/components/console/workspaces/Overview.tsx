@@ -369,6 +369,12 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
 
       <div className="ops-ws__grid ops-ws__grid--d">
         <div className="ops-ws__main">
+          {n && n.requests === 0 && !t.drivers_online && fulfil === null && eta === null ? (
+            <p className="ops-today__clear" role="status">
+              {/* 22 Nov (owner): no large empty number tiles when a value is zero. */}
+              No requests in the last hour · no drivers online.
+            </p>
+          ) : (
           <div className="ops-metrics ops-metrics--dense">
             <MetricCard label="Requests · last hour" value={n ? fmt(n.requests) : null} points={reqPoints}
               usual={againstUsual(n?.requests ?? null, usual?.requests ?? null)} />
@@ -379,6 +385,7 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
             <MetricCard label="Drivers online" value={fmt(t.drivers_online)}
               note={t.stuck_trips ? `${t.stuck_trips} stuck trip${t.stuck_trips === 1 ? '' : 's'}` : undefined} />
           </div>
+          )}
 
           {below && short.length ? (
             <section className="ops-why" aria-label="Why">
