@@ -101,7 +101,6 @@
   transition: background 140ms ease, color 140ms ease;
 }
 .ops__link svg { flex: none; opacity: 0.8; }
-.ops__link-label { overflow: hidden; text-overflow: ellipsis; }
 .ops__link:hover { background: rgba(241, 245, 249, 0.07); color: var(--on-noir); }
 .ops__link:hover svg { opacity: 1; }
 /* Active: the gold hairline in the gutter and gold type. The only gold in
