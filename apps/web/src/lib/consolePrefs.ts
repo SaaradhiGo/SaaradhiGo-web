@@ -76,7 +76,7 @@ export function useTheme(): [Theme, (t: Theme) => void] {
     // 22 Nov (owner): the choice lives on the operator's ACCOUNT; this browser's copy is only a
     // fast first paint. Light when the account has none.
     let live = true;
-    void import('@/lib/api').then(({ api, readToken }) => (readToken() ? api.get<{ theme: Theme }>('/auth/admin/preferences/') : Promise.reject(new Error('signed out'))))
+    void import('@/lib/api').then(({ api, readToken }) => (readToken() ? api.get<{ theme: Theme }>('/auth/console-preferences/') : Promise.reject(new Error('signed out'))))
       .then((d) => { if (live && (d.theme === 'light' || d.theme === 'dark')) { writeTheme(d.theme); setThemeState(d.theme); } })
       .catch(() => undefined);
     return () => { live = false; };
@@ -84,7 +84,7 @@ export function useTheme(): [Theme, (t: Theme) => void] {
   const setTheme = useCallback((t: Theme) => {
     writeTheme(t);
     setThemeState(t);
-    void import('@/lib/api').then(({ api, readToken }) => (readToken() ? api.patch('/auth/admin/preferences/', { theme: t }) : undefined)).catch(() => undefined);
+    void import('@/lib/api').then(({ api, readToken }) => (readToken() ? api.patch('/auth/console-preferences/', { theme: t }) : undefined)).catch(() => undefined);
   }, []);
   return [theme, setTheme];
 }
