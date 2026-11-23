@@ -124,7 +124,9 @@ export function NeedsActionInbox({
               ) : null}
               <div className="ops-inbox__foot">
                 <span className={item.owner ? 'ops-inbox__owner' : 'ops-inbox__owner ops-inbox__owner--none'}>
-                  {item.owner ? `${item.owner.label ?? 'Someone'} has it` : sos || item.kind === 'stuck_trip' ? 'Nobody on it' : ''}
+                  {item.owner ? `${item.owner.label ?? 'Someone'} has it`
+                    : item.team ? `Owner: ${item.team} · nobody has taken it yet`
+                      : sos || item.kind === 'stuck_trip' ? 'Nobody on it' : ''}
                 </span>
                 {sos && !(item.owner && String(item.owner.id) === String(me)) ? (
                   <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy === item.link}

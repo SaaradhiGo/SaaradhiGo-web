@@ -36,9 +36,9 @@ type PlaceLine =
 
 const STATUS_VIEWS: Array<'' | MarketStatus> = ['', 'live', 'draft', 'paused'];
 
-function MarketChip({ status }: { status: MarketStatus }) {
+function MarketChip({ status, label }: { status: MarketStatus; label?: string }) {
   const tone = status === 'live' ? 'good' : status === 'paused' ? 'caution' : 'info';
-  return <StatusChip tone={tone}>{MARKET_STATUS_WORDS[status]}</StatusChip>;
+  return <StatusChip tone={tone}>{label ?? MARKET_STATUS_WORDS[status]}</StatusChip>;
 }
 
 function ReadinessChip({ city }: { city: CityRow }) {
@@ -118,7 +118,7 @@ export default function MarketsPage() {
     { key: 'kind', label: 'Kind', render: (l) => (l.level === 0 ? 'Country' : l.level === 1 ? 'State' : 'City') },
     {
       key: 'status', label: 'Status',
-      render: (l) => (l.level === 0 ? <MarketChip status={l.country.status} /> : l.level === 2 ? <MarketChip status={l.city.status} /> : null),
+      render: (l) => (l.level === 0 ? <MarketChip status={l.country.status} /> : l.level === 2 ? <MarketChip status={l.city.status} label={l.city.launch_label} /> : null),
     },
     {
       key: 'ready', label: 'Readiness',
@@ -246,7 +246,7 @@ function CityRecord({ code, onClose, onDone }: { code: string; onClose: () => vo
       title={city.name}
       refId={city.code}
       subtitle={<>{city.state?.name ?? 'No state'} · {readinessSummary(city)}</>}
-      status={<MarketChip status={city.status} />}
+      status={<MarketChip status={city.status} label={city.launch_label} />}
       onClose={onClose}
       tabs={[{
         key: 'ready', label: 'Readiness', content: (
@@ -269,6 +269,7 @@ function CityRecord({ code, onClose, onDone }: { code: string; onClose: () => vo
                     {item.blocking ? <span className="ps-check__flag">Blocks launch</span> : null}
                   </div>
                   <p className="help mb-0">{item.detail}</p>
+                  {item.status !== 'ok' && item.owner ? <p className="help mb-0">Who fixes it: <b>{item.owner}</b></p> : null}
                   {item.status !== 'ok' && item.href ? (
                     <Link href={item.href} className="ps-check__fix">Fix this under {item.href.replace(/^\//, '').split('/')[0] || 'settings'}</Link>
                   ) : null}
