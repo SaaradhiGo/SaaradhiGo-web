@@ -194,8 +194,7 @@ export function secondsWords(seconds: number): string {
   if (s < 60) return `${s} s`;
   const m = Math.floor(s / 60); const rest = s % 60;
   if (m < 60) return rest ? `${m} min ${rest} s` : `${m} min`;
-  const h = Math.floor(m / 60);
-  return `${h} h ${m % 60} min`;
+  return formatAge(m) ?? '—';
 }
 
 /** A cell, as the table and the tooltip write it. Null is a dash, never a zero. */

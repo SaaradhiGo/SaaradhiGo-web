@@ -13,6 +13,7 @@
  * polls the snapshot every ten seconds and says how old the data is.
  */
 
+import { formatAge } from '@/lib/commandCentre';
 import { AdminAccess, can } from '@/lib/adminScope';
 
 // ---------------------------------------------------------------------------
@@ -413,9 +414,7 @@ export function ageText(seconds: number | null | undefined): string {
   const s = Math.max(0, Math.floor(seconds));
   if (s < 60) return `${s} s`;
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m} min`;
-  const h = Math.floor(m / 60);
-  return m % 60 ? `${h} h ${m % 60} min` : `${h} h`;
+  return formatAge(m) ?? '—';
 }
 
 /** Seconds from an ISO instant to `now` (ms), or null for no instant. */

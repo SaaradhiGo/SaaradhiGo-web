@@ -8,6 +8,7 @@
  * what to SAY, and it says "blocked: no approval policy in this country"
  * plainly when the server says so.
  */
+import { formatAge } from '@/lib/commandCentre';
 import { can, type AdminAccess } from './adminScope';
 import { canActOnPayouts, formatMinor } from './finance';
 import { exponentOf, parseMajorToMinor } from './trips';
@@ -254,7 +255,7 @@ export function configChanges(current: PayoutConfig, draft: ConfigDraft, currenc
   }
   const hours = draft.stuckHours.trim() === '' ? null : Number(draft.stuckHours);
   if (hours !== current.stuck_payout_hours) {
-    const words = (h: number | null) => (h === null ? 'not checked' : `${h} h`);
+    const words = (h: number | null) => (h === null ? 'not checked' : formatAge(h * 60) ?? '—');
     out.push({ label: 'Stuck after', from: words(current.stuck_payout_hours), to: words(hours) });
   }
   const nextWeekday = draft.schedule === 'weekly' ? draft.weekday : null;

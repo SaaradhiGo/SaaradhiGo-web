@@ -1,3 +1,4 @@
+import { formatAge } from '@/lib/commandCentre';
 import type { AdminAccess } from './adminScope';
 import { can } from './adminScope';
 
@@ -340,10 +341,7 @@ export function elapsed(minutes: number | null): string {
   if (minutes === null) return '—';
   if (minutes < 1) return 'just now';
   if (minutes < 60) return `${minutes} min`;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h < 24) return `${h} h ${String(m).padStart(2, '0')} min`;
-  return `${Math.floor(h / 24)} d ${h % 24} h`;
+  return formatAge(minutes) ?? '—';
 }
 
 export type AckState =

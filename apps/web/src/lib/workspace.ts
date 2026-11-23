@@ -2,6 +2,7 @@
  * The workspace API (owner, 2026-11-03): places, Needs action, a place's pulse.
  * Shapes mirror `servers/command_centre/workspace.py`.
  */
+import { formatAge } from '@/lib/commandCentre';
 
 export type Severity = 'critical' | 'high' | 'waiting';
 export type Health = 'critical' | 'watch' | 'normal' | 'quiet';
@@ -110,11 +111,7 @@ export const HEALTH_WORD: Record<Health, string> = {
 export function waited(seconds: number): string {
   const m = Math.floor(Math.max(0, seconds) / 60);
   if (m < 1) return 'just now';
-  if (m < 60) return `${m} min`;
-  const h = Math.floor(m / 60);
-  if (h < 48) return `${h} h`;
-  const d = Math.floor(h / 24);
-  return d === 1 ? '1 day' : `${d} days`;
+  return formatAge(m) ?? '—';
 }
 
 /** Where a value sits against its usual range, in words, or null without one. */
@@ -133,7 +130,6 @@ export function againstUsual(value: number | null, band: Band, unit = ''): strin
 export function sosClock(seconds: number): string {
   const s = Math.max(0, Math.round(seconds));
   const m = Math.floor(s / 60);
-  if (m >= 2880) return `${Math.floor(m / 1440)} d`;
-  if (m >= 60) return `${Math.floor(m / 60)} h ${m % 60} min`;
+  if (m >= 60) return formatAge(m) ?? '—';
   return `${m}:${String(s % 60).padStart(2, '0')}`;
 }
