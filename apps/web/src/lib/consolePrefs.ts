@@ -55,11 +55,13 @@ export function writeDensity(density: Density) {
   write(DENSITY_KEY, density);
 }
 
-export function readSidebarCollapsed(): boolean {
-  return read(SIDEBAR_KEY) === 'collapsed';
+/** Per operator (22 Nov: "remembered per person"), so a shared machine keeps each choice. */
+const sidebarKey = (who?: string | null) => (who ? `${SIDEBAR_KEY}:${who.toLowerCase()}` : SIDEBAR_KEY);
+export function readSidebarCollapsed(who?: string | null): boolean {
+  return read(sidebarKey(who)) === 'collapsed';
 }
-export function writeSidebarCollapsed(collapsed: boolean) {
-  write(SIDEBAR_KEY, collapsed ? 'collapsed' : null);
+export function writeSidebarCollapsed(collapsed: boolean, who?: string | null) {
+  write(sidebarKey(who), collapsed ? 'collapsed' : null);
 }
 
 /**

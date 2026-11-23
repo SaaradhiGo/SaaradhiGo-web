@@ -64,8 +64,8 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
   }, [router, pathname]);
 
   useEffect(() => {
-    setCollapsed(readSidebarCollapsed());
-  }, []);
+    setCollapsed(readSidebarCollapsed(operator?.email ?? null));
+  }, [operator]);
 
   // The console's theme is the operator's choice; the <html> attribute has
   // to follow so native controls and the scrollbar agree with the page.
@@ -128,7 +128,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
 
   function toggleSidebar() {
     setCollapsed((c) => {
-      writeSidebarCollapsed(!c);
+      writeSidebarCollapsed(!c, operator?.email ?? null);
       return !c;
     });
   }

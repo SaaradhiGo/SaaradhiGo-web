@@ -34,18 +34,20 @@ export const SELF_APPROVAL_MIN_REASON = 10;
  * and checker. Links to those requests in Approvals. Shows nothing to an
  * operator who cannot read approvals, or while the exception is off.
  */
-export function SelfApprovalNotice() {
+export function SelfApprovalNotice({ approver = true }: { approver?: boolean } = {}) {
   const [state, setState] = useState<{ on: boolean; count: number; who: string } | null>(null);
   useEffect(() => {
+    if (!approver) return undefined;
     let live = true;
     api.get<{ count: number; self_approval_on?: boolean; self_approval?: SelfApprovalSwitch }>('/approvals/admin/requests/?self_approved=1&page_size=1')
       .then((d) => { if (live) setState({ on: !!d.self_approval_on, count: d.count ?? 0, who: selfApprovalWho(d.self_approval) }); })
       .catch(() => { if (live) setState(null); });
     return () => { live = false; };
-  }, []);
-  if (!state?.on) return null;
+  }, [approver]);
+  // 22 Nov (owner): a small notice, only for people who approve things; never City Ops.
+  if (!approver || !state?.on) return null;
   return (
-    <div className="ops-banner ops-banner--row" role="status">
+    <div className="ops-banner ops-banner--row ops-banner--small" role="status">
       <b>
         Self-approval is on:{' '}
         <PageLink page="approvals" href="/ops/approvals?view=self">
