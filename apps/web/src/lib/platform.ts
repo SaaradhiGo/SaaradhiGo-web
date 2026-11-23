@@ -279,8 +279,11 @@ export const modeTone = (m: IntegrationMode): 'good' | 'bad' | 'wait' | 'neutral
 export type AuditRow = {
   id: number; created_at: string; actor: { id: number | null; label: string | null; role: string };
   action: string; target_type: string; target_id: string; place: string | null; reason: string;
+  /** 22 Nov: the entry in words, the target and the place by name. */
+  summary?: string; target_label?: string; place_name?: string | null;
 };
 export type AuditDetail = AuditRow & {
+  changes?: { field: string; from: string; to: string }[];
   before: Record<string, unknown>; after: Record<string, unknown>; ip: string | null; user_agent: string;
   hash: { previous: string; content: string; hashed: boolean };
 };

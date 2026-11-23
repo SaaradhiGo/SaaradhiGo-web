@@ -53,7 +53,7 @@ describe('US style for US cities (15 Nov)', () => {
   it('writes a US date month first, and India keeps day first', async () => {
     const { marketDate, clock } = await import('./consoleTime');
     expect(marketDate('2026-11-14', 'US')).toBe('Nov 14, 2026');
-    expect(marketDate('2026-11-14', 'IN')).toBe('14/11/2026');
+    expect(marketDate('2026-11-14', 'IN')).toBe('14 Nov 2026');
     expect(clock('2026-11-15T02:58:00Z', 'America/Boise')).toBe('7:58 PM');
     expect(clock('2026-11-15T02:58:00Z', 'Asia/Kolkata')).toBe('08:28');
   });

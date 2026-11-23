@@ -7,15 +7,15 @@ import { DocExpiry } from './DocExpiry';
 afterEach(cleanup);
 
 describe('document expiry', () => {
-  it('reads dd/mm/yyyy and turns amber within 30 days', () => {
+  it('reads the date in words and turns amber within 30 days', () => {
     render(<DocExpiry iso="2026-11-30" today="2026-11-13" />);
     const el = screen.getByTestId('doc-expiry');
-    expect(el.textContent).toMatch(/Expires 30\/11\/2026/);
+    expect(el.textContent).toMatch(/Expires 30 Nov 2026/);
     expect(el.textContent).toMatch(/expires in 17 days/);
   });
   it('stays plain further out', () => {
     render(<DocExpiry iso="2028-10-31" today="2026-11-13" />);
-    expect(screen.getByTestId('doc-expiry').textContent).toBe('Expires 31/10/2028');
+    expect(screen.getByTestId('doc-expiry').textContent).toBe('Expires 31 Oct 2028');
   });
 });
 

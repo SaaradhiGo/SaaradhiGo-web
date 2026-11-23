@@ -1882,7 +1882,8 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .rp-chart { margin: 0; display: grid; gap: 8px; }
 .rp-chart__title { font: 600 14px/1.3 var(--font-sans); color: var(--ink); }
 .rp-chart__plot { position: relative; }
-.rp-svg { width: 100%; height: auto; display: block; }
+.rp-svg { display: block; max-width: 100%; }
+.rp-chart__empty { margin: 0; padding: 24px 16px; text-align: center; color: var(--ops-ink-4); font-size: 14px; border: 1px dashed var(--ops-hairline); border-radius: 10px; }
 .rp-grid { stroke: var(--ops-hairline); stroke-width: 1; }
 .rp-axis { fill: var(--ops-ink-3); font: 400 14px var(--font-sans); font-variant-numeric: tabular-nums; }
 .rp-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 0; padding: 0; font: 600 14px/1.3 var(--font-sans); color: var(--ink); }
@@ -2632,3 +2633,41 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .ops-banner--small { padding: 8px 12px; gap: 8px; font-size: 14px; }
 /* 22 Nov: the console footer is one slim line. */
 .sg-legal-line--console { justify-content: flex-start; padding-block: 12px; }
+
+/* 22 Nov: Today -- country tiles, then per live city only what waits, or one "All clear" line. */
+.ops-today { display: grid; gap: 12px; }
+.ops-today__countries { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.ops-today__country { display: grid; gap: 10px; text-align: left; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--ops-hairline); background: var(--ops-bg-100); color: var(--ink); cursor: pointer; min-height: 44px; }
+.ops-today__country:hover { border-color: var(--gold-500); }
+.ops-today__country-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 16px; }
+.ops-today__facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px 16px; margin: 0; }
+.ops-today__facts dt { font-size: 14px; color: var(--ops-ink-4); }
+.ops-today__facts dd { margin: 0; font-size: 16px; font-weight: 600; }
+.ops-today__cities { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border: 1px solid var(--ops-hairline); border-radius: 14px; background: var(--ops-bg-100); }
+.ops-today__city { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 16px; border-top: 1px solid var(--ops-hairline); }
+.ops-today__city:first-child { border-top: 0; }
+.ops-today__city-name { min-width: 120px; font-size: 16px; }
+.ops-today__acts { display: flex; gap: 8px; flex-wrap: wrap; flex: 1 1 auto; }
+.ops-today__act { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 999px; background: var(--gold-soft); color: var(--ink); text-decoration: none; font-size: 14px; font-weight: 600; }
+.ops-today__act--urgent { background: var(--danger); color: var(--on-danger, var(--bg-000)); }
+.ops-today__online { margin-left: auto; font-size: 14px; color: var(--ops-ink-4); min-height: 44px; display: inline-flex; align-items: center; }
+.ops-today__clear { margin: 0; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--ops-hairline); background: var(--ops-bg-100); font-size: 16px; }
+.ops-today__refresh { margin: 0; }
+
+/* 22 Nov: payout settings by place -- one "Same as" line, then only what differs, highlighted. */
+.ps-scopes { display: grid; gap: 10px; }
+.ps-scopes__title { margin: 0; font-size: 16px; font-weight: 600; }
+.ps-scopes__same { margin: 0; font-size: 14px; }
+.ps-scopes__add { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ps-diff { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ps-diff__label { font-weight: 600; white-space: nowrap; }
+.ps-diff__new { background: var(--gold-soft); color: var(--ink); padding: 0 4px; border-radius: 4px; }
+
+/* 22 Nov: places on a driver fee plan, on the Commission page. */
+.pr-feeplans { list-style: none; display: grid; gap: 4px; }
+
+/* 22 Nov: a city with no drivers online says so over the map. */
+.lo-empty-note { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 3; margin: 0; padding: 8px 14px; border-radius: 999px; background: var(--ops-bg-100); border: 1px solid var(--ops-hairline); color: var(--ink); font-size: 14px; max-width: calc(100% - 32px); text-align: center; }
+
+/* 22 Nov: the audit log's "show page views" switch. */
+.au-views { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; cursor: pointer; }

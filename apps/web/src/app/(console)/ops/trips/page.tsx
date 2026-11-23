@@ -197,7 +197,7 @@ function TripStatus({ t }: { t: TripRow }) {
         : t.stale ? <StatusChip tone="caution">Stale</StatusChip> : null}
       {t.has_sos ? <StatusChip tone="critical">SOS</StatusChip> : null}
       {t.flagged ? <StatusChip tone="caution">Flagged</StatusChip> : null}
-      {t.has_ticket ? <StatusChip tone="info">Ticket</StatusChip> : null}
+      {t.has_ticket ? <StatusChip tone="info" title="A rider or driver opened a support ticket about this trip">Support ticket</StatusChip> : null}
     </span>
   );
 }
