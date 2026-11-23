@@ -1,5 +1,6 @@
 'use client';
 
+import { DatePresets } from '@/components/console/kit/DatePresets';
 import { useCallback, useEffect, useState } from 'react';
 import { api, apiDownload } from '@/lib/api';
 import { readSelectedScope, useAdminAccess, withScope } from '@/lib/adminScope';
@@ -114,14 +115,16 @@ export default function AuditPage() {
           title="Audit log"
           summary={`Who changed what, where and when. Personal details are masked. Page views and sign-ins are hidden unless you show them. Times are ${viewerZone ? `in ${viewerZone.split('/').pop()?.replace('_', ' ')} time` : 'in each place\'s own time'}.`}
           views={[
+            // 23 Nov: Today and 7 days moved into the date presets every page shares.
             { key: '', label: 'All', count: view === '' ? data?.count ?? null : undefined },
-            { key: 'today', label: 'Today', count: view === 'today' ? data?.count ?? null : undefined },
-            { key: 'week', label: 'Last 7 days', count: view === 'week' ? data?.count ?? null : undefined },
           ]}
           view={view}
           onView={(v) => apply({ ...filters, from: v === 'today' ? today : v === 'week' ? weekAgo : '', to: v ? today : '' })}
           chips={chips}
           filterSlot={(
+            <>
+            <DatePresets from={filters.from} to={filters.to} today={today} onCustom={() => setMore(true)}
+              onPick={(r) => apply({ ...filters, ...r })} />
             <form className="ops-list__filters" onSubmit={(e) => { e.preventDefault(); apply(draft); }} aria-label="Filter the audit log">
               <label className="sr-only" htmlFor="au-actor">Who</label>
               <input id="au-actor" className="input ops-list__search" value={draft.actor} onChange={set('actor')} placeholder="Who: name or staff id" />
@@ -134,6 +137,7 @@ export default function AuditPage() {
               <button type="submit" className="sg-btn sg-btn--primary sg-btn--sm">Apply</button>
               <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setMore(true)}>More filters</button>
             </form>
+            </>
           )}
           onExport={exporting ? undefined : () => void download()}
           columns={columns}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useAreaTheme } from '@/lib/area/theme';
 import { DeleteAccountSheet } from '../DeleteAccountSheet';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -56,16 +57,12 @@ function PrefsCard() {
   const [deleting, setDeleting] = useState(false);
   const [acct] = useAccount();
   const [editing, setEditing] = useState(false);
-  const [dark, setDark] = useState(false);
-  useEffect(() => setDark(document.documentElement.getAttribute('data-theme') === 'dark'), []);
+  const [areaTheme, setAreaTheme] = useAreaTheme();
+  const dark = areaTheme === 'dark';
   // Only the market's languages (10 Nov): India en/te/hi, USA en/es.
   const offered = LANGUAGES.filter((l) => (acct?.market_languages ?? LANGUAGES).includes(l));
-  function theme(next: 'light' | 'dark') {
-    document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('sg-theme', next); } catch { /* private mode */ }
-    document.cookie = `sg-theme=${next}; path=/; max-age=31536000; samesite=lax`;
-    setDark(next === 'dark');
-  }
+  // 23 Nov: saved to the account (and this device), the same as the account menu.
+  const theme = setAreaTheme;
   return (
     <section className="acard pf-card" id="language" data-testid="card-preferences">
       <div className="arow" style={{ gap: 10, marginBottom: 8 }}><span className="aico"><IHelp /></span><h2 className="a20">{tr('Language and preferences')}</h2></div>

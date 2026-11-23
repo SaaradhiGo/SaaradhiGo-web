@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { History, HistoryPeriod } from './earnings';
-import type { PeriodState } from '@/components/area/driver/PeriodSwitcher';
+import { type PeriodState, type Tab, tabRange } from '@/components/area/driver/PeriodSwitcher';
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const day = (s: string) => new Date(`${s}T12:00:00Z`);
@@ -42,9 +42,12 @@ function bounds(period: HistoryPeriod, anchor: string): [string, string, string,
  */
 export function useRiderPeriod(initial: HistoryPeriod = 'month'): PeriodState {
   const today = iso(new Date());
-  const [period, setPeriod] = useState<HistoryPeriod>(initial);
+  // 23 Nov: the shared presets; a calendar period asked for opens as its rolling preset.
+  const first: Tab = initial === 'day' ? 'today' : initial === 'week' ? 'd7' : initial === 'year' || initial === 'taxyear' ? 'd365' : 'd30';
+  const [period, setPeriod] = useState<HistoryPeriod>(first === 'today' ? 'day' : 'custom');
   const [anchor, setAnchor] = useState<string | undefined>(undefined);
-  const [range, setRange] = useState<{ start: string; end: string } | null>(null);
+  const [range, setRange] = useState<{ start: string; end: string } | null>(() => tabRange(first));
+  const [tab, setTab] = useState<Tab>(first);
   const data = useMemo<History | null>(() => {
     if (period === 'custom') {
       return range ? { period, start: range.start, end: range.end, timezone: '', currency: '', today, joined: null,
@@ -58,6 +61,12 @@ export function useRiderPeriod(initial: HistoryPeriod = 'month'): PeriodState {
   return {
     period, range, setRange, setAnchor,
     pick: (p) => { setPeriod(p); setAnchor(undefined); if (p !== 'custom') setRange(null); },
+    tab,
+    pickTab: (t, tz) => {
+      setTab(t); setAnchor(undefined);
+      if (t === 'today') { setPeriod('day'); setRange(null); return; }
+      setPeriod('custom'); setRange(tabRange(t, tz));
+    },
     hist: { state: 'ok', data, retry: () => {} },
   };
 }

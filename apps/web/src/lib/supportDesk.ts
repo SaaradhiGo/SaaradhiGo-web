@@ -470,14 +470,14 @@ export function dashboardPath(dateFrom: string, dateTo: string, scope = ''): str
   return `/support/admin/sla/dashboard/${text ? `?${text}` : ''}`;
 }
 
-/** Is the range acceptable to the server (ordered, at most 92 days)? */
+/** Is the range acceptable to the server (ordered, at most 366 days)? */
 export function dashboardRangeError(dateFrom: string, dateTo: string): string | null {
   if (!dateFrom && !dateTo) return null;
   if (!DATE.test(dateFrom) || !DATE.test(dateTo)) return 'Pick both dates.';
   const from = Date.parse(`${dateFrom}T00:00:00Z`);
   const to = Date.parse(`${dateTo}T00:00:00Z`);
   if (from > to) return 'The start date is after the end date.';
-  if ((to - from) / 86400000 + 1 > 92) return 'The range can be at most 92 days.';
+  if ((to - from) / 86400000 + 1 > 366) return 'The range can be at most 12 months.';
   return null;
 }
 

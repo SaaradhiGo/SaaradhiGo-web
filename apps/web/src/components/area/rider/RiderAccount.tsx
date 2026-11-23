@@ -1,5 +1,6 @@
 'use client';
 
+import { useAreaTheme } from '@/lib/area/theme';
 import { DeleteAccountSheet } from '../DeleteAccountSheet';
 import { useEffect, useState } from 'react';
 import { useLocale } from '@/i18n/LocaleProvider';
@@ -60,7 +61,8 @@ export function RiderAccount() {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [dark, setDark] = useState(false);
+  const [areaTheme, setAreaTheme] = useAreaTheme();
+  const dark = areaTheme === 'dark';
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [resend, setResend] = useState<ResendState>('idle');
@@ -71,16 +73,9 @@ export function RiderAccount() {
     const p = profileLoad.data;
     if (p) { setMe(p); setName(p.full_name ?? ''); setEmail(p.email ?? ''); }
   }, [profileLoad.data]);
-  useEffect(() => {
-    setDark(document.documentElement.getAttribute('data-theme') === 'dark');
-  }, []);
 
-  function theme(next: 'light' | 'dark') {
-    document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('sg-theme', next); } catch { /* private mode */ }
-    document.cookie = `sg-theme=${next}; path=/; max-age=31536000; samesite=lax`;
-    setDark(next === 'dark');
-  }
+  // 23 Nov: saved to the account (and this device), the same as the account menu.
+  const theme = setAreaTheme;
 
   async function save() {
     try {

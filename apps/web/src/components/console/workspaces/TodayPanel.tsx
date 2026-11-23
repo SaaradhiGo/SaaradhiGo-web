@@ -1,5 +1,7 @@
 'use client';
 
+import { todayLocal } from '@/lib/reports';
+import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
@@ -29,31 +31,38 @@ export type TodayCountry = {
 export type TodayPayload = {
   generated_at: string; refresh: string; countries: TodayCountry[]; cities: TodayCity[];
   all_clear: boolean; money: boolean;
+  /** 23 Nov: the local days the counts cover; null means today. */
+  range?: { from: string; to: string } | null;
 };
+export type Range = { from: string; to: string };
 
 export function useToday() {
   const [data, setData] = useState<TodayPayload | null>(null);
+  const [range, setRange] = useState<Range | null>(null);
   const load = useCallback(async () => {
-    try { setData(await api.get<TodayPayload>(withScope('/command-centre/admin/today/'))); } catch { /* the rest of the page still works */ }
-  }, []);
+    const q = range ? `?date_from=${range.from}&date_to=${range.to}` : '';
+    try { setData(await api.get<TodayPayload>(withScope(`/command-centre/admin/today/${q}`))); } catch { /* the rest of the page still works */ }
+  }, [range]);
   useEffect(() => {
     void load();
     const t = window.setInterval(load, 60_000);
     return () => window.clearInterval(t);
   }, [load]);
-  return data;
+  return { data, range, setRange };
 }
 
 function n(v: number) { return v.toLocaleString('en-IN'); }
 
-export function CountryTiles({ countries, onOpen }: { countries: TodayCountry[]; onOpen: (code: string) => void }) {
-  if (countries.length < 2) return null;
+export function CountryTiles({ countries, onOpen, range }: { countries: TodayCountry[]; onOpen: (code: string) => void; range?: Range | null }) {
+  // One country shows its tile only for a chosen range: today's figures are on the page already.
+  if (countries.length < 2 && !range) return null;
+  const when = range ? (range.from === range.to ? range.from : `${range.from} to ${range.to}`) : 'today, local time';
   return (
     <section className="ops-today__countries" aria-label="All countries">
       {countries.map((c) => (
         <button key={c.code} type="button" className="ops-today__country" onClick={() => onOpen(c.code)}
           aria-label={`Open ${c.name}`}>
-          <span className="ops-today__country-head"><b>{c.name}</b><span className="muted">{c.currency} · today, local time</span></span>
+          <span className="ops-today__country-head"><b>{c.name}</b><span className="muted">{c.currency} · {when}</span></span>
           <dl className="ops-today__facts">
             <div><dt>Requests</dt><dd className="sg-num">{n(c.requests)}</dd></div>
             <div><dt>Completed</dt><dd className="sg-num">{n(c.completed)}{c.completion_rate !== null ? ` · ${c.completion_rate}%` : ''}</dd></div>
@@ -100,14 +109,20 @@ export function TodayCities({ data, placeName }: { data: TodayPayload; placeName
   );
 }
 
-export function TodayPanel({ data, placeName, onOpenCountry }: {
+export function TodayPanel({ data, placeName, onOpenCountry, range, onRange }: {
   data: TodayPayload | null; placeName?: string; onOpenCountry: (code: string) => void;
+  range?: Range | null; onRange?: (r: Range | null) => void;
 }) {
   if (!data) return null;
   const at = new Date(data.generated_at);
+  const today = todayLocal();
   return (
     <section className="ops-today" aria-label="Today">
-      <CountryTiles countries={data.countries} onOpen={onOpenCountry} />
+      {onRange ? (
+        <DatePresets from={range?.from ?? today} to={range?.to ?? today}
+          onPick={(r) => onRange(r.from === today && r.to === today ? null : r)} />
+      ) : null}
+      <CountryTiles countries={data.countries} onOpen={onOpenCountry} range={range} />
       <TodayCities data={data} placeName={placeName} />
       <p className="ops-today__refresh help">{data.refresh} · last update {at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
     </section>

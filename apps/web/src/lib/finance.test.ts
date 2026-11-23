@@ -104,7 +104,7 @@ describe('dates and ranges', () => {
     expect(rangeProblem('2026-03-01', '2026-03-10')).toBeNull();
     expect(rangeProblem('', '2026-03-10')).toMatch(/both dates/);
     expect(rangeProblem('2026-03-10', '2026-03-01')).toMatch(/before/);
-    expect(rangeProblem('2026-01-01', '2026-12-31')).toBe(`Choose at most ${MAX_RANGE_DAYS} days.`);
+    expect(rangeProblem('2025-01-01', '2026-12-31')).toBe(`Choose at most ${MAX_RANGE_DAYS} days.`);
     expect(rangeProblem('2026-01-01', shiftDate('2026-01-01', MAX_RANGE_DAYS - 1))).toBeNull();
   });
 });

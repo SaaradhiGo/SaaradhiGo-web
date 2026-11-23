@@ -21,10 +21,13 @@ export function money(amount: string | number | null | undefined, currency: stri
   if (amount === null || amount === undefined || amount === '' || !currency) return null;
   const raw = Number(amount);
   if (!Number.isFinite(raw)) return null;
-  // `|| 0` turns -0 into 0: Intl writes a negative zero as "-₹0.00".
-  const n = raw || 0;
+  // 23 Nov (owner): India money reads in whole rupees everywhere, averages included ("₹176", not
+  // "₹176.35"); other currencies keep their cents. `|| 0` turns -0 into 0 ("-₹0").
+  const inr = currency.toUpperCase() === 'INR';
+  const n = (inr ? Math.round(raw) : raw) || 0;
+  const digits = inr ? 0 : 2;
   try {
-    return oneLine(new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n));
+    return oneLine(new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n));
   } catch {
     return null;
   }

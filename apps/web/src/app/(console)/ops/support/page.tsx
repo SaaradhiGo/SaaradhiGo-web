@@ -1,5 +1,6 @@
 'use client';
 
+import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
@@ -225,6 +226,9 @@ function SupportInner() {
           onView={(key) => go({ ...filters, queue: key as QueueKey, page: 1 })}
           chips={chips}
           filterSlot={(
+            <>
+            <DatePresets from={filters.dateFrom} to={filters.dateTo} customFieldId="f-from"
+              onPick={(r) => apply({ dateFrom: r.from, dateTo: r.to })} />
             <MoreFilters count={active}>
               <form className="ops-form" aria-label="Filter tickets" onSubmit={(e) => { e.preventDefault(); apply({}); }}>
                 <div className="ops-form__row">
@@ -279,6 +283,7 @@ function SupportInner() {
                 </div>
               </form>
             </MoreFilters>
+            </>
           )}
           columns={columns}
           rows={rows}

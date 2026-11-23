@@ -859,5 +859,10 @@
   "Set up payouts to get paid": "भुगतान पाने के लिए पेआउट सेट करें",
   "Your earnings wait in your wallet until then.": "तब तक आपकी कमाई आपके वॉलेट में रहेगी।",
   "Cancel this trip?": "यह यात्रा रद्द करें?",
-  "This place is outside our service area": "यह जगह हमारे सेवा क्षेत्र से बाहर है"
+  "This place is outside our service area": "यह जगह हमारे सेवा क्षेत्र से बाहर है",
+  "7 days": "7 दिन",
+  "30 days": "30 दिन",
+  "90 days": "90 दिन",
+  "12 months": "12 महीने",
+  "Custom": "अपनी तारीखें"
 }
