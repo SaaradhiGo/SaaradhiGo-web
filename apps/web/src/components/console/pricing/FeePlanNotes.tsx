@@ -19,14 +19,18 @@ const PLAN_NAMES: Record<string, string> = {
 };
 
 function feeWords(p: Plan): string {
-  const fees = Object.entries(p.amounts).flatMap(([cls, a]) => {
-    if (a.per_trip_fee_minor != null) return [`${formatWhole(a.per_trip_fee_minor, p.currency)} a trip${Object.keys(p.amounts).length > 1 ? ` (${classWord(cls)})` : ''}`];
-    if (a.daily_pass_minor != null) return [`${formatWhole(a.daily_pass_minor, p.currency)} a day`];
-    return [];
-  });
-  const unique = Array.from(new Set(fees));
+  // The same fee for several classes reads once: "Rs 10 a trip for Mini, Sedan and SUV".
+  const byFee = new Map<string, string[]>();
+  for (const [cls, a] of Object.entries(p.amounts)) {
+    const fee = a.per_trip_fee_minor != null ? (a.per_trip_fee_minor === 0 ? 'no platform fee' : `${formatWhole(a.per_trip_fee_minor, p.currency)} a trip`)
+      : a.daily_pass_minor != null ? (a.daily_pass_minor === 0 ? 'no platform fee' : `${formatWhole(a.daily_pass_minor, p.currency)} a day`) : null;
+    if (fee) byFee.set(fee, [...(byFee.get(fee) ?? []), classWord(cls)]);
+  }
+  const list = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs[0]);
+  const parts = Array.from(byFee.entries()).map(([fee, classes]) => (
+    classes.length === 1 && classes[0] === 'All classes' ? fee : `${fee} for ${list(classes)}`));
   const cap = p.daily_cap_minor != null ? `, at most ${formatWhole(p.daily_cap_minor, p.currency)} a day` : '';
-  return unique.length ? `${unique.join(', ')}${cap}` : 'fee not yet decided';
+  return parts.length ? `${parts.join('; ')}${cap}` : 'fee not yet decided';
 }
 
 export function FeePlanNotes() {
@@ -43,7 +47,8 @@ export function FeePlanNotes() {
       {plans.map((p) => (
         <li key={p.id}>
           <b>{placeWord(p.scope_code, access, p.country === 'IN' ? 'India' : p.country === 'US' ? 'United States' : p.country)}:</b>{' '}
-          no commission; drivers pay the {PLAN_NAMES[p.plan_type] ?? p.plan_type} plan ({feeWords(p)}).
+          {feeWords(p) === 'no platform fee' ? 'no commission and no platform fee.'
+            : <>no commission; drivers pay the {PLAN_NAMES[p.plan_type] ?? p.plan_type} plan ({feeWords(p)}).</>}
         </li>
       ))}
     </ul>
