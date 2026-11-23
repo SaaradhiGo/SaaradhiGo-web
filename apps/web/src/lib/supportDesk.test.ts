@@ -232,7 +232,7 @@ describe('the SLA dashboard helpers', () => {
     expect(dashboardRangeError('', '')).toBeNull();
     expect(dashboardRangeError('2026-10-01', '')).toBe('Pick both dates.');
     expect(dashboardRangeError('2026-10-08', '2026-10-01')).toMatch(/after/);
-    expect(dashboardRangeError('2026-01-01', '2026-12-31')).toMatch(/92/);
+    expect(dashboardRangeError('2025-01-01', '2026-12-31')).toMatch(/12 months/);
     expect(dashboardRangeError('2026-10-01', '2026-10-07')).toBeNull();
   });
 

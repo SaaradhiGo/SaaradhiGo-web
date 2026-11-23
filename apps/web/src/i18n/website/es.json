@@ -267,5 +267,10 @@
   "Other policies": "Otras políticas",
   "Questions about this page? Write to": "¿Preguntas sobre esta página? Escribe a",
   "Today": "Hoy",
-  "{pct}% of each fare.": "{pct}% de cada tarifa."
+  "{pct}% of each fare.": "{pct}% de cada tarifa.",
+  "7 days": "7 días",
+  "30 days": "30 días",
+  "90 days": "90 días",
+  "12 months": "12 meses",
+  "Custom": "Personalizado"
 }

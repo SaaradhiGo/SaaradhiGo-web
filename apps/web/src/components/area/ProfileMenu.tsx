@@ -1,5 +1,6 @@
 'use client';
 
+import { useAreaTheme } from '@/lib/area/theme';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/i18n/LocaleProvider';
@@ -59,6 +60,7 @@ export function Avatar({ me, size = 36 }: { me: Profile | null; size?: number })
 export function ProfileMenu({ links, onSignOut, extra }: { links: MenuLink[]; onSignOut: () => void; extra?: React.ReactNode }) {
   const tr = useTr();
   const [me] = useAccount();
+  const [theme, setTheme] = useAreaTheme();
   const [open, setOpen] = useOneMenu('profile');
   const box = useRef<HTMLDivElement | null>(null);
   const btn = useRef<HTMLButtonElement | null>(null);
@@ -101,6 +103,12 @@ export function ProfileMenu({ links, onSignOut, extra }: { links: MenuLink[]; on
             <Link key={l.href} href={l.href} role="menuitem" className={l.phone ? 'apm-phone' : undefined} onClick={() => setOpen(false)}>{tr(l.label)}</Link>
           ))}
           {extra}
+          <div className="apm-theme" role="group" aria-label={tr('Theme')}>
+            {/* 23 Nov (owner): Theme in the account menu, saved to the account like the console's. */}
+            <span className="a14 amut">{tr('Theme')}</span>
+            <button type="button" className={`achip${theme === 'light' ? ' achip--on' : ''}`} aria-pressed={theme === 'light'} onClick={() => setTheme('light')}>{tr('Light')}</button>
+            <button type="button" className={`achip${theme === 'dark' ? ' achip--on' : ''}`} aria-pressed={theme === 'dark'} onClick={() => setTheme('dark')}>{tr('Dark')}</button>
+          </div>
           <hr className="apm-rule" />
           <button type="button" role="menuitem" data-testid="menu-sign-out" onClick={() => { setOpen(false); onSignOut(); }}>
             <ILogout size={18} />{tr('Sign out')}

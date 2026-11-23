@@ -61,8 +61,8 @@ describe('earnings', () => {
     const stat = (label: string) => amount(container.querySelector(`[data-stat="${label}"]`)?.textContent ?? '');
     expect(stat('You earned')).toBeCloseTo(stat('Trip fares') - stat('Platform fee') + stat('Tips'), 2);
     expect(container.querySelector('[data-stat="You earned"]')?.textContent).toBe('₹31,840.50');
-    expect(container.querySelector('[data-testid="period-label"]')?.textContent).toBe('October 2026');
-    expect((container.querySelector('button[aria-label="Previous"]') as HTMLButtonElement).disabled).toBe(true);
+    // 23 Nov: the shared presets; Earnings opens on the last 30 days.
+    expect(container.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe('30 days');
     const rows = [...container.querySelectorAll('[data-month]')].map((r) => r.getAttribute('data-month'));
     expect(rows).toEqual(['2026-11', '2026-10']);
     expect(container.querySelector('[data-month="2026-11"]')?.textContent).toContain('(so far)');

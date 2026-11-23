@@ -112,7 +112,7 @@ describe('RangeBar', () => {
     render(<RangeBar from="2026-03-01" to="2026-03-10" onApply={onApply} />);
     fireEvent.click(screen.getByRole('button', { name: 'Show' }));
     expect(onApply).toHaveBeenCalledWith({ from: '2026-03-01', to: '2026-03-10' });
-    fireEvent.click(screen.getByRole('button', { name: 'Last 7 days' }));
+    fireEvent.click(screen.getByRole('button', { name: '7 days' }));
     expect(onApply).toHaveBeenCalledTimes(2);
   });
 });

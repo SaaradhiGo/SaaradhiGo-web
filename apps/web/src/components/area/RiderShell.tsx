@@ -1,5 +1,6 @@
 'use client';
 
+import { useAreaTheme } from '@/lib/area/theme';
 import { LegalLine } from '@/components/sg/Footer';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -36,16 +37,10 @@ export function RiderShell({ children }: { children: React.ReactNode }) {
   const tr = useTr();
   const path = areaPath(usePathname());
   const { both, signOut, switchTo } = useArea();
-  const [dark, setDark] = useState(false);
-  useEffect(() => setDark(document.documentElement.getAttribute('data-theme') === 'dark'), []);
+  const [areaTheme, setAreaTheme] = useAreaTheme();
+  const dark = areaTheme === 'dark';
 
-  function flip() {
-    const next = dark ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('sg-theme', next); } catch { /* private mode */ }
-    document.cookie = `sg-theme=${next}; path=/; max-age=31536000; samesite=lax`;
-    setDark(!dark);
-  }
+  function flip() { setAreaTheme(dark ? 'light' : 'dark'); }
 
   return (
     <div className="ar" data-area="rider">
