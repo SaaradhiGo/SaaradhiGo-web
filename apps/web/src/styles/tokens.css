@@ -149,22 +149,24 @@
    `gold-text` does; fills keep using `gold-500`.
    ----------------------------------------------------------------------- */
 :root, [data-theme="dark"] {
-  --ops-bg-000: #0b0b0b;
-  --ops-bg-100: #121212;
-  --ops-bg-150: #161616;
-  --ops-bg-200: #181818;
-  --ops-bg-300: #1f1f1f;
-  --ops-bg-field: #12141a;
+  /* 22 Nov (owner): dark is a designed theme -- three clearly different surfaces (page, card,
+     raised panel or menu), lines you can see, and every grey at AA (4.5:1) on a card. */
+  --ops-bg-000: #0c0e11;
+  --ops-bg-100: #171a1f;
+  --ops-bg-150: #1b1f25;
+  --ops-bg-200: #222730;
+  --ops-bg-300: #262b34;
+  --ops-bg-field: #101318;
   --ops-qr-bg: #ffffff;
-  --ops-line-strong: #3a3a40;
+  --ops-line-strong: #4b525e;
   --ops-ink-1: #c6cedb;
   --ops-ink-2: #9aa6b6;
   --ops-ink-3: #8e99a8;
   --ops-ink-3b: #8b95a5;
-  --ops-ink-4: #7d8795;
-  --ops-ink-5: #7a8493;
-  --ops-ink-6: #76808f;
-  --ops-ink-7: #4f5765;
+  --ops-ink-4: #9099a7;
+  --ops-ink-5: #8d96a4;
+  --ops-ink-6: #8a93a1;
+  --ops-ink-7: #868f9d;
   --ops-gold-300: #ffe98a;
   --ops-gold-350: #ffe07a;
   --ops-gold-500: #c8a75a;
@@ -175,10 +177,10 @@
   /* Translucent overlays: hover washes, hairlines, the scrim behind a drawer.
      Named because a white wash on ivory is invisible and a black one on noir
      is, so each theme needs its own. */
-  --ops-wash: rgba(255,255,255,0.045);
-  --ops-wash-strong: rgba(255,255,255,0.09);
-  --ops-hairline: rgba(255,255,255,0.055);
-  --ops-edge-highlight: rgba(255,255,255,0.045);
+  --ops-wash: rgba(255,255,255,0.06);
+  --ops-wash-strong: rgba(255,255,255,0.12);
+  --ops-hairline: rgba(255,255,255,0.13);
+  --ops-edge-highlight: rgba(255,255,255,0.07);
   --ops-scrim: rgba(0,0,0,0.6);
   --ops-lift: 0 1px 2px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.35);
   --ops-gold-wash: rgba(255,215,0,0.08);
