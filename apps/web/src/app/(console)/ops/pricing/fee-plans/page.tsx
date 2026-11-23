@@ -219,20 +219,27 @@ function Simulator() {
       <header className="ops-card__head"><div><h2 id="fp-sim">Simulator</h2>
         <p>Compares plan types at Basic (5), Medium (12) and Heavy (20) trips a day. It never activates anything.</p></div></header>
       <div className="flex flex-wrap gap-3 items-end">
-        {input('country', 'Market')}
+        <label className="grid gap-1"><span className="help">Market</span>
+          <select className="input" value={f.country} onChange={(e) => {
+            // 23 Nov review: a market by name, and its own classes and default daily fee.
+            const country = e.target.value;
+            setF((x) => ({ ...x, country, vehicle_type: country === 'US' ? 'standard' : 'sedan', pass: country === 'US' ? '5' : '49' }));
+          }}>
+            <option value="IN">India</option><option value="US">United States</option>
+          </select></label>
         <label className="grid gap-1"><span className="help">Class</span>
           <select className="input" value={f.vehicle_type} onChange={(e) => setF((x) => ({ ...x, vehicle_type: e.target.value }))}>
-            {['auto', 'hatchback', 'sedan', 'suv', 'standard', 'xl'].map((c) => <option key={c} value={c}>{classWord(c)}</option>)}
+            {(f.country === 'US' ? ['standard', 'xl'] : ['auto', 'hatchback', 'sedan', 'suv']).map((c) => <option key={c} value={c}>{classWord(c)}</option>)}
           </select></label>
-        {input('fare', 'Average fare (₹, blank = last 30 days)')}
-        {input('commission', 'Commission % to compare')}{input('pass', 'Daily fee (₹) to compare')}
+        {input('fare', `Average fare (${f.country === 'US' ? '$' : '₹'}, blank = last 30 days)`)}
+        {input('commission', 'Commission % to compare')}{input('pass', `Daily fee (${f.country === 'US' ? '$' : '₹'}) to compare`)}
         <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => void run()}>Run</button>
       </div>
       {error ? <div className="alert-error mt-3" role="alert">{error}</div> : null}
       {sim ? (
         <div className="mt-3">
           <p className="help m-0">Average fare {rupees(sim.average_fare_minor, cur)} ({sim.average_fare_source.replace(/_/g, ' ')}) · our variable cost {rupees(sim.cost_per_trip_minor, cur)} a trip
-            {sim.cost_breakdown.missing.length ? ` (not configured: ${sim.cost_breakdown.missing.join(', ')})` : ''}</p>
+            {sim.cost_breakdown.missing.length ? ' (an estimate: SMS and call prices are not set yet)' : ''}</p>
           <DataTable caption="Simulated plans" rows={sim.rows} rowKey={(r) => `${r.plan}-${r.preset}`} density="compact" maxHeight={false}
             columns={[
               { key: 'plan', label: 'Plan', render: (r) => TYPE_WORDS[r.plan] ?? r.plan },
