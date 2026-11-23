@@ -1,5 +1,7 @@
 'use client';
 
+import { marketDate } from '@/lib/consoleTime';
+import { readSelectedScope } from '@/lib/adminScope';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
@@ -329,7 +331,7 @@ function ReportInner() {
         <Filters filters={filters} catalogue={catalogue} groups={card?.groups ?? body?.report.groups ?? []}
           showVehicle={(card?.groups ?? body?.report.groups ?? []).includes('vehicle')} noPeriod={key === 'rider_retention'} onApply={go} />
         <TableToolbar
-          summary={body ? `${body.rows.length || body.cohorts?.length || 0} row${(body.rows.length || body.cohorts?.length || 0) === 1 ? '' : 's'} · ${body.params.from} to ${body.params.to} · days are each city's own` : null}
+          summary={body ? `${body.rows.length || body.cohorts?.length || 0} row${(body.rows.length || body.cohorts?.length || 0) === 1 ? '' : 's'} · ${marketDate(body.params.from, reportMarket())} to ${marketDate(body.params.to, reportMarket())} · days are each city's own` : null}
           density={density} onDensity={setDensity} />
         <p className="rp-asof" role="status">
           {body ? (body.as_of ? `Data as of ${stamp(body.as_of, marketZone)} (last rebuild of these days).` : 'No rollup has been built for these days yet.') : ''}
@@ -408,6 +410,11 @@ function ReportInner() {
       ) : null}
     </>
   );
+}
+
+/** The market whose date format the report uses: the selected place's country (22 Nov). */
+function reportMarket(): string {
+  return (readSelectedScope() ?? '').startsWith('US') ? 'US' : 'IN';
 }
 
 export default function ReportView() {

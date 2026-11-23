@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import {
   type Cohort, type Granularity, type Pivot, type ReportColumn, formatCell, groupWord, niceScale,
   periodLabel, stackMax, STAGE_WORDS,
@@ -17,9 +17,28 @@ import {
  * colour alone. Marks are thin, bars have a 2px gap, the grid is recessive.
  */
 
-const W = 720;
+// 22 Nov (owner): the chart is drawn at its container's real width, 1 unit = 1 px, so axis text
+// stays at the standard 14 px at every width from 320 to 1920 instead of shrinking with a scaled SVG.
+const W_DEFAULT = 720;
 const H = 260;
-const PAD = { top: 12, right: 12, bottom: 28, left: 92 };
+const PAD = { top: 12, right: 12, bottom: 32, left: 84 };
+const LABEL_PX = 64; // room one x-axis date label needs
+
+function useWidth() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [w, setW] = useState(W_DEFAULT);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const ro = new ResizeObserver((entries) => {
+      const next = Math.round(entries[0]?.contentRect.width ?? 0);
+      if (next > 0) setW(Math.max(260, next));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, w] as const;
+}
 const MAX_SERIES = 5;
 const CHART_TOKENS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
 
@@ -52,6 +71,7 @@ export function StackedBars({
 }) {
   const [hover, setHover] = useState<number | null>(null);
   const uid = useId();
+  const [plotRef, W] = useWidth();
   const series = fold({ ...pivot, series: pivot.series.filter((s) => s.values.some((v) => (v ?? 0) > 0)) });
   const periods = pivot.periods;
   const { top, ticks } = niceScale(stackMax(pivot));
@@ -60,7 +80,8 @@ export function StackedBars({
   const band = innerW / Math.max(periods.length, 1);
   const barW = Math.min(36, Math.max(2, band * 0.66));
   const y = (v: number) => PAD.top + innerH - (v / top) * innerH;
-  const every = Math.ceil(periods.length / 8);
+  // As many date labels as fit the width, never overlapping.
+  const every = Math.max(1, Math.ceil(periods.length / Math.max(2, Math.floor(innerW / LABEL_PX))));
   // Axis labels drop the decimals of a money figure; the tooltip and the table keep them.
   const axisFmt = (v: number) => formatCell(column, v, currency).replace(/[.,]00$/, '');
 
@@ -74,8 +95,11 @@ export function StackedBars({
     <figure className="rp-chart" aria-labelledby={`${uid}-t`}>
       <figcaption id={`${uid}-t`} className="rp-chart__title">{title}</figcaption>
       <Legend names={series} />
-      <div className="rp-chart__plot">
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={summary} className="rp-svg"
+      <div className="rp-chart__plot" ref={plotRef}>
+        {series.length === 0 ? (
+          <p className="rp-chart__empty" role="status">No data for this period. Try a longer date range.</p>
+        ) : (
+        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={summary} className="rp-svg"
           onMouseLeave={() => setHover(null)}>
           {ticks.map((t) => (
             <g key={t}>
@@ -107,6 +131,7 @@ export function StackedBars({
             );
           })}
         </svg>
+        )}
         {tip ? (
           <div className="rp-tip" role="status" style={{ left: `${Math.min(80, Math.max(2, (hover! / Math.max(periods.length, 1)) * 100))}%` }}>
             <b>{periodLabel(tip.period, granularity)}</b>
