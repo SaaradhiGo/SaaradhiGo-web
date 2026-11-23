@@ -2669,5 +2669,9 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 /* 22 Nov: a city with no drivers online says so over the map. */
 .lo-empty-note { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 3; margin: 0; padding: 8px 14px; border-radius: 999px; background: var(--ops-bg-100); border: 1px solid var(--ops-hairline); color: var(--ink); font-size: 14px; max-width: calc(100% - 32px); text-align: center; }
 
+/* 22 Nov: a country's states or cities as chips, never a long dropdown. */
+.ops-placechips { display: flex; flex-wrap: wrap; gap: 8px; }
+.ops-placechip { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--ops-hairline); background: var(--ops-bg-100); color: var(--ink); font: 600 14px/1 var(--font-sans); cursor: pointer; }
+.ops-placechip:hover { border-color: var(--gold-500); }
 /* 22 Nov: the audit log's "show page views" switch. */
 .au-views { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; cursor: pointer; }
