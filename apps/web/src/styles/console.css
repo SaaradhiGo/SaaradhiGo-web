@@ -2673,3 +2673,5 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .ops-placechips { display: flex; flex-wrap: wrap; gap: 8px; }
 .ops-placechip { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--ops-hairline); background: var(--ops-bg-100); color: var(--ink); font: 600 14px/1 var(--font-sans); cursor: pointer; }
 .ops-placechip:hover { border-color: var(--gold-500); }
+/* 22 Nov: the audit log's "show page views" switch. */
+.au-views { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; white-space: nowrap; cursor: pointer; }

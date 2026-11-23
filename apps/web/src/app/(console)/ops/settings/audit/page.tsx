@@ -127,7 +127,7 @@ export default function AuditPage() {
               <input id="au-actor" className="input ops-list__search" value={draft.actor} onChange={set('actor')} placeholder="Who: name or staff id" />
               <label className="sr-only" htmlFor="au-action">Action</label>
               <input id="au-action" className="input ops-list__search" value={draft.action} onChange={set('action')} placeholder="Action, e.g. zone_changed" />
-              <label className="ops-check">
+              <label className="au-views">
                 <input type="checkbox" checked={showViews} onChange={(e) => { setShowViews(e.target.checked); setPage(1); }} />
                 {' '}Show page views and sign-ins
               </label>
