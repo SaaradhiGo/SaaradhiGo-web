@@ -1,5 +1,6 @@
 'use client';
 
+import { marketDate } from '@/lib/consoleTime';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
@@ -120,8 +121,8 @@ export default function FeePlansPage() {
               { key: 'type', label: 'Plan', render: (p) => `${TYPE_WORDS[p.plan_type] ?? p.plan_type} (version ${p.version})` },
               { key: 'status', label: 'Status', render: (p) => <StatusChip tone={TONE[p.status] ?? 'neutral'}>{STATUS_WORDS[p.status] ?? p.status.replace('_', ' ')}</StatusChip> },
               { key: 'amounts', label: 'Per class', render: (p) => amountsWords(p) },
-              { key: 'rules', label: 'Floor · cap · waiver', render: (p) => `${rupees(p.earnings_floor_minor, p.currency)} · ${p.daily_cap_minor == null ? 'no cap' : rupees(p.daily_cap_minor, p.currency)} · ${p.waiver_first_days ? `first ${p.waiver_first_days} days free` : p.waiver_until ? `free until ${p.waiver_until}` : 'none'}` },
-              { key: 'from', label: 'From', render: (p) => (p.effective_from ? `${p.effective_from}${p.effective_to ? ` to ${p.effective_to}` : ''}` : '—') },
+              { key: 'rules', label: 'Floor · cap · waiver', render: (p) => `${rupees(p.earnings_floor_minor, p.currency)} · ${p.daily_cap_minor == null ? 'no cap' : rupees(p.daily_cap_minor, p.currency)} · ${p.waiver_first_days ? `first ${p.waiver_first_days} days free` : p.waiver_until ? `free until ${marketDate(p.waiver_until, p.country)}` : 'none'}` },
+              { key: 'from', label: 'From', render: (p) => (p.effective_from ? `${marketDate(p.effective_from, p.country)}${p.effective_to ? ` to ${marketDate(p.effective_to, p.country)}` : ''}` : '—') },
               { key: 'note', label: 'Note', hideBelow: 1280, render: (p) => p.note || '—' },
               { key: 'act', label: '', render: (p) => (may && p.status === 'draft'
                 ? <button type="button" className="ops-linkbtn" onClick={() => void submit(p)}>Send for approval</button> : null) },

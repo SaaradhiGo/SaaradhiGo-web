@@ -220,9 +220,9 @@ export function ageLabel(seconds: number | null | undefined): string {
   if (minutes < 1) return 'under a minute';
   if (minutes < 60) return `${minutes} min`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} h ${minutes % 60 ? `${minutes % 60} min` : ''}`.trim();
+  if (hours < 24) return `${hours} ${hours === 1 ? 'hour' : 'hours'}${minutes % 60 ? ` ${minutes % 60} min` : ''}`;
   const days = Math.floor(hours / 24);
-  return `${days} d ${hours % 24 ? `${hours % 24} h` : ''}`.trim();
+  return `${days} ${days === 1 ? 'day' : 'days'}`;
 }
 
 /** What a ledger entry is called on the statement. */

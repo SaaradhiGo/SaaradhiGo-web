@@ -18,7 +18,7 @@ describe('SlaChip', () => {
 
   it('draws no icon for a running clock', () => {
     const { container } = render(<SlaChip sla={sla({})} />);
-    expect(screen.getByText('2h left')).toBeTruthy();
+    expect(screen.getByText('2 hours left')).toBeTruthy();
     expect(container.querySelector('svg')).toBeNull();
   });
 });

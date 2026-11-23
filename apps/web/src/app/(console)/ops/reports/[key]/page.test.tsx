@@ -33,7 +33,7 @@ describe('report view', () => {
     expect(await screen.findByText(/Data as of 02 Jan, 05:30 IST/)).toBeTruthy();
     expect(screen.getAllByText('Trips requested').length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: 'All reports' }).getAttribute('href')).toBe('/ops/reports');
-    const group = screen.getByRole('group', { name: 'Date presets' });
+    const group = screen.getByRole('group', { name: 'Date range' });
     fireEvent.click(group.querySelector('button')!);
     expect(push).toHaveBeenCalled();
   });

@@ -74,18 +74,19 @@ export type Sla = {
   resolution: SlaClock;
 };
 
-/** 45 -> "45m", 130 -> "2h 10m", 3000 -> "2d 2h". Never negative. */
+/** 45 -> "45 min", 130 -> "2 hours 10 min", 3000 -> "2 days 2 hours". Never negative (owner 24 Nov: human units). */
 export function formatMinutes(total: number): string {
   const minutes = Math.max(0, Math.round(Math.abs(total)));
-  if (minutes < 60) return `${minutes}m`;
+  const n = (v: number, w: string) => `${v} ${w}${v === 1 ? '' : 's'}`;
+  if (minutes < 60) return `${minutes} min`;
   if (minutes < 60 * 24) {
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
-    return m ? `${h}h ${m}m` : `${h}h`;
+    return m ? `${n(h, 'hour')} ${m} min` : n(h, 'hour');
   }
   const d = Math.floor(minutes / (60 * 24));
   const h = Math.floor((minutes % (60 * 24)) / 60);
-  return h ? `${d}d ${h}h` : `${d}d`;
+  return h ? `${n(d, 'day')} ${n(h, 'hour')}` : n(d, 'day');
 }
 
 const NEXT_LABEL: Record<string, string> = { first_response: 'first reply', resolution: 'resolution' };

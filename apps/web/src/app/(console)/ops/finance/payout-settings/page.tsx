@@ -154,7 +154,7 @@ function SettingsInner() {
                       <DataTable caption={`Scheduled payout runs in ${c.name}`} rows={c.recent_runs}
                         rowKey={(r) => r.id} density="compact" maxHeight={false}
                         columns={[
-                          { key: 'week', label: 'Week of', render: (r) => r.week_start },
+                          { key: 'week', label: 'Week of', render: (r) => marketDate(r.week_start, c.country) },
                           { key: 'n', label: 'Payouts', num: true, render: (r) => r.withdrawal_count },
                           { key: 'amt', label: 'Amount', num: true, render: (r) => formatMinor(r.amount_minor, r.currency) },
                           { key: 'out', label: 'Outcome', render: (r) => (

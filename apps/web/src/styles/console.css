@@ -704,7 +704,8 @@ a.ops-alert:hover { background: var(--ops-wash); }
 }
 .ops-iconbtn:hover { background: var(--ops-wash); color: var(--ink); }
 
-.ops-table-wrap { overflow: auto; max-width: 100%; }
+/* position: relative so a cell's absolutely placed sr-only text is clipped here, not widening the page (24 Nov, SLA). */
+.ops-table-wrap { overflow: auto; max-width: 100%; position: relative; }
 .ops-table-wrap--tall { max-height: calc(100vh - var(--ops-top-h) - 190px); min-height: 200px; }
 
 /* FIXED LAYOUT. Auto layout sized every column to its content, so once

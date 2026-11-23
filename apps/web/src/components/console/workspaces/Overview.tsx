@@ -10,8 +10,8 @@ import { useHeatmap, useLiveOps } from '@/lib/useLiveOps';
 import type { IntegrationsPayload } from '@/lib/platform';
 import { formatWhole } from '@/lib/trips';
 import {
-  type CitySquare, type Health, type PlaceRow, type PlacesResponse, type PulseResponse,
-  HEALTH_WORD, againstUsual,
+  type PlacesResponse, type PulseResponse,
+  againstUsual,
 } from '@/lib/workspace';
 import { LiveMap } from '@/components/console/liveops/LiveMap';
 import { HealthChip, StatusChip } from '@/components/console/kit/StatusChip';
@@ -39,7 +39,6 @@ import { Empty, ErrorState, Skeleton } from '@/components/console/ui';
  * and `pulse/`; nothing here invents a number. No block repeats per city.
  */
 
-const RANK: Record<Health, number> = { critical: 0, watch: 1, normal: 2, quiet: 3 };
 
 export function goToPlace(code: string | null) {
   writeSelectedScope(code);
@@ -86,31 +85,9 @@ function fmt(n: number | null | undefined) {
   return typeof n === 'number' ? n.toLocaleString('en-IN') : '—';
 }
 
-function rateCell(row: PlaceRow) {
-  if (!row.requests) return <span className="muted">—</span>;
-  if (!row.rates_reliable) return <span className="muted">Not enough data yet</span>;
-  return <>{row.unfulfilled_rate}%</>;
-}
-
 function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places: PlacesResponse }) {
   const node = places.node;
   const t = places.totals;
-  const childWord = node?.kind === 'global' ? 'Country' : node?.kind === 'country' ? 'State' : 'City';
-  const byCountry = useMemo(() => {
-    const groups = new Map<string, CitySquare[]>();
-    for (const c of places.cities) {
-      const key = c.country ?? '—';
-      groups.set(key, [...(groups.get(key) ?? []), c]);
-    }
-    return Array.from(groups.entries()).map(([country, cities]) => ({
-      country,
-      name: places.children.find((r) => r.code === country)?.name
-        ?? places.quiet.find((r) => r.code === country)?.name
-        ?? places.breadcrumb.find((b) => b.code === country)?.name ?? country,
-      cities: [...cities].sort((a, b) => RANK[a.health] - RANK[b.health] || a.name.localeCompare(b.name)),
-    })).sort((a, b) => b.cities.length - a.cities.length);
-  }, [places]);
-  const counts = places.health_counts;
   const today = useToday();
   const money = t.collected_minor ? Object.entries(t.collected_minor) : null;
 
@@ -148,93 +125,8 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
       <SuperAdminBanner access={access} />
       <SelfApprovalNotice approver={can(access, 'approval.check')} />
 
-      <div className="ops-ws__grid ops-ws__grid--c">
-        <div className="ops-ws__main">
-        <section className="ops-card" aria-label="Every city at a glance">
-          <header className="ops-card__head">
-            <div>
-              <h2>Every city at a glance</h2>
-              <p>One square per city, worst first in each country. Choose a square to open that city.</p>
-            </div>
-            <div className="ops-legend" aria-label="Legend">
-              {(['critical', 'watch', 'normal', 'quiet'] as Health[]).map((h) => (
-                <span key={h} className="ops-legend__item">
-                  <span className={`ops-square ops-square--${h}`} aria-hidden="true" />
-                  {HEALTH_WORD[h]} <span className="sg-num">{counts[h] ?? 0}</span>
-                </span>
-              ))}
-            </div>
-          </header>
-          <div className="ops-squares">
-            {byCountry.map((g) => {
-              const crit = g.cities.filter((c) => c.health === 'critical').length;
-              const watch = g.cities.filter((c) => c.health === 'watch').length;
-              return (
-                <div key={g.country} className="ops-squares__row">
-                  <div className="ops-squares__name"><b>{g.name}</b><span className="sg-num">{g.cities.length} cities</span></div>
-                  <div className="ops-squares__grid">
-                    {g.cities.map((c) => (
-                      <button key={c.code} type="button" className={`ops-square ops-square--${c.health}`}
-                        title={`${c.name}: ${HEALTH_WORD[c.health]}${c.health_reason ? ` (${c.health_reason})` : ''}`}
-                        aria-label={`${c.name}: ${HEALTH_WORD[c.health]}${c.health_reason ? `, ${c.health_reason}` : ''}`}
-                        onClick={() => goToPlace(c.code)} />
-                    ))}
-                  </div>
-                  <div className="ops-squares__sum sg-num">
-                    {crit || watch ? `${crit ? `${crit} critical` : ''}${crit && watch ? ' · ' : ''}${watch ? `${watch} watch` : ''}` : 'all normal'}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-
-      <section className="ops-card" aria-label={`${childWord} by ${childWord.toLowerCase()}`}>
-        <header className="ops-card__head">
-          <div><h2>{childWord === 'Country' ? 'Countries' : childWord === 'State' ? 'States' : 'Cities'}</h2>
-            <p>Worst first. Choose a row to open it.</p></div>
-        </header>
-        <div className="ops-list__table">
-          <table>
-            <caption className="sr-only">{childWord} table</caption>
-            <thead>
-              <tr>
-                <th scope="col">{childWord}</th><th scope="col">Status</th><th scope="col" className="num">Requests today</th>
-                <th scope="col" className="num">Completed</th><th scope="col" className="num">Unfulfilled</th>
-                <th scope="col" className="num">Drivers online</th><th scope="col" className="num">Active SOS</th>
-                <th scope="col" className="num">Stuck trips</th><th scope="col">Worst city</th>
-              </tr>
-            </thead>
-            <tbody>
-              {places.children.map((r) => (
-                <tr key={r.code} className="is-link" tabIndex={0}
-                  onClick={() => goToPlace(r.code)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') goToPlace(r.code); }}>
-                  <td className="primary">{r.name}</td>
-                  <td><HealthChip health={r.health} reason={r.health_reason} /></td>
-                  <td className="num">{fmt(r.requests)}</td>
-                  <td className="num">{fmt(r.completed)}</td>
-                  <td className="num">{rateCell(r)}</td>
-                  <td className="num">{fmt(r.drivers_online)}</td>
-                  <td className="num">{r.sos_active ? <b className="ops-text--critical">{r.sos_active}</b> : 0}</td>
-                  <td className="num">{fmt(r.stuck_trips)}</td>
-                  <td>{r.worst_city ? `${r.worst_city.name}${r.worst_city.reason ? ` · ${r.worst_city.reason}` : ''}` : '—'}</td>
-                </tr>
-              ))}
-              {places.quiet.length ? (
-                <tr className="ops-row--quiet">
-                  <td colSpan={9}>{places.quiet.length} with no activity today: {places.quiet.map((q) => q.name).join(', ')}</td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-        </div>
-        <NeedsActionInbox access={access} placeName={node?.name} compact limit={8} />
-      </div>
+      {/* 24 Nov (owner): the country tiles above replace "Every city at a glance" and the Countries table. */}
+      <NeedsActionInbox access={access} placeName={node?.name} limit={8} />
 
       <div className="ops-ws__grid ops-ws__grid--2">
         {money ? (

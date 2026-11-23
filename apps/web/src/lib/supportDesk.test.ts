@@ -27,20 +27,20 @@ const server = (patch: Partial<SupportActions>): SupportActions => ({
 
 describe('SLA formatting', () => {
   it('words minutes the way an operator reads a clock', () => {
-    expect(formatMinutes(0)).toBe('0m');
-    expect(formatMinutes(45)).toBe('45m');
-    expect(formatMinutes(60)).toBe('1h');
-    expect(formatMinutes(130)).toBe('2h 10m');
-    expect(formatMinutes(1440)).toBe('1d');
-    expect(formatMinutes(2880 + 120)).toBe('2d 2h');
-    expect(formatMinutes(-35)).toBe('35m');
+    expect(formatMinutes(0)).toBe('0 min');
+    expect(formatMinutes(45)).toBe('45 min');
+    expect(formatMinutes(60)).toBe('1 hour');
+    expect(formatMinutes(130)).toBe('2 hours 10 min');
+    expect(formatMinutes(1440)).toBe('1 day');
+    expect(formatMinutes(2880 + 120)).toBe('2 days 2 hours');
+    expect(formatMinutes(-35)).toBe('35 min');
   });
 
   it('is red only once a deadline has passed, and says so in words', () => {
-    expect(slaChip(sla({ state: 'ok', minutes_remaining: 190 }))).toEqual({ label: '3h 10m left', tone: 'good' });
-    expect(slaChip(sla({ state: 'due_soon', minutes_remaining: 25 }))).toEqual({ label: '25m left', tone: 'wait' });
+    expect(slaChip(sla({ state: 'ok', minutes_remaining: 190 }))).toEqual({ label: '3 hours 10 min left', tone: 'good' });
+    expect(slaChip(sla({ state: 'due_soon', minutes_remaining: 25 }))).toEqual({ label: '25 min left', tone: 'wait' });
     expect(slaChip(sla({ state: 'breached', breached: true, minutes_remaining: -35 })))
-      .toEqual({ label: 'Breached 35m ago', tone: 'bad' });
+      .toEqual({ label: 'Breached 35 min ago', tone: 'bad' });
   });
 
   it('is quiet for a closed ticket and honest about a missing clock', () => {
@@ -50,9 +50,9 @@ describe('SLA formatting', () => {
   });
 
   it('names the clock that matters on the ticket page', () => {
-    expect(slaSentence(sla({ minutes_remaining: 90 }))).toBe('1h 30m until the first reply deadline.');
+    expect(slaSentence(sla({ minutes_remaining: 90 }))).toBe('1 hour 30 min until the first reply deadline.');
     expect(slaSentence(sla({ state: 'breached', next: 'resolution', minutes_remaining: -75 })))
-      .toBe('The resolution deadline passed 1h 15m ago.');
+      .toBe('The resolution deadline passed 1 hour 15 min ago.');
     expect(slaSentence(sla({ state: 'closed', next: null, minutes_remaining: null })))
       .toBe('Closed. The clock has stopped.');
   });
@@ -183,7 +183,7 @@ describe('a paused clock (waiting on the user)', () => {
 
   it('still reports a late first reply while paused', () => {
     const late = sla({ state: 'breached', breached: true, paused: true, minutes_remaining: -20 });
-    expect(slaChip(late)).toEqual({ label: 'Breached 20m ago', tone: 'bad' });
+    expect(slaChip(late)).toEqual({ label: 'Breached 20 min ago', tone: 'bad' });
   });
 });
 
@@ -222,7 +222,7 @@ describe('the SLA dashboard helpers', () => {
     expect(formatPct(66.666)).toBe('66.7%');
     expect(formatPct(0)).toBe('0.0%');
     expect(formatMedian(null)).toBe('—');
-    expect(formatMedian(155)).toBe('2h 35m');
+    expect(formatMedian(155)).toBe('2 hours 35 min');
   });
 
   it('builds the query and refuses a bad range before the server does', () => {
@@ -253,7 +253,7 @@ describe('SLA change requests', () => {
   };
 
   it('says what a pending request asks for', () => {
-    expect(pendingSummary(policy)).toBe('Normal: first reply within 2h, resolved within 10h');
+    expect(pendingSummary(policy)).toBe('Normal: first reply within 2 hours, resolved within 10 hours');
     expect(pendingSummary(cfg)).toContain('auto-close after 10 days');
   });
 
