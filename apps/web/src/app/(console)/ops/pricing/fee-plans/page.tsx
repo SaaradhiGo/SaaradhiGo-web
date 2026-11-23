@@ -5,6 +5,7 @@ import { ApiError, api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
 import { canDraftPricing } from '@/lib/pricing';
 import { classWord, placeWord } from '@/lib/pricingWords';
+import { ResolvedPlans } from '@/components/console/pricing/ResolvedPlans';
 import { interpretWrite } from '@/lib/trips';
 import { PricingNav } from '@/components/console/pricing';
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
@@ -26,6 +27,7 @@ type Plan = {
 type SimRow = {
   plan: string; preset: string; trips_per_day: number; fares_per_day_minor: number; driver_pays_day_minor: number;
   driver_pays_month_minor: number; driver_share_percent: number | null; our_cost_day_minor: number;
+  driver_takes_home_day_minor?: number;
   we_keep_day_minor: number; loses_money: boolean; breaks_legal_share: boolean;
 };
 type Sim = { average_fare_minor: number; average_fare_source: string; cost_per_trip_minor: number; currency: string;
@@ -33,8 +35,10 @@ type Sim = { average_fare_minor: number; average_fare_source: string; cost_per_t
 
 const STATUS_WORDS: Record<string, string> = { draft: 'Draft', pending_approval: 'Waiting for approval', active: 'In force', archived: 'Ended' };
 const TONE: Record<string, ChipTone> = { draft: 'neutral', pending_approval: 'info', active: 'good', archived: 'neutral' };
+// 22 Nov (Srini's ruling): three plan types -- a daily fee, a commission, a per-trip fee.
 const TYPE_WORDS: Record<string, string> = {
-  percent_commission: 'Commission %', per_trip_fee: 'Fee per trip', daily_pass: 'Daily pass', fair_share: 'Fair Share',
+  daily_pass: 'Daily fee', percent_commission: 'Commission (% of each fare)', fair_share: 'Per-trip fee (Fair Share)',
+  per_trip_fee: 'Per-trip fee',
 };
 const rupees = (minor: number | null | undefined, cur = 'INR') =>
   minor == null ? '—' : `${cur === 'INR' ? '₹' : '$'}${(minor / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
@@ -121,6 +125,7 @@ export default function FeePlansPage() {
                 ? <button type="button" className="ops-linkbtn" onClick={() => void submit(p)}>Send for approval</button> : null) },
             ]} />
         )}
+      <div className="mt-4"><ResolvedPlans /></div>
       <div className="mt-4"><Simulator /></div>
       {drafting ? <DraftDrawer onClose={() => setDrafting(false)} onDone={(t) => { setDrafting(false); setNotice(t); void load(); }} /> : null}
     </>
@@ -170,9 +175,9 @@ function DraftDrawer({ onClose, onDone }: { onClose: () => void; onDone: (text: 
         </select>
         {field('country', 'Country (IN, US)')}
         {field('scope_code', 'State or city code (blank = the whole country), e.g. IN-TG or IN-TG-HYD')}
-        {field('classes', 'Vehicle classes (comma separated)')}
+        {field('classes', 'Classes, comma separated: auto, hatchback (Mini), sedan, suv, standard, xl; * = all')}
         {field('per_trip', `Fee per trip (${sym})`)}
-        {field('pass', `Daily pass (${sym}, daily pass plans)`)}
+        {field('pass', `Daily fee (${sym}, charged only on a day with a trip)`)}
         {field('free_after', 'Fee-free after this many trips a day (optional)')}
         {field('commission', 'Commission % (commission plans)')}
         {field('floor', `Earnings floor a day (${sym}, 0 = off)`)}
@@ -188,7 +193,7 @@ function DraftDrawer({ onClose, onDone }: { onClose: () => void; onDone: (text: 
 }
 
 function Simulator() {
-  const [f, setF] = useState({ country: 'IN', vehicle_type: 'sedan', fare: '', commission: '10', pass: '199' });
+  const [f, setF] = useState({ country: 'IN', vehicle_type: 'sedan', fare: '', commission: '10', pass: '49' });
   const [sim, setSim] = useState<Sim | null>(null);
   const [error, setError] = useState<string | null>(null);
   async function run() {
@@ -212,8 +217,13 @@ function Simulator() {
       <header className="ops-card__head"><div><h2 id="fp-sim">Simulator</h2>
         <p>Compares plan types at Basic (5), Medium (12) and Heavy (20) trips a day. It never activates anything.</p></div></header>
       <div className="flex flex-wrap gap-3 items-end">
-        {input('country', 'Market')}{input('vehicle_type', 'Class')}{input('fare', 'Average fare (₹, blank = last 30 days)')}
-        {input('commission', 'Commission % to compare')}{input('pass', 'Daily pass (₹) to compare')}
+        {input('country', 'Market')}
+        <label className="grid gap-1"><span className="help">Class</span>
+          <select className="input" value={f.vehicle_type} onChange={(e) => setF((x) => ({ ...x, vehicle_type: e.target.value }))}>
+            {['auto', 'hatchback', 'sedan', 'suv', 'standard', 'xl'].map((c) => <option key={c} value={c}>{classWord(c)}</option>)}
+          </select></label>
+        {input('fare', 'Average fare (₹, blank = last 30 days)')}
+        {input('commission', 'Commission % to compare')}{input('pass', 'Daily fee (₹) to compare')}
         <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => void run()}>Run</button>
       </div>
       {error ? <div className="alert-error mt-3" role="alert">{error}</div> : null}
@@ -226,10 +236,11 @@ function Simulator() {
               { key: 'plan', label: 'Plan', render: (r) => TYPE_WORDS[r.plan] ?? r.plan },
               { key: 'preset', label: 'Day', render: (r) => `${r.preset} (${r.trips_per_day} ${r.trips_per_day === 1 ? 'trip' : 'trips'})` },
               { key: 'pays', label: 'Driver pays a day', num: true, render: (r) => rupees(r.driver_pays_day_minor, cur) },
+              { key: 'home', label: 'Driver takes home', num: true, render: (r) => rupees(r.driver_takes_home_day_minor ?? (r.fares_per_day_minor - r.driver_pays_day_minor), cur) },
               { key: 'month', label: 'A month', num: true, render: (r) => rupees(r.driver_pays_month_minor, cur) },
               { key: 'share', label: 'Driver keeps', num: true, render: (r) => (r.driver_share_percent == null ? '—' : `${r.driver_share_percent}%`) },
               { key: 'cost', label: 'Our cost a day', num: true, render: (r) => rupees(r.our_cost_day_minor, cur) },
-              { key: 'keep', label: 'We keep a day', num: true, render: (r) => (
+              { key: 'keep', label: 'SaaradhiGo keeps a day', num: true, render: (r) => (
                 <span className={r.loses_money || r.breaks_legal_share ? 'ared' : undefined}>
                   {rupees(r.we_keep_day_minor, cur)}{r.loses_money ? ' · loses money' : ''}{r.breaks_legal_share ? ' · breaks the legal share' : ''}
                 </span>) },
