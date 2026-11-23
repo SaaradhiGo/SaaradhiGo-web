@@ -51,6 +51,20 @@ async function countOf(path: string): Promise<number | null> {
   }
 }
 
+/**
+ * The Support badge is the number the Support page calls "Open" (22 Nov: the badge said 2 while
+ * the page said 0). The list's own `queues.open` is that number; `status=OPEN` was a different one.
+ */
+async function supportOpenCount(): Promise<number | null> {
+  try {
+    const page = await api.get<{ queues?: Record<string, number> }>('/support/admin/tickets/?page_size=1');
+    const n = page?.queues?.open;
+    return typeof n === 'number' ? n : countOf(QUEUES.supportOpen);
+  } catch {
+    return null;
+  }
+}
+
 export const QUEUES = {
   // Not a status: a driver awaiting review is one that is not approved.
   // The KYC review queue: documents sent and waiting (the /kyc page lists exactly these).
@@ -119,7 +133,7 @@ export async function fetchQueueCounts(
       // are deliberately NOT given a scope parameter -- sending one the
       // endpoint ignores would make the badge look region-aware when it
       // is not. They scope when their endpoints do.
-      allowed('supportOpen') ? countOf(QUEUES.supportOpen) : skip,
+      allowed('supportOpen') ? supportOpenCount() : skip,
       allowed('sosOpen')
         ? (can(access ?? null, 'safety.respond') ? countOf(QUEUES.sosOpen) : readOnlySosCount())
         : skip,

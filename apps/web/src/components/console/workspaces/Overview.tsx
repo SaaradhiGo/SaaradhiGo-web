@@ -115,8 +115,6 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
 
   return (
     <div className="ops-ws">
-      <SuperAdminBanner access={access} />
-      <SelfApprovalNotice />
       <header className="ops-ws__head">
         <div>
           <nav className="ops-crumbs" aria-label="Place">
@@ -137,6 +135,9 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
       </header>
 
       <ActionTiles access={access} />
+
+      <SuperAdminBanner access={access} />
+      <SelfApprovalNotice approver={can(access, 'approval.check')} />
 
       <div className="ops-ws__grid ops-ws__grid--c">
         <div className="ops-ws__main">
@@ -341,8 +342,6 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
 
   return (
     <div className="ops-ws">
-      <SuperAdminBanner access={access} />
-      <SelfApprovalNotice />
       <header className="ops-ws__head">
         <div>
           <nav className="ops-crumbs" aria-label="Place">
@@ -356,6 +355,7 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
       </header>
 
       <ActionTiles access={access} />
+      <SelfApprovalNotice approver={can(access, 'approval.check')} />
 
       <div className="ops-ws__grid ops-ws__grid--d">
         <div className="ops-ws__main">
