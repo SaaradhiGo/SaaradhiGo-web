@@ -135,6 +135,14 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
         </div>
       </header>
 
+      {node?.kind !== 'global' && places.children.length > 1 ? (
+        <nav className="ops-placechips" aria-label={`Places in ${node?.name ?? 'this view'}`}>
+          {/* 22 Nov (owner): states and cities are chips, never a long dropdown. */}
+          {places.children.map((r) => (
+            <button key={r.code} type="button" className="ops-placechip" onClick={() => goToPlace(r.code)}>{r.name}</button>
+          ))}
+        </nav>
+      ) : null}
       <TodayPanel data={today} placeName={node?.name} onOpenCountry={(code) => goToPlace(code)} />
 
       <SuperAdminBanner access={access} />
