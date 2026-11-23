@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { ErrorState, Fact, Facts, Panel, Skeleton } from '@/components/console/ui';
+import { Empty, ErrorState, Fact, Facts, Panel, Skeleton } from '@/components/console/ui';
 import { FieldsDrawer, type FieldSpec } from '@/components/console/kit/FieldsDrawer';
 
 /**
@@ -29,12 +29,15 @@ export default function CostPerTripPage() {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [data, setData] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [forbidden, setForbidden] = useState(false);
   const [editing, setEditing] = useState(false);
   const load = useCallback(async () => {
     setError(null); setData(null);
     try {
       setData(await api.get<Report>(`/pricing/admin/cost-per-trip/?country=${country}&month=${month}`));
     } catch (err) {
+      // 23 Nov review: a role without finance access is told so, not shown a load failure.
+      if (err instanceof ApiError && err.status === 403) { setForbidden(true); return; }
       setError(err instanceof ApiError && err.fromServer ? err.message : 'The report could not be loaded.');
     }
   }, [country, month]);
@@ -51,7 +54,8 @@ export default function CostPerTripPage() {
           <input className="input" type="month" aria-label="Month" value={month} onChange={(e) => setMonth(e.target.value)} />
         </div>
       </header>
-      {error ? <ErrorState title="The report could not be loaded" detail={error} onRetry={() => void load()} />
+      {forbidden ? <Empty title="Cost per trip is not available to your role" detail="It opens with finance access, because it shows the platform's income and costs." />
+        : error ? <ErrorState title="The report could not be loaded" detail={error} onRetry={() => void load()} />
         : !data ? <Skeleton kind="row" count={4} /> : (
           <div className="grid gap-4">
             <Panel title={`${data.country} · ${data.month.slice(0, 7)}`}>
