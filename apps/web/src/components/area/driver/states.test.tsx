@@ -66,12 +66,14 @@ beforeEach(() => { api.get.mockReset(); api.get.mockImplementation(async (p: str
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 describe('a brand-new driver sees zeros, not dots', () => {
-  it('dashboard: ₹0.00 today, this week and ready to withdraw; seven ₹0.00 bars', async () => {
+  it('dashboard: ₹0 today, this week and ready to withdraw; seven ₹0 bars', async () => {
     const { container } = page(<DriverDashboard />);
     await settle();
     const text = container.textContent ?? '';
     expect(text).not.toMatch(PLACEHOLDER);
-    expect(text.match(/₹0\.00/g)?.length).toBeGreaterThanOrEqual(3);
+    // Whole rupees (23 Nov): "₹0" sits right before "0 trips" in the text, so count the sign.
+    expect(text.match(/₹0/g)?.length).toBeGreaterThanOrEqual(3);
+    expect(text).not.toMatch(/₹0\.00/);
     // No trips yet: "Your first ride" in place of the 7-day chart (10 Nov v2).
     expect(container.querySelector('[data-testid="first-ride"]')).not.toBeNull();
     expect(container.querySelector('.askel')).toBeNull();
@@ -97,10 +99,10 @@ describe('a brand-new driver sees zeros, not dots', () => {
     expect(container.textContent).not.toMatch(PLACEHOLDER);
   });
 
-  it('payouts: ₹0.00 ready and "No payouts yet"', async () => {
+  it('payouts: ₹0 ready and "No payouts yet"', async () => {
     const { container } = page(<DriverPayouts />);
     await settle();
-    expect(container.textContent).toContain('₹0.00');
+    expect(container.textContent).toContain('₹0');
     expect(container.textContent).toContain('No payouts yet');
     expect(container.textContent).not.toMatch(PLACEHOLDER);
     expect(container.textContent).toContain('in cash');

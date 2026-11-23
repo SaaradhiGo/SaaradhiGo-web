@@ -11,11 +11,11 @@ const IST = 'Asia/Kolkata';
 
 describe('money', () => {
   it('formats in the trip currency with its decimals, zero included', () => {
-    expect(money('118', 'INR', 'en-IN')).toBe('₹118.00');
-    expect(money('0.00', 'INR', 'en-IN')).toBe('₹0.00');
-    expect(money(0, 'INR', 'en-IN')).toBe('₹0.00');
-    expect(money('631.55', 'INR', 'en-IN')).toBe('₹631.55');
-    expect(money('1257.50', 'INR', 'en-IN')).toBe('₹1,257.50');
+    expect(money('118', 'INR', 'en-IN')).toBe('₹118');
+    expect(money('0.00', 'INR', 'en-IN')).toBe('₹0');
+    expect(money(0, 'INR', 'en-IN')).toBe('₹0');
+    expect(money('631.55', 'INR', 'en-IN')).toBe('₹632');
+    expect(money('1257.50', 'INR', 'en-IN')).toBe('₹1,258');
     expect(money('12.5', 'USD', 'en-US')).toBe('$12.50');
   });
   it('shows nothing rather than a guess', () => {
@@ -60,9 +60,9 @@ describe('chart and week labels', () => {
 });
 
 describe('zero amounts (11 Nov)', () => {
-  it('a negative zero is a plain ₹0.00', () => {
-    expect(money('-0.00', 'INR', 'en-IN')).toBe('₹0.00');
-    expect(money(-0, 'INR', 'en-IN')).toBe('₹0.00');
+  it('a negative zero is a plain ₹0', () => {
+    expect(money('-0.00', 'INR', 'en-IN')).toBe('₹0');
+    expect(money(-0, 'INR', 'en-IN')).toBe('₹0');
     expect(money('abc', 'INR', 'en-IN')).toBeNull();
   });
   it('a fee shows the minus and red only above zero', () => {
@@ -70,12 +70,12 @@ describe('zero amounts (11 Nov)', () => {
     expect(deduction(null, 'INR', 'en-IN')).toEqual({ text: '₹0', red: false });
     // 19 Nov (owner): a whole-rupee fee reads "− ₹10"; paise stay when there are any.
     expect(deduction('10.00', 'INR', 'en-IN')).toEqual({ text: oneLine('− ₹10'), red: true });
-    expect(deduction('45.5', 'INR', 'en-IN')).toEqual({ text: oneLine('− ₹45.50'), red: true });
+    expect(deduction('45.5', 'INR', 'en-IN')).toEqual({ text: oneLine('− ₹46'), red: true });
   });
   it('a tip shows the plus only above zero', () => {
     expect(addition('0.00', 'INR', 'en-IN')).toBe('₹0');
     expect(addition('20', 'INR', 'en-IN')).toBe(oneLine('+ ₹20'));
-    expect(addition('20.5', 'INR', 'en-IN')).toBe(oneLine('+ ₹20.50'));
+    expect(addition('20.5', 'INR', 'en-IN')).toBe(oneLine('+ ₹21'));
   });
 });
 

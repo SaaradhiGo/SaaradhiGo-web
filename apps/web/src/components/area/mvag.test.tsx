@@ -25,7 +25,7 @@ describe('FareWorkings', () => {
     expect(text).toContain('Higher demand');
     expect(text).toContain('×1.30');
     expect(text).toContain('GST (included)');
-    expect(text).toMatch(/cancellation fee of .*43\.70/);
+    expect(text).toMatch(/cancellation fee of .*₹44(?![\d.])/);
     expect(text.toLowerCase()).not.toContain('surge');
   });
 });
