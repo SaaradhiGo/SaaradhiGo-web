@@ -64,7 +64,7 @@ export function ResolvedPlans() {
             <tbody>
               {places.map(([code, p]) => (
                 <tr key={code} className={`rp-resolved__${p.kind}`}>
-                  <th scope="row"><span className="rp-resolved__place">{p.name}</span> <span className="muted">{KIND_WORDS[p.kind]}</span></th>
+                  <th scope="row"><span className="rp-resolved__place" title={KIND_WORDS[p.kind]}>{p.name}</span></th>
                   {data.classes.map((c) => {
                     const cell = p.cells.get(c);
                     if (!cell) return <td key={c}>—</td>;

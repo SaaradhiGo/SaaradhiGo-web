@@ -53,6 +53,7 @@ export default function DashboardPage() {
   const [scope, setScope] = useState('');
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [forbidden, setForbidden] = useState(false);
 
   const cities = (access?.scopes ?? []).filter((s) => s.kind === 'city');
   // The viewer's market clock: the chosen city, else their first scope; India by default.
@@ -65,6 +66,8 @@ export default function DashboardPage() {
     try {
       setData(await api.get<Dashboard>(dashboardPath(applied.from, applied.to, scope)));
     } catch (err) {
+      // 23 Nov review: a role without the dashboard is told so, not shown a load failure.
+      if (err instanceof ApiError && err.status === 403) { setForbidden(true); return; }
       setError(failure(err, 'We could not load the dashboard.'));
     }
   }, [applied, scope]);
@@ -124,7 +127,10 @@ export default function DashboardPage() {
         </form>
       </Panel>
 
-      {error ? (
+      {forbidden ? (
+        <Empty title="The SLA dashboard is not available to your role"
+          detail="It opens with the support dashboard permission. The Support queue shows the tickets you can work on." />
+      ) : error ? (
         <ErrorState title="The dashboard could not be loaded" detail={`${error} This is not the same as there being no tickets.`} onRetry={() => void load()} />
       ) : data === null ? (
         <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
