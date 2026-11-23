@@ -1,5 +1,6 @@
 'use client';
 
+import { formatAge } from '@/lib/commandCentre';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
@@ -180,7 +181,7 @@ function SettingsInner() {
                         ) },
                         { key: 'fee', label: 'Fee', num: true, render: (h) => `${Number(h.fee_percent)}%` },
                         { key: 'min', label: 'Minimum', num: true, render: (h) => formatMinor(h.minimum_withdrawal_minor, c.currency) },
-                        { key: 'stuck', label: 'Stuck after', num: true, render: (h) => (h.stuck_payout_hours ? `${h.stuck_payout_hours} h` : '—') },
+                        { key: 'stuck', label: 'Stuck after', num: true, render: (h) => (h.stuck_payout_hours ? formatAge(h.stuck_payout_hours * 60) : '—') },
                         { key: 'sched', label: 'Schedule', render: (h) => scheduleLabel(h) },
                         { key: 'limit', label: 'Daily limit', hideBelow: 1100, render: (h) => limitWords(h as CycleFields, c.currency) },
                         { key: 'from', label: 'From', render: (h) => marketDate(h.valid_from, c.country) },

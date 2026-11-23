@@ -99,8 +99,8 @@ describe('time', () => {
     expect(elapsed(null)).toBe('—');
     expect(elapsed(0)).toBe('just now');
     expect(elapsed(7)).toBe('7 min');
-    expect(elapsed(65)).toBe('1 h 05 min');
-    expect(elapsed(60 * 27)).toBe('1 d 3 h');
+    expect(elapsed(65)).toBe('1 hour 5 min');
+    expect(elapsed(60 * 27)).toBe('1 day');
   });
 });
 
