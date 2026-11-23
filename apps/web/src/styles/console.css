@@ -2670,4 +2670,4 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .lo-empty-note { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 3; margin: 0; padding: 8px 14px; border-radius: 999px; background: var(--ops-bg-100); border: 1px solid var(--ops-hairline); color: var(--ink); font-size: 14px; max-width: calc(100% - 32px); text-align: center; }
 
 /* 22 Nov: the audit log's "show page views" switch. */
-.au-views { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; white-space: nowrap; cursor: pointer; }
+.au-views { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; cursor: pointer; }
