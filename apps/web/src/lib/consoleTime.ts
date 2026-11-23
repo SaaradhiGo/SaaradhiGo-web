@@ -120,16 +120,15 @@ export function longDate(date: Date, timeZone?: string): string {
 }
 
 /**
- * A calendar date ("2028-10-31" or an ISO timestamp) as the market writes it: dd/mm/yyyy for India
- * (the default), "Oct 31, 2028" for the USA (15 Nov). Never shifted by a time zone: it is a date.
+ * A calendar date ("2028-10-31" or an ISO timestamp) as the market writes it: "31 Oct 2028" for
+ * India (the default; owner 22 Nov), "Oct 31, 2028" for the USA. Never shifted by a time zone.
  */
 export function marketDate(iso: string | null | undefined, country: string = 'IN'): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? '');
   if (!m) return iso ?? '';
   const [, y, mo, d] = m;
-  if (country.toUpperCase() === 'US') {
-    const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(mo) - 1];
-    return month ? `${month} ${Number(d)}, ${y}` : `${mo}/${d}/${y}`;
-  }
-  return `${d}/${mo}/${y}`;
+  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(mo) - 1];
+  if (!month) return iso ?? '';
+  if (country.toUpperCase() === 'US') return `${month} ${Number(d)}, ${y}`;
+  return `${Number(d)} ${month} ${y}`;
 }
