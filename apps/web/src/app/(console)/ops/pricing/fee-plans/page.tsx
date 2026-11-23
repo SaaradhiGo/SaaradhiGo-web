@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
 import { canDraftPricing } from '@/lib/pricing';
+import { classWord, placeWord } from '@/lib/pricingWords';
+import { ResolvedPlans } from '@/components/console/pricing/ResolvedPlans';
 import { interpretWrite } from '@/lib/trips';
 import { PricingNav } from '@/components/console/pricing';
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
@@ -21,18 +23,24 @@ type Plan = {
   amounts: Record<string, Record<string, number>>; earnings_floor_minor: number; daily_cap_minor: number | null;
   waiver_until: string | null; waiver_first_days: number | null; status: string; version: number;
   effective_from: string | null; effective_to: string | null; note: string;
+  /** 22 Nov: the place by name, from the server. */
+  scope_name?: string;
 };
 type SimRow = {
   plan: string; preset: string; trips_per_day: number; fares_per_day_minor: number; driver_pays_day_minor: number;
   driver_pays_month_minor: number; driver_share_percent: number | null; our_cost_day_minor: number;
+  driver_takes_home_day_minor?: number;
   we_keep_day_minor: number; loses_money: boolean; breaks_legal_share: boolean;
 };
 type Sim = { average_fare_minor: number; average_fare_source: string; cost_per_trip_minor: number; currency: string;
   rows: SimRow[]; cost_breakdown: { missing: string[] } };
 
+const STATUS_WORDS: Record<string, string> = { draft: 'Draft', pending_approval: 'Waiting for approval', active: 'In force', archived: 'Ended' };
 const TONE: Record<string, ChipTone> = { draft: 'neutral', pending_approval: 'info', active: 'good', archived: 'neutral' };
+// 22 Nov (Srini's ruling): three plan types -- a daily fee, a commission, a per-trip fee.
 const TYPE_WORDS: Record<string, string> = {
-  percent_commission: 'Commission %', per_trip_fee: 'Fee per trip', daily_pass: 'Daily pass', fair_share: 'Fair Share',
+  daily_pass: 'Daily fee', percent_commission: 'Commission (% of each fare)', fair_share: 'Per-trip fee (Fair Share)',
+  per_trip_fee: 'Per-trip fee',
 };
 const rupees = (minor: number | null | undefined, cur = 'INR') =>
   minor == null ? '—' : `${cur === 'INR' ? '₹' : '$'}${(minor / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
@@ -41,14 +49,22 @@ const toMinor = (v: string) => (v.trim() === '' ? null : Math.round(Number(v) * 
 function amountsWords(p: Plan) {
   return Object.entries(p.amounts).map(([cls, a]) => {
     const bits = [
-      a.per_trip_fee_minor != null ? `${rupees(a.per_trip_fee_minor, p.currency)}/trip` : null,
-      a.daily_pass_minor != null ? `${rupees(a.daily_pass_minor, p.currency)}/day` : null,
+      a.per_trip_fee_minor != null ? `${rupees(a.per_trip_fee_minor, p.currency)} a trip` : null,
+      a.daily_pass_minor != null ? `${rupees(a.daily_pass_minor, p.currency)} a day` : null,
       a.fee_free_after_trips != null ? `free after ${a.fee_free_after_trips}` : null,
       a.commission_percent != null ? `${a.commission_percent}%` : null,
       a.rider_platform_fee_minor != null ? `rider ${rupees(a.rider_platform_fee_minor, p.currency)}` : null,
     ].filter(Boolean);
-    return `${cls}: ${bits.join(', ') || 'to be decided'}`;
+    return `${classWord(cls)}: ${bits.join(', ') || 'to be decided'}`;
   }).join(' · ');
+}
+
+/** Classes whose driver fee an ACTIVE plan leaves undecided: an open decision for the owner. */
+function undecided(plans: Plan[]): { where: string; classes: string[] }[] {
+  return plans.filter((p) => p.status === 'active').map((p) => ({
+    where: p.scope_code,
+    classes: Object.entries(p.amounts).filter(([, a]) => Object.values(a).every((v) => v == null)).map(([c]) => classWord(c)),
+  })).filter((x) => x.classes.length > 0);
 }
 
 export default function FeePlansPage() {
@@ -89,13 +105,20 @@ export default function FeePlansPage() {
         {may ? <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setDrafting(true)}>New draft…</button> : null}
       </header>
       {notice ? <div className="ops-confirm mb-3" role="status"><b>{notice}</b></div> : null}
+      {plans && undecided(plans).length ? (
+        <div className="ops-note ops-note--warn mb-3" role="status">
+          <b>Open decision for Srini:</b>{' '}
+          {undecided(plans).map((u) => `the driver fee for ${u.classes.join(' and ')} in ${placeWord(u.where, access)}`).join('; ')}.
+          {' '}Riders are not offered a class until its driver fee is approved.
+        </div>
+      ) : null}
       {error ? <ErrorState title="The fee plans could not be loaded" detail={error} onRetry={() => void load()} />
         : plans === null ? <Skeleton kind="row" count={4} /> : (
           <DataTable caption="Driver fee plans" rows={plans} rowKey={(p) => p.id} maxHeight={false}
             columns={[
-              { key: 'where', label: 'Where', render: (p) => p.scope_code || `All of ${p.country}` },
-              { key: 'type', label: 'Plan', render: (p) => `${TYPE_WORDS[p.plan_type] ?? p.plan_type} v${p.version}` },
-              { key: 'status', label: 'Status', render: (p) => <StatusChip tone={TONE[p.status] ?? 'neutral'}>{p.status.replace('_', ' ')}</StatusChip> },
+              { key: 'where', label: 'Where', render: (p) => (p.scope_code ? p.scope_name ?? placeWord(p.scope_code, access) : `All of ${p.scope_name ?? placeWord(p.country, access)}`) },
+              { key: 'type', label: 'Plan', render: (p) => `${TYPE_WORDS[p.plan_type] ?? p.plan_type} (version ${p.version})` },
+              { key: 'status', label: 'Status', render: (p) => <StatusChip tone={TONE[p.status] ?? 'neutral'}>{STATUS_WORDS[p.status] ?? p.status.replace('_', ' ')}</StatusChip> },
               { key: 'amounts', label: 'Per class', render: (p) => amountsWords(p) },
               { key: 'rules', label: 'Floor · cap · waiver', render: (p) => `${rupees(p.earnings_floor_minor, p.currency)} · ${p.daily_cap_minor == null ? 'no cap' : rupees(p.daily_cap_minor, p.currency)} · ${p.waiver_first_days ? `first ${p.waiver_first_days} days free` : p.waiver_until ? `free until ${p.waiver_until}` : 'none'}` },
               { key: 'from', label: 'From', render: (p) => (p.effective_from ? `${p.effective_from}${p.effective_to ? ` to ${p.effective_to}` : ''}` : '—') },
@@ -104,6 +127,7 @@ export default function FeePlansPage() {
                 ? <button type="button" className="ops-linkbtn" onClick={() => void submit(p)}>Send for approval</button> : null) },
             ]} />
         )}
+      <div className="mt-4"><ResolvedPlans /></div>
       <div className="mt-4"><Simulator /></div>
       {drafting ? <DraftDrawer onClose={() => setDrafting(false)} onDone={(t) => { setDrafting(false); setNotice(t); void load(); }} /> : null}
     </>
@@ -153,9 +177,9 @@ function DraftDrawer({ onClose, onDone }: { onClose: () => void; onDone: (text: 
         </select>
         {field('country', 'Country (IN, US)')}
         {field('scope_code', 'State or city code (blank = the whole country), e.g. IN-TG or IN-TG-HYD')}
-        {field('classes', 'Vehicle classes (comma separated)')}
+        {field('classes', 'Classes, comma separated: auto, hatchback (Mini), sedan, suv, standard, xl; * = all')}
         {field('per_trip', `Fee per trip (${sym})`)}
-        {field('pass', `Daily pass (${sym}, daily pass plans)`)}
+        {field('pass', `Daily fee (${sym}, charged only on a day with a trip)`)}
         {field('free_after', 'Fee-free after this many trips a day (optional)')}
         {field('commission', 'Commission % (commission plans)')}
         {field('floor', `Earnings floor a day (${sym}, 0 = off)`)}
@@ -171,7 +195,7 @@ function DraftDrawer({ onClose, onDone }: { onClose: () => void; onDone: (text: 
 }
 
 function Simulator() {
-  const [f, setF] = useState({ country: 'IN', vehicle_type: 'sedan', fare: '', commission: '10', pass: '199' });
+  const [f, setF] = useState({ country: 'IN', vehicle_type: 'sedan', fare: '', commission: '10', pass: '49' });
   const [sim, setSim] = useState<Sim | null>(null);
   const [error, setError] = useState<string | null>(null);
   async function run() {
@@ -195,24 +219,37 @@ function Simulator() {
       <header className="ops-card__head"><div><h2 id="fp-sim">Simulator</h2>
         <p>Compares plan types at Basic (5), Medium (12) and Heavy (20) trips a day. It never activates anything.</p></div></header>
       <div className="flex flex-wrap gap-3 items-end">
-        {input('country', 'Market')}{input('vehicle_type', 'Class')}{input('fare', 'Average fare (₹, blank = last 30 days)')}
-        {input('commission', 'Commission % to compare')}{input('pass', 'Daily pass (₹) to compare')}
+        <label className="grid gap-1"><span className="help">Market</span>
+          <select className="input" value={f.country} onChange={(e) => {
+            // 23 Nov review: a market by name, and its own classes and default daily fee.
+            const country = e.target.value;
+            setF((x) => ({ ...x, country, vehicle_type: country === 'US' ? 'standard' : 'sedan', pass: country === 'US' ? '5' : '49' }));
+          }}>
+            <option value="IN">India</option><option value="US">United States</option>
+          </select></label>
+        <label className="grid gap-1"><span className="help">Class</span>
+          <select className="input" value={f.vehicle_type} onChange={(e) => setF((x) => ({ ...x, vehicle_type: e.target.value }))}>
+            {(f.country === 'US' ? ['standard', 'xl'] : ['auto', 'hatchback', 'sedan', 'suv']).map((c) => <option key={c} value={c}>{classWord(c)}</option>)}
+          </select></label>
+        {input('fare', `Average fare (${f.country === 'US' ? '$' : '₹'}, blank = last 30 days)`)}
+        {input('commission', 'Commission % to compare')}{input('pass', `Daily fee (${f.country === 'US' ? '$' : '₹'}) to compare`)}
         <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => void run()}>Run</button>
       </div>
       {error ? <div className="alert-error mt-3" role="alert">{error}</div> : null}
       {sim ? (
         <div className="mt-3">
           <p className="help m-0">Average fare {rupees(sim.average_fare_minor, cur)} ({sim.average_fare_source.replace(/_/g, ' ')}) · our variable cost {rupees(sim.cost_per_trip_minor, cur)} a trip
-            {sim.cost_breakdown.missing.length ? ` (not configured: ${sim.cost_breakdown.missing.join(', ')})` : ''}</p>
+            {sim.cost_breakdown.missing.length ? ' (an estimate: SMS and call prices are not set yet)' : ''}</p>
           <DataTable caption="Simulated plans" rows={sim.rows} rowKey={(r) => `${r.plan}-${r.preset}`} density="compact" maxHeight={false}
             columns={[
               { key: 'plan', label: 'Plan', render: (r) => TYPE_WORDS[r.plan] ?? r.plan },
               { key: 'preset', label: 'Day', render: (r) => `${r.preset} (${r.trips_per_day} ${r.trips_per_day === 1 ? 'trip' : 'trips'})` },
               { key: 'pays', label: 'Driver pays a day', num: true, render: (r) => rupees(r.driver_pays_day_minor, cur) },
+              { key: 'home', label: 'Driver takes home', num: true, render: (r) => rupees(r.driver_takes_home_day_minor ?? (r.fares_per_day_minor - r.driver_pays_day_minor), cur) },
               { key: 'month', label: 'A month', num: true, render: (r) => rupees(r.driver_pays_month_minor, cur) },
               { key: 'share', label: 'Driver keeps', num: true, render: (r) => (r.driver_share_percent == null ? '—' : `${r.driver_share_percent}%`) },
               { key: 'cost', label: 'Our cost a day', num: true, render: (r) => rupees(r.our_cost_day_minor, cur) },
-              { key: 'keep', label: 'We keep a day', num: true, render: (r) => (
+              { key: 'keep', label: 'SaaradhiGo keeps a day', num: true, render: (r) => (
                 <span className={r.loses_money || r.breaks_legal_share ? 'ared' : undefined}>
                   {rupees(r.we_keep_day_minor, cur)}{r.loses_money ? ' · loses money' : ''}{r.breaks_legal_share ? ' · breaks the legal share' : ''}
                 </span>) },

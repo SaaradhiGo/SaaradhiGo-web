@@ -83,6 +83,8 @@ export type CityStatus = {
   name: string;
   network_status: NetworkStatus;
   online_drivers: number;
+  /** 22 Nov: is the city live (through the launch gate)? The map opens on live cities. */
+  live?: boolean;
   on_trip_drivers: number;
   unassigned_trips: number;
   oldest_unassigned_age_s: number | null;

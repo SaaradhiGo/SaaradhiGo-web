@@ -34,26 +34,27 @@ export const SELF_APPROVAL_MIN_REASON = 10;
  * and checker. Links to those requests in Approvals. Shows nothing to an
  * operator who cannot read approvals, or while the exception is off.
  */
-export function SelfApprovalNotice() {
+export function SelfApprovalNotice({ approver = true }: { approver?: boolean } = {}) {
   const [state, setState] = useState<{ on: boolean; count: number; who: string } | null>(null);
   useEffect(() => {
+    if (!approver) return undefined;
     let live = true;
     api.get<{ count: number; self_approval_on?: boolean; self_approval?: SelfApprovalSwitch }>('/approvals/admin/requests/?self_approved=1&page_size=1')
       .then((d) => { if (live) setState({ on: !!d.self_approval_on, count: d.count ?? 0, who: selfApprovalWho(d.self_approval) }); })
       .catch(() => { if (live) setState(null); });
     return () => { live = false; };
-  }, []);
-  if (!state?.on) return null;
+  }, [approver]);
+  // 22 Nov (owner): a small notice, only for people who approve things; never City Ops.
+  if (!approver || !state?.on) return null;
   return (
-    <div className="ops-banner ops-banner--row" role="status">
+    <div className="ops-banner ops-banner--row ops-banner--small" role="status">
       <b>
         Self-approval is on:{' '}
         <PageLink page="approvals" href="/ops/approvals?view=self">
           {state.count} decision{state.count === 1 ? '' : 's'} self-approved
         </PageLink>
       </b>
-      <span>Until a second person can check requests, the one Super Admin decides their own, with a reason.</span>
-      {state.who ? <span data-testid="self-approval-who">{state.who}</span> : null}
+      {state.who ? <span className="muted" data-testid="self-approval-who" title="Until a second person can check requests, the one Super Admin decides their own, with a reason.">{state.who}</span> : null}
     </div>
   );
 }

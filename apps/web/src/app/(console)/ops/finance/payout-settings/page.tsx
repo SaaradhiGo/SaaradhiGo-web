@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
-import { stamp } from '@/lib/consoleTime';
+import { marketDate } from '@/lib/consoleTime';
 import { formatMinor } from '@/lib/finance';
 import {
   FRAUD_MONEY_DEFAULTS, NO_POLICY_WORDS, WEEKDAYS, canConfigurePayouts, configBody, configChanges, configProblem, draftFrom,
@@ -105,14 +105,13 @@ function SettingsInner() {
                     ['Transfer fee', <>{Number(c.config.fee_percent)}%</>],
                     ['Minimum withdrawal', formatMinor(c.config.minimum_withdrawal_minor, c.currency)],
                     ['A payout is stuck after', c.config.stuck_payout_hours ? `${c.config.stuck_payout_hours} hours` : 'Not checked'],
-                    ['Payout schedule', cycleWords(c.config as CycleFields) || scheduleLabel(c.config)],
+                    ['Payout schedule', cycleWords(c.config as CycleFields, c.country) || scheduleLabel(c.config)],
                     ['Withdraw now', instantWords(c.config as CycleFields, c.currency)],
-                    ['Withdraw now daily limit', `${limitWords(c.config as CycleFields, c.currency)} (the driver's local day; scheduled payouts are never limited)`],
-                    ['SaaradhiGo fee on payouts', <>{Number(c.config.fee_percent)}%</>],
-                    ['A reward under review is held for', <>{c.config.reward_hold_days ?? FRAUD_MONEY_DEFAULTS.reward_hold_days} days, then released if the flag is not decided</>],
-                    ['A recovery takes at most', <>{c.config.recovery_max_percent ?? FRAUD_MONEY_DEFAULTS.recovery_max_percent}% of any one payout</>],
-                    ['A payout hold lasts at most', <>{c.config.payout_hold_max_days ?? FRAUD_MONEY_DEFAULTS.payout_hold_max_days} days unless renewed</>],
-                    ['Version', <>v{c.config.version} · since {stamp(c.config.valid_from)}</>],
+                    ['Withdraw now daily limit', `${limitWords(c.config as CycleFields, c.currency)} (driver's local day)`],
+                    ['Reward under review held', <>{c.config.reward_hold_days ?? FRAUD_MONEY_DEFAULTS.reward_hold_days} days</>],
+                    ['Recovery, at most', <>{c.config.recovery_max_percent ?? FRAUD_MONEY_DEFAULTS.recovery_max_percent}% of a payout</>],
+                    ['Payout hold, at most', <>{c.config.payout_hold_max_days ?? FRAUD_MONEY_DEFAULTS.payout_hold_max_days} days</>],
+                    ['Version', <>v{c.config.version} · since {marketDate(c.config.valid_from, c.country)}</>],
                   ]} />
                   {c.payout_approval_blocked && (
                     <div className="ops-note ops-note--warn mt-3" role="status">
@@ -145,7 +144,8 @@ function SettingsInner() {
                     )
                   ) : null}
 
-                  <PayoutScopes country={c.country} currency={c.currency} scopes={c.scopes ?? []}
+                  <PayoutScopes country={c.country} countryName={c.name} currency={c.currency}
+                    base={c.config as CycleFields} scopes={c.scopes ?? []}
                     may={may && c.editable && !c.change_blocked}
                     onDone={(text, kind) => { setNotice({ text, kind }); void load(); }} />
 
@@ -183,7 +183,7 @@ function SettingsInner() {
                         { key: 'stuck', label: 'Stuck after', num: true, render: (h) => (h.stuck_payout_hours ? `${h.stuck_payout_hours} h` : '—') },
                         { key: 'sched', label: 'Schedule', render: (h) => scheduleLabel(h) },
                         { key: 'limit', label: 'Daily limit', hideBelow: 1100, render: (h) => limitWords(h as CycleFields, c.currency) },
-                        { key: 'from', label: 'From', render: (h) => stamp(h.valid_from) },
+                        { key: 'from', label: 'From', render: (h) => marketDate(h.valid_from, c.country) },
                         { key: 'by', label: 'Set by', hideBelow: 1100, render: (h) => h.created_by.label || '—' },
                         { key: 'why', label: 'Reason', hideBelow: 1280, render: (h) => h.reason || '—' },
                       ]} />

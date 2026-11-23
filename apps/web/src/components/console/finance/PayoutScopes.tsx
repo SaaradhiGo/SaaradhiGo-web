@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { formatMinor } from '@/lib/finance';
+import { marketDate } from '@/lib/consoleTime';
 import { newIdempotencyKey } from '@/lib/trips';
 import { DataTable, Pill } from '@/components/console/ui';
 import { FieldsDrawer, toText, type FieldSpec } from '@/components/console/kit/FieldsDrawer';
@@ -29,10 +30,10 @@ export type Scope = {
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-export function cycleWords(c: CycleFields): string {
+export function cycleWords(c: CycleFields, country = 'IN'): string {
   const at = c.payout_time_local ? ` at ${c.payout_time_local}` : '';
   if (c.payout_schedule === 'weekly') return `Weekly on ${DAYS[c.payout_weekday ?? 0]}${at}`;
-  if (c.payout_schedule === 'every_n_days') return `Every ${c.payout_interval_days} days from ${c.payout_anchor_date}${at}`;
+  if (c.payout_schedule === 'every_n_days') return `Every ${c.payout_interval_days} days from ${marketDate(c.payout_anchor_date, country)}${at}`;
   return 'On request';
 }
 
@@ -76,33 +77,87 @@ const FIELDS: FieldSpec[] = [
   { key: 'instant_max_amount_per_day_minor', label: 'Withdraw now, at most this total a day (minor units)', kind: 'number' },
 ];
 
-export function PayoutScopes({ country, currency, scopes, may, onDone }: {
-  country: string; currency: string; scopes: Scope[]; may: boolean;
+/** The fields a place can set, in words, for "what differs". */
+const SHORT: Record<string, string> = {
+  payout_schedule: 'Paid', payout_interval_days: 'Paid', payout_anchor_date: 'Paid', payout_weekday: 'Paid',
+  payout_time_local: 'Paid', minimum_withdrawal_minor: 'Minimum payout',
+  instant_cashout_enabled: 'Withdraw now', instant_fee_provider: 'Withdraw now', instant_fee_percent: 'Withdraw now',
+  instant_cashout_fee_flat_minor: 'Withdraw now', instant_fee_min_minor: 'Withdraw now', instant_fee_max_minor: 'Withdraw now',
+  instant_fee_tiers: 'Withdraw now', instant_max_per_day: 'Withdraw now limit', instant_max_amount_per_day_minor: 'Withdraw now limit',
+};
+
+function valueOf(label: string, c: CycleFields, country: string, currency: string): string {
+  if (label === 'Paid') return cycleWords(c, country);
+  if (label === 'Minimum payout') return c.minimum_withdrawal_minor != null ? formatMinor(c.minimum_withdrawal_minor, currency) : '—';
+  if (label === 'Withdraw now limit') return limitWords(c, currency);
+  return c.instant_cashout_enabled ? 'On' : 'Off';
+}
+
+/**
+ * Payouts by state and city (owner ruling, 9 Nov; layout 22 Nov). The country's settings are shown
+ * once above. Here: one line naming every place that is "Same as {country}", then only the places
+ * that set something themselves, each difference against the country's value. A change is the same
+ * request as the country's, approved by a second finance admin.
+ */
+export function PayoutScopes({ country, countryName, currency, base, scopes, may, onDone }: {
+  country: string; countryName?: string; currency: string; base?: CycleFields | null; scopes: Scope[]; may: boolean;
   onDone: (text: string, kind: 'pending' | 'done') => void;
 }) {
   const [editing, setEditing] = useState<Scope | null>(null);
+  const [pick, setPick] = useState('');
   const [key] = useState(newIdempotencyKey);
   if (scopes.length === 0) return null;
+  const name = countryName ?? country;
   const own = (s: Scope) => Object.entries(s.effective.sources).filter(([, src]) => src === s.scope).map(([k]) => k);
+  const differs = scopes.filter((s) => own(s).length > 0);
+  const same = scopes.filter((s) => own(s).length === 0);
+  const diffOf = (s: Scope) => Array.from(new Set(own(s).map((k) => SHORT[k] ?? k)));
 
   return (
-    <div className="mt-4">
-      <DataTable caption={`States and cities in ${country}`} rows={scopes} rowKey={(s) => s.scope} density="compact" maxHeight={false}
-        columns={[
-          { key: 'name', label: 'Place', render: (s) => (
-            <span className={s.kind === 'city' ? 'ops-tree ops-tree--1' : ''}>{s.name}{s.override ? <> <Pill tone="wait">own settings</Pill></> : null}</span>
-          ) },
-          { key: 'cycle', label: 'Paid', render: (s) => cycleWords(s.effective) },
-          { key: 'min', label: 'Minimum', num: true, render: (s) => (s.effective.minimum_withdrawal_minor != null ? formatMinor(s.effective.minimum_withdrawal_minor, currency) : '—') },
-          { key: 'instant', label: 'Withdraw now', render: (s) => instantWords(s.effective, currency) },
-          { key: 'inherits', label: 'Set here', hideBelow: 1100, render: (s) => (own(s).length ? own(s).join(', ').replace(/_/g, ' ') : `All from ${s.parent ?? country}`) },
-          { key: 'next', label: 'Next payout', render: (s) => s.preview ?? '—' },
-          { key: 'edit', label: '', render: (s) => (may ? <button type="button" className="ops-linkbtn" onClick={() => setEditing(s)}>Change…</button> : null) },
-        ]} />
+    <div className="mt-4 ps-scopes">
+      <h3 className="ps-scopes__title">States and cities</h3>
+      {same.length ? (
+        <p className="ps-scopes__same">
+          <b>Same as {name}</b> ({same.length}): {same.map((s) => s.name).join(', ')}.
+        </p>
+      ) : null}
+      {differs.length ? (
+        <DataTable caption={`Places in ${name} with their own payout settings`} rows={differs} rowKey={(s) => s.scope}
+          density="compact" maxHeight={false}
+          columns={[
+            { key: 'name', label: 'Place', render: (s) => <span className="ops-nowrap">{s.name}</span> },
+            { key: 'diff', label: `Differs from ${name}`, render: (s) => (
+              <ul className="ps-diff">
+                {diffOf(s).map((label) => (
+                  <li key={label}>
+                    <span className="ps-diff__label">{label}</span>{' '}
+                    <mark className="ps-diff__new">{valueOf(label, s.effective, country, currency)}</mark>
+                    {base ? <span className="muted"> instead of {valueOf(label, base, country, currency)}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            ) },
+            { key: 'next', label: 'Next payout', render: (s) => (s.next_payout_date ? marketDate(s.next_payout_date, country) : s.preview ?? '—') },
+            { key: 'edit', label: '', render: (s) => (may ? <button type="button" className="ops-linkbtn" onClick={() => setEditing(s)}>Change…</button> : null) },
+          ]} />
+      ) : (
+        <p className="help m-0">No state or city has its own payout settings: all use {name}&apos;s.</p>
+      )}
+      {may && same.length ? (
+        <div className="ps-scopes__add">
+          <label className="ops-form__label" htmlFor={`ps-pick-${country}`}>Give a place its own settings</label>
+          <select id={`ps-pick-${country}`} className="ops-select" value={pick} onChange={(e) => setPick(e.target.value)}>
+            <option value="">Choose a state or city</option>
+            {same.map((s) => <option key={s.scope} value={s.scope}>{s.name}</option>)}
+          </select>
+          <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={!pick}
+            onClick={() => setEditing(same.find((s) => s.scope === pick) ?? null)}>Set…</button>
+        </div>
+      ) : null}
       {editing ? (
         <FieldsDrawer title={`Payouts · ${editing.name}`} fields={FIELDS}
           initial={Object.fromEntries(FIELDS.map((f) => [f.key, toText((editing.override as Record<string, unknown> | null)?.[f.key])]))}
-          note={`Blank means "not set here": ${editing.name} then uses ${editing.parent ?? country}'s value.`}
+          note={`Blank means "same as ${editing.parent ?? name}".`}
           send={(changes, reason) => api.post(`/payments/admin/payout-config/${country}/`,
             { scope: editing.scope, ...changes, reason, idempotency_key: `${key}-${editing.scope}` })}
           onClose={() => setEditing(null)}

@@ -74,7 +74,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/ops/settings', label: 'Countries and cities', Icon: Cog, need: PAGE_NEEDS.platform },
       { href: '/ops/zones', label: 'Zones', Icon: MapPin, need: PAGE_NEEDS.zones },
       // Commission and fare cards (module 8). Readable with `zone.read`.
-      { href: '/ops/pricing', label: 'Pricing and commission', Icon: Percent, need: PAGE_NEEDS.pricing },
+      { href: '/ops/pricing', label: 'Pricing and fees', Icon: Percent, need: PAGE_NEEDS.pricing },
       { href: '/ops/settings/integrations', label: 'Integrations and apps', Icon: Cog, need: ['platform.integrations.read', 'platform.read'] },
     ],
   },
@@ -86,6 +86,7 @@ export const NAV_GROUPS: NavGroup[] = [
       // The fraud review queue and the detection rules (module 13): `fraud.read`.
       { href: '/ops/fraud', label: 'Fraud and risk', Icon: Flag, need: PAGE_NEEDS.fraud },
       { href: '/ops/settings/audit', label: 'Audit log', Icon: Shield, need: ['audit.read'] },
+      { href: '/ops/settings/engineering', label: 'Engineering health', Icon: Cog, need: ['platform.settings'] },
       { href: '/ops/settings/staff', label: 'Staff and roles', Icon: Users, need: PAGE_NEEDS.staff },
       { href: '/ops/settings/data-requests', label: 'Data requests', Icon: Lock, need: PAGE_NEEDS.dataRequests },
       // Reports & Analytics (module 14): `report.read`.

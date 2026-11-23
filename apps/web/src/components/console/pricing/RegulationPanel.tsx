@@ -1,5 +1,6 @@
 'use client';
 
+import { placeWord } from '@/lib/pricingWords';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { withScope } from '@/lib/adminScope';
@@ -48,7 +49,9 @@ const FIELDS: FieldSpec[] = [
 ];
 
 const dash = (v: unknown) => (v === null || v === undefined || v === '' ? '—' : String(v));
-const scopeName = (r: RegulationRow) => (r.state_code ? `${r.country}-${r.state_code}` : `All of ${r.country}`);
+// 22 Nov review: names, not codes ("Idaho", not "US-ID").
+const scopeName = (r: RegulationRow) => (r.state_code ? placeWord(`${r.country}-${r.state_code}`, null)
+  : `All of ${placeWord(r.country, null)}`);
 
 export function RegulationPanel({ may }: { may: boolean }) {
   const [rows, setRows] = useState<RegulationRow[] | null>(null);

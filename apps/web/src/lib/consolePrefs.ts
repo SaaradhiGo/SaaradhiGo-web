@@ -55,11 +55,13 @@ export function writeDensity(density: Density) {
   write(DENSITY_KEY, density);
 }
 
-export function readSidebarCollapsed(): boolean {
-  return read(SIDEBAR_KEY) === 'collapsed';
+/** Per operator (22 Nov: "remembered per person"), so a shared machine keeps each choice. */
+const sidebarKey = (who?: string | null) => (who ? `${SIDEBAR_KEY}:${who.toLowerCase()}` : SIDEBAR_KEY);
+export function readSidebarCollapsed(who?: string | null): boolean {
+  return read(sidebarKey(who)) === 'collapsed';
 }
-export function writeSidebarCollapsed(collapsed: boolean) {
-  write(SIDEBAR_KEY, collapsed ? 'collapsed' : null);
+export function writeSidebarCollapsed(collapsed: boolean, who?: string | null) {
+  write(sidebarKey(who), collapsed ? 'collapsed' : null);
 }
 
 /**
@@ -69,10 +71,20 @@ export function writeSidebarCollapsed(collapsed: boolean) {
  */
 export function useTheme(): [Theme, (t: Theme) => void] {
   const [theme, setThemeState] = useState<Theme>('light');
-  useEffect(() => setThemeState(readTheme()), []);
+  useEffect(() => {
+    setThemeState(readTheme());
+    // 22 Nov (owner): the choice lives on the operator's ACCOUNT; this browser's copy is only a
+    // fast first paint. Light when the account has none.
+    let live = true;
+    void import('@/lib/api').then(({ api, readToken }) => (readToken() ? api.get<{ theme: Theme }>('/auth/console-preferences/') : Promise.reject(new Error('signed out'))))
+      .then((d) => { if (live && (d.theme === 'light' || d.theme === 'dark')) { writeTheme(d.theme); setThemeState(d.theme); } })
+      .catch(() => undefined);
+    return () => { live = false; };
+  }, []);
   const setTheme = useCallback((t: Theme) => {
     writeTheme(t);
     setThemeState(t);
+    void import('@/lib/api').then(({ api, readToken }) => (readToken() ? api.patch('/auth/console-preferences/', { theme: t }) : undefined)).catch(() => undefined);
   }, []);
   return [theme, setTheme];
 }

@@ -33,7 +33,7 @@ describe('FareWorkings', () => {
 describe('payout words', () => {
   it('states the cycle and the instant fee rule', () => {
     expect(cycleWords({ payout_schedule: 'every_n_days', payout_interval_days: 5, payout_anchor_date: '2026-11-05', payout_time_local: '10:00' }))
-      .toBe('Every 5 days from 2026-11-05 at 10:00');
+      .toBe('Every 5 days from 5 Nov 2026 at 10:00');
     expect(cycleWords({ payout_schedule: 'weekly', payout_weekday: 0, payout_time_local: '10:00' })).toBe('Weekly on Monday at 10:00');
     const words = instantWords({ instant_cashout_enabled: true, instant_fee_provider: 'RazorpayX',
       instant_fee_tiers: [[99999, 472], [null, 1062]] }, 'INR');

@@ -74,6 +74,8 @@ export const marketTone = (s: MarketStatus): 'good' | 'bad' | 'wait' | 'neutral'
 export type ReadinessStatus = 'ok' | 'missing' | 'warning';
 export type ReadinessItem = {
   key: string; ok: boolean; status: ReadinessStatus; blocking: boolean; label: string; detail: string; href: string;
+  /** Who fixes it (22 Nov), e.g. "Safety", "Engineering". */
+  owner?: string;
 };
 export const READINESS_WORDS: Record<ReadinessStatus, string> = { ok: 'Ready', missing: 'Missing', warning: 'Warning' };
 export const readinessTone = (s: ReadinessStatus): 'good' | 'bad' | 'wait' => (s === 'ok' ? 'good' : s === 'missing' ? 'bad' : 'wait');
@@ -82,6 +84,9 @@ export type CityRow = {
   code: string; name: string; status: MarketStatus; country: string | null;
   state: { code: string; name: string } | null; blocking_count: number; warning_count: number; ready: boolean;
   readiness: ReadinessItem[] | null; pending_request: Pending | null; may_launch: boolean; may_pause: boolean;
+  /** 22 Nov: live only through the launch gate; a draft city riders can see is "Coming soon". */
+  launch_state?: 'live' | 'coming_soon' | 'not_launched' | 'paused';
+  launch_label?: string;
 };
 export type CountryRow = {
   code: string; name: string; currency: string | null; status: MarketStatus; in_registry: boolean;
@@ -274,8 +279,11 @@ export const modeTone = (m: IntegrationMode): 'good' | 'bad' | 'wait' | 'neutral
 export type AuditRow = {
   id: number; created_at: string; actor: { id: number | null; label: string | null; role: string };
   action: string; target_type: string; target_id: string; place: string | null; reason: string;
+  /** 22 Nov: the entry in words, the target and the place by name. */
+  summary?: string; target_label?: string; place_name?: string | null;
 };
 export type AuditDetail = AuditRow & {
+  changes?: { field: string; from: string; to: string }[];
   before: Record<string, unknown>; after: Record<string, unknown>; ip: string | null; user_agent: string;
   hash: { previous: string; content: string; hashed: boolean };
 };

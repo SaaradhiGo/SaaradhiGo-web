@@ -16,7 +16,7 @@ import {
 import { LiveMap } from '@/components/console/liveops/LiveMap';
 import { HealthChip, StatusChip } from '@/components/console/kit/StatusChip';
 import { MetricCard } from '@/components/console/kit/MetricCard';
-import { ActionTiles } from '@/components/console/kit/ActionTiles';
+import { TodayPanel, useToday } from '@/components/console/workspaces/TodayPanel';
 import { NeedsActionInbox } from '@/components/console/kit/NeedsActionInbox';
 import { SuperAdminBanner } from '@/components/console/command-centre/SuperAdminBanner';
 import { SelfApprovalNotice } from '@/components/console/SelfApprovalNotice';
@@ -111,12 +111,11 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
     })).sort((a, b) => b.cities.length - a.cities.length);
   }, [places]);
   const counts = places.health_counts;
+  const today = useToday();
   const money = t.collected_minor ? Object.entries(t.collected_minor) : null;
 
   return (
     <div className="ops-ws">
-      <SuperAdminBanner access={access} />
-      <SelfApprovalNotice />
       <header className="ops-ws__head">
         <div>
           <nav className="ops-crumbs" aria-label="Place">
@@ -136,7 +135,18 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
         </div>
       </header>
 
-      <ActionTiles access={access} />
+      {node?.kind !== 'global' && places.children.length > 1 ? (
+        <nav className="ops-placechips" aria-label={`Places in ${node?.name ?? 'this view'}`}>
+          {/* 22 Nov (owner): states and cities are chips, never a long dropdown. */}
+          {places.children.map((r) => (
+            <button key={r.code} type="button" className="ops-placechip" onClick={() => goToPlace(r.code)}>{r.name}</button>
+          ))}
+        </nav>
+      ) : null}
+      <TodayPanel data={today} placeName={node?.name} onOpenCountry={(code) => goToPlace(code)} />
+
+      <SuperAdminBanner access={access} />
+      <SelfApprovalNotice approver={can(access, 'approval.check')} />
 
       <div className="ops-ws__grid ops-ws__grid--c">
         <div className="ops-ws__main">
@@ -338,11 +348,10 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
   const below = fulfil !== null && usual?.fulfilment_rate && fulfil < usual.fulfilment_rate.low;
   const reqPoints = (pulse?.hourly ?? []).map((x) => x.requests);
   const t = places.totals;
+  const today = useToday();
 
   return (
     <div className="ops-ws">
-      <SuperAdminBanner access={access} />
-      <SelfApprovalNotice />
       <header className="ops-ws__head">
         <div>
           <nav className="ops-crumbs" aria-label="Place">
@@ -355,10 +364,17 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
         </div>
       </header>
 
-      <ActionTiles access={access} />
+      <TodayPanel data={today} placeName={city.name} onOpenCountry={(code) => goToPlace(code)} />
+      <SelfApprovalNotice approver={can(access, 'approval.check')} />
 
       <div className="ops-ws__grid ops-ws__grid--d">
         <div className="ops-ws__main">
+          {n && n.requests === 0 && !t.drivers_online && fulfil === null && eta === null ? (
+            <p className="ops-today__clear" role="status">
+              {/* 22 Nov (owner): no large empty number tiles when a value is zero. */}
+              No requests in the last hour · no drivers online.
+            </p>
+          ) : (
           <div className="ops-metrics ops-metrics--dense">
             <MetricCard label="Requests · last hour" value={n ? fmt(n.requests) : null} points={reqPoints}
               usual={againstUsual(n?.requests ?? null, usual?.requests ?? null)} />
@@ -369,6 +385,7 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
             <MetricCard label="Drivers online" value={fmt(t.drivers_online)}
               note={t.stuck_trips ? `${t.stuck_trips} stuck trip${t.stuck_trips === 1 ? '' : 's'}` : undefined} />
           </div>
+          )}
 
           {below && short.length ? (
             <section className="ops-why" aria-label="Why">

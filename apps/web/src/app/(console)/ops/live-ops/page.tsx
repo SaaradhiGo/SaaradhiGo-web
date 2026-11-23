@@ -81,8 +81,19 @@ export default function LiveOpsPage() {
     () => (snapshot?.alerts ?? []).filter((a) => !city || a.city === city || a.city === null), [snapshot, city],
   );
   const cells = useMemo(() => heat.data?.cells ?? [], [heat.data]);
-  const focus = useMemo(() => (city ? [city] : live.cities
-    .filter((c) => c.online_drivers + c.on_trip_drivers + c.unassigned_trips > 0).map((c) => c.code)), [city, live.cities]);
+  // 22 Nov (owner): open zoomed to the cities in scope, never the whole world. The busy cities
+  // first; with nothing going on, the live cities; failing those, every city in scope.
+  const focus = useMemo(() => {
+    if (city) return [city];
+    const busy = live.cities.filter((c) => c.online_drivers + c.on_trip_drivers + c.unassigned_trips > 0);
+    if (busy.length) return busy.map((c) => c.code);
+    const liveOnes = live.cities.filter((c) => c.live);
+    return (liveOnes.length ? liveOnes : live.cities).map((c) => c.code);
+  }, [city, live.cities]);
+  const noDrivers = useMemo(() => {
+    const shown = city ? live.cities.filter((c) => c.code === city) : live.cities.filter((c) => c.live);
+    return shown.length === 1 && shown[0].online_drivers + shown[0].on_trip_drivers === 0 ? shown[0].name : null;
+  }, [city, live.cities]);
 
   useSosAlarm(alerts);
 
@@ -204,6 +215,9 @@ export default function LiveOpsPage() {
             />
           )}
 
+          {noDrivers && !empty ? (
+            <p className="lo-empty-note" role="status">No drivers online in {noDrivers} right now. The map fills in as drivers go online.</p>
+          ) : null}
           <div className="lo-float">
             <label className="lo-field">
               <span className="sr-only">City</span>
