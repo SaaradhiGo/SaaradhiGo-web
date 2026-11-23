@@ -17,6 +17,8 @@ export type NeedsItem = {
   count: number;
   link: string;
   owner: { id: number; label: string | null } | null;
+  /** The team whose job it is (22 Nov), e.g. "Finance"; `owner` is the person who took it. */
+  team?: string | null;
   time_left_seconds: number | null;
   actions: string[];
   viewers?: string[];
@@ -111,7 +113,8 @@ export function waited(seconds: number): string {
   if (m < 60) return `${m} min`;
   const h = Math.floor(m / 60);
   if (h < 48) return `${h} h`;
-  return `${Math.floor(h / 24)} d`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? '1 day' : `${d} days`;
 }
 
 /** Where a value sits against its usual range, in words, or null without one. */
