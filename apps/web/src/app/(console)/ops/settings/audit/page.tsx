@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api, apiDownload } from '@/lib/api';
-import { useAdminAccess, withScope } from '@/lib/adminScope';
+import { readSelectedScope, useAdminAccess, withScope } from '@/lib/adminScope';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   auditQuery, canReadAudit, chainWords, diffRows, emptyAuditFilters, type AuditDetail, type AuditFilters,
@@ -36,16 +36,25 @@ export default function AuditPage() {
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [more, setMore] = useState(false);
+  // 22 Nov (owner): page views and sign-ins are hidden unless asked for.
+  const [showViews, setShowViews] = useState(false);
+  // Times in the viewer's city: the place they have selected, else their one assigned city.
+  const [viewerZone, setViewerZone] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    const cities = (access?.roles ?? []).filter((r) => r.scope_kind === 'city');
+    const own = cities.length === 1 ? cities[0].scope : null;
+    setViewerZone(timeZoneFor(readSelectedScope() ?? own) ?? undefined);
+  }, [access]);
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      setData(await api.get<AuditPage>(withScope(`/admin-audit/admin/entries/${auditQuery(filters, { page, page_size: PAGE_SIZE })}`)));
+      setData(await api.get<AuditPage>(withScope(`/admin-audit/admin/entries/${auditQuery(filters, { page, page_size: PAGE_SIZE, ...(showViews ? { views: 1 } : {}) })}`)));
     } catch (err) {
       setData(null);
       setError(messageOf(err, 'The audit log could not be loaded.'));
     }
-  }, [filters, page]);
+  }, [filters, page, showViews]);
   useEffect(() => { void load(); }, [load]);
 
   async function download() {
@@ -64,11 +73,11 @@ export default function AuditPage() {
   }
 
   const columns: ListColumn<AuditRow>[] = [
-    { key: 'when', label: 'When', render: (r) => stamp(r.created_at, timeZoneFor(r.place)) },
-    { key: 'actor', label: 'Who', render: (r) => <>{r.actor.label ?? 'system'} <span className="muted">{r.actor.role}</span></> },
-    { key: 'action', label: 'Action', primary: true, render: (r) => r.action },
-    { key: 'target', label: 'Target', render: (r) => `${r.target_type} ${r.target_id}`.trim() },
-    { key: 'place', label: 'Place', render: (r) => r.place ?? <span className="muted">none</span> },
+    { key: 'when', label: 'When', render: (r) => stamp(r.created_at, viewerZone ?? timeZoneFor(r.place)) },
+    { key: 'actor', label: 'Who', render: (r) => <>{r.actor.label ?? 'The system'} <span className="muted">{r.actor.role}</span></> },
+    { key: 'action', label: 'What happened', primary: true, render: (r) => r.summary ?? r.action },
+    { key: 'target', label: 'About', render: (r) => r.target_label ?? `${r.target_type} ${r.target_id}`.trim() },
+    { key: 'place', label: 'Place', render: (r) => r.place_name ?? r.place ?? <span className="muted">none</span> },
     { key: 'reason', label: 'Reason', render: (r) => r.reason || <span className="muted">—</span> },
   ];
 
@@ -103,7 +112,7 @@ export default function AuditPage() {
         <ListPage<AuditRow>
           pageKey="settings-audit"
           title="Audit log"
-          summary="Who changed what, where and when. You see the places you hold the audit capability at; personal details are masked. Times are UTC."
+          summary={`Who changed what, where and when. Personal details are masked. Page views and sign-ins are hidden unless you show them. Times are ${viewerZone ? `in ${viewerZone.split('/').pop()?.replace('_', ' ')} time` : 'in each place\'s own time'}.`}
           views={[
             { key: '', label: 'All', count: view === '' ? data?.count ?? null : undefined },
             { key: 'today', label: 'Today', count: view === 'today' ? data?.count ?? null : undefined },
@@ -118,6 +127,10 @@ export default function AuditPage() {
               <input id="au-actor" className="input ops-list__search" value={draft.actor} onChange={set('actor')} placeholder="Who: name or staff id" />
               <label className="sr-only" htmlFor="au-action">Action</label>
               <input id="au-action" className="input ops-list__search" value={draft.action} onChange={set('action')} placeholder="Action, e.g. zone_changed" />
+              <label className="ops-check">
+                <input type="checkbox" checked={showViews} onChange={(e) => { setShowViews(e.target.checked); setPage(1); }} />
+                {' '}Show page views and sign-ins
+              </label>
               <button type="submit" className="sg-btn sg-btn--primary sg-btn--sm">Apply</button>
               <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setMore(true)}>More filters</button>
             </form>
@@ -207,7 +220,7 @@ function EntryRecord({ id, onClose }: { id: number; onClose: () => void }) {
       label="Audit entry"
       title={entry.action}
       refId={`#${entry.id}`}
-      subtitle={<>{entry.actor.label ?? 'system'} · {stamp(entry.created_at, timeZoneFor(entry.place))}</>}
+      subtitle={<>{entry.summary ?? entry.action} · {entry.actor.label ?? 'The system'} · {stamp(entry.created_at, timeZoneFor(entry.place))}</>}
       onClose={onClose}
       tabs={[
         {
