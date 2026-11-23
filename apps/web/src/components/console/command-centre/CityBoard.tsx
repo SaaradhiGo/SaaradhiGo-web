@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react';
 import {
-  CityRow, Delta, Pair, delta, formatAge, formatCount, formatDelta, formatMinutes, formatRate, moneyTiles,
+  CityRow, Delta, Pair, delta, formatAge, formatAgeHours, formatCount, formatDelta, formatMinutes, formatRate, moneyTiles,
 } from '@/lib/commandCentre';
 import type { AdminAccess } from '@/lib/adminScope';
 import { boardLinks } from '@/lib/boardLinks';
@@ -196,7 +196,7 @@ export function CityBoard({
             count={q.withdrawals_pending.now}
             title="Withdrawals pending"
             detail={(q.withdrawals_pending.now ?? 0) > 0
-              ? `Oldest waiting ${new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(q.withdrawals_oldest_pending_hours ?? 0)} h`
+              ? `Oldest waiting ${formatAgeHours(q.withdrawals_oldest_pending_hours ?? 0)}`
               : 'Nobody waiting to be paid'}
             href={`/ops/finance/payouts?scope=${row.code}`}
           />

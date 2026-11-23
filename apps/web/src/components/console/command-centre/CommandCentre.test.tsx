@@ -297,7 +297,7 @@ describe('alerts', () => {
     await screen.findByText('Alerts · 3 open');
     expect(await screen.findByText('3 open alerts')).toBeTruthy(); // the live region
     expect(screen.getByText('20% vs 15% line')).toBeTruthy();
-    expect(screen.getByText('60 h vs 48 h line')).toBeTruthy();
+    expect(screen.getByText('2 days vs 2 days line')).toBeTruthy();
     expect(screen.getByText('critical')).toBeTruthy();
     const buttons = screen.getAllByRole('button', { name: /^Acknowledge alert/ });
     expect(buttons).toHaveLength(1);

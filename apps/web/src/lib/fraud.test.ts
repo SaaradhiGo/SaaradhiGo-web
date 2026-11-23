@@ -111,7 +111,7 @@ describe('evidence, in words', () => {
 describe('ages and queries', () => {
   it('writes an age the way a person says it', () => {
     expect([ageWords(0), ageWords(5), ageWords(47), ageWords(48), ageWords(100)])
-      .toEqual(['under 1 h', '5 h', '47 h', '2 d', '4 d']);
+      .toEqual(['under an hour', '5 hours', '1 day', '2 days', '4 days']);
   });
 
   it('builds the queue query from the filters', () => {

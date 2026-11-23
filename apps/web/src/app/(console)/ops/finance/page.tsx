@@ -1,5 +1,6 @@
 'use client';
 
+import { marketDate } from '@/lib/consoleTime';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
@@ -146,7 +147,7 @@ function OverviewInner() {
   const common = {
     pageKey: 'finance-overview',
     title: 'Money overview',
-    summary: `Money collected, kept and paid out, by place and currency · ${from} to ${to}`,
+    summary: `Money collected, kept and paid out, by place and currency · ${marketDate(from)} to ${marketDate(to)}`,
     views: [
       { key: 'places', label: 'By place', count: data ? places.length : undefined },
       { key: 'days', label: 'By place and day', count: data ? rows.length : undefined },
@@ -185,7 +186,7 @@ function OverviewInner() {
         const noHandle = r.no_handle_count ?? r.count - held;
         return (
           <div key={r.country} className="ops-note ops-note--warn mb-4" role="status">
-            <b>{r.country}: {r.count} driver{r.count === 1 ? '' : 's'} skipped in the weekly payout run of {r.week_start}.</b>{' '}
+            <b>{r.country}: {r.count} driver{r.count === 1 ? '' : 's'} skipped in the weekly payout run of {marketDate(r.week_start, r.country)}.</b>{' '}
             {noHandle > 0 ? `${noHandle} have no payout details; they are asked to add them and are picked up the week they do. ` : ''}
             {held > 0 ? `${held} ${held === 1 ? 'has' : 'have'} their payouts on hold (a suspended driver, approved by a second admin); the hold ends by itself unless renewed.` : ''}
           </div>
@@ -229,7 +230,7 @@ function OverviewInner() {
             label="Place"
             title={cityName(open.city)}
             refId={open.currency}
-            subtitle={`${from} to ${to} · ${open.days} day${open.days === 1 ? '' : 's'} with money moving`}
+            subtitle={`${marketDate(from)} to ${marketDate(to)} · ${open.days} day${open.days === 1 ? '' : 's'} with money moving`}
             onClose={() => setOpenPlace(null)}
             tabs={[
               {

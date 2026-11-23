@@ -203,17 +203,21 @@ export function formatMinutes(value: number | null | undefined, country?: string
  */
 export function formatAge(minutes: number | null | undefined): string | null {
   if (minutes === null || minutes === undefined || !Number.isFinite(minutes)) return null;
+  // 24 Nov (owner): human units everywhere ("8 days", never "207.2 h" or "8 d").
   const total = Math.max(0, Math.floor(minutes));
   if (total < 60) return `${total} min`;
   const hours = Math.floor(total / 60);
   if (hours < 24) {
     const rest = total % 60;
-    return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'}${rest ? ` ${rest} min` : ''}`;
   }
   const days = Math.floor(hours / 24);
-  const restHours = hours % 24;
-  return days < 10 && restHours > 0 ? `${days} d ${restHours} h` : `${days} d`;
+  return `${days} ${days === 1 ? 'day' : 'days'}`;
 }
+
+/** An age given in hours, in the same words: "8 days", "3 hours". */
+export const formatAgeHours = (hours: number | null | undefined): string =>
+  hours === null || hours === undefined || !Number.isFinite(hours) ? '—' : formatAge(hours * 60) ?? '—';
 
 // ---------------------------------------------------------------------------
 // Deltas
@@ -325,6 +329,9 @@ export function alertMeasure(alert: OperatorAlert): string | null {
   // A wait in minutes reads as an age ("36 d vs 5 min line"), not 51922.5 min.
   if (p.unit === 'minutes' && typeof p.value === 'number' && Number.isFinite(Number(p.threshold))) {
     return `${formatAge(p.value)} vs ${formatAge(Number(p.threshold))} line`;
+  }
+  if (p.unit === 'hours' && typeof p.value === 'number' && Number.isFinite(Number(p.threshold))) {
+    return `${formatAgeHours(p.value)} vs ${formatAgeHours(Number(p.threshold))} line`;
   }
   const value = typeof p.value === 'number'
     ? new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(p.value)

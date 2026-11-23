@@ -325,5 +325,5 @@ export const chainWords = (c: ChainStatus | null): string => {
   if (!c) return 'Not checked';
   if (c.status === 'empty') return 'Nothing in this range';
   if (c.status === 'ok') return `Verified ${c.checked} entr${c.checked === 1 ? 'y' : 'ies'}${c.truncated ? ' (the oldest part of a large range was not checked)' : ''}`;
-  return `Broken: ${c.problem_count ?? c.problems.length} problem${(c.problem_count ?? c.problems.length) === 1 ? '' : 's'}`;
+  return `${c.problem_count ?? c.problems.length} problem${(c.problem_count ?? c.problems.length) === 1 ? '' : 's'}`;
 };

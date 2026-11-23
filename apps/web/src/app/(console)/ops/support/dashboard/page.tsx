@@ -4,7 +4,7 @@ import { DatePresets } from '@/components/console/kit/DatePresets';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
-import { stamp, timeZoneFor } from '@/lib/consoleTime';
+import { marketDate, stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
   type Dashboard, type DashboardStats, PRIORITY_LABEL, dashboardPath, dashboardRangeError,
   formatMedian, formatPct, priorityTone,
@@ -143,7 +143,7 @@ export default function DashboardPage() {
       ) : (
         <>
           <p className="help" role="status">
-            {data.date_from} to {data.date_to} · as of {stamp(data.as_of, marketTz)}
+            {marketDate(data.date_from)} to {marketDate(data.date_to)} · as of {stamp(data.as_of, marketTz)}
             {data.truncated ? ' · very large range: the oldest tickets were left out' : ''}
           </p>
           <div className="ops-metrics mb-4">

@@ -109,7 +109,7 @@ describe('alerts', () => {
       acknowledged_note: '', ack_permission: 'trip.write',
     };
     expect(alertMeasure({ ...base, payload: { value: 20, threshold: '15', unit: 'percent' } })).toBe('20% vs 15% line');
-    expect(alertMeasure({ ...base, payload: { value: 60.2, threshold: '48', unit: 'hours' } })).toBe('60.2 h vs 48 h line');
+    expect(alertMeasure({ ...base, payload: { value: 60.2, threshold: '48', unit: 'hours' } })).toBe('2 days vs 2 days line');
     expect(alertMeasure({ ...base, payload: { value: 1, threshold: '0', unit: 'count' } })).toBe('1 vs 0 line');
     expect(alertMeasure({ ...base, payload: { sos_id: 4 } })).toBeNull();
   });
@@ -119,12 +119,12 @@ describe('formatAge', () => {
   it('says a long wait the way a person does', () => {
     expect(formatAge(0)).toBe('0 min');
     expect(formatAge(45)).toBe('45 min');
-    expect(formatAge(60)).toBe('1 h');
-    expect(formatAge(320)).toBe('5 h 20 min');
-    expect(formatAge(1440)).toBe('1 d');
-    expect(formatAge(1440 + 180)).toBe('1 d 3 h');
+    expect(formatAge(60)).toBe('1 hour');
+    expect(formatAge(320)).toBe('5 hours 20 min');
+    expect(formatAge(1440)).toBe('1 day');
+    expect(formatAge(1440 + 180)).toBe('1 day');
     // The real case: an SOS left open for five weeks was "51,922.5 min".
-    expect(formatAge(51_922.5)).toBe('36 d');
+    expect(formatAge(51_922.5)).toBe('36 days');
     expect(formatAge(null)).toBeNull();
     expect(formatAge(Number.NaN)).toBeNull();
   });
@@ -132,7 +132,7 @@ describe('formatAge', () => {
   it('is what an SOS threshold crossing reads in', () => {
     const base = { id: 1 } as never;
     expect(alertMeasure({ ...(base as object), payload: { value: 51_922.5, threshold: '5', unit: 'minutes' } } as never))
-      .toBe('36 d vs 5 min line');
+      .toBe('36 days vs 5 min line');
   });
 });
 

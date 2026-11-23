@@ -161,9 +161,9 @@ describe('words', () => {
     expect(ageLabel(-5)).toBe('—');
     expect(ageLabel(20)).toBe('under a minute');
     expect(ageLabel(5 * 60)).toBe('5 min');
-    expect(ageLabel(3 * 3600 + 20 * 60)).toBe('3 h 20 min');
-    expect(ageLabel(3 * 3600)).toBe('3 h');
-    expect(ageLabel(2 * 86_400 + 4 * 3600)).toBe('2 d 4 h');
+    expect(ageLabel(3 * 3600 + 20 * 60)).toBe('3 hours 20 min');
+    expect(ageLabel(3 * 3600)).toBe('3 hours');
+    expect(ageLabel(2 * 86_400 + 4 * 3600)).toBe('2 days');
   });
 
   it('never prints "null" for a row with no city', () => {

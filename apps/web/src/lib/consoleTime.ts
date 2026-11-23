@@ -123,6 +123,26 @@ export function longDate(date: Date, timeZone?: string): string {
  * A calendar date ("2028-10-31" or an ISO timestamp) as the market writes it: "31 Oct 2028" for
  * India (the default; owner 22 Nov), "Oct 31, 2028" for the USA. Never shifted by a time zone.
  */
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
+/** "20 Nov 2026", "Nov 20, 2026" or "2026-11-20" -> "2026-11-20"; anything else -> null. */
+export function parseMarketDate(text: string): string | null {
+  const t = text.trim().toLowerCase().replace(/,/g, ' ').replace(/\s+/g, ' ');
+  let y: number, m: number, d: number;
+  let hit = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t);
+  if (hit) { y = +hit[1]; m = +hit[2]; d = +hit[3]; } else {
+    hit = /^(\d{1,2}) ([a-z]{3})[a-z]* (\d{4})$/.exec(t);
+    if (hit) { d = +hit[1]; m = MONTHS.indexOf(hit[2]) + 1; y = +hit[3]; } else {
+      hit = /^([a-z]{3})[a-z]* (\d{1,2}) (\d{4})$/.exec(t);
+      if (!hit) return null;
+      m = MONTHS.indexOf(hit[1]) + 1; d = +hit[2]; y = +hit[3];
+    }
+  }
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (m < 1 || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d) return null;
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
 export function marketDate(iso: string | null | undefined, country: string = 'IN'): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? '');
   if (!m) return iso ?? '';

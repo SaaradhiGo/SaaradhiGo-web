@@ -80,15 +80,15 @@ export default function SlaPage() {
   const pending = data?.pending ?? [];
 
   const columns: Column<Row>[] = [
-    { key: 'country', label: 'Country', width: '10rem', render: (r) => COUNTRY[r.country] ?? r.country },
+    { key: 'country', label: 'Country', width: '9rem', render: (r) => COUNTRY[r.country] ?? r.country },
     {
-      key: 'priority', label: 'Priority', width: '8rem',
+      key: 'priority', label: 'Priority', width: '6rem',
       render: (r) => <Pill tone={priorityTone(r.priority)}>{PRIORITY_LABEL[r.priority] ?? r.priority}</Pill>,
     },
-    { key: 'first', label: 'First reply within', width: '11rem', num: true, render: (r) => formatMinutes(r.first_response_minutes) },
-    { key: 'resolve', label: 'Resolved within', width: '11rem', num: true, render: (r) => formatMinutes(r.resolution_minutes) },
+    { key: 'first', label: 'First reply within', width: '9rem', num: true, render: (r) => formatMinutes(r.first_response_minutes) },
+    { key: 'resolve', label: 'Resolved within', width: '9rem', num: true, render: (r) => formatMinutes(r.resolution_minutes) },
     {
-      key: 'source', label: 'Source', width: '10rem',
+      key: 'source', label: 'Source', width: '9rem',
       render: (r) => (r.source === 'policy' ? 'Set in the console' : <span className="muted">Platform default</span>),
     },
     {
@@ -96,7 +96,7 @@ export default function SlaPage() {
       render: (r) => (r.updated_at ? `${stamp(r.updated_at)}${r.updated_by?.label ? ` · ${r.updated_by.label}` : ''}` : <span className="muted">—</span>),
     },
     ...(data?.may_edit ? [{
-      key: 'edit', label: 'Change', width: '11rem',
+      key: 'edit', label: 'Change', width: '9rem',
       render: (r: Row) => {
         if (pendingFor(pending, r.country, r.priority)) return <Pill tone="wait">Change pending</Pill>;
         if (!editable(r.country)) return <span className="muted">Not in your scope</span>;

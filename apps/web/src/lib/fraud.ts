@@ -14,6 +14,7 @@
  *   * nothing here moves money or tells the subject anything. Confirming records a decision and
  *     offers links to actions that already exist in other modules, each behind its own capability.
  */
+import { formatAge } from '@/lib/commandCentre';
 import { can, type AdminAccess } from './adminScope';
 
 // ---------------------------------------------------------------------------
@@ -320,9 +321,8 @@ export const evidenceSummary = (flag: Pick<Flag, 'kind' | 'rule_key' | 'evidence
 
 /** Age as a person says it: "3 h", "2 d". */
 export function ageWords(hours: number): string {
-  if (hours < 1) return 'under 1 h';
-  if (hours < 48) return `${hours} h`;
-  return `${Math.floor(hours / 24)} d`;
+  if (hours < 1) return 'under an hour';
+  return formatAge(hours * 60) ?? '—';
 }
 
 // ---------------------------------------------------------------------------
