@@ -12,6 +12,7 @@ import {
 } from '@/lib/pricing';
 import { interpretWrite } from '@/lib/trips';
 import { PricingNav } from '@/components/console/pricing';
+import { FeePlanNotes } from '@/components/console/pricing/FeePlanNotes';
 import { RegulationPanel } from '@/components/console/pricing/RegulationPanel';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
@@ -104,9 +105,10 @@ function PricingInner() {
       <header className="ops-list__head mb-3">
         <div>
           <h1>Commission</h1>
-          <p>Each country&rsquo;s default, and only the cities that override it. A change is a request a second admin approves, and never reaches a trip already booked.</p>
+          <p>Where drivers pay a commission: each country&rsquo;s default, then only the cities that differ. Cities on a driver fee plan pay no commission (see Driver fee plans).</p>
         </div>
       </header>
+      <FeePlanNotes />
 
       {loading ? (
         <div className="ops-skel-rows" aria-busy="true" aria-live="polite">
@@ -126,17 +128,6 @@ function PricingInner() {
               onEditConfig={may ? () => setEditingConfig(cfg) : undefined} />
           ))}
 
-          <section className="ops-card" aria-labelledby="pr-kinds">
-            <header className="ops-card__head"><h2 id="pr-kinds">Rule types</h2></header>
-            <ul className="ops-kinds m-0 p-0 list-none flex flex-wrap gap-3">
-              {matrix.kinds.map((k) => (
-                <li key={k.kind} className={k.supported ? '' : 'muted'}>
-                  <b>kind: {k.kind}</b>{' '}
-                  {k.supported ? <span>in use</span> : <span>{k.note ?? 'not supported yet'}</span>}
-                </li>
-              ))}
-            </ul>
-          </section>
         </div>
       ) : null}
 
@@ -166,7 +157,7 @@ function PricingInner() {
           activeKey={openRule}
           loading={rules === null}
           error={rulesError}
-          empty={status ? 'No rules in this view.' : 'No commission rules yet. Without a rule, trips in this scope cannot be settled and a city cannot go live. Start a draft.'}
+          empty={status ? 'No rules in this view.' : 'No commission rules. Cities on a driver fee plan do not need one; a city without a fee plan needs one before it goes live.'}
         />
       </div>
 
@@ -613,7 +604,7 @@ function NewDraftDrawer({ matrix, onClose, onCreated }: {
         <input id="nd-pct" className="input" inputMode="decimal" value={draft.percent}
           onChange={(e) => setDraft({ ...draft, percent: e.target.value })} aria-describedby="nd-pct-help" />
         <p id="nd-pct-help" className="help m-0">
-          Kind: percentage of the fare. A flat fee and a driver subscription are not supported yet.
+          A commission is a percentage of the fare.
           Now in force for this scope: {pct(current)}. {capWords(cfg)}.
         </p>
         <label className="ops-form__label" htmlFor="nd-from">Effective from (blank: as soon as allowed)</label>

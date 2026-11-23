@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
 import { canDraftPricing } from '@/lib/pricing';
+import { classWord, placeWord } from '@/lib/pricingWords';
 import { interpretWrite } from '@/lib/trips';
 import { PricingNav } from '@/components/console/pricing';
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
@@ -30,6 +31,7 @@ type SimRow = {
 type Sim = { average_fare_minor: number; average_fare_source: string; cost_per_trip_minor: number; currency: string;
   rows: SimRow[]; cost_breakdown: { missing: string[] } };
 
+const STATUS_WORDS: Record<string, string> = { draft: 'Draft', pending_approval: 'Waiting for approval', active: 'In force', archived: 'Ended' };
 const TONE: Record<string, ChipTone> = { draft: 'neutral', pending_approval: 'info', active: 'good', archived: 'neutral' };
 const TYPE_WORDS: Record<string, string> = {
   percent_commission: 'Commission %', per_trip_fee: 'Fee per trip', daily_pass: 'Daily pass', fair_share: 'Fair Share',
@@ -41,14 +43,22 @@ const toMinor = (v: string) => (v.trim() === '' ? null : Math.round(Number(v) * 
 function amountsWords(p: Plan) {
   return Object.entries(p.amounts).map(([cls, a]) => {
     const bits = [
-      a.per_trip_fee_minor != null ? `${rupees(a.per_trip_fee_minor, p.currency)}/trip` : null,
-      a.daily_pass_minor != null ? `${rupees(a.daily_pass_minor, p.currency)}/day` : null,
+      a.per_trip_fee_minor != null ? `${rupees(a.per_trip_fee_minor, p.currency)} a trip` : null,
+      a.daily_pass_minor != null ? `${rupees(a.daily_pass_minor, p.currency)} a day` : null,
       a.fee_free_after_trips != null ? `free after ${a.fee_free_after_trips}` : null,
       a.commission_percent != null ? `${a.commission_percent}%` : null,
       a.rider_platform_fee_minor != null ? `rider ${rupees(a.rider_platform_fee_minor, p.currency)}` : null,
     ].filter(Boolean);
-    return `${cls}: ${bits.join(', ') || 'to be decided'}`;
+    return `${classWord(cls)}: ${bits.join(', ') || 'to be decided'}`;
   }).join(' · ');
+}
+
+/** Classes whose driver fee an ACTIVE plan leaves undecided: an open decision for the owner. */
+function undecided(plans: Plan[]): { where: string; classes: string[] }[] {
+  return plans.filter((p) => p.status === 'active').map((p) => ({
+    where: p.scope_code,
+    classes: Object.entries(p.amounts).filter(([, a]) => Object.values(a).every((v) => v == null)).map(([c]) => classWord(c)),
+  })).filter((x) => x.classes.length > 0);
 }
 
 export default function FeePlansPage() {
@@ -89,13 +99,20 @@ export default function FeePlansPage() {
         {may ? <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setDrafting(true)}>New draft…</button> : null}
       </header>
       {notice ? <div className="ops-confirm mb-3" role="status"><b>{notice}</b></div> : null}
+      {plans && undecided(plans).length ? (
+        <div className="ops-note ops-note--warn mb-3" role="status">
+          <b>Open decision for Srini:</b>{' '}
+          {undecided(plans).map((u) => `the driver fee for ${u.classes.join(' and ')} in ${placeWord(u.where, access)}`).join('; ')}.
+          {' '}Riders are not offered a class until its driver fee is approved.
+        </div>
+      ) : null}
       {error ? <ErrorState title="The fee plans could not be loaded" detail={error} onRetry={() => void load()} />
         : plans === null ? <Skeleton kind="row" count={4} /> : (
           <DataTable caption="Driver fee plans" rows={plans} rowKey={(p) => p.id} maxHeight={false}
             columns={[
-              { key: 'where', label: 'Where', render: (p) => p.scope_code || `All of ${p.country}` },
-              { key: 'type', label: 'Plan', render: (p) => `${TYPE_WORDS[p.plan_type] ?? p.plan_type} v${p.version}` },
-              { key: 'status', label: 'Status', render: (p) => <StatusChip tone={TONE[p.status] ?? 'neutral'}>{p.status.replace('_', ' ')}</StatusChip> },
+              { key: 'where', label: 'Where', render: (p) => placeWord(p.scope_code, access, p.country === 'IN' ? 'India' : p.country === 'US' ? 'United States' : p.country) },
+              { key: 'type', label: 'Plan', render: (p) => `${TYPE_WORDS[p.plan_type] ?? p.plan_type} (version ${p.version})` },
+              { key: 'status', label: 'Status', render: (p) => <StatusChip tone={TONE[p.status] ?? 'neutral'}>{STATUS_WORDS[p.status] ?? p.status.replace('_', ' ')}</StatusChip> },
               { key: 'amounts', label: 'Per class', render: (p) => amountsWords(p) },
               { key: 'rules', label: 'Floor · cap · waiver', render: (p) => `${rupees(p.earnings_floor_minor, p.currency)} · ${p.daily_cap_minor == null ? 'no cap' : rupees(p.daily_cap_minor, p.currency)} · ${p.waiver_first_days ? `first ${p.waiver_first_days} days free` : p.waiver_until ? `free until ${p.waiver_until}` : 'none'}` },
               { key: 'from', label: 'From', render: (p) => (p.effective_from ? `${p.effective_from}${p.effective_to ? ` to ${p.effective_to}` : ''}` : '—') },

@@ -2661,3 +2661,6 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .ps-diff { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .ps-diff__label { font-weight: 600; white-space: nowrap; }
 .ps-diff__new { background: var(--gold-soft); color: var(--ink); padding: 0 4px; border-radius: 4px; }
+
+/* 22 Nov: places on a driver fee plan, on the Commission page. */
+.pr-feeplans { list-style: none; display: grid; gap: 4px; }
