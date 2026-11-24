@@ -8,8 +8,7 @@ import {
   CONFIG_FIELDS, configPatch, configValue, emergencyLine, type ConfigPage, type ConfigRow,
 } from '@/lib/safety';
 import {
-  Drawer, Empty, ErrorState, Pill, Skeleton,
-} from '@/components/console/ui';
+  Drawer, Empty, ErrorState, Pill, Skeleton, FitBox } from '@/components/console/ui';
 import { PageHead, RecordSection } from '@/components/console/kit/ListBits';
 import { OnCallRota } from '@/components/console/safety/OnCallRota';
 
@@ -175,7 +174,7 @@ export default function SafetyConfigPage() {
                     {row.active.created_by.label ? ` · set by ${row.active.created_by.label}` : ''}.
                     {row.active.reason ? ` ${row.active.reason}` : ''}
                   </p>
-                  <div className="ops-table-wrap"><table className="ops-config__table">
+                  <FitBox><table className="ops-config__table">
                     <caption className="sr-only">{row.name} safety settings</caption>
                     <thead><tr><th scope="col">Setting</th><th scope="col">Value</th></tr></thead>
                     <tbody>
@@ -193,7 +192,7 @@ export default function SafetyConfigPage() {
                         <td>{emergencyLine({ country: row.country, configured: row.active.emergency_numbers.length > 0, numbers: row.active.emergency_numbers })}</td>
                       </tr>
                     </tbody>
-                  </table></div>
+                  </table></FitBox>
                 </>
               )}
               {row.history.length > 1 && (

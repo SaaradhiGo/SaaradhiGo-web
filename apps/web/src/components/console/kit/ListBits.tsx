@@ -99,3 +99,13 @@ export function PageHead({ title, summary, actions }: { title: string; summary?:
     </header>
   );
 }
+
+/** 25 Nov (owner): a person in a list -- the name, and under it the full reference, never cut. */
+export function NameRef({ name, refText }: { name: ReactNode; refText: ReactNode }) {
+  return (
+    <span className="ops-who">
+      <span className="ops-who__name">{name}</span>{' '}
+      <span className="ops-ref sg-num ops-who__ref">{refText}</span>
+    </span>
+  );
+}

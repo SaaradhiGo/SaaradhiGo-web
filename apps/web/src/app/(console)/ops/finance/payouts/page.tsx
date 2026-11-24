@@ -23,8 +23,7 @@ import { ListPage, plural, type FilterChip, type ListColumn } from '@/components
 import { History, RecordPanel, RecordStat } from '@/components/console/kit/RecordPanel';
 import { StatusChip } from '@/components/console/kit/StatusChip';
 import {
-  ActionNotice, MoreFilters, RecordFacts, RecordSection, chipTone,
-} from '@/components/console/kit/ListBits';
+  ActionNotice, MoreFilters, RecordFacts, RecordSection, chipTone, NameRef } from '@/components/console/kit/ListBits';
 import { Panel, Skeleton } from '@/components/console/ui';
 
 /**
@@ -271,7 +270,7 @@ function PayoutsInner() {
 
   const columns: ListColumn<Row>[] = [
     { key: 'id', label: 'Payout', primary: true, sortKey: 'id', render: (w) => <span className="sg-num">{refOf(w) !== '—' ? refOf(w) : 'Payout'}</span> },
-    { key: 'driver', label: 'Driver', sortKey: 'driver', render: (w) => <span>{whoOf(w)} <span className="ops-ref sg-num">{refFrom(w, 'driver_ref', 'Driver')}</span></span> },
+    { key: 'driver', label: 'Driver', sortKey: 'driver', render: (w) => <NameRef name={whoOf(w)} refText={refFrom(w, 'driver_ref', 'Driver')} /> },
     { key: 'amount', label: 'Amount', num: true, sortKey: 'amount', render: (w) => formatWhole(w.amount_minor, w.currency) },
     { key: 'status', label: 'Status', render: (w) => <PayoutStatus w={w} /> },
     {

@@ -13,9 +13,9 @@ import { interpretWrite } from '@/lib/trips';
 import { PricingNav } from '@/components/console/pricing';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { StatusChip } from '@/components/console/kit/StatusChip';
+import { classWord } from '@/lib/pricingWords';
 import {
-  DataTable, Drawer, Empty, ErrorState, Pill, Skeleton, type PillTone,
-} from '@/components/console/ui';
+  DataTable, Drawer, Empty, ErrorState, Pill, Skeleton, type PillTone, FitBox } from '@/components/console/ui';
 
 /**
  * Pricing: fare cards, per zone and vehicle class.
@@ -59,7 +59,7 @@ function FareCardsInner() {
 
   const zones = data?.zones ?? [];
   const classes: { id: number; name: string }[] = [];
-  for (const z of zones) for (const c of z.classes) if (!classes.some((x) => x.id === c.vehicle_type)) classes.push({ id: c.vehicle_type, name: c.vehicle_type_name });
+  for (const z of zones) for (const c of z.classes) if (!classes.some((x) => x.id === c.vehicle_type)) classes.push({ id: c.vehicle_type, name: classWord(c.vehicle_type_name) });
   const needle = q.trim().toLowerCase();
   const gaps = (z: FareZone) => z.classes.filter((c) => !c.live).length;
   const scheduled = (z: FareZone) => z.classes.filter((c) => c.scheduled).length;
@@ -75,7 +75,7 @@ function FareCardsInner() {
         if (!c) return <span className="muted">—</span>;
         return (
           <button type="button" className="ops-linkbtn" onClick={() => setOpen({ zone: z, cls: c })}
-            aria-label={`${z.name}, ${c.vehicle_type_name}: ${c.live ? `version ${c.live.version}` : 'no card'}`}>
+            aria-label={`${z.name}, ${classWord(c.vehicle_type_name)}: ${c.live ? `version ${c.live.version}` : 'no card'}`}>
             {c.live ? <>{money(z, c.live.base_fare)} + {money(z, c.live.per_km_fare)}/km <span className="muted">v{c.live.version}</span></>
               : <StatusChip tone="caution">No card</StatusChip>}
             {c.scheduled ? <> <StatusChip tone="info">v{c.scheduled.version} scheduled</StatusChip></> : null}
@@ -208,7 +208,7 @@ function CardDrawer({ zone, cls, may, onClose, onDone }: {
   }
 
   return (
-    <Drawer open wide onClose={onClose} title={`${cls.vehicle_type_name} · ${zone.name}`}
+    <Drawer open wide onClose={onClose} title={`${classWord(cls.vehicle_type_name)} · ${zone.name}`}
       footer={may ? (
         <>
           {live ? (
@@ -229,7 +229,7 @@ function CardDrawer({ zone, cls, may, onClose, onDone }: {
           {cls.history.length === 0 ? (
             <Empty title="No card yet" detail="This class cannot quote a fare in this zone until one is approved." />
           ) : (
-            <DataTable caption={`Versions of the ${cls.vehicle_type_name} card`} density="compact" maxHeight={false}
+            <DataTable caption={`Versions of the ${classWord(cls.vehicle_type_name)} card`} density="compact" maxHeight={false}
               rows={cls.history} rowKey={(h) => h.id}
               columns={[
                 { key: 'v', label: 'Version', width: '6rem', render: (h) => `v${h.version}` },
@@ -288,7 +288,7 @@ function CardDrawer({ zone, cls, may, onClose, onDone }: {
               <ErrorState title="The preview could not be worked out" onRetry={() => void runPreview()} />
             ) : (
               <>
-                <div className="ops-table-wrap">
+                <FitBox>
                   <table className="ops-table ops-table--compact ops-table--auto">
                     <caption className="sr-only">Sample fares, current card against the draft, in {preview.preview.currency}</caption>
                     <thead>
@@ -304,7 +304,7 @@ function CardDrawer({ zone, cls, may, onClose, onDone }: {
                       ))}
                     </tbody>
                   </table>
-                </div>
+                </FitBox>
                 <p className="help m-0">Assumes {preview.preview.assumes}. Live demand surge is not part of this estimate.</p>
               </>
             )}

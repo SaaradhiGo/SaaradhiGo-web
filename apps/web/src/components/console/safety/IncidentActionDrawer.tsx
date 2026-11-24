@@ -138,7 +138,7 @@ export function IncidentActionDrawer({
   return (
     <Drawer
       open
-      title={`${ACTION_TITLE[action]} · ${incident.ref ?? `INC-${incident.id}`}`}
+      title={`${ACTION_TITLE[action]} · ${incident.ref ?? 'Incident'}`}
       onClose={onClose}
       footer={(
         <>

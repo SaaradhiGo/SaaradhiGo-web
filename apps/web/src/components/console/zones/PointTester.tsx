@@ -4,7 +4,8 @@ import { useId, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { currencySymbol } from '@/lib/money';
 import { cardLine, num, type PointResolution, type PointTest } from '@/lib/zones';
-import { Pill } from '@/components/console/ui';
+import { Pill, FitBox } from '@/components/console/ui';
+import { classWord } from '@/lib/pricingWords';
 
 /**
  * The point tester: type a latitude and longitude, or click the map, and see which zone and
@@ -102,14 +103,14 @@ function Resolution({ title, r }: { title: string; r: PointResolution }) {
           {r.matching_zones.length > 1 ? (
             <p className="help m-0">Inside {r.matching_zones.length} zones ({r.matching_zones.join(', ')}); the highest priority wins.</p>
           ) : null}
-          <div className="ops-table-wrap">
+          <FitBox>
             <table className="ops-table ops-table--compact ops-table--auto">
               <caption className="sr-only">{title}: the fare card each vehicle class would use</caption>
               <thead><tr><th scope="col">Vehicle class</th><th scope="col">Fare card in force</th></tr></thead>
               <tbody>
                 {r.rate_cards.map((c) => (
                   <tr key={c.vehicle_type}>
-                    <th scope="row">{c.vehicle_type_name}</th>
+                    <th scope="row">{classWord(c.vehicle_type_name)}</th>
                     <td>
                       {c.card ? <>{cardLine(c.card, symbol)} <span className="muted">· {c.card.zone} v{c.card.version}</span></>
                         : <Pill tone="bad">No fare card</Pill>}
@@ -118,7 +119,7 @@ function Resolution({ title, r }: { title: string; r: PointResolution }) {
                 ))}
               </tbody>
             </table>
-          </div>
+          </FitBox>
         </>
       )}
     </section>

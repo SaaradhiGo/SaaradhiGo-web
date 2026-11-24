@@ -14,6 +14,7 @@ import { PageLink } from '@/components/console/PageLink';
 import { ZoneMap, type MapZone } from '@/components/console/zones/ZoneMap';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { StatusChip } from '@/components/console/kit/StatusChip';
+import { FitBox } from '@/components/console/ui';
 
 /**
  * Service zones: a searchable list paged on the server, beside the map of every zone in scope.
@@ -197,7 +198,7 @@ export default function ZonesPage() {
               <p>A second admin decides these in Approvals.</p>
             </div>
           </header>
-          <div className="ops-list__table">
+          <FitBox className="ops-list__table">
             <table className="ops-table ops-table--compact">
               <caption className="sr-only">Zone changes waiting for approval</caption>
               <thead>
@@ -218,7 +219,7 @@ export default function ZonesPage() {
                 })}
               </tbody>
             </table>
-          </div>
+          </FitBox>
         </section>
       ) : null}
     </div>

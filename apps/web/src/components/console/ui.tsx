@@ -3,6 +3,7 @@
 import { textOf } from '@/lib/cellText';
 import Link from 'next/link';
 import {
+  HTMLAttributes,
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
   ReactNode,
@@ -14,6 +15,7 @@ import {
 } from 'react';
 import type { Density } from '@/lib/consolePrefs';
 import { Chevron, Close, Sliders, SortArrow } from '@/components/console/icons';
+import { useFitOrCards } from '@/lib/useFitOrCards';
 
 /**
  * The console's shared parts.
@@ -635,6 +637,7 @@ export function DataTable<T>({
   wrap?: boolean;
 }) {
   const [sort, setSort] = useState<SortState>(defaultSort);
+  const [box, cards] = useFitOrCards<HTMLDivElement>([rows, columns.length]);
 
   const sorted = useMemo(() => {
     if (!sort) return rows;
@@ -684,7 +687,7 @@ export function DataTable<T>({
   ].filter(Boolean).join(' ') || undefined;
 
   return (
-    <div className={`ops-table-wrap ${maxHeight ? 'ops-table-wrap--tall' : ''} ${wrap ? 'ops-table-wrap--wrap' : ''}`} tabIndex={0} role="region"
+    <div ref={box} className={`ops-table-wrap ${maxHeight ? 'ops-table-wrap--tall' : ''} ${wrap ? 'ops-table-wrap--wrap' : ''}${cards ? ' is-cards' : ''}`} tabIndex={0} role="region"
       aria-label={typeof caption === 'string' ? caption : 'Table'}>
       <table className={`ops-table ops-table--${density} ${onRow ? 'ops-table--rows' : ''}`}>
         <caption className="sr-only">{caption}</caption>
@@ -731,12 +734,13 @@ export function DataTable<T>({
                 onClick={(e) => onRowClick(e, row)}
                 onKeyDown={(e) => onRowKey(e, row)}
               >
-                {columns.map((c) => {
+                {columns.map((c, i) => {
                   const content = c.render(row);
                   const hover = textOf(content) || undefined;
                   const keep = hover !== undefined && /^\d{1,2} [A-Z][a-z]{2} \d{4}/.test(hover);
                   return (
-                    <td key={c.key} className={cellClass(c)} title={hover}>
+                    <td key={c.key} className={cellClass(c)} title={hover}
+                      data-label={textOf(c.label) || undefined} data-card={i === 0 ? 'title' : c.key === 'status' || c.key === 'state' ? 'badge' : 'field'}>
                       <span className={keep ? 'ops-cell ops-cell--keep' : 'ops-cell'}>{content}</span>
                     </td>
                   );
@@ -776,4 +780,15 @@ export function AlertRow({
   return href
     ? <Link href={href} className={`ops-alert ops-alert--${tone}`}>{inner}</Link>
     : <div className={`ops-alert ops-alert--${tone}`}>{inner}</div>;
+}
+
+/**
+ * 25 Nov (owner): the box for a hand-built table. Like DataTable, it turns the table into
+ * cards when the table does not fit, so nothing in the console scrolls sideways.
+ */
+export function FitBox({ className = 'ops-table-wrap', children, ...rest }: {
+  className?: string; children: ReactNode;
+} & Omit<HTMLAttributes<HTMLDivElement>, 'className' | 'children'>) {
+  const [box, cards] = useFitOrCards<HTMLDivElement>([children]);
+  return <div ref={box} className={`${className}${cards ? ' is-cards' : ''}`} {...rest}>{children}</div>;
 }

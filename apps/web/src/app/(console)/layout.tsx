@@ -196,12 +196,12 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
 
           {/* 24 Nov (owner): anyone without two-step sign-in is told, with the way to fix it. */}
           {access?.two_step && !access.two_step.set_up ? (
-            <div className="ops-banner ops-banner--notice" role="status" data-severity="warning">
-              <b>Two-step sign-in is not set up</b>
-              <span>
-                In production you cannot sign in, approve anything or move money without it.{' '}
-                <a href="/ops/settings/security">Set it up now</a>.
-              </span>
+            <div className="ops-banner ops-banner--notice ops-banner--twostep" role="status" data-severity="warning">
+              <p className="ops-banner__line">
+                <b>Two-step sign-in is not set up.</b>
+                <span className="ops-banner__more"> In production you cannot sign in, approve anything or move money without it.</span>
+              </p>
+              <a className="sg-btn sg-btn--secondary sg-btn--sm" href="/ops/settings/security">Set up</a>
             </div>
           ) : null}
 
