@@ -30,7 +30,7 @@ describe('report view', () => {
   it('shows the head, a metric card, the market-time stamp, and a preset applies', async () => {
     render(<Page />);
     expect(await screen.findByRole('heading', { name: 'Trips' })).toBeTruthy();
-    expect(await screen.findByText(/Data as of 02 Jan, 05:30 IST/)).toBeTruthy();
+    expect(await screen.findByText(/Data as of 2 Jan 2026, 5:30 AM IST/)).toBeTruthy();
     expect(screen.getAllByText('Trips requested').length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: 'All reports' }).getAttribute('href')).toBe('/ops/reports');
     const group = screen.getByRole('group', { name: 'Date range' });

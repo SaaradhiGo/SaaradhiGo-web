@@ -22,7 +22,7 @@ vi.mock('@/lib/area/api', () => ({
 describe('limitWords', () => {
   it('states the count and the total, or says there is none', () => {
     expect(limitWords({ instant_max_per_day: 3, instant_max_amount_per_day_minor: 5_000_000 }, 'INR'))
-      .toBe('at most 3 a day and ₹50,000.00 a day');
+      .toBe('at most 3 a day and ₹50,000 a day');
     expect(limitWords({}, 'INR')).toBe('no daily limit');
     expect(instantWords({ instant_cashout_enabled: true, instant_max_per_day: 3 }, 'INR')).toContain('at most 3 a day');
   });

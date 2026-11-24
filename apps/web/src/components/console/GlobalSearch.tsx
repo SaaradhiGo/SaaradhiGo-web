@@ -185,7 +185,7 @@ export function GlobalSearch({ access }: { access: AdminAccess | null }) {
         onChange={(e) => { setValue(e.target.value); setOpen(true); }}
         onFocus={() => { if (state) setOpen(true); }}
         onKeyDown={onKeyDown}
-        placeholder="Find T-, D-, R-, SOS-, a phone, plate or name, or a page"
+        placeholder="Find a reference (HYD-…, D-…), phone, plate, name or page"
         aria-label="Search records and pages (Ctrl K)"
         role="combobox"
         aria-autocomplete="list"

@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom } from '@/lib/refs';
 import { Suspense, useEffect, useState } from 'react';
 import { cityTimeZone, stamp } from '@/lib/consoleTime';
 import {
@@ -55,8 +56,8 @@ function SettlementRecord({ row, onClose }: { row: Row; onClose: () => void }) {
   return (
     <RecordPanel
       label="Settlement"
-      title={row.driver_name || `Driver D-${row.driver_id}`}
-      refId={`T-${row.trip_id}`}
+      title={row.driver_name || refFrom(row, 'driver_ref', 'Driver')}
+      refId={(row as { trip_ref?: string }).trip_ref || '—'}
       subtitle={<>{cityName(row.city)} · settled {stamp(row.settled_at, tz)}</>}
       status={<SourceChip source={row.source} />}
       onClose={onClose}
@@ -71,12 +72,12 @@ function SettlementRecord({ row, onClose }: { row: Row; onClose: () => void }) {
           <div className="grid gap-3">
             <div className="ops-record__stats">
               <RecordStat label="Gross" value={formatMinor(row.gross_fare_minor, row.currency)} />
-              <RecordStat label="Commission" value={formatMinor(row.commission_amount_minor, row.currency)} note={`${Number(row.commission_percent)}% as applied`} />
+              <RecordStat label="Driver fee" value={formatMinor(row.commission_amount_minor, row.currency)} note={`${Number(row.commission_percent)}% as applied`} />
               <RecordStat label="Driver net" value={formatMinor(row.driver_net_minor, row.currency)} />
             </div>
             <Facts>
-              <Fact label="Trip"><PageLink page="trips" href={`/ops/trips/${row.trip_id}`}>T-{row.trip_id}</PageLink></Fact>
-              <Fact label="Driver"><PageLink page="drivers" href={`/ops/drivers/${row.driver_id}`}>D-{row.driver_id}</PageLink></Fact>
+              <Fact label="Trip"><PageLink page="trips" href={`/ops/trips/${row.trip_id}`}>{refFrom(row, 'trip_ref', 'Trip')}</PageLink></Fact>
+              <Fact label="Driver"><PageLink page="drivers" href={`/ops/drivers/${row.driver_id}`}>{refFrom(row, 'driver_ref', 'Driver')}</PageLink></Fact>
               <Fact label="Payment method">{words(row.payment_method)}</Fact>
               <Fact label="Currency">{row.currency}</Fact>
               <Fact label="Version">{row.version}</Fact>
@@ -99,16 +100,16 @@ function SettlementsInner() {
   const columns: ListColumn<Row>[] = [
     {
       key: 'trip', label: 'Trip', width: '7rem', primary: true,
-      render: (r) => <PageLink page="trips" href={`/ops/trips/${r.trip_id}`}>T-{r.trip_id}</PageLink>,
+      render: (r) => <PageLink page="trips" href={`/ops/trips/${r.trip_id}`}>{refFrom(r, 'trip_ref', 'Trip')}</PageLink>,
     },
     { key: 'city', label: 'City', render: (r) => cityName(r.city) },
     {
       key: 'driver', label: 'Driver',
-      render: (r) => <PageLink page="drivers" href={`/ops/drivers/${r.driver_id}`}>{r.driver_name || `D-${r.driver_id}`}</PageLink>,
+      render: (r) => <PageLink page="drivers" href={`/ops/drivers/${r.driver_id}`}>{r.driver_name || (r as { driver_ref?: string }).driver_ref || '—'}</PageLink>,
     },
     { key: 'gross', label: 'Gross', num: true, render: (r) => formatWhole(r.gross_fare_minor, r.currency) },
     {
-      key: 'commission', label: 'Commission', num: true,
+      key: 'commission', label: 'Driver fee', num: true,
       render: (r) => `${formatWhole(r.commission_amount_minor, r.currency)} · ${Number(r.commission_percent)}%`,
     },
     { key: 'net', label: 'Driver net', num: true, render: (r) => formatWhole(r.driver_net_minor, r.currency) },
@@ -130,7 +131,7 @@ function SettlementsInner() {
         <ListPage<Row>
           pageKey="finance-settlements"
           title="Settlements"
-          summary={data ? <CurrencyTotals totals={data.totals ?? []} noun="trip" amount="gross_minor" /> : 'What each settled trip paid out: gross, commission as applied, driver net.'}
+          summary={data ? <CurrencyTotals totals={data.totals ?? []} noun="trip" amount="gross_minor" /> : 'What each settled trip paid out: gross, the driver fee as applied, driver net.'}
           views={views}
           view={filters.method}
           onView={(method) => go({ ...filters, method, page: 1 })}

@@ -1,5 +1,7 @@
 'use client';
 
+import { refFrom, refOf } from '@/lib/refs';
+import { DateField } from '@/components/console/kit/DateField';
 import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -175,13 +177,13 @@ function routeOf(t: TripRow): string {
   return `${from ?? '—'} → ${to ?? '—'}`;
 }
 
-const driverOf = (t: TripRow) => t.driver_name || (t.driver_id ? `Driver #${t.driver_id}` : null);
+const driverOf = (t: TripRow) => t.driver_name || (t.driver_id ? 'Driver' : null);
 
 /** A search hit as a list row: what the search answers, nothing invented. */
 function rowFromHit(h: TripHit): TripRow {
   const tz = timeZoneFor(h.city_code);
   return {
-    id: h.id, ref: `T-${h.id}`, status: h.status, requested_at: h.requested_at ?? undefined,
+    id: h.id, ref: (h as { ref?: string }).ref, status: h.status, requested_at: h.requested_at ?? undefined,
     user: h.rider ? (h.rider.full_name?.trim() || h.rider.phone) : null,
     driver_name: h.driver ? (h.driver.full_name?.trim() || h.driver.phone) : null,
     driver_id: h.driver?.id ?? null,
@@ -298,10 +300,10 @@ function TripsInner() {
   if (filters.stale) chips.push({ key: 'stale', label: 'Stale', onRemove: drop({ stale: false }) });
   if (filters.flagged) chips.push({ key: 'flagged', label: 'Flagged', onRemove: drop({ flagged: false }) });
   if (filters.hasSos) chips.push({ key: 'sos', label: 'Had an SOS', onRemove: drop({ hasSos: false }) });
-  if (filters.id) chips.push({ key: 'id', label: `T-${filters.id}`, onRemove: drop({ id: '' }) });
+  if (filters.id) chips.push({ key: 'id', label: 'One trip', onRemove: drop({ id: '' }) });
 
   const columns: ListColumn<TripRow>[] = [
-    { key: 'id', label: 'Trip', primary: true, sortKey: 'id', render: (t) => <span className="sg-num">{t.ref ?? `T-${t.id}`}</span> },
+    { key: 'id', label: 'Trip', primary: true, sortKey: 'id', render: (t) => <span className="sg-num">{refOf(t)}</span> },
     { key: 'status', label: 'Status', sortKey: 'status', render: (t) => <TripStatus t={t} /> },
     { key: 'city', label: 'City', card: 'hide', render: (t) => t.city?.name ?? '—' },
     { key: 'rider', label: 'Rider', cardOrder: 4, render: (t) => t.user || '—' },
@@ -328,7 +330,7 @@ function TripsInner() {
       const header = ['Trip', 'Status', 'Stuck', 'City', 'Rider', 'Driver', 'From', 'To',
         ...(showMoney ? ['Fare', 'Currency', 'Payment'] : []), 'Requested'];
       const body = all.map((t) => [
-        t.ref ?? `T-${t.id}`, STATUS_WORD[t.status ?? ''] ?? words(t.status),
+        refOf(t), STATUS_WORD[t.status ?? ''] ?? words(t.status),
         t.stuck_reason ? (STUCK_WORDS[t.stuck_reason] ?? t.stuck_reason) : '', t.city?.name ?? '',
         t.user ?? '', driverOf(t) ?? '', t.pickup_locality ?? '', t.drop_locality ?? '',
         ...(showMoney ? [formatWhole(t.charged_fare_minor ?? null, t.currency), t.currency ?? '', t.payment_method ?? ''] : []),
@@ -364,7 +366,7 @@ function TripsInner() {
           actionsSlot={(
             <form className="ops-search" role="search" aria-label="Find a trip" onSubmit={(e) => { e.preventDefault(); find(); }}>
               <label className="sr-only" htmlFor="trip-find">Find a trip by T- number or rider phone</label>
-              <input id="trip-find" className="ops-select" value={term} placeholder="T-881230 or rider phone"
+              <input id="trip-find" className="ops-select" value={term} placeholder="HYD-261116-K7Q4 or rider phone"
                 onChange={(e) => setTerm(e.target.value)} size={24} />
               <button type="submit" className="sg-btn sg-btn--secondary sg-btn--sm">Find</button>
             </form>
@@ -390,18 +392,9 @@ function TripsInner() {
                 </div>
                 <div className="ops-form__row">
                   <label className="ops-form__label" htmlFor="f-from">From</label>
-                  <input id="f-from" type="date" className="ops-select" value={draft.dateFrom} onChange={(e) => setDraft({ ...draft, dateFrom: e.target.value })} />
+                  <DateField id="f-from" className="ops-select" value={draft.dateFrom} onChange={(v) => setDraft({ ...draft, dateFrom: v })} />
                   <label className="ops-form__label" htmlFor="f-to">To</label>
-                  <input id="f-to" type="date" className="ops-select" value={draft.dateTo} onChange={(e) => setDraft({ ...draft, dateTo: e.target.value })} />
-                  {cities.length > 1 ? (
-                    <>
-                      <label className="ops-form__label" htmlFor="f-city">City</label>
-                      <select id="f-city" className="ops-select" value={draft.scope} onChange={(e) => setDraft({ ...draft, scope: e.target.value })}>
-                        <option value="">All I hold</option>
-                        {cities.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-                      </select>
-                    </>
-                  ) : null}
+                  <DateField id="f-to" className="ops-select" value={draft.dateTo} onChange={(v) => setDraft({ ...draft, dateTo: v })} />
                   <label className="ops-form__label" htmlFor="f-pay">Payment</label>
                   <select id="f-pay" className="ops-select" value={draft.paymentMethod} onChange={(e) => setDraft({ ...draft, paymentMethod: e.target.value })}>
                     <option value="">Any</option>
@@ -509,7 +502,7 @@ function TripRecord({ row, showMoney, onClose, onChanged }: {
   const rail = visibleActions(data.actions, access);
   const target = { type: 'trip', id: data.id } as const;
   const riderName = data.rider?.full_name?.trim() || data.rider?.phone_number || 'the rider';
-  const driverName = data.driver?.full_name?.trim() || (data.driver ? `Driver #${data.driver.driver_id}` : null);
+  const driverName = data.driver?.full_name?.trim() || (data.driver ? 'Driver' : null);
   const pending = (data.approval_requests ?? []).filter((r) => r.status === 'requested');
   const state = data.status ?? row.status ?? '';
 
@@ -525,7 +518,7 @@ function TripRecord({ row, showMoney, onClose, onChanged }: {
     <>
       <RecordPanel
         label="Trip"
-        title={row.ref ?? `T-${data.id}`}
+        title={refOf(row)}
         onClose={onClose}
         subtitle={<>{[data.city?.name ?? row.city?.name, routeOf(row)].filter(Boolean).join(' · ')} · requested {when(data.timeline.requested_at ?? row.requested_at)}</>}
         status={(
@@ -549,15 +542,15 @@ function TripRecord({ row, showMoney, onClose, onChanged }: {
                 <RecordFacts rows={[
                   ['Rider', data.rider ? (
                     <span key="r">
-                      <PageLink page="riders" href={`/ops/riders/${data.rider.user_id}`}>{data.rider.full_name?.trim() || `Rider #${data.rider.user_id}`}</PageLink>
-                      {' '}<span className="ops-ref sg-num">R-{data.rider.user_id}</span>
+                      <PageLink page="riders" href={`/ops/riders/${data.rider.user_id}`}>{data.rider.full_name?.trim() || 'Rider'}</PageLink>
+                      {' '}<span className="ops-ref sg-num">{refFrom(data.rider, 'rider_ref', 'Rider')}</span>
                       {' · '}<Revealable value={data.rider.phone_number ?? '—'} label="rider phone" target={target} field="rider_phone" compact />
                     </span>
                   ) : '—'],
                   ['Driver', data.driver ? (
                     <span key="d">
                       <PageLink page="drivers" href={`/ops/drivers/${data.driver.driver_id}`}>{driverName}</PageLink>
-                      {' '}<span className="ops-ref sg-num">D-{data.driver.driver_id}</span>
+                      {' '}<span className="ops-ref sg-num">{refFrom(data.driver, 'driver_ref', 'Driver')}</span>
                       {' · '}<Revealable value={data.driver.phone_number ?? '—'} label="driver phone" target={target} field="driver_phone" compact />
                     </span>
                   ) : 'Unassigned'],
@@ -570,7 +563,7 @@ function TripRecord({ row, showMoney, onClose, onChanged }: {
                 ]} />
                 {pending.map((r) => (
                   <p key={r.id} className="ops-confirm">
-                    Waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>APR-{r.id}</PageLink>
+                    Waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>{refOf(r) !== '—' ? refOf(r) : 'approval request'}</PageLink>
                     {' '}({words(r.action_key)}{r.amount != null && r.currency ? ` · ${formatMinor(r.amount, r.currency)}` : ''})
                   </p>
                 ))}
@@ -612,7 +605,7 @@ function TripRecord({ row, showMoney, onClose, onChanged }: {
                   <ul className="ops-reclist">
                     {(data.support_tickets ?? []).map((t) => (
                       <li key={t.id}>
-                        <PageLink page="support" href={`/ops/support/${t.id}`}><span className="sg-num">TKT-{t.id}</span></PageLink>
+                        <PageLink page="support" href={`/ops/support/${t.id}`}><span className="sg-num">{refOf(t) !== '—' ? refOf(t) : 'Ticket'}</span></PageLink>
                         <span>{words(t.issue_type)}</span>
                         <StatusChip tone={t.status === 'CLOSED' ? 'good' : 'info'}>{t.status === 'CLOSED' ? 'Closed' : 'Open'}</StatusChip>
                       </li>
@@ -720,7 +713,7 @@ function BulkDrawer({ action, ids, onClose, onDone }: {
         {outcome && <div className="alert-success" role="status">{outcome}</div>}
         {rows ? (
           <Facts>
-            {rows.results.map((r) => <Fact key={r.id} label={`T-${r.id}`}>{words(r.result)}</Fact>)}
+            {rows.results.map((r) => <Fact key={r.id} label={refOf(r)}>{words(r.result)}</Fact>)}
           </Facts>
         ) : null}
       </div>

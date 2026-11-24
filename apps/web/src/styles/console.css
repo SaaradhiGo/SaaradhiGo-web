@@ -816,7 +816,7 @@ a.ops-alert:hover { background: var(--ops-wash); }
   border: 1px solid var(--ops-line-strong);
   background: var(--ops-wash);
   font: 600 14px/1.6 var(--font-sans);
-  letter-spacing: 0.04em; text-transform: capitalize; white-space: nowrap;
+  letter-spacing: 0.04em; text-transform: none; white-space: nowrap; /* 24 Nov: sentence case */
   color: var(--ops-ink-2);
 }
 .ops-pill--good { border-color: var(--ops-success-edge); color: var(--ops-success); background: var(--ops-success-wash); }
@@ -949,7 +949,7 @@ a.ops-alert:hover { background: var(--ops-wash); }
 /* --- segmented filters (older pages) -------------------------------------- */
 
 .ops-filters { display: inline-flex; padding: 3px; gap: 2px; background: var(--ops-wash); border: 1px solid var(--line); border-radius: 10px; }
-.ops-filter { appearance: none; border: 0; background: none; cursor: pointer; padding: 6px 12px; border-radius: 7px; font: 600 14px/1.2 var(--font-sans); color: var(--ops-ink-3); text-transform: capitalize; }
+.ops-filter { appearance: none; border: 0; background: none; cursor: pointer; padding: 6px 12px; border-radius: 7px; font: 600 14px/1.2 var(--font-sans); color: var(--ops-ink-3); text-transform: none; }
 .ops-filter:hover { color: var(--ink); }
 .ops-filter[aria-pressed='true'] { background: var(--ops-wash-strong); color: var(--ink); }
 
@@ -1518,7 +1518,7 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .ops-audit { list-style: none; margin: 0; padding: 4px 16px 12px; display: grid; gap: 8px; }
 .ops-audit li { display: grid; grid-template-columns: 11rem 1fr; gap: 2px 12px; font: 400 14px/1.45 var(--font-sans); color: var(--ops-ink-3); }
 .ops-audit time { color: var(--ops-ink-5); font-variant-numeric: tabular-nums; }
-.ops-audit b { color: var(--ink); text-transform: capitalize; }
+.ops-audit b { color: var(--ink); }
 .ops-audit span { grid-column: 2; }
 @media (max-width: 720px) { .ops-audit li { grid-template-columns: 1fr; } .ops-audit span { grid-column: 1; } }
 
@@ -2692,3 +2692,73 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 /* 23 Nov: date presets keep their width and wrap to a second line on a phone (never squeezed). */
 .ops-presets { display: flex; flex-wrap: wrap; max-width: 100%; min-width: min(100%, 18rem); height: auto; }
 .ops-presets .ops-seg__btn { flex: none; min-width: 44px; min-height: 44px; white-space: nowrap; }
+
+/* ===========================================================================
+   24 Nov (owner): console final pass.
+   =========================================================================== */
+/* One place control, at the top of the content: a path, then the next level as chips. */
+.ops__top > .ops__search { flex: 1 1 420px; max-width: 560px; }
+.ops-placebar { display: grid; gap: 10px; margin: 0 0 20px; }
+.ops-placebar__path { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; list-style: none; margin: 0; padding: 0; font: 600 14px/1.4 var(--font-sans); }
+.ops-placebar__path li + li::before { content: '›'; margin: 0 6px 0 2px; color: var(--ops-ink-4); }
+.ops-placebar__step { background: none; border: 0; padding: 10px 2px; min-height: 44px; color: var(--ops-ink-2, var(--ink)); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--ops-hairline); }
+.ops-placebar__step:hover { color: var(--ink); text-decoration-color: var(--gold-500); }
+.ops-placebar__here { color: var(--ink); }
+.ops-placebar__chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ops-placebar__chips .ops-placechip small { font-weight: 400; color: var(--ops-ink-3, var(--ink)); }
+.ops-placebar__toggle { background: none; border: 0; min-height: 44px; padding: 0 8px; color: var(--ops-ink-3, var(--ink)); font: 500 14px/1 var(--font-sans); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+/* The footer sits at the bottom of the window on short pages and after the content on long ones. */
+.ops__main { min-height: 100vh; min-height: 100dvh; }
+.ops__content { display: flex; flex-direction: column; }
+.ops__page { flex: 1 0 auto; min-width: 0; }
+.ops__content > .sg-legal-line--console { margin-top: auto; }
+.ops-code { font-size: 14px; font-weight: 400; margin-left: 6px; }
+.ops-list-plain { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+
+/* 24 Nov (owner): tables fit at 1440 without sideways scroll. Columns size to their content;
+   names, IDs and numbers stay on one line; long places end in an ellipsis with the full text on hover. */
+@media (min-width: 1100px) {
+  .ops__content td, .ops__content th { min-width: 0; }
+  .ops__content td.num, .ops__content th.num, .ops__content .sg-num, .ops__content td:first-child { white-space: nowrap; }
+  .ops__content td .ops-ellipsis { display: block; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ops-board__lanes { grid-template-columns: repeat(4, minmax(0, 1fr)); overflow-x: visible; }
+  .ops-board__lanes > * { min-width: 0; }
+}
+.ops-datefield { width: 9.5em; max-width: 100%; min-width: 0; box-sizing: border-box; }
+.ops-rangebar__field { min-width: 0; max-width: 100%; grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 400px) { .ops-rangebar__field { flex: 1 1 100%; } .ops-rangebar__field .ops-datefield { width: 100%; } }
+
+/* 24 Nov (owner), measured on QA at 1440: list tables fit with no sideways scroll. One line per row;
+   text ends in an ellipsis with the full text on hover; names, references, numbers and dates are whole. */
+@media (min-width: 1100px) {
+  .ops-list__table table.ops-table { width: 100%; min-width: 0; table-layout: auto; }
+  .ops-list__table td { white-space: nowrap; }
+  .ops-list__table td, .ops-list__table th { padding-left: 8px; padding-right: 8px; }
+  .ops-table td.primary { min-width: 0; }
+  .ops-cell { display: block; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  td.primary > .ops-cell { max-width: 18rem; }
+  td.num > .ops-cell, .ops-cell--keep { max-width: none; }
+  /* A row's status chips stay whole; several wrap inside an 11rem column. */
+  .ops-cell:has(.ops-pill, .ops-chips, .sg-chip) { max-width: 14rem; overflow: visible; white-space: normal; }
+  .ops-cell .ops-chips { flex-wrap: wrap; }
+  .ops-cell .ops-pill, .ops-cell .sg-chip { white-space: nowrap; }
+}
+@media (min-width: 1100px) {
+  .ops-table-wrap table.ops-table { width: 100%; min-width: 0; table-layout: auto; }
+  .ops-table-wrap td, .ops-table-wrap th { padding-left: 8px; padding-right: 8px; white-space: nowrap; }
+  .ops-table-wrap .ops-cell { max-width: 12rem; }
+  /* A matrix (what each place pays) wraps inside its width instead. */
+  .rp-resolved table { width: 100%; table-layout: fixed; }
+  .rp-resolved td, .rp-resolved th { white-space: normal; overflow-wrap: break-word; }
+}
+/* The zones map sits beside its list only where both fit. */
+@media (max-width: 1600px) { .ops-split--map { grid-template-columns: minmax(0, 1fr); } }
+@media (min-width: 1100px) { .ops-cell:has(> .ops-what) { max-width: 18rem; } }
+
+@media (min-width: 1100px) {
+  .ops-table-wrap--wrap td, .ops-table-wrap--wrap td .ops-cell { white-space: normal; overflow: visible; }
+  .ops-table-wrap--wrap td .ops-cell { max-width: 12rem; }
+  .ops-list__table td, .ops-list__table th { padding-left: 6px; padding-right: 6px; }
+}
+@media (min-width: 1100px) { .ops-cell:has(> .ops-wrap) { white-space: normal; max-width: 24rem; overflow: visible; } }

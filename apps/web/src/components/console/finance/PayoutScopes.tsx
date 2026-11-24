@@ -1,5 +1,6 @@
 'use client';
 
+import { hiddenPlace } from '@/lib/notLaunched';
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { formatMinor } from '@/lib/finance';
@@ -99,13 +100,15 @@ function valueOf(label: string, c: CycleFields, country: string, currency: strin
  * that set something themselves, each difference against the country's value. A change is the same
  * request as the country's, approved by a second finance admin.
  */
-export function PayoutScopes({ country, countryName, currency, base, scopes, may, onDone }: {
+export function PayoutScopes({ country, countryName, currency, base, scopes: all, may, onDone }: {
   country: string; countryName?: string; currency: string; base?: CycleFields | null; scopes: Scope[]; may: boolean;
   onDone: (text: string, kind: 'pending' | 'done') => void;
 }) {
   const [editing, setEditing] = useState<Scope | null>(null);
   const [pick, setPick] = useState('');
   const [key] = useState(newIdempotencyKey);
+  // 24 Nov (owner): not-launched places stay out unless "Show not launched" is on.
+  const scopes = all.filter((s) => !hiddenPlace(s.scope));
   if (scopes.length === 0) return null;
   const name = countryName ?? country;
   const own = (s: Scope) => Object.entries(s.effective.sources).filter(([, src]) => src === s.scope).map(([k]) => k);

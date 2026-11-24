@@ -20,6 +20,7 @@ import { SosBar } from '@/components/console/shell/SosBar';
 import { TopBar } from '@/components/console/TopBar';
 import { RecoveryLowBanner } from '@/components/console/RecoveryLowBanner';
 import { ConsoleLegalLine } from '@/components/console/shell/ConsoleLegalLine';
+import { PlaceBar } from '@/components/console/shell/PlaceBar';
 import '@/styles/console.css';
 
 /**
@@ -179,6 +180,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
         <SosBar access={access ?? null} />
 
         <main className="ops__content" id="ops-content" tabIndex={-1}>
+          <div className="ops__page">
           {/* Console maintenance notices (module 15): a message from the platform's own admins.
               Plain text; it informs and never blocks the console. */}
           {(access?.notices ?? []).map((n) => (
@@ -191,6 +193,17 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
           {/* A recovery code was spent at sign-in and few are left. Said
               once, here, with the way to fix it. */}
           <RecoveryLowBanner />
+
+          {/* 24 Nov (owner): anyone without two-step sign-in is told, with the way to fix it. */}
+          {access?.two_step && !access.two_step.set_up ? (
+            <div className="ops-banner ops-banner--notice" role="status" data-severity="warning">
+              <b>Two-step sign-in is not set up</b>
+              <span>
+                In production you cannot sign in, approve anything or move money without it.{' '}
+                <a href="/ops/settings/security">Set it up now</a>.
+              </span>
+            </div>
+          ) : null}
 
           {access === undefined ? (
             /* Nothing is rendered until we know what this operator holds.
@@ -222,7 +235,14 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
                 show you.
               </span>
             </div>
-          ) : children}
+          ) : (
+            <>
+              {/* Owner 24 Nov: one place control on every page, at the top of the content. */}
+              <PlaceBar access={access ?? null} />
+              {children}
+            </>
+          )}
+          </div>
           <ConsoleLegalLine access={access ?? null} />
         </main>
       </div>

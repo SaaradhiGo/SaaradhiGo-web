@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
@@ -109,9 +110,9 @@ export default function MarketsPage() {
       key: 'place', label: 'Place', primary: true,
       render: (l) => (
         <span className={`ops-tree ops-tree--${l.level}`}>
-          {l.level === 0 ? <>{l.country.name} <span className="muted">{l.country.code}</span></>
-            : l.level === 1 ? <>{l.name} <span className="muted">{l.code}</span></>
-              : <>{l.city.name} <span className="muted">{l.city.code}</span></>}
+          {l.level === 0 ? <>{l.country.name} <small className="muted ops-code">{l.country.code}</small></>
+            : l.level === 1 ? <>{l.name} <small className="muted ops-code">{l.code}</small></>
+              : <>{l.city.name} <small className="muted ops-code">{l.city.code}</small></>}
         </span>
       ),
     },
@@ -257,7 +258,7 @@ function CityRecord({ code, onClose, onDone }: { code: string; onClose: () => vo
             {city.pending_request ? (
               <div className="ops-confirm" role="status">
                 <b>Awaiting a checker</b>
-                <span>Request APR-{city.pending_request.id} from {city.pending_request.maker_label}: {city.pending_request.reason}</span>
+                <span>Request {refOf(city.pending_request) !== '—' ? refOf(city.pending_request) : 'approval request'} from {city.pending_request.maker_label}: {city.pending_request.reason}</span>
               </div>
             ) : null}
             <ul className="ps-checklist" aria-label="Readiness checklist">

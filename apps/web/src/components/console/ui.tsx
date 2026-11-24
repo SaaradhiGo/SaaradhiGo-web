@@ -1,5 +1,6 @@
 'use client';
 
+import { textOf } from '@/lib/cellText';
 import Link from 'next/link';
 import {
   KeyboardEvent as ReactKeyboardEvent,
@@ -618,6 +619,7 @@ export function DataTable<T>({
   defaultSort = null,
   caption,
   maxHeight = true,
+  wrap = false,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -629,6 +631,8 @@ export function DataTable<T>({
   caption: string;
   /** Scrolls the body inside the viewport; off for a short table in a panel. */
   maxHeight?: boolean;
+  /** 24 Nov: rows already several lines tall; text wraps inside its column so the table fits. */
+  wrap?: boolean;
 }) {
   const [sort, setSort] = useState<SortState>(defaultSort);
 
@@ -680,7 +684,7 @@ export function DataTable<T>({
   ].filter(Boolean).join(' ') || undefined;
 
   return (
-    <div className={`ops-table-wrap ${maxHeight ? 'ops-table-wrap--tall' : ''}`} tabIndex={0} role="region"
+    <div className={`ops-table-wrap ${maxHeight ? 'ops-table-wrap--tall' : ''} ${wrap ? 'ops-table-wrap--wrap' : ''}`} tabIndex={0} role="region"
       aria-label={typeof caption === 'string' ? caption : 'Table'}>
       <table className={`ops-table ops-table--${density} ${onRow ? 'ops-table--rows' : ''}`}>
         <caption className="sr-only">{caption}</caption>
@@ -727,11 +731,16 @@ export function DataTable<T>({
                 onClick={(e) => onRowClick(e, row)}
                 onKeyDown={(e) => onRowKey(e, row)}
               >
-                {columns.map((c) => (
-                  <td key={c.key} className={cellClass(c)}>
-                    {c.render(row)}
-                  </td>
-                ))}
+                {columns.map((c) => {
+                  const content = c.render(row);
+                  const hover = textOf(content) || undefined;
+                  const keep = hover !== undefined && /^\d{1,2} [A-Z][a-z]{2} \d{4}/.test(hover);
+                  return (
+                    <td key={c.key} className={cellClass(c)} title={hover}>
+                      <span className={keep ? 'ops-cell ops-cell--keep' : 'ops-cell'}>{content}</span>
+                    </td>
+                  );
+                })}
               </tr>
             );
           })}

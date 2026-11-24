@@ -1,5 +1,7 @@
 'use client';
 
+import type { IntegrationRow, IntegrationsPayload } from '@/lib/platform';
+import { placeName } from '@/lib/places';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { acknowledgeAlert } from '@/lib/commandCentre';
@@ -106,6 +108,28 @@ export default function EngineeringHealthPage() {
           </ul>
         )}
       </section>
+      <EnvNames />
     </div>
+  );
+}
+
+/** 24 Nov (owner): environment variable names live here, for engineers, and nowhere else. */
+function EnvNames() {
+  const [rows, setRows] = useState<IntegrationRow[] | null>(null);
+  useEffect(() => {
+    api.get<IntegrationsPayload>('/platform/admin/integrations/').then((d) => setRows(d.rows)).catch(() => setRows(null));
+  }, []);
+  const withEnv = (rows ?? []).filter((r) => r.env_vars.length);
+  if (!withEnv.length) return null;
+  return (
+    <section className="ops-card" aria-labelledby="eng-env">
+      <h2 id="eng-env">Environment variables each provider reads</h2>
+      <p className="help">Names only; this console never shows a value.</p>
+      <ul className="ops-list-plain">
+        {withEnv.map((r) => (
+          <li key={`${r.type}-${r.country}`}><b>{r.label}</b> · {placeName(r.country === 'all' ? 'GLOBAL' : r.country)} · <code className="nf-envnames">{r.env_vars.join(', ')}</code></li>
+        ))}
+      </ul>
+    </section>
   );
 }

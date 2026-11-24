@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
@@ -364,7 +365,7 @@ export default function KycReviewPage() {
   const multiVehicle = detail.vehicles.length > 1;
   const plateOf = (id: number | null) => {
     const v = detail.vehicles.find((x) => x.id === id);
-    return v?.vehicle_number || (id ? `#${id}` : '');
+    return v?.vehicle_number || (id ? 'No plate yet' : '');
   };
   const chipLabel = (d: ReviewDoc) => (d.owner === 'vehicle' && multiVehicle ? `${d.label} · ${plateOf(d.vehicle_id)}` : d.label);
   const nextIdx = doc ? nextUndecided(docs, docIndex) : -1;
@@ -381,7 +382,7 @@ export default function KycReviewPage() {
   };
   const upNext = queue.slice(position, position + 8);
   const queueColumns: ListColumn<QueueRow>[] = [
-    { key: 'driver', label: 'Driver', primary: true, render: (r) => <span>{r.user_details?.full_name || 'Driver'} <span className="ops-ref sg-num">D-{r.id}</span></span> },
+    { key: 'driver', label: 'Driver', primary: true, render: (r) => <span>{r.user_details?.full_name || 'Driver'} <span className="ops-ref sg-num">{refOf(r) !== '—' ? refOf(r) : 'Driver'}</span></span> },
     { key: 'vehicle', label: 'Vehicle', render: (r) => r.vehicle_type ?? <span className="muted">None</span> },
     { key: 'waiting', label: 'Waiting', num: true, render: (r) => (
       <span>{waitingLabel(r.waiting_seconds ?? null)}{r.past_target ? <> <StatusChip tone="critical">Past target</StatusChip></> : null}</span>
@@ -566,7 +567,7 @@ export default function KycReviewPage() {
         <RecordPanel
           label="KYC review"
           title={name}
-          refId={`D-${detail.id}`}
+          refId={refOf(detail)}
           subtitle={<>{vehicleClass ?? 'No vehicle class'} · <Link href={`/ops/drivers/${detail.id}`}>Driver record</Link></>}
           status={<StatusChip tone={detail.approved ? 'good' : 'info'}>{detail.approved ? 'Approved' : 'Waiting for review'}</StatusChip>}
           tabs={[{ key: 'review', label: 'Review', content: reviewTab }]}

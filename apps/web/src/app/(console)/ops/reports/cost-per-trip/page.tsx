@@ -21,7 +21,7 @@ type Report = {
 };
 
 const money = (minor: number | null | undefined, country: string) =>
-  minor == null ? '—' : `${country === 'US' ? '$' : '₹'}${(minor / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  minor == null ? '—' : `${country === 'US' ? '$' : '₹'}${(minor / 100).toLocaleString(country === 'US' ? 'en-US' : 'en-IN', { minimumFractionDigits: country === 'US' ? 2 : 0, maximumFractionDigits: country === 'US' ? 2 : 0 })}`;
 const FIXED: FieldSpec[] = [{ key: 'amount_minor', label: 'Fixed costs this month (minor units, ₹1 = 100)', kind: 'number' }];
 
 export default function CostPerTripPage() {
@@ -61,7 +61,7 @@ export default function CostPerTripPage() {
             <Panel title={`${data.country} · ${data.month.slice(0, 7)}`}>
               <Facts>
                 <Fact label="Completed trips">{data.completed_trips}</Fact>
-                <Fact label="Fee income">{money(data.fee_income_minor, country)} (commission {money(data.commission_minor, country)}, platform fee {money(data.platform_fee_minor, country)})</Fact>
+                <Fact label="Fee income">{money(data.fee_income_minor, country)} (driver fees {money(data.commission_minor, country)}, platform fee {money(data.platform_fee_minor, country)})</Fact>
                 <Fact label="Rider platform fee">{money(data.rider_platform_fee_minor, country)}</Fact>
                 <Fact label="Maps">{money(data.variable_costs.maps_minor, country)}</Fact>
                 <Fact label="SMS">{money(data.variable_costs.sms_minor, country)} ({data.variable_costs.sms_count} sent)</Fact>

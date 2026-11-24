@@ -66,7 +66,7 @@ describe('the rewards and money panel', () => {
     const table = screen.getByRole('table', { name: 'Rewards linked to this flag' });
     expect(within(table).getByText('Held')).toBeTruthy();
     expect(within(table).getByText('Paid out')).toBeTruthy();
-    expect(screen.getByRole('button', { name: /^Recover/ }).textContent).toContain('400.00');
+    expect(screen.getByRole('button', { name: /^Recover/ }).textContent).toContain('₹400');
     expect(screen.getByText(/already paid out/)).toBeTruthy();
   });
 

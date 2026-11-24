@@ -241,7 +241,7 @@ export function TemplateEditor({ templateId, defaultCountry, onClose, onDone, on
                 <Fact label="Written by">{detail.created_by.label || '—'}</Fact>
                 <Fact label="Created">{stamp(detail.created_at)}</Fact>
                 {detail.activated_at ? <Fact label="Went live">{stamp(detail.activated_at)}</Fact> : null}
-                {detail.changed_via_request_id ? <Fact label="Approval request">#{detail.changed_via_request_id}</Fact> : null}
+                {detail.changed_via_request_id ? <Fact label="Approval request">{'Open'}</Fact> : null}
               </Facts>
             ) : null}
             {detail && detail.status === 'pending_approval' ? (

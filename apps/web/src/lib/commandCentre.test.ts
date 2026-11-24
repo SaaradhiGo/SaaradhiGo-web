@@ -17,10 +17,10 @@ import { SCOPE_KEY } from './adminScope';
 
 describe('money', () => {
   it('formats each currency in its own locale from integer minor units', () => {
-    expect(formatMoneyMinor(210_000, 'INR')).toBe('₹2,100.00');
+    expect(formatMoneyMinor(210_000, 'INR')).toBe('₹2,100');
     expect(formatMoneyMinor(4_000, 'USD')).toBe('$40.00');
     // Lakh grouping for rupees, thousand grouping for dollars.
-    expect(formatMoneyMinor(12_345_678, 'INR')).toBe('₹1,23,456.78');
+    expect(formatMoneyMinor(12_345_678, 'INR')).toBe('₹1,23,457');
     expect(formatMoneyMinor(12_345_678, 'USD')).toBe('$123,456.78');
     expect(minorToMajor(150, 'INR')).toBe(1.5);
   });
@@ -28,7 +28,7 @@ describe('money', () => {
   it('is null for nothing, not zero', () => {
     expect(formatMoneyMinor(null, 'INR')).toBeNull();
     expect(formatMoneyMinor(undefined, 'USD')).toBeNull();
-    expect(formatMoneyMinor(0, 'INR')).toBe('₹0.00');
+    expect(formatMoneyMinor(0, 'INR')).toBe('₹0');
   });
 
   it('makes one tile per currency and never a combined one', () => {

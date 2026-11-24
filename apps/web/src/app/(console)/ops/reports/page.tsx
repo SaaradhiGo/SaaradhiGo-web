@@ -1,5 +1,6 @@
 'use client';
 
+import { hiddenPlace } from '@/lib/notLaunched';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
@@ -52,7 +53,8 @@ export default function ReportsPage() {
         <>
           <p className="rp-asof" role="status">
             {data.as_of ? `Data as of ${stamp(data.as_of, marketZone)} (last rebuild).` : 'No rollup has been built yet.'}{' '}
-            {data.cities.length} {data.cities.length === 1 ? 'city' : 'cities'} in your scope.
+            {/* 24 Nov (owner): launched cities only. */}
+            {(() => { const n = data.cities.filter((c) => !hiddenPlace(c.code)).length; return `${n} launched ${n === 1 ? 'city' : 'cities'} in your scope.`; })()}
           </p>
           {data.areas.map((area) => (
             <section key={area.area} aria-labelledby={`area-${area.area}`} className="rp-area">

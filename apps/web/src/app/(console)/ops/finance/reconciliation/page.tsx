@@ -1,5 +1,8 @@
 'use client';
 
+import { placeName } from '@/lib/places';
+import { refFrom } from '@/lib/refs';
+import { providerName } from '@/lib/templateNames';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
@@ -207,7 +210,7 @@ function ReconciliationInner() {
           <RecordPanel
             label="Finding"
             title={selected.kind_label}
-            refId={`#${selected.id}`}
+            refId="Finding"
             subtitle={<>{cityName(selected.city)} · raised {stamp(selected.created_at, tz)}</>}
             status={<FindingChip item={selected} />}
             onClose={() => setSelected(null)}
@@ -221,8 +224,8 @@ function ReconciliationInner() {
                       <Fact label="Seen">{selected.seen || '—'}</Fact>
                       {selected.reference ? <Fact label="Gateway reference">{selected.reference}</Fact> : null}
                       {selected.payment_id ? <Fact label="Payment"><Link href={`/ops/finance/payments/${selected.payment_id}`}>Payment #{selected.payment_id}</Link></Fact> : null}
-                      {selected.trip_id ? <Fact label="Trip"><PageLink page="trips" href={`/ops/trips/${selected.trip_id}`}>T-{selected.trip_id}</PageLink></Fact> : null}
-                      {selected.withdrawal_id ? <Fact label="Payout"><PageLink page="withdrawals" href={`/ops/finance/payouts?id=${selected.withdrawal_id}`}>PO-{selected.withdrawal_id}</PageLink></Fact> : null}
+                      {selected.trip_id ? <Fact label="Trip"><PageLink page="trips" href={`/ops/trips/${selected.trip_id}`}>{refFrom(selected, 'trip_ref', 'Trip')}</PageLink></Fact> : null}
+                      {selected.withdrawal_id ? <Fact label="Payout"><PageLink page="withdrawals" href={`/ops/finance/payouts?id=${selected.withdrawal_id}`}>{refFrom(selected, 'payout_ref', 'Payout')}</PageLink></Fact> : null}
                     </Facts>
                     {!selected.resolved_at && mayResolve && (
                       <div className="ops-confirm">
@@ -301,8 +304,8 @@ function ReconciliationInner() {
                   return (
                     <tr key={r.id}>
                       <td>{marketDate(r.date, r.country)}</td>
-                      <td>{r.country} · {r.currency}</td>
-                      <td>{r.gateway}</td>
+                      <td>{placeName(r.country)} · {r.currency}</td>
+                      <td>{providerName(r.gateway)}</td>
                       <td><RunChip status={r.status} /></td>
                       <td className="num">{Object.values(r.new_findings).reduce((a, b) => a + b, 0)}</td>
                       <td className="num">{r.open_items}</td>

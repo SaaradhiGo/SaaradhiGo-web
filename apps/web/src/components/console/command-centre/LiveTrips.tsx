@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { PageLink } from '@/components/console/PageLink';
 import { canOpen } from '@/lib/consoleLinks';
 import Link from 'next/link';
@@ -8,7 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
 import { clock, zoneAbbreviation } from '@/lib/consoleTime';
-import { currencySymbol } from '@/lib/money';
+import { currencySymbol, plainAmount } from '@/lib/money';
 import {
   Column, DataTable, Empty, ErrorState, Panel, Pill, Skeleton,
 } from '@/components/console/ui';
@@ -45,7 +46,7 @@ const TONE: Record<string, 'good' | 'bad' | 'wait' | 'neutral'> = {
 function fare(t: Trip) {
   const amount = t.final_fare ?? t.estimated_fare;
   if (amount === undefined || amount === null || amount === '') return '—';
-  return `${currencySymbol(t.currency)}${amount}`;
+  return `${currencySymbol(t.currency)}${plainAmount(amount, t.currency)}`;
 }
 
 export function LiveTrips({ city, timeZone }: { city: string | null; timeZone?: string }) {
@@ -79,7 +80,7 @@ export function LiveTrips({ city, timeZone }: { city: string | null; timeZone?: 
   }
 
   const columns: Column<Trip>[] = [
-    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <PageLink page="trips" href={`/ops/trips/${t.id}`}>#{t.id}</PageLink> },
+    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <PageLink page="trips" href={`/ops/trips/${t.id}`}>{refOf(t) !== '—' ? refOf(t) : 'Open'}</PageLink> },
     {
       key: 'status', label: 'Status', width: '8rem',
       render: (t) => {

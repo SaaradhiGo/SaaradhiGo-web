@@ -1,5 +1,8 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
+import { plainAmount } from '@/lib/money';
+
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -210,7 +213,7 @@ export default function ZoneDetailPage() {
             <Fact label="Distance unit">{zone.distance_unit === 'mi' ? 'Miles' : 'Kilometres'}</Fact>
             <Fact label="Tax">{zone.tax_mode === 'additive' ? 'Added on top' : 'Included in the fare'}</Fact>
             <Fact label="Per-trip fee">
-              {Number(zone.per_trip_fee) > 0 ? `${symbol}${zone.per_trip_fee} (${zone.per_trip_fee_label})` : 'None'}
+              {Number(zone.per_trip_fee) > 0 ? `${symbol}${plainAmount(zone.per_trip_fee, symbol === '₹' ? 'INR' : 'USD')} (${zone.per_trip_fee_label})` : 'None'}
             </Fact>
           </Facts>
         </>
@@ -232,7 +235,7 @@ export default function ZoneDetailPage() {
           caption="Requests waiting for approval for this zone" maxHeight={false} density="compact"
           rows={pending} rowKey={(r) => r.id}
           columns={[
-            { key: 'id', label: 'Request', width: '7rem', render: (r) => <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>APR-{r.id}</PageLink> },
+            { key: 'id', label: 'Request', width: '7rem', render: (r) => <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>{refOf(r) !== '—' ? refOf(r) : 'approval request'}</PageLink> },
             { key: 'what', label: 'What', render: (r) => requestWords(r) },
             { key: 'who', label: 'Asked by', hideBelow: 1100, render: (r) => r.maker?.label || r.maker?.email || '—' },
             { key: 'why', label: 'Reason', hideBelow: 1100, render: (r) => r.request_reason || '—' },

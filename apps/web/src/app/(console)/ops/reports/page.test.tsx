@@ -15,7 +15,7 @@ describe('reports catalogue', () => {
     expect(screen.getByRole('heading', { name: 'Reports' })).toBeTruthy();
     const link = await screen.findByRole('link', { name: /Trips/ });
     expect(link.getAttribute('href')).toBe('/ops/reports/trips');
-    expect(screen.getByText(/Data as of 02 Jan, 05:30 IST/)).toBeTruthy();
+    expect(screen.getByText(/Data as of 2 Jan 2026, 5:30 AM IST/)).toBeTruthy();
   });
 });
 

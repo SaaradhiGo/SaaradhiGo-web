@@ -146,7 +146,7 @@ describe('StaleTripPanel', () => {
     const onDone = draw(startedActions);
     fireEvent.click(screen.getByRole('button', { name: 'Release driver…' }));
     fireEvent.click(screen.getByLabelText(/Driver unresponsive/));
-    await waitFor(() => expect(screen.getAllByText('₹49.00').length).toBe(2));
+    await waitFor(() => expect(screen.getAllByText('₹49').length).toBe(2));
     expect(screen.getByText('₹39.20 after 20.00% commission')).toBeTruthy();
     const [previewUrl] = fetchMock.mock.calls[0] as unknown as [string];
     expect(previewUrl).toMatch(/\/ride\/admin\/trips\/81\/stale\/release-preview\/\?reason_code=driver_unresponsive$/);

@@ -118,9 +118,8 @@ describe('dates follow the MARKET, not the site market the visitor picked (15 No
     expect(dateLocale('es-US', IST)).toBe('es-US');
   });
 
-  it('console city times: a US city is month first on a 12-hour clock, India unchanged', () => {
-    expect(cityTime(at, BOISE)).toBe('Nov 14, 7:30 PM');
-    expect(cityTime(at, BOISE, { zone: true })).toBe('Nov 14, 7:30 PM MST');
-    expect(cityTime('2026-11-14T06:00:00Z', IST)).toBe('14 Nov, 11:30');
+  it('console city times: one format for every market (24 Nov)', () => {
+    expect(cityTime(at, BOISE)).toBe('14 Nov 2026, 7:30 PM MST');
+    expect(cityTime('2026-11-14T06:00:00Z', IST)).toBe('14 Nov 2026, 11:30 AM IST');
   });
 });

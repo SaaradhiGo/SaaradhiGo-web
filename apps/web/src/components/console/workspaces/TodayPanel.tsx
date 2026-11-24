@@ -1,6 +1,6 @@
 'use client';
 
-import { marketDate } from '@/lib/consoleTime';
+import { marketDate, stamp } from '@/lib/consoleTime';
 import { todayLocal } from '@/lib/reports';
 import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
@@ -87,6 +87,10 @@ export function TodayCities({ data, placeName }: { data: TodayPayload; placeName
     return (
       <p className="ops-today__clear" role="status">
         <b>All clear.</b> Nothing waits in {data.cities.length === 1 ? data.cities[0].name : `${data.cities.length} live cities`} · {n(online)} {online === 1 ? 'driver' : 'drivers'} online.
+        {/* 24 Nov (owner): drivers still uploading are not waiting on staff, but stay one click away. */}
+        {data.cities.flatMap((c) => c.actions.filter((a) => a.key === 'kyc_uploading' && a.count).map((a) => (
+          <Link key={`${c.code}-up`} href={a.link} className="ops-today__act"> {c.name}: <span className="sg-num">{a.count}</span> {a.label}</Link>
+        )))}
       </p>
     );
   }
@@ -95,7 +99,7 @@ export function TodayCities({ data, placeName }: { data: TodayPayload; placeName
       {data.cities.map((c) => (
         <li key={c.code} className="ops-today__city">
           <b className="ops-today__city-name">{c.name}</b>
-          {c.waiting === 0 ? <span className="muted">All clear</span> : (
+          {c.waiting === 0 && !c.actions.some((a) => a.count) ? <span className="muted">All clear</span> : (
             <span className="ops-today__acts">
               {c.actions.filter((a) => a.count).map((a) => (
                 <Link key={a.key} href={a.link} className={`ops-today__act${a.urgent ? ' ops-today__act--urgent' : ''}`}>
@@ -116,7 +120,6 @@ export function TodayPanel({ data, placeName, onOpenCountry, range, onRange }: {
   range?: Range | null; onRange?: (r: Range | null) => void;
 }) {
   if (!data) return null;
-  const at = new Date(data.generated_at);
   const today = todayLocal();
   return (
     <section className="ops-today" aria-label="Today">
@@ -126,7 +129,7 @@ export function TodayPanel({ data, placeName, onOpenCountry, range, onRange }: {
       ) : null}
       <CountryTiles countries={data.countries} onOpen={onOpenCountry} range={range} />
       <TodayCities data={data} placeName={placeName} />
-      <p className="ops-today__refresh help">{data.refresh} · last update {at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+      <p className="ops-today__refresh help">{data.refresh} · last update {stamp(data.generated_at, data.cities.length === 1 ? data.cities[0].timezone : null)}</p>
     </section>
   );
 }

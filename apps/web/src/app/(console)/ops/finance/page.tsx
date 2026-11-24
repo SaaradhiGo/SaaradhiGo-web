@@ -172,7 +172,7 @@ function OverviewInner() {
           {data.totals.flatMap((t) => [
             <MetricCard key={`${t.currency}-gross`} label={`Gross collected · ${t.currency}`}
               value={formatWhole(Number(t.gross_minor), t.currency)}
-              note={`Commission ${formatWhole(Number(t.commission_minor), t.currency)} · driver net ${formatWhole(Number(t.driver_net_minor), t.currency)}`} />,
+              note={`Driver fee ${formatWhole(Number(t.commission_minor), t.currency)} · driver net ${formatWhole(Number(t.driver_net_minor), t.currency)}`} />,
             <MetricCard key={`${t.currency}-pending`} label={`Payouts pending · ${t.currency}`}
               tone={Number(t.payouts_failed_minor) > 0 ? 'caution' : 'neutral'}
               value={formatWhole(Number(t.payouts_pending_minor), t.currency)}
@@ -246,7 +246,7 @@ function OverviewInner() {
                 key: 'days', label: 'By day', content: (
                   <div className="ops-table-wrap"><table className="ops-table ops-table--compact">
                     <caption className="sr-only">{cityName(open.city)} by day</caption>
-                    <thead><tr><th scope="col">Day</th><th scope="col" className="num">Gross</th><th scope="col" className="num">Commission</th><th scope="col" className="num">Payouts pending</th></tr></thead>
+                    <thead><tr><th scope="col">Day</th><th scope="col" className="num">Gross</th><th scope="col" className="num">Driver fee</th><th scope="col" className="num">Payouts pending</th></tr></thead>
                     <tbody>
                       {openDays.map((d) => (
                         <tr key={d.day}>

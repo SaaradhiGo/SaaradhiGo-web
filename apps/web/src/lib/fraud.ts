@@ -154,6 +154,7 @@ export const KIND_WORDS: Record<string, string> = {
   referral_abuse: 'Referral abuse', multi_accounting: 'Multiple accounts',
   collusion: 'Rider-driver collusion', incentive_farming: 'Incentive farming',
   gps_anomaly: 'GPS anomaly', cancellation_abuse: 'Cancellation abuse', payment_abuse: 'Payment abuse',
+  unpaid_pair: 'Failed payments with one driver',
 };
 
 export const SEVERITY_WORDS: Record<Severity, string> = { high: 'High', medium: 'Medium', low: 'Low' };

@@ -1,5 +1,8 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
+import { hiddenCityName } from '@/lib/notLaunched';
+import { marketName, placeName } from '@/lib/places';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -87,17 +90,26 @@ export default function ZonesPage() {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return (all ?? []).filter((z) => (view === 'active' ? z.is_active : view === 'inactive' ? !z.is_active
+    return (all ?? []).filter((z) => !hiddenCityName(z.city, access?.scopes ?? []) && (view === 'active' ? z.is_active : view === 'inactive' ? !z.is_active
       : view === 'pending' ? pendingFor.has(String(z.id)) : true)
       && (!needle || [z.name, z.code, z.city, z.state_code, z.country].some((t) => (t ?? '').toLowerCase().includes(needle))));
-  }, [all, view, q, pendingFor]);
+  }, [all, view, q, pendingFor, access]);
 
   // The map labels zones by code; an inactive and an active zone can share a code over time, so
   // the id stays the row key and the code is the visible key.
-  const mapZones = useMemo<MapZone[]>(() => (all ?? []).map((z) => ({
-    key: z.code, label: `${z.name} (${z.code})`, rings: outerRings(z.polygon_geojson),
+  const mapZones = useMemo<MapZone[]>(() => (all ?? []).filter((z) => !hiddenCityName(z.city, access?.scopes ?? [])).map((z) => ({
+    key: z.code, label: z.name, rings: outerRings(z.polygon_geojson),
     tone: z.is_active ? 'live' : 'inactive',
-  })), [all]);
+  })), [all, access]);
+  // 24 Nov (owner): open on the live zones in scope, not the whole world. Across two countries
+  // the map opens on the one with the most live zones; the place bar picks the other.
+  const fitRings = useMemo(() => {
+    const live = (all ?? []).filter((z) => z.is_active && !hiddenCityName(z.city, access?.scopes ?? []));
+    const by = new Map<string, typeof live>();
+    for (const z of live) by.set(z.country, [...(by.get(z.country) ?? []), z]);
+    const top = [...by.values()].sort((x, y) => y.length - x.length)[0] ?? [];
+    return top.flatMap((z) => outerRings(z.polygon_geojson));
+  }, [all, access]);
   const openCode = (code: string) => {
     const z = (all ?? []).find((x) => x.code === code);
     if (z) router.push(`/ops/zones/${z.id}`);
@@ -106,13 +118,11 @@ export default function ZonesPage() {
   const columns: ListColumn<Zone>[] = [
     {
       key: 'name', label: 'Zone', primary: true,
-      render: (z) => <><Link href={`/ops/zones/${z.id}`}>{z.name}</Link> <span className="muted">{z.code}</span></>,
+      render: (z) => <><Link href={`/ops/zones/${z.id}`}>{z.name}</Link> <small className="muted ops-code">{z.code}</small></>,
     },
-    { key: 'where', label: 'Where', render: (z) => `${z.city}, ${z.state_code}, ${z.country}` },
+    { key: 'where', label: 'Where', render: (z) => `${z.city}, ${marketName(z.country, z.state_code)}`.replace(', All of ', ', ') },
     { key: 'type', label: 'Type', render: (z) => (TYPE_WORDS[z.zone_type] ?? z.zone_type).split(' (')[0] },
-    { key: 'priority', label: 'Priority', num: true, render: (z) => z.priority },
     { key: 'area', label: 'Area', num: true, render: (z) => (z.area_km2 === null ? '—' : `${z.area_km2.toLocaleString('en')} km²`) },
-    { key: 'version', label: 'Version', num: true, render: (z) => `v${z.version}` },
     { key: 'changed', label: 'Last changed', render: (z) => stamp(z.updated_at, z.timezone_name) },
     {
       key: 'status', label: 'Status',
@@ -125,8 +135,11 @@ export default function ZonesPage() {
     },
   ];
 
-  const rows = narrowed ? filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : pageRows?.results ?? [];
-  const total = narrowed ? (all ? filtered.length : null) : pageRows ? pageRows.count : null;
+  // 24 Nov (owner): once every zone is loaded the list is filtered here, so not-launched places
+  // stay out of it (they are hidden from every working list unless "Show not launched" is on).
+  const local = narrowed || all !== null;
+  const rows = local ? filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : pageRows?.results ?? [];
+  const total = local ? (all ? filtered.length : null) : pageRows ? pageRows.count : null;
   const allZones = all ?? [];
 
   return (
@@ -135,7 +148,7 @@ export default function ZonesPage() {
         <ListPage<Zone>
           pageKey="zones"
           title="Zones"
-          summary="Where we operate. A change is a request a second admin approves, and never reaches a trip already booked. Fares and commission are under Pricing."
+          summary="Where we operate. A change is a request a second admin approves, and never reaches a trip already booked. Fares and driver fees are under Pricing."
           actionsSlot={may ? <Link href="/ops/zones/new" className="sg-btn sg-btn--primary sg-btn--sm">New zone…</Link> : undefined}
           views={[
             { key: '', label: 'All', count: all ? allZones.length : undefined },
@@ -161,7 +174,7 @@ export default function ZonesPage() {
           pageSize={PAGE_SIZE}
           onPage={setPage}
           onRow={(z) => router.push(`/ops/zones/${z.id}`)}
-          loading={narrowed ? all === null : pageRows === null}
+          loading={local ? all === null : pageRows === null}
           error={error}
           empty={narrowed ? 'No zone matches.' : may ? 'No service zones in your scope yet. Draw the first one.' : 'No service zones in your scope yet.'}
         />
@@ -171,7 +184,7 @@ export default function ZonesPage() {
           ) : allZones.length === 0 ? (
             <p className="ops-record__empty">Nothing is configured in your scope yet.</p>
           ) : (
-            <ZoneMap caption="Every zone in your scope" zones={mapZones} onZone={openCode} />
+            <ZoneMap caption="Every zone in your scope" zones={mapZones} onZone={openCode} fit={fitRings.length ? fitRings : null} />
           )}
         </section>
       </div>
@@ -195,7 +208,7 @@ export default function ZonesPage() {
                   const z = byId.get(r.target_id);
                   return (
                     <tr key={r.id}>
-                      <td><PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>APR-{r.id}</PageLink></td>
+                      <td><PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>{refOf(r) !== '—' ? refOf(r) : 'approval request'}</PageLink></td>
                       <td>{z ? <Link href={`/ops/zones/${z.id}`}>{z.name}</Link> : r.payload?.zone_code ?? r.target_id}</td>
                       <td>{requestWords(r)}</td>
                       <td>{r.maker?.label || r.maker?.email || '—'}</td>

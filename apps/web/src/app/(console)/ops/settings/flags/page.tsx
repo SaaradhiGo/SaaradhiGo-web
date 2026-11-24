@@ -1,5 +1,6 @@
 'use client';
 
+import { keyWords } from '@/lib/templateNames';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
@@ -48,7 +49,7 @@ export default function FlagsPage() {
   useEffect(() => { void load(); }, [load]);
 
   const columns: ListColumn<Flag>[] = [
-    { key: 'key', label: 'Flag', primary: true, render: (f) => <>{f.key} <span className="muted">v{f.version}</span></> },
+    { key: 'key', label: 'Flag', primary: true, render: (f) => <>{keyWords(f.key)} <small className="muted ops-code">{f.key} v{f.version}</small></> },
     { key: 'def', label: 'Default', render: (f) => <StatusChip tone={f.default_enabled ? 'good' : 'neutral'}>{f.default_enabled ? 'On' : 'Off'}</StatusChip> },
     {
       key: 'ov', label: 'Overrides',

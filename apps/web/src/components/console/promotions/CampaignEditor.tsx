@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom } from '@/lib/refs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
@@ -279,8 +280,8 @@ function Summary({ c }: { c: Campaign }) {
         <Fact label="Where">{c.scope_name ?? '—'}</Fact>
         <Fact label="Runs">{stamp(c.starts_at)} to {stamp(c.ends_at)}</Fact>
         <Fact label="Asked by">{c.created_by.label || '—'}</Fact>
-        {c.approval_request_id ? <Fact label="Approval request">#{c.approval_request_id}</Fact> : null}
-        {c.budget_request_id ? <Fact label="Budget request">#{c.budget_request_id}</Fact> : null}
+        {c.approval_request_id ? <Fact label="Approval request">{refFrom(c, 'approval_ref', 'Approval request')}</Fact> : null}
+        {c.budget_request_id ? <Fact label="Budget request">{'Open'}</Fact> : null}
       </Facts>
       {c.state !== 'draft' ? (
         <section aria-label="Budget">
@@ -291,7 +292,7 @@ function Summary({ c }: { c: Campaign }) {
       {c.state === 'pending_approval' ? (
         <div className="ops-confirm" role="status">
           <b>Waiting for a second admin</b>
-          <span>Nothing goes live until a different admin approves APR-{c.approval_request_id}. You can still cancel it.</span>
+          <span>Nothing goes live until a different admin approves {refFrom(c, 'approval_ref', 'approval request')}. You can still cancel it.</span>
         </div>
       ) : null}
       {c.state === 'exhausted' ? (
@@ -335,9 +336,9 @@ function ReadOnly({ c }: { c: Campaign }) {
         {c.reason ? <Fact label="Reason">{c.reason}</Fact> : null}
       </Facts>
       {c.kind === 'rider_promo' ? (
-        <p className="help m-0">Paid by the platform. The rider pays the fare less the discount; the driver&apos;s earnings and commission are on the full fare.</p>
+        <p className="help m-0">Paid by the platform. The rider pays the fare less the discount; the driver&apos;s earnings and driver fee are on the full fare.</p>
       ) : c.kind === 'driver_incentive' ? (
-        <p className="help m-0">Paid in the weekly payout as its own line, with no commission. Tax: {c.tax}.</p>
+        <p className="help m-0">Paid in the weekly payout as its own line, with no driver fee. Tax: {c.tax}.</p>
       ) : (
         <p className="help m-0">Paid only after the new person completes the trips, and never across the same device, phone number or payment instrument.</p>
       )}
@@ -360,7 +361,7 @@ function ActivityPanel({ c, activity, error }: { c: Campaign; activity: Activity
               <thead><tr><th scope="col">Rider</th><th scope="col">Trip</th><th scope="col">Discount</th><th scope="col">State</th><th scope="col">When</th></tr></thead>
               <tbody>
                 {activity.results.map((r) => (
-                  <tr key={r.id}><td>{r.who}</td><td>{r.trip_id ? `#${r.trip_id}` : '—'}</td>
+                  <tr key={r.id}><td>{r.who}</td><td>{r.trip_id ? refFrom(r, 'trip_ref', 'Trip') : '—'}</td>
                     <td>{formatMinor(r.discount_minor, currency)}</td><td>{REDEMPTION_WORDS[r.state]}</td><td>{stamp(r.created_at)}</td></tr>
                 ))}
               </tbody>
@@ -477,7 +478,7 @@ function FormBody({ kind, form, set, err, places, options, currency, cost, words
       {kind === 'rider_promo' ? (
         <section className="ops-form" aria-label="The discount">
           <h3 className="ops-subhead">The discount</h3>
-          <p className="help m-0">Paid by the platform. The rider pays the fare less the discount; the driver&apos;s earnings and commission stay on the full fare. A promo may cover the whole fare, and the rider then pays nothing.</p>
+          <p className="help m-0">Paid by the platform. The rider pays the fare less the discount; the driver&apos;s earnings and driver fee stay on the full fare. A promo may cover the whole fare, and the rider then pays nothing.</p>
           <div className="nf-grid">
             {text('pm-code', 'Code', 'code', err('code'), { autoCapitalize: 'characters', disabled: form.autoApply },
               'Letters, digits, dashes. The rider types it on the fare screen.')}
@@ -532,7 +533,7 @@ function FormBody({ kind, form, set, err, places, options, currency, cost, words
       {kind === 'driver_incentive' ? (
         <section className="ops-form" aria-label="The quest">
           <h3 className="ops-subhead">The quest</h3>
-          <p className="help m-0">Paid in the weekly payout as its own line, with no commission. Tax is not configured yet, so none is computed or withheld. A reward is reserved when the driver completes the trips; when the budget is used up, no further reward is paid.</p>
+          <p className="help m-0">Paid in the weekly payout as its own line, with no driver fee. Tax is not configured yet, so none is computed or withheld. A reward is reserved when the driver completes the trips; when the budget is used up, no further reward is paid.</p>
           <div className="nf-grid">
             {whole('pm-target', 'Trips to complete', 'targetTrips', err('targetTrips'))}
             {money('pm-reward', 'Reward', 'reward', err('reward'))}
@@ -561,7 +562,7 @@ function FormBody({ kind, form, set, err, places, options, currency, cost, words
       {kind === 'referral' ? (
         <section className="ops-form" aria-label="The referral">
           <h3 className="ops-subhead">The referral</h3>
-          <p className="help m-0">A reward is earned only after the new person completes the trips below, and never across the same device, phone number or payment instrument; a blocked reward goes to the fraud queue. A rider&apos;s reward is a wallet credit; a driver&apos;s is paid in the weekly payout with no commission.</p>
+          <p className="help m-0">A reward is earned only after the new person completes the trips below, and never across the same device, phone number or payment instrument; a blocked reward goes to the fraud queue. A rider&apos;s reward is a wallet credit; a driver&apos;s is paid in the weekly payout with no driver fee.</p>
           <div className="nf-grid">
             {whole('pm-req', 'Trips the new person must complete', 'requiredTrips', err('requiredTrips'))}
           </div>

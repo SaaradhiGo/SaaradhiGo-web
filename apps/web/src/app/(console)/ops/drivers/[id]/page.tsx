@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -122,7 +123,7 @@ export default function DriverDetailPage() {
       <div aria-busy="true" aria-live="polite">
         <span className="sr-only">Loading the driver</span>
         <p className="ops-record-page__back"><Link href="/ops/drivers">All drivers</Link></p>
-        <PageHeader title={`D-${id}`} />
+        <PageHeader title="Driver" />
         <div className="ops-review"><Skeleton kind="block" /><Skeleton kind="block" /></div>
       </div>
     );
@@ -131,7 +132,7 @@ export default function DriverDetailPage() {
     return (
       <>
         <p className="ops-record-page__back"><Link href="/ops/drivers">All drivers</Link></p>
-        <PageHeader title={`Driver #${id}`} />
+        <PageHeader title="Driver" />
         <ErrorState title="This driver could not be loaded" detail={error ?? undefined} onRetry={() => void load()} />
       </>
     );
@@ -153,7 +154,7 @@ export default function DriverDetailPage() {
   const docGroups: Array<[string, Doc[]]> = [
     ['Driver documents', documents.filter((d) => d.owner === 'driver')],
     ...data.vehicles.filter((v) => v.status !== 'archived').map((v): [string, Doc[]] => [
-      `Vehicle · ${v.vehicle_number || `#${v.id}`}${v.is_active_vehicle ? ' (active)' : ''}`,
+      `Vehicle · ${v.vehicle_number || 'No plate yet'}${v.is_active_vehicle ? ' (active)' : ''}`,
       documents.filter((d) => d.owner === 'vehicle' && d.vehicle_id === v.id),
     ]),
   ];
@@ -176,13 +177,13 @@ export default function DriverDetailPage() {
   };
 
   const tripColumns: Column<Trip>[] = [
-    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <PageLink page="trips" href={`/ops/trips/${t.id}`}>T-{t.id}</PageLink> },
+    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <PageLink page="trips" href={`/ops/trips/${t.id}`}>{refOf(t) !== '—' ? refOf(t) : 'Trip'}</PageLink> },
     { key: 'status', label: 'Status', width: '8rem', render: (t) => <Pill tone={TRIP_TONE[t.status ?? ''] ?? 'neutral'}>{words(t.status)}</Pill> },
     { key: 'route', label: 'Pickup → drop', render: (t) => <span>{t.pickup_address || '—'} <span className="muted">→</span> {t.destination_address || '—'}</span> },
     { key: 'when', label: 'Requested', num: true, width: '10rem', render: (t) => cityTime(t.requested_at, tz) },
   ];
   const vehicleColumns: Column<Vehicle>[] = [
-    { key: 'plate', label: 'Vehicle', render: (v) => <span>{v.vehicle_number || `#${v.id}`}{v.is_active_vehicle ? <> <Pill tone="good">active</Pill></> : null}</span> },
+    { key: 'plate', label: 'Vehicle', render: (v) => <span>{v.vehicle_number || 'No plate yet'}{v.is_active_vehicle ? <> <Pill tone="good">active</Pill></> : null}</span> },
     { key: 'kind', label: 'Type', width: '7rem', render: (v) => v.type ?? '—' },
     { key: 'make', label: 'Make', hideBelow: 1280, render: (v) => [v.brand, v.model, v.color].filter(Boolean).join(' · ') || '—' },
     { key: 'status', label: 'Status', width: '8rem', render: (v) => <Pill tone={v.status === 'active' ? 'good' : 'neutral'}>{words(v.status)}</Pill> },
@@ -209,7 +210,7 @@ export default function DriverDetailPage() {
           <Panel title="Record">
             <Facts>
               <Fact label="Rating">
-                {Number(data.ratings) > 0 ? Number(data.ratings).toFixed(2) : 'No ratings yet'}
+                {Number(data.ratings) > 0 && (data.ratings_summary?.count ?? 1) > 0 ? Number(data.ratings).toFixed(2) : '— · no rated trips yet'}
                 {data.ratings_summary ? ` · ${data.ratings_summary.count} rating${data.ratings_summary.count === 1 ? '' : 's'}` : ''}
               </Fact>
               {data.ratings_summary && data.ratings_summary.count > 0 ? (
@@ -377,7 +378,7 @@ export default function DriverDetailPage() {
               </div>
             ) : null}
             {(data.approval_requests ?? []).filter((r) => r.status === 'requested').map((r) => (
-              <p key={r.id} className="ops-confirm">Waiting for a checker · APR-{r.id} ({words(r.action_key)})</p>
+              <p key={r.id} className="ops-confirm">Waiting for a checker · {refOf(r) !== '—' ? refOf(r) : 'approval request'} ({words(r.action_key)})</p>
             ))}
             {rail.length === 0 ? (
               <p className="help m-0">You can view this driver but not change them.</p>
@@ -388,7 +389,7 @@ export default function DriverDetailPage() {
         <RecordPanel
           label="Driver"
           title={name}
-          refId={`D-${data.id}`}
+          refId={refOf(data)}
           subtitle={<>
             <Revealable value={data.user.phone_number ?? '—'} label="driver phone" target={target} field="phone_number" compact />
             {data.user.email ? <> · <Revealable value={data.user.email} label="driver email" target={target} field="email" compact /></> : null}
@@ -447,7 +448,7 @@ function VehicleDrawer({ driverId, vehicle, onClose, onDone }: {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
-  const plate = vehicle.vehicle_number || `#${vehicle.id}`;
+  const plate = vehicle.vehicle_number || 'No plate yet';
 
   async function submit() {
     setBusy(true); setError(null);

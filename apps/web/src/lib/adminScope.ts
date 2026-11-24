@@ -37,6 +37,8 @@ export type AdminScope = {
   name: string;
   kind: 'global' | 'country' | 'state' | 'city' | string;
   status: string;
+  /** 24 Nov: a city's launch state: live, coming_soon (draft with an active zone), not_launched, paused, archived. */
+  launch_state?: string | null;
   depth: number;
   /** Materialised path (`/IN/IN-TG/IN-TG-HYD/`): lets a per-city link be decided. */
   path?: string;
@@ -80,6 +82,8 @@ export type AdminAccess = {
    * it is a prompt to act, and everyone else can do nothing about it.
    */
   super_admin_shortfall: number;
+  /** 24 Nov (owner): is two-step sign-in set up, and does this environment require it? */
+  two_step?: { set_up: boolean; required_here: boolean };
   /**
    * Active console maintenance notices for this operator's scope (module 15): the banner.
    * Optional so an older backend, which does not send it, draws none.

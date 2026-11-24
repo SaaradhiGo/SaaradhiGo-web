@@ -1,5 +1,6 @@
 'use client';
 
+import { templateName } from '@/lib/templateNames';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
@@ -67,7 +68,7 @@ export default function TemplatesPage() {
   }
 
   const columns: ListColumn<Template>[] = [
-    { key: 'key', label: 'Template', primary: true, render: (t) => <>{t.key} <span className="muted">v{t.version}</span></> },
+    { key: 'key', label: 'Template', primary: true, render: (t) => <>{templateName(t.key)} <small className="muted ops-code">{t.key} v{t.version}</small></> },
     { key: 'channel', label: 'Channel', render: (t) => CHANNEL_WORDS[t.channel] },
     { key: 'country', label: 'Country', render: (t) => t.country || 'All' },
     { key: 'category', label: 'Kind', render: (t) => (t.category === 'promotional' ? 'Promotional' : 'Transactional') },

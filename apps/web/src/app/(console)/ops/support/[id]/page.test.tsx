@@ -24,7 +24,7 @@ vi.mock('@/lib/adminScope', async (importActual) => {
 });
 
 const DETAIL = {
-  id: 41, status: 'OPEN', priority: 'NORMAL', issue_type: 'payment', description: 'Charged twice', trip_id: null,
+  id: 41, ref: 'SUP-HYD-4KQ7', status: 'OPEN', priority: 'NORMAL', issue_type: 'payment', description: 'Charged twice', trip_id: null,
   assigned_to: null, assignee: null,
   requester: { id: 3, role: 'rider', full_name: 'Meera', phone_number: '+91 1111', email: null, page: null },
   city: null, country: null, created_at: '2026-01-01T10:00:00Z', updated_at: '2026-01-01T10:00:00Z', resolved_at: null,
@@ -37,7 +37,7 @@ const DETAIL = {
 describe('support ticket record page', () => {
   it('shows the ref and moves between tabs', async () => {
     render(<Page />);
-    expect(await screen.findByText('TKT-41')).toBeTruthy();
+    expect(await screen.findByText('SUP-HYD-4KQ7')).toBeTruthy();
     expect(screen.getByText('Charged twice')).toBeTruthy();
     fireEvent.click(screen.getByRole('tab', { name: 'Trip & money' }));
     expect(screen.getByText('No trip attached to this ticket.')).toBeTruthy();

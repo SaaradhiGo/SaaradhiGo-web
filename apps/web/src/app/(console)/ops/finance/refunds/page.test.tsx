@@ -21,7 +21,7 @@ vi.mock('@/components/console/PageLink', () => ({
 }));
 
 const ROW = {
-  id: 5, source: 'ledger', trip_id: 42, amount_minor: 25000, currency: 'INR', method: 'wallet',
+  id: 5, source: 'ledger', trip_id: 42, trip_ref: 'HYD-261116-K7Q4', amount_minor: 25000, currency: 'INR', method: 'wallet',
   method_label: 'To wallet', status: 'completed', reason: 'Driver late', city: { code: 'HYD', name: 'Hyderabad' },
   created_at: '2026-11-03T04:00:00Z', created_by: 'maker@example.test', approval_request_id: null,
 };
@@ -49,7 +49,7 @@ describe('finance refunds', () => {
   it('renders a row with the trip link and the status chip', async () => {
     stubFetch();
     render(<RefundsPage />);
-    const link = await screen.findByRole('link', { name: 'T-42' });
+    const link = await screen.findByRole('link', { name: 'HYD-261116-K7Q4' });
     expect(link.getAttribute('href')).toBe('/ops/trips/42');
     expect(screen.getByText('Completed')).toBeTruthy();
     expect(screen.getByText('To wallet')).toBeTruthy();

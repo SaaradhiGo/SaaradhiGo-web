@@ -14,6 +14,8 @@ import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { StatusChip } from '@/components/console/kit/StatusChip';
 import { chipToneOf } from '@/components/console/listKit';
 import { PageHeader } from '@/components/console/ui';
+import { placeName } from '@/lib/places';
+import { providerName } from '@/lib/templateNames';
 
 /**
  * Platform settings: Integrations.
@@ -26,7 +28,6 @@ import { PageHeader } from '@/components/console/ui';
 export default function IntegrationsPage() {
   const access = useAdminAccess();
   const [view, setView] = useState('');
-  const [country, setCountry] = useState('');
   const [q, setQ] = useState('');
   const [data, setData] = useState<IntegrationsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,17 +43,17 @@ export default function IntegrationsPage() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
+  // 24 Nov (owner): written for a Super Admin -- provider, country, live or not, last success, and
+  // what is missing in words. Environment variable names are on Engineering health only.
   const columns: ListColumn<IntegrationRow>[] = [
-    { key: 'type', label: 'Provider type', primary: true, render: (r) => r.label },
-    { key: 'country', label: 'Country', render: (r) => (r.country === 'all' ? 'All' : r.country) },
-    { key: 'provider', label: 'Provider', render: (r) => r.provider },
-    { key: 'configured', label: 'Configured', render: (r) => (r.configured ? <StatusChip tone="good">Yes</StatusChip> : <StatusChip tone="caution">No</StatusChip>) },
-    { key: 'mode', label: 'Mode', render: (r) => <StatusChip tone={chipToneOf(modeTone(r.mode))}>{MODE_WORDS[r.mode]}</StatusChip> },
-    { key: 'blocker', label: 'Waits on', render: (r) => (r.blocker ? `Blocker #${r.blocker}` : <span className="muted">none</span>) },
-    { key: 'ok', label: 'Last success', render: (r) => (r.last_success_at ? stamp(r.last_success_at, timeZoneFor(r.country)) : <span className="muted">none recorded</span>) },
-    { key: 'bad', label: 'Last error', render: (r) => (r.last_error_at ? stamp(r.last_error_at, timeZoneFor(r.country)) : <span className="muted">none recorded</span>) },
-    { key: 'env', label: 'Environment variables', render: (r) => (r.env_vars.length ? <code className="nf-envnames">{r.env_vars.join(', ')}</code> : <span className="muted">—</span>) },
-    { key: 'note', label: 'Note', render: (r) => r.note || <span className="muted">—</span> },
+    { key: 'type', label: 'Service', primary: true, render: (r) => r.label },
+    { key: 'provider', label: 'Provider', render: (r) => (r.provider === 'none' ? <span className="muted">None chosen</span> : providerName(r.provider)) },
+    { key: 'country', label: 'Country', render: (r) => (r.country === 'all' ? 'Every country' : placeName(r.country)) },
+    { key: 'live', label: 'Live?', render: (r) => (r.configured && r.mode === 'live'
+      ? <StatusChip tone="good">Live</StatusChip>
+      : <StatusChip tone={chipToneOf(modeTone(r.mode))}>{r.configured ? MODE_WORDS[r.mode] : 'Not set up'}</StatusChip>) },
+    { key: 'ok', label: 'Last success', render: (r) => (r.last_success_at ? stamp(r.last_success_at, timeZoneFor(r.country)) : <span className="muted">None recorded</span>) },
+    { key: 'missing', label: 'What is missing', render: (r) => <span className="ops-wrap">{r.waits_on || r.note || (r.configured && r.mode === 'live' ? 'Nothing' : 'Not set up yet.')}</span> },
   ];
 
   if (!canReadIntegrations(access)) {
@@ -63,10 +64,9 @@ export default function IntegrationsPage() {
   // The list is platform configuration (one small payload), so it is narrowed here.
   const market = selectedMarket(access);
   const all = [...(data?.rows ?? [])].filter((r) => !market || r.country === market || r.country === 'all').sort((x, y) => x.label.localeCompare(y.label) || x.country.localeCompare(y.country));
-  const countries = Array.from(new Set(all.map((r) => r.country))).sort();
   const inView = (r: IntegrationRow) => (view === 'live' ? r.mode === 'live' : view === 'attention' ? (!r.configured || r.mode !== 'live') : true);
   const needle = q.trim().toLowerCase();
-  const rows = all.filter((r) => inView(r) && (!country || r.country === country)
+  const rows = all.filter((r) => inView(r)
     && (!needle || [r.label, r.provider, r.type].some((t) => t.toLowerCase().includes(needle))));
 
   return (
@@ -74,7 +74,7 @@ export default function IntegrationsPage() {
       <PlatformNav />
       {data ? (
         <p className="ops-note mb-3" role="note">
-          Live sending {data.live_send ? <StatusChip tone="good">On</StatusChip> : <><StatusChip tone="info">Off</StatusChip> every external message goes to the stub</>}
+          Live sending {data.live_send ? <StatusChip tone="good">On</StatusChip> : <><StatusChip tone="info">Off</StatusChip> messages go to the test sender and nobody receives them</>}
           {' · '}{data.production ? 'Production' : 'Not production'}
           {' · '}a stubbed provider {data.live_providers_required ? 'blocks a launch' : 'is a warning on the launch checklist'}
         </p>
@@ -91,16 +91,10 @@ export default function IntegrationsPage() {
         view={view}
         onView={setView}
         chips={[
-          ...(country ? [{ key: 'country', label: `Country: ${country === 'all' ? 'All' : country}`, onRemove: () => setCountry('') }] : []),
-          ...(q.trim() ? [{ key: 'q', label: `Search: ${q.trim()}`, onRemove: () => setQ('') }] : []),
+                    ...(q.trim() ? [{ key: 'q', label: `Search: ${q.trim()}`, onRemove: () => setQ('') }] : []),
         ]}
         filterSlot={(
           <div className="ops-list__filters">
-            <label className="sr-only" htmlFor="in-country">Country</label>
-            <select id="in-country" className="ops-select ops-list__select" value={country} onChange={(e) => setCountry(e.target.value)}>
-              <option value="">Every country</option>
-              {countries.map((c) => <option key={c} value={c}>{c === 'all' ? 'All countries' : c}</option>)}
-            </select>
             <label className="sr-only" htmlFor="in-q">Search providers</label>
             <input id="in-q" className="input ops-list__search" type="search" placeholder="Search a provider" value={q}
               onChange={(e) => setQ(e.target.value)} />

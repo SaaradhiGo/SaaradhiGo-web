@@ -1,5 +1,7 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
+import { DateField } from '@/components/console/kit/DateField';
 import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -113,8 +115,8 @@ const VIEWS: Array<{ key: QueueKey; label: string }> = [
 
 const requesterName = (t: { requester?: { id: number; role: string; full_name?: string | null } | null }) =>
   t.requester?.full_name?.trim() || `${t.requester?.role === 'driver' ? 'Driver' : 'Rider'} #${t.requester?.id ?? '—'}`;
-const requesterRef = (t: { requester?: { id: number; role: string } | null }) =>
-  (t.requester ? `${t.requester.role === 'driver' ? 'D' : 'R'}-${t.requester.id}` : '');
+const requesterRef = (t: { requester?: { id: number; role: string; ref?: string | null } | null }) =>
+  t.requester?.ref ?? '';  // 24 Nov (owner): the person's reference, never an id
 
 function SupportInner() {
   const router = useRouter();
@@ -167,7 +169,7 @@ function SupportInner() {
   if (filters.dateFrom || filters.dateTo) chips.push({ key: 'dates', label: `Opened ${filters.dateFrom || '…'} to ${filters.dateTo || '…'}`, onRemove: drop({ dateFrom: '', dateTo: '' }) });
 
   const columns: ListColumn<TicketRow>[] = [
-    { key: 'id', label: 'Ticket', primary: true, render: (t) => <span className="sg-num">TKT-{t.id}</span> },
+    { key: 'id', label: 'Ticket', primary: true, render: (t) => <span className="sg-num">{refOf(t) !== '—' ? refOf(t) : 'Ticket'}</span> },
     {
       key: 'priority', label: 'Priority', sortKey: 'priority',
       render: (t) => <StatusChip tone={PRIORITY_TONE[t.priority] ?? 'neutral'}>{PRIORITY_LABEL[t.priority] ?? t.priority}</StatusChip>,
@@ -187,7 +189,7 @@ function SupportInner() {
       const { rows: all, truncated } = await fetchAllPages<TicketRow>((p, size) => scoped(supportApiPath({ ...filters, page: p, pageSize: size })));
       const header = ['Ticket', 'Priority', 'SLA', 'Issue', 'Raised by', 'City', 'Assignee', 'Status', 'Opened'];
       const body = all.map((t) => [
-        `TKT-${t.id}`, PRIORITY_LABEL[t.priority] ?? t.priority, slaSentence(t.sla),
+        refOf(t), PRIORITY_LABEL[t.priority] ?? t.priority, slaSentence(t.sla),
         t.issue_label ?? ISSUE_LABEL[t.issue_type] ?? t.issue_type, `${requesterName(t)} ${requesterRef(t)}`.trim(),
         t.city?.name ?? '', t.assignee?.label ?? '', STATUS_LABEL[t.status] ?? t.status,
         stamp(t.created_at, cityTimeZone(t.city)),
@@ -235,15 +237,6 @@ function SupportInner() {
                   <label className="ops-form__label" htmlFor="f-q">Find</label>
                   <input id="f-q" className="ops-select" value={draft.q} placeholder="Ticket # or last 4 of phone"
                     onChange={(e) => setDraft({ ...draft, q: e.target.value.replace(/^tkt-?/i, '') })} size={24} />
-                  {cities.length > 1 ? (
-                    <>
-                      <label className="ops-form__label" htmlFor="f-city">City</label>
-                      <select id="f-city" className="ops-select" value={draft.scope} onChange={(e) => setDraft({ ...draft, scope: e.target.value })}>
-                        <option value="">All I hold</option>
-                        {cities.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-                      </select>
-                    </>
-                  ) : null}
                   <label className="ops-form__label" htmlFor="f-country">Country</label>
                   <select id="f-country" className="ops-select" value={draft.country} onChange={(e) => setDraft({ ...draft, country: e.target.value })}>
                     <option value="">Any</option>
@@ -263,9 +256,9 @@ function SupportInner() {
                 </div>
                 <div className="ops-form__row">
                   <label className="ops-form__label" htmlFor="f-from">Opened from</label>
-                  <input id="f-from" type="date" className="ops-select" value={draft.dateFrom} onChange={(e) => setDraft({ ...draft, dateFrom: e.target.value })} />
+                  <DateField id="f-from" className="ops-select" value={draft.dateFrom} onChange={(v) => setDraft({ ...draft, dateFrom: v })} />
                   <label className="ops-form__label" htmlFor="f-to">to</label>
-                  <input id="f-to" type="date" className="ops-select" value={draft.dateTo} onChange={(e) => setDraft({ ...draft, dateTo: e.target.value })} />
+                  <DateField id="f-to" className="ops-select" value={draft.dateTo} onChange={(v) => setDraft({ ...draft, dateTo: v })} />
                   <label className="ops-form__row">
                     <input type="checkbox" checked={draft.dueSoon} onChange={(e) => apply({ dueSoon: e.target.checked })} /> Due within the hour
                   </label>
@@ -372,7 +365,7 @@ function TicketRecord({ id, onClose, onChanged }: {
       <RecordPanel
         label="Ticket"
         title={ticket.issue_label ?? ISSUE_LABEL[ticket.issue_type] ?? words(ticket.issue_type)}
-        refId={`TKT-${ticket.id}`}
+        refId={refOf(ticket)}
         onClose={onClose}
         subtitle={<>Raised by {name} {requesterRef(ticket)} · opened {stamp(ticket.created_at, tz)}{ticket.city ? ` · ${ticket.city.name}` : ''}</>}
         status={(
@@ -452,7 +445,7 @@ function TicketRecord({ id, onClose, onChanged }: {
                 {ticket.trip ? (
                   <RecordSection title="Trip">
                     <RecordFacts rows={[
-                      ['Trip', <PageLink key="t" page="trips" href={`/ops/trips/${ticket.trip.id}`}><span className="sg-num">T-{ticket.trip.id}</span></PageLink>],
+                      ['Trip', <PageLink key="t" page="trips" href={`/ops/trips/${ticket.trip.id}`}><span className="sg-num">{refOf(ticket.trip) !== '—' ? refOf(ticket.trip) : 'Trip'}</span></PageLink>],
                       ['Status', words(ticket.trip.status)],
                     ]} />
                     {ticket.trip.payment ? (
@@ -464,7 +457,7 @@ function TicketRecord({ id, onClose, onChanged }: {
                     ) : null}
                     {waitingRefunds.map((r) => (
                       <p key={r.id} className="ops-confirm">
-                        Refund of {formatMinor(r.amount_minor, r.currency)} waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>APR-{r.id}</PageLink>
+                        Refund of {formatMinor(r.amount_minor, r.currency)} waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>{refOf(r) !== '—' ? refOf(r) : 'approval request'}</PageLink>
                       </p>
                     ))}
                   </RecordSection>

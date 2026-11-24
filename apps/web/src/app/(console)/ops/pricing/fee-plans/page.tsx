@@ -7,6 +7,7 @@ import { useAdminAccess } from '@/lib/adminScope';
 import { canDraftPricing } from '@/lib/pricing';
 import { classWord, placeWord } from '@/lib/pricingWords';
 import { ResolvedPlans } from '@/components/console/pricing/ResolvedPlans';
+import { RegulationPanel } from '@/components/console/pricing/RegulationPanel';
 import { interpretWrite } from '@/lib/trips';
 import { PricingNav } from '@/components/console/pricing';
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
@@ -44,7 +45,7 @@ const TYPE_WORDS: Record<string, string> = {
   per_trip_fee: 'Per-trip fee',
 };
 const rupees = (minor: number | null | undefined, cur = 'INR') =>
-  minor == null ? '—' : `${cur === 'INR' ? '₹' : '$'}${(minor / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  minor == null ? '—' : `${cur === 'INR' ? '₹' : '$'}${(minor / 100).toLocaleString(cur === 'INR' ? 'en-IN' : 'en-US', { maximumFractionDigits: 2 })}`;
 const toMinor = (v: string) => (v.trim() === '' ? null : Math.round(Number(v) * 100));
 
 function amountsWords(p: Plan) {
@@ -54,10 +55,18 @@ function amountsWords(p: Plan) {
       a.daily_pass_minor != null ? `${rupees(a.daily_pass_minor, p.currency)} a day` : null,
       a.fee_free_after_trips != null ? `free after ${a.fee_free_after_trips}` : null,
       a.commission_percent != null ? `${a.commission_percent}%` : null,
-      a.rider_platform_fee_minor != null ? `rider ${rupees(a.rider_platform_fee_minor, p.currency)}` : null,
     ].filter(Boolean);
     return `${classWord(cls)}: ${bits.join(', ') || 'to be decided'}`;
-  }).join(' · ');
+  });
+}
+
+/** 24 Nov (owner): the rider booking fee once per place, not repeated in every class cell. */
+function riderFeeWords(p: Plan): string {
+  const fees = Object.entries(p.amounts).map(([cls, a]) => [cls, a.rider_platform_fee_minor] as const).filter(([, f]) => f != null);
+  if (!fees.length) return 'None';
+  const one = new Set(fees.map(([, f]) => f));
+  if (one.size === 1) return rupees(fees[0][1], p.currency);
+  return fees.map(([cls, f]) => `${classWord(cls)} ${rupees(f, p.currency)}`).join(', ');
 }
 
 /** Classes whose driver fee an ACTIVE plan leaves undecided: an open decision for the owner. */
@@ -101,7 +110,7 @@ export default function FeePlansPage() {
       <header className="ops-list__head mb-3">
         <div>
           <h1>Driver fee plans</h1>
-          <p>What drivers pay SaaradhiGo, per market. A change starts the next local day and never reaches a trip already booked.</p>
+          <p>The only way drivers are charged: a daily fee, a commission (% of each fare) or a per-trip fee, per place. A place cannot go live, and riders are offered no class, until a plan is approved. A change starts the next local day and never reaches a trip already booked.</p>
         </div>
         {may ? <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setDrafting(true)}>New draft…</button> : null}
       </header>
@@ -115,21 +124,25 @@ export default function FeePlansPage() {
       ) : null}
       {error ? <ErrorState title="The fee plans could not be loaded" detail={error} onRetry={() => void load()} />
         : plans === null ? <Skeleton kind="row" count={4} /> : (
-          <DataTable caption="Driver fee plans" rows={plans} rowKey={(p) => p.id} maxHeight={false}
+          <DataTable caption="Driver fee plans" wrap rows={plans} rowKey={(p) => p.id} maxHeight={false}
             columns={[
               { key: 'where', label: 'Where', render: (p) => (p.scope_code ? p.scope_name ?? placeWord(p.scope_code, access) : `All of ${p.scope_name ?? placeWord(p.country, access)}`) },
-              { key: 'type', label: 'Plan', render: (p) => `${TYPE_WORDS[p.plan_type] ?? p.plan_type} (version ${p.version})` },
+              { key: 'type', label: 'Plan', render: (p) => TYPE_WORDS[p.plan_type] ?? p.plan_type },
+              { key: 'version', label: 'Version', render: (p) => `v${p.version}` },
               { key: 'status', label: 'Status', render: (p) => <StatusChip tone={TONE[p.status] ?? 'neutral'}>{STATUS_WORDS[p.status] ?? p.status.replace('_', ' ')}</StatusChip> },
-              { key: 'amounts', label: 'Per class', render: (p) => amountsWords(p) },
+              { key: 'amounts', label: 'Driver fee per class', render: (p) => <ul className="ops-list-plain">{amountsWords(p).map((w) => <li key={w}>{w}</li>)}</ul> },
+              { key: 'rider', label: 'Rider booking fee', render: (p) => riderFeeWords(p) },
               { key: 'rules', label: 'Floor · cap · waiver', render: (p) => `${rupees(p.earnings_floor_minor, p.currency)} · ${p.daily_cap_minor == null ? 'no cap' : rupees(p.daily_cap_minor, p.currency)} · ${p.waiver_first_days ? `first ${p.waiver_first_days} days free` : p.waiver_until ? `free until ${marketDate(p.waiver_until, p.country)}` : 'none'}` },
               { key: 'from', label: 'From', render: (p) => (p.effective_from ? `${marketDate(p.effective_from, p.country)}${p.effective_to ? ` to ${marketDate(p.effective_to, p.country)}` : ''}` : '—') },
-              { key: 'note', label: 'Note', hideBelow: 1280, render: (p) => p.note || '—' },
+              { key: 'note', label: 'Note', hideBelow: 1500, render: (p) => p.note || '—' },
               { key: 'act', label: '', render: (p) => (may && p.status === 'draft'
-                ? <button type="button" className="ops-linkbtn" onClick={() => void submit(p)}>Send for approval</button> : null) },
+                ? <button type="button" className="ops-linkbtn" onClick={() => void submit(p)}>Send</button> : null) },
             ]} />
         )}
       <div className="mt-4"><ResolvedPlans /></div>
       <div className="mt-4"><Simulator /></div>
+      {/* 24 Nov (owner): the legal caps live with the plans they limit (commission is a plan type). */}
+      <div className="mt-4"><RegulationPanel may={may} /></div>
       {drafting ? <DraftDrawer onClose={() => setDrafting(false)} onDone={(t) => { setDrafting(false); setNotice(t); void load(); }} /> : null}
     </>
   );

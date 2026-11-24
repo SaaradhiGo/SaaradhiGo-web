@@ -57,9 +57,9 @@ async function countOf(path: string): Promise<number | null> {
  */
 async function supportOpenCount(): Promise<number | null> {
   try {
-    const page = await api.get<{ queues?: Record<string, number> }>('/support/admin/tickets/?page_size=1');
+    const page = await api.get<{ queues?: Record<string, number> }>(withScope('/support/admin/tickets/?page_size=1'));
     const n = page?.queues?.open;
-    return typeof n === 'number' ? n : countOf(QUEUES.supportOpen);
+    return typeof n === 'number' ? n : countOf(withScope(QUEUES.supportOpen));
   } catch {
     return null;
   }
@@ -137,7 +137,7 @@ export async function fetchQueueCounts(
       allowed('sosOpen')
         ? (can(access ?? null, 'safety.respond') ? countOf(QUEUES.sosOpen) : readOnlySosCount())
         : skip,
-      allowed('approvalsWaiting') ? countOf(QUEUES.approvalsWaiting) : skip,
+      allowed('approvalsWaiting') ? countOf(withScope(QUEUES.approvalsWaiting)) : skip, // 24 Nov: same place as the page
     ]);
   return { driversAwaiting, withdrawalsPending, supportOpen, sosOpen, approvalsWaiting };
 }

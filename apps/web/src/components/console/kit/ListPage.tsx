@@ -1,6 +1,7 @@
 'use client';
 
 import { type CSSProperties, type ReactNode, useEffect, useState } from 'react';
+import { textOf } from '@/lib/cellText';
 
 /**
  * The everyday pattern, list half (design board B): saved views with counts,
@@ -239,13 +240,19 @@ export function ListPage<T>({
                       </label>
                     </td>
                   ) : null}
-                  {columns.map((c) => (
-                    <td key={c.key} className={`${c.num ? 'num' : ''}${c.primary ? ' primary' : ''}`}
-                      data-label={c.label} data-card={cardRole(c)}
-                      style={c.cardOrder !== undefined ? ({ '--card-order': c.cardOrder } as CSSProperties) : undefined}>
-                      {c.render(row)}
-                    </td>
-                  ))}
+                  {columns.map((c) => {
+                    const content = c.render(row);
+                    // 24 Nov (owner): one line per row; a cut-off cell shows its full text on hover.
+                    const hover = textOf(content) || undefined;
+                    const keep = hover !== undefined && /^\d{1,2} [A-Z][a-z]{2} \d{4}/.test(hover); // a date is never cut
+                    return (
+                      <td key={c.key} className={`${c.num ? 'num' : ''}${c.primary ? ' primary' : ''}`}
+                        data-label={c.label} data-card={cardRole(c)} title={hover}
+                        style={c.cardOrder !== undefined ? ({ '--card-order': c.cardOrder } as CSSProperties) : undefined}>
+                        <span className={keep ? 'ops-cell ops-cell--keep' : 'ops-cell'}>{content}</span>
+                      </td>
+                    );
+                  })}
                 </tr>
               );
             })}
@@ -265,3 +272,4 @@ export function ListPage<T>({
     </section>
   );
 }
+

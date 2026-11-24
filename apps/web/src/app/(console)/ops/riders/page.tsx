@@ -1,5 +1,7 @@
 'use client';
 
+import { refFrom, refOf } from '@/lib/refs';
+import { DateField } from '@/components/console/kit/DateField';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
@@ -198,12 +200,12 @@ function RidersInner() {
   }
   if (filters.joinedFrom || filters.joinedTo) chips.push({ key: 'joined', label: `Joined ${filters.joinedFrom || '…'} to ${filters.joinedTo || '…'}`, onRemove: drop({ joinedFrom: '', joinedTo: '' }) });
   if (filters.lastTripFrom || filters.lastTripTo) chips.push({ key: 'last', label: `Last trip ${filters.lastTripFrom || '…'} to ${filters.lastTripTo || '…'}`, onRemove: drop({ lastTripFrom: '', lastTripTo: '' }) });
-  if (filters.id) chips.push({ key: 'id', label: `R-${filters.id}`, onRemove: drop({ id: '' }) });
+  if (filters.id) chips.push({ key: 'id', label: 'One rider', onRemove: drop({ id: '' }) });
 
   const columns: ListColumn<RiderRow>[] = [
     {
       key: 'id', label: 'Rider', primary: true, sortKey: 'id',
-      render: (r) => <span>{riderName(r.user_details, r.id)} <span className="ops-ref sg-num">R-{r.id}</span></span>,
+      render: (r) => <span>{riderName(r.user_details, r.id)} <span className="ops-ref sg-num">{refOf(r) !== '—' ? refOf(r) : 'Rider'}</span></span>,
     },
     { key: 'state', label: 'State', render: (r) => (q ? <span className="muted">—</span> : <StateChips r={r} />) },
     { key: 'city', label: 'City', render: (r) => r.city?.name ?? <span className="muted">No trips</span> },
@@ -221,7 +223,7 @@ function RidersInner() {
         : await fetchAllPages<RiderRow>((p, size) => scoped(ridersApiPath({ ...filters, page: p, pageSize: size })));
       const header = ['Rider', 'Name', 'Phone (masked)', 'Blocked', 'Flagged', 'City', 'Completed trips', 'Rating', 'Last trip', 'Joined'];
       const body = all.map((r) => [
-        `R-${r.id}`, riderName(r.user_details, r.id), r.user_details?.phone_number ?? '',
+        refOf(r), riderName(r.user_details, r.id), r.user_details?.phone_number ?? '',
         r.blocked ? 'Yes' : 'No', r.flagged ? 'Yes' : 'No', r.city?.name ?? '', r.trips_completed ?? '',
         r.rating ?? '', cityTime(r.last_trip_at, r.city?.timezone, { zone: true }), cityTime(r.joined_at, r.city?.timezone, { zone: true }),
       ]);
@@ -265,15 +267,6 @@ function RidersInner() {
             <MoreFilters count={active}>
               <form className="ops-form" aria-label="Filter riders" onSubmit={(e) => { e.preventDefault(); apply({}); }}>
                 <div className="ops-form__row">
-                  {cities.length > 1 ? (
-                    <>
-                      <label className="ops-form__label" htmlFor="f-city">City</label>
-                      <select id="f-city" className="ops-select" value={draft.scope} onChange={(e) => setDraft({ ...draft, scope: e.target.value })}>
-                        <option value="">All I hold</option>
-                        {cities.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-                      </select>
-                    </>
-                  ) : null}
                   <label className="ops-form__label" htmlFor="f-trips">Completed trips</label>
                   <select id="f-trips" className="ops-select" value={tripBandValue(draft)}
                     onChange={(e) => { const [min, max] = e.target.value.split('|'); setDraft({ ...draft, tripsMin: min, tripsMax: max }); }}>
@@ -284,13 +277,13 @@ function RidersInner() {
                 </div>
                 <div className="ops-form__row">
                   <label className="ops-form__label" htmlFor="f-joined-from">Joined from</label>
-                  <input id="f-joined-from" type="date" className="ops-select" value={draft.joinedFrom} onChange={(e) => setDraft({ ...draft, joinedFrom: e.target.value })} />
+                  <DateField id="f-joined-from" className="ops-select" value={draft.joinedFrom} onChange={(v) => setDraft({ ...draft, joinedFrom: v })} />
                   <label className="ops-form__label" htmlFor="f-joined-to">to</label>
-                  <input id="f-joined-to" type="date" className="ops-select" value={draft.joinedTo} onChange={(e) => setDraft({ ...draft, joinedTo: e.target.value })} />
+                  <DateField id="f-joined-to" className="ops-select" value={draft.joinedTo} onChange={(v) => setDraft({ ...draft, joinedTo: v })} />
                   <label className="ops-form__label" htmlFor="f-last-from">Last trip from</label>
-                  <input id="f-last-from" type="date" className="ops-select" value={draft.lastTripFrom} onChange={(e) => setDraft({ ...draft, lastTripFrom: e.target.value })} />
+                  <DateField id="f-last-from" className="ops-select" value={draft.lastTripFrom} onChange={(v) => setDraft({ ...draft, lastTripFrom: v })} />
                   <label className="ops-form__label" htmlFor="f-last-to">to</label>
-                  <input id="f-last-to" type="date" className="ops-select" value={draft.lastTripTo} onChange={(e) => setDraft({ ...draft, lastTripTo: e.target.value })} />
+                  <DateField id="f-last-to" className="ops-select" value={draft.lastTripTo} onChange={(v) => setDraft({ ...draft, lastTripTo: v })} />
                 </div>
                 <div className="ops-form__row">
                   <label className="ops-form__row"><input type="checkbox" checked={draft.hasOpenTicket} onChange={(e) => apply({ hasOpenTicket: e.target.checked })} /> Open ticket</label>
@@ -396,7 +389,7 @@ function RiderRecord({ id, onClose, onChanged }: {
       <RecordPanel
         label="Rider"
         title={name}
-        refId={`R-${data.id}`}
+        refId={refOf(data)}
         onClose={onClose}
         subtitle={data.city ? `${data.city.name} (latest trip)` : 'No trips yet'}
         status={(
@@ -425,7 +418,7 @@ function RiderRecord({ id, onClose, onChanged }: {
             key: 'overview', label: 'Overview', content: (
               <>
                 <div className="ops-recstats">
-                  <RecordStat label="Rating" value={Number(data.ratings_summary.rating) > 0 ? Number(data.ratings_summary.rating).toFixed(2) : '—'}
+                  <RecordStat label="Rating" value={data.ratings_summary.rating_count && Number(data.ratings_summary.rating) > 0 ? Number(data.ratings_summary.rating).toFixed(2) : '—'}
                     note={`${data.ratings_summary.rating_count.toLocaleString('en-IN')} rating${data.ratings_summary.rating_count === 1 ? '' : 's'}`} />
                   <RecordStat label="Trips" value={data.trips.total.toLocaleString('en-IN')} />
                   <RecordStat label="Open tickets" value={data.tickets.open} />
@@ -447,7 +440,7 @@ function RiderRecord({ id, onClose, onChanged }: {
                 ))}
                 {waiting.map((r) => (
                   <p key={r.id} className="ops-confirm">
-                    Waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>APR-{r.id}</PageLink> ({words(r.action_key)})
+                    Waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>{refOf(r) !== '—' ? refOf(r) : 'approval request'}</PageLink> ({words(r.action_key)})
                   </p>
                 ))}
                 <RecordFacts rows={[
@@ -472,7 +465,7 @@ function RiderRecord({ id, onClose, onChanged }: {
                 <ul className="ops-reclist">
                   {data.trips.recent.map((t) => (
                     <li key={t.id}>
-                      <PageLink page="trips" href={`/ops/trips/${t.id}`}><span className="sg-num">T-{t.id}</span></PageLink>
+                      <PageLink page="trips" href={`/ops/trips/${t.id}`}><span className="sg-num">{refOf(t) !== '—' ? refOf(t) : 'Trip'}</span></PageLink>
                       <StatusChip tone={t.status === 'completed' ? 'good' : t.status === 'cancelled' ? 'neutral' : 'info'}>{words(t.status)}</StatusChip>
                       <span className="sg-num">{formatMinor(t.fare_minor, t.currency)}</span>
                       <span className="muted">{cityTime(t.requested_at, tz)}</span>
@@ -491,7 +484,7 @@ function RiderRecord({ id, onClose, onChanged }: {
                     <ul className="ops-reclist">
                       {data.tickets.recent.map((t) => (
                         <li key={t.id}>
-                          <PageLink page="support" href={`/ops/support/${t.id}`}><span className="sg-num">TKT-{t.id}</span></PageLink>
+                          <PageLink page="support" href={`/ops/support/${t.id}`}><span className="sg-num">{refOf(t) !== '—' ? refOf(t) : 'Ticket'}</span></PageLink>
                           <span>{words(t.issue_type)}</span>
                           <StatusChip tone={t.status === 'CLOSED' ? 'good' : 'info'}>{t.status === 'CLOSED' ? 'Closed' : words(t.status.toLowerCase())}</StatusChip>
                           <span className="muted">{cityTime(t.created_at, tz)}</span>
@@ -507,7 +500,7 @@ function RiderRecord({ id, onClose, onChanged }: {
                         <li key={s.id}>
                           <PageLink page="safety" href="/ops/safety-ops"><span className="sg-num">SOS-{s.id}</span></PageLink>
                           <StatusChip tone={s.status === 'resolved' ? 'good' : s.status === 'open' ? 'critical' : 'caution'}>{words(s.status)}</StatusChip>
-                          {s.trip_id ? <PageLink page="trips" href={`/ops/trips/${s.trip_id}`}><span className="sg-num">T-{s.trip_id}</span></PageLink> : null}
+                          {s.trip_id ? <PageLink page="trips" href={`/ops/trips/${s.trip_id}`}><span className="sg-num">{refFrom(s, 'trip_ref', 'Trip')}</span></PageLink> : null}
                           <span className="muted">{cityTime(s.created_at, tz)}</span>
                         </li>
                       ))}

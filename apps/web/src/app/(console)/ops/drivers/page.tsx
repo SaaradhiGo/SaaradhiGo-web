@@ -1,5 +1,7 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
+import { DateField } from '@/components/console/kit/DateField';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
@@ -224,14 +226,14 @@ function DriversInner() {
     if (filters.joinedFrom || filters.joinedTo) chips.push({ key: 'joined', label: `Joined ${filters.joinedFrom || '…'} to ${filters.joinedTo || '…'}`, onRemove: drop({ joinedFrom: '', joinedTo: '' }) });
     if (filters.approved) chips.push({ key: 'approved', label: filters.approved === 'false' ? 'Not yet approved' : 'Approved', onRemove: drop({ approved: '' }) });
     if (filters.status) chips.push({ key: 'status', label: `Status: ${filters.status}`, onRemove: drop({ status: '' }) });
-    if (filters.id) chips.push({ key: 'id', label: `D-${filters.id}`, onRemove: drop({ id: '' }) });
+    if (filters.id) chips.push({ key: 'id', label: 'One driver', onRemove: drop({ id: '' }) });
   }
   if (filters.scope) {
     chips.push({ key: 'scope', label: `City: ${cities.find((c) => c.code === filters.scope)?.name ?? filters.scope}`, onRemove: drop({ scope: '' }) });
   }
 
   const nameCell = (d: DriverRow) => (
-    <span>{driverName(d.user_details, d.id)} <span className="ops-ref sg-num">D-{d.id}</span></span>
+    <span>{driverName(d.user_details, d.id)} <span className="ops-ref sg-num">{refOf(d) !== '—' ? refOf(d) : 'Driver'}</span></span>
   );
   const columns: ListColumn<DriverRow>[] = queue ? [
     { key: 'id', label: 'Driver', primary: true, render: nameCell },
@@ -268,7 +270,7 @@ function DriversInner() {
         queue ? queueApiPath({ ...filters, page: p, pageSize: size }) : driversApiPath({ ...filters, page: p, pageSize: size })));
       const header = ['Driver', 'Name', 'Phone (masked)', 'Now', 'City', 'KYC', 'Rating', 'Trips', 'Vehicle', 'Joined'];
       const body = all.map((d) => [
-        `D-${d.id}`, driverName(d.user_details, d.id), d.user_details?.phone_number ?? '',
+        refOf(d), driverName(d.user_details, d.id), d.user_details?.phone_number ?? '',
         d.suspended ? 'Suspended' : d.online ? 'Online' : words(d.status), d.home_city?.name ?? '',
         KYC_LABEL[d.kyc_state ?? '']?.[0] ?? words(d.kyc_state), rating(d.ratings), d.total_trips ?? 0,
         [d.vehicle_type, d.vehicle_number].filter(Boolean).join(' '), cityTime(d.joined_at, d.home_city?.timezone, { zone: true }),
@@ -311,15 +313,6 @@ function DriversInner() {
                   })}
                 </div>
                 <div className="ops-form__row">
-                  {cities.length > 1 ? (
-                    <>
-                      <label className="ops-form__label" htmlFor="f-city">City</label>
-                      <select id="f-city" className="ops-select" value={draft.scope} onChange={(e) => setDraft({ ...draft, scope: e.target.value })}>
-                        <option value="">All I hold</option>
-                        {cities.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-                      </select>
-                    </>
-                  ) : null}
                   <label className="ops-form__label" htmlFor="f-vehicle">Vehicle</label>
                   <input id="f-vehicle" className="ops-select" placeholder="e.g. sedan" value={draft.vehicleType} onChange={(e) => setDraft({ ...draft, vehicleType: e.target.value })} size={10} />
                   <label className="ops-form__label" htmlFor="f-expiring">Documents expiring within</label>
@@ -334,9 +327,9 @@ function DriversInner() {
                 </div>
                 <div className="ops-form__row">
                   <label className="ops-form__label" htmlFor="f-joined-from">Joined from</label>
-                  <input id="f-joined-from" type="date" className="ops-select" value={draft.joinedFrom} onChange={(e) => setDraft({ ...draft, joinedFrom: e.target.value })} />
+                  <DateField id="f-joined-from" className="ops-select" value={draft.joinedFrom} onChange={(v) => setDraft({ ...draft, joinedFrom: v })} />
                   <label className="ops-form__label" htmlFor="f-joined-to">to</label>
-                  <input id="f-joined-to" type="date" className="ops-select" value={draft.joinedTo} onChange={(e) => setDraft({ ...draft, joinedTo: e.target.value })} />
+                  <DateField id="f-joined-to" className="ops-select" value={draft.joinedTo} onChange={(v) => setDraft({ ...draft, joinedTo: v })} />
                   <label className="ops-form__label" htmlFor="f-id">Driver (D-…)</label>
                   <input id="f-id" className="ops-select" inputMode="numeric" value={draft.id} onChange={(e) => setDraft({ ...draft, id: e.target.value.replace(/\D/g, '') })} size={8} />
                 </div>
@@ -456,7 +449,7 @@ function DriverRecord({ row, queue, onClose, onChanged }: {
       <RecordPanel
         label="Driver"
         title={name}
-        refId={`D-${data.id}`}
+        refId={refOf(data)}
         onClose={onClose}
         subtitle={<>{data.home_city?.name ?? 'No home city'}{data.vehicles.find((v) => v.is_active_vehicle)?.vehicle_number ? ` · ${data.vehicles.find((v) => v.is_active_vehicle)?.vehicle_number}` : ''}</>}
         status={(
@@ -510,7 +503,7 @@ function DriverRecord({ row, queue, onClose, onChanged }: {
                 ) : null}
                 {waiting.map((r) => (
                   <p key={r.id} className="ops-confirm">
-                    Waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>APR-{r.id}</PageLink> ({words(r.action_key)})
+                    Waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>{refOf(r) !== '—' ? refOf(r) : 'approval request'}</PageLink> ({words(r.action_key)})
                   </p>
                 ))}
                 <RecordFacts rows={[
@@ -533,7 +526,7 @@ function DriverRecord({ row, queue, onClose, onChanged }: {
               <ul className="ops-reclist">
                 {data.recent_trips.slice(0, 10).map((t) => (
                   <li key={t.id}>
-                    <PageLink page="trips" href={`/ops/trips/${t.id}`}><span className="sg-num">T-{t.id}</span></PageLink>
+                    <PageLink page="trips" href={`/ops/trips/${t.id}`}><span className="sg-num">{refOf(t) !== '—' ? refOf(t) : 'Trip'}</span></PageLink>
                     <StatusChip tone={t.status === 'completed' ? 'good' : t.status === 'cancelled' ? 'neutral' : 'info'}>{words(t.status)}</StatusChip>
                     <span className="muted">{cityTime(t.requested_at, tz)}</span>
                   </li>
@@ -673,7 +666,7 @@ function BulkDrawer({ action, ids, onClose, onDone }: {
         {outcome && <div className="alert-success" role="status">{outcome}</div>}
         {rows ? (
           <Facts>
-            {rows.results.map((r) => <Fact key={r.id} label={`D-${r.id}`}>{words(r.result)}</Fact>)}
+            {rows.results.map((r) => <Fact key={r.id} label={refOf(r)}>{words(r.result)}</Fact>)}
           </Facts>
         ) : null}
       </div>

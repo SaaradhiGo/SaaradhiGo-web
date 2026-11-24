@@ -16,7 +16,7 @@ const access = (permissions: string[]): AdminAccess => ({
 describe('money in minor units', () => {
   it('formats rupees with Indian grouping and exact paise', () => {
     expect(formatMinor(12345650, 'INR')).toBe('₹1,23,456.50');
-    expect(formatMinor(50_000, 'INR')).toBe('₹500.00');
+    expect(formatMinor(50_000, 'INR')).toBe('₹500');
     expect(formatMinor(1, 'INR')).toBe('₹0.01');
   });
 
@@ -26,7 +26,7 @@ describe('money in minor units', () => {
   });
 
   it('signs adjustments and never prints a missing amount as zero', () => {
-    expect(formatMinor(-200_000, 'INR')).toBe(oneLine('−₹2,000.00'));
+    expect(formatMinor(-200_000, 'INR')).toBe(oneLine('−₹2,000'));
     expect(formatMinor(150, 'INR', { signed: true })).toBe(oneLine('+₹1.50'));
     expect(formatMinor(null, 'INR')).toBe('—');
     expect(formatMinor(12.5 as number, 'INR')).toBe('—');
@@ -47,11 +47,9 @@ describe('money in minor units', () => {
 
 describe('time in the trip city', () => {
   const iso = '2026-10-01T20:00:00Z';
-  it('shows Hyderabad and Austin in their own clocks, each in its market style (15 Nov)', () => {
-    expect(cityTime(iso, 'Asia/Kolkata')).toBe('02 Oct, 01:30');
-    expect(cityTime(iso, 'America/Chicago')).toBe('Oct 1, 3:00 PM');
-    expect(cityTime(iso, 'Asia/Kolkata', { zone: true })).toBe('02 Oct, 01:30 IST');
-    expect(cityTime(iso, 'America/Chicago', { zone: true })).toMatch(/^Oct 1, 3:00 PM C[DS]T$/);
+  it('shows each city in its own clock, in the one console format (24 Nov)', () => {
+    expect(cityTime(iso, 'Asia/Kolkata')).toBe('2 Oct 2026, 1:30 AM IST');
+    expect(cityTime(iso, 'America/Chicago')).toMatch(/^1 Oct 2026, 3:00 PM C[DS]T$/);
   });
   it('says nothing rather than inventing a time', () => {
     expect(cityTime(null, 'Asia/Kolkata')).toBe('—');
@@ -145,13 +143,13 @@ describe('the fare card (AUDIT 27.74)', () => {
 
   it('reads as the money moved', () => {
     expect(fareCardSummary(card)).toBe(
-      `Fare ₹159.72 · Promo ${oneLine('−₹20.00')} (paid by SaaradhiGo) · Rider paid ₹139.72 (cash)`);
+      `Fare ₹159.72 · Promo ${oneLine('−₹20')} (paid by SaaradhiGo) · Rider paid ₹139.72 (cash)`);
   });
 
   it('says who paid a referral reward', () => {
     expect(fareCardLineText({ kind: 'referral_reward', label: 'Referral reward to the rider',
       amount_minor: 2_500, note: 'paid by SaaradhiGo', to: 'rider' }, 'INR'))
-      .toBe('Referral reward to the rider ₹25.00 (paid by SaaradhiGo)');
+      .toBe('Referral reward to the rider ₹25 (paid by SaaradhiGo)');
   });
 });
 

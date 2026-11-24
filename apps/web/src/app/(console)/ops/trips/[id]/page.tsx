@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom, refOf } from '@/lib/refs';
 import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -225,7 +226,7 @@ export default function TripDetailPage() {
       <div aria-busy="true" aria-live="polite">
         <span className="sr-only">Loading the trip</span>
         <p className="ops-record-page__back"><Link href="/ops/trips">All trips</Link></p>
-        <PageHeader title={`T-${id}`} />
+        <PageHeader title="Trip" />
         <TileGrid><Skeleton kind="tile" count={4} /></TileGrid>
         <div className="ops-review"><Skeleton kind="block" /><Skeleton kind="block" /></div>
       </div>
@@ -235,7 +236,7 @@ export default function TripDetailPage() {
     return (
       <>
         <p className="ops-record-page__back"><Link href="/ops/trips">All trips</Link></p>
-        <PageHeader title={`T-${id}`} />
+        <PageHeader title="Trip" />
         <ErrorState title="This trip could not be loaded" detail={error ?? undefined} onRetry={() => void load()} />
       </>
     );
@@ -353,7 +354,7 @@ export default function TripDetailPage() {
           <Panel title="Driver">
             {data.driver ? (
               <Facts>
-                <Fact label="Name"><PageLink page="drivers" href={`/ops/drivers/${data.driver.driver_id}`}>{data.driver.full_name ?? `Driver #${data.driver.driver_id}`}</PageLink></Fact>
+                <Fact label="Name"><PageLink page="drivers" href={`/ops/drivers/${data.driver.driver_id}`}>{data.driver.full_name ?? 'Driver'}</PageLink></Fact>
                 <Fact label="Phone"><Revealable value={data.driver.phone_number ?? '—'} label="driver phone" target={tripTarget} field="driver_phone" /></Fact>
                 <Fact label="State">
                   <Pill tone={data.driver.status === 'online' ? 'good' : 'neutral'}>{data.driver.status ?? '—'}</Pill>{' '}
@@ -484,7 +485,7 @@ export default function TripDetailPage() {
                 {(data.money_actions ?? []).map((m) => (
                   <Fact key={m.id} label={`${words(m.kind)} #${m.id}`}>
                     {formatMinor(m.amount_minor, m.currency, { signed: m.kind === 'adjustment' })} · {words(m.status)}
-                    {m.approval_request_id ? <span className="muted"> · APR-{m.approval_request_id}</span> : null}
+                    {m.approval_request_id ? <span className="muted"> · {refFrom(m, 'approval_ref', 'approval request')}</span> : null}
                     <div className="help">{m.reason} · {cityTime(m.created_at, cityTz)}</div>
                   </Fact>
                 ))}
@@ -658,7 +659,7 @@ export default function TripDetailPage() {
         <RecordPanel
           label="Trip"
           title="Trip"
-          refId={`T-${data.id}`}
+          refId={refOf(data)}
           subtitle={<>
             {data.zone ? `${data.zone.name} (${data.zone.code})` : 'No zone'}
             {' · requested '}{cityTime(data.timeline.requested_at, cityTz, { zone: true })}

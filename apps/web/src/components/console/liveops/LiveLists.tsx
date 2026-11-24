@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom, refOf } from '@/lib/refs';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -94,14 +95,14 @@ function DriverTable({ dots, density, now, href }: { dots: Dot[]; density: Densi
       key: 'id', label: 'Driver', width: '7rem', sortValue: (d) => d.driver_id,
       render: (d) => {
         const link = href(d.driver_id);
-        return link ? <Link href={link} className="ops-linkbtn"><b>#{d.driver_id}</b></Link> : <b>#{d.driver_id}</b>;
+        return link ? <Link href={link} className="ops-linkbtn"><b>{refFrom(d, 'driver_ref', 'Driver')}</b></Link> : <b>{refFrom(d, 'driver_ref', 'Driver')}</b>;
       },
     },
     { key: 'status', label: 'Status', width: '9rem', sortValue: (d) => d.status, render: (d) => <Pill tone={STATUS_TONE[d.status]}>{STATUS_WORDS[d.status]}</Pill> },
     { key: 'vehicle', label: 'Vehicle', hideBelow: 1100, sortValue: (d) => d.vehicle_class ?? '', render: (d) => <span className="capitalize">{d.vehicle_class ?? '—'}</span> },
     { key: 'city', label: 'City', hideBelow: 1100, sortValue: (d) => d.city ?? '', render: (d) => d.city ?? '—' },
     { key: 'pos', label: 'Position', render: (d) => positionText(d.lat, d.lng, 4) },
-    { key: 'trip', label: 'Trip', width: '6rem', num: true, sortValue: (d) => d.trip_id ?? 0, render: (d) => (d.trip_id ? `#${d.trip_id}` : '—') },
+    { key: 'trip', label: 'Trip', width: '6rem', num: true, sortValue: (d) => d.trip_id ?? 0, render: (d) => (d.trip_id ? refFrom(d, 'trip_ref', 'Trip') : '—') },
     {
       key: 'age', label: 'Updated', width: '7rem', num: true,
       sortValue: (d) => secondsSince(d.updated_at, now),
@@ -127,7 +128,7 @@ function TripTable({ trips, density, href }: { trips: LiveTrip[]; density: Densi
       key: 'id', label: 'Trip', width: '7rem', sortValue: (t) => t.id,
       render: (t) => {
         const link = href(t.id);
-        return link ? <Link href={link} className="ops-linkbtn"><b>#{t.id}</b></Link> : <b>#{t.id}</b>;
+        return link ? <Link href={link} className="ops-linkbtn"><b>{refOf(t) !== '—' ? refOf(t) : 'Open'}</b></Link> : <b>{refOf(t) !== '—' ? refOf(t) : 'Open'}</b>;
       },
     },
     {

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, apiDownload } from '@/lib/api';
 import { readSelectedScope, useAdminAccess, withScope } from '@/lib/adminScope';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
+import { DateField } from '@/components/console/kit/DateField';
 import {
   auditQuery, canReadAudit, chainWords, emptyAuditFilters, type AuditDetail, type AuditFilters,
   type AuditPage, type AuditRow,
@@ -179,9 +180,9 @@ export default function AuditPage() {
           <div className="ops-form__row"><label className="ops-form__label" htmlFor="au-city">Place</label>
             <input id="au-city" className="input" value={draft.city} onChange={set('city')} placeholder="City or country code" /></div>
           <div className="ops-form__row"><label className="ops-form__label" htmlFor="au-from">From</label>
-            <input id="au-from" className="input" type="date" value={draft.from} onChange={set('from')} /></div>
+            <DateField id="au-from" className="input" value={draft.from} onChange={(v) => setDraft((d) => ({ ...d, from: v }))} /></div>
           <div className="ops-form__row"><label className="ops-form__label" htmlFor="au-to">To</label>
-            <input id="au-to" className="input" type="date" value={draft.to} onChange={set('to')} /></div>
+            <DateField id="au-to" className="input" value={draft.to} onChange={(v) => setDraft((d) => ({ ...d, to: v }))} /></div>
         </div>
       </Drawer>
     </>
@@ -210,7 +211,7 @@ function EntryRecord({ id, zone, onClose }: { id: number; zone: string; onClose:
 
   if (!entry || entry.id !== id) {
     return (
-      <RecordPanel label="Audit entry" title="Audit entry" refId={`#${id}`} onClose={onClose}
+      <RecordPanel label="Audit entry" title="Audit entry" refId="" onClose={onClose}
         tabs={[{ key: 'entry', label: 'Entry', content: error ? (
           <div>
             <p className="alert-error" role="alert">{error}</p>
@@ -225,7 +226,7 @@ function EntryRecord({ id, zone, onClose }: { id: number; zone: string; onClose:
     <RecordPanel
       label="Audit entry"
       title={entry.summary ?? entry.action}
-      refId={`#${entry.id}`}
+      refId=""
       subtitle={<>{entry.actor.label ?? 'The system'} · {stamp(entry.created_at, zone)}</>}
       onClose={onClose}
       tabs={[

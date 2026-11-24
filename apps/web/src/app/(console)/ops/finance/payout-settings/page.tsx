@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom, refOf } from '@/lib/refs';
 import { formatAge } from '@/lib/commandCentre';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
@@ -123,7 +124,7 @@ function SettingsInner() {
                     <div className="ops-confirm mt-3" role="status">
                       <b>{c.pending_changes.length} change{c.pending_changes.length === 1 ? '' : 's'} waiting for a second admin</b>
                       <span>
-                        {c.pending_changes.map((p) => `APR-${p.id} (asked by ${p.maker.label || 'an operator'})`).join(' · ')}
+                        {c.pending_changes.map((p) => `${refOf(p)} (asked by ${p.maker.label || 'an operator'})`).join(' · ')}
                       </span>
                     </div>
                   )}
@@ -161,19 +162,19 @@ function SettingsInner() {
                           { key: 'out', label: 'Outcome', render: (r) => (
                             <>
                               {RUN_WORDS[r.outcome] ?? r.outcome}
-                              {r.approval_request_id ? ` · APR-${r.approval_request_id}` : ''}
+                              {r.approval_request_id ? ` · ${refFrom(r, 'approval_ref', 'approval request')}` : ''}
                               {r.truncated ? ' · cut at the weekly cap' : ''}
                             </>
                           ) },
                           { key: 'skip', label: 'No payout handle', render: (r) => (r.skipped_count
-                            ? `${r.skipped_count} skipped (driver ${(r.skipped ?? []).slice(0, 5).map((x) => `D-${x.driver_id}`).join(', ')}${(r.skipped_count ?? 0) > 5 ? ' …' : ''})`
+                            ? `${r.skipped_count} skipped (driver ${(r.skipped ?? []).slice(0, 5).map((x) => refOf(x)).join(', ')}${(r.skipped_count ?? 0) > 5 ? ' …' : ''})`
                             : '—') },
                         ]} />
                     </div>
                   )}
 
                   <div className="mt-4">
-                    <DataTable caption={`Version history for ${c.name}`} rows={c.history} rowKey={(h) => h.id}
+                    <DataTable wrap caption={`Version history for ${c.name}`} rows={c.history} rowKey={(h) => h.id}
                       density="compact" maxHeight={false}
                       columns={[
                         { key: 'v', label: 'Version', width: '6rem', render: (h) => (

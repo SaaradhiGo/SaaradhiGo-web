@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom, refOf } from '@/lib/refs';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type ReactNode, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { SELF_APPROVAL_LINE, SELF_APPROVAL_MIN_REASON } from '@/components/console/SelfApprovalNotice';
@@ -134,13 +135,13 @@ function waitedFor(iso: string | null): string {
   return ageLabel(Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000)));
 }
 
-const whoOf = (r: Row) => r.driver_name || `Driver #${r.driver_id}`;
+const whoOf = (r: Row) => r.driver_name || 'Driver';
 const exact = (r: Row) => formatMinor(r.amount_minor, r.currency);
 
 function aprNotice(id: number, tail: string): ReactNode {
   return (
     <>
-      Sent for approval · <PageLink page="approvals" href={`/ops/approvals?id=${id}`}>APR-{id}</PageLink>. {tail}
+      Sent for approval · <PageLink page="approvals" href={`/ops/approvals?id=${id}`}>{'approval request'}</PageLink>. {tail}
     </>
   );
 }
@@ -269,8 +270,8 @@ function PayoutsInner() {
   if (filters.method) chips.push({ key: 'method', label: `Paid by ${filters.method}`, onRemove: () => go({ ...filters, method: '', page: 1 }) });
 
   const columns: ListColumn<Row>[] = [
-    { key: 'id', label: 'Payout', primary: true, sortKey: 'id', render: (w) => <span className="sg-num">PO-{w.id}</span> },
-    { key: 'driver', label: 'Driver', sortKey: 'driver', render: (w) => <span>{whoOf(w)} <span className="ops-ref sg-num">D-{w.driver_id}</span></span> },
+    { key: 'id', label: 'Payout', primary: true, sortKey: 'id', render: (w) => <span className="sg-num">{refOf(w) !== '—' ? refOf(w) : 'Payout'}</span> },
+    { key: 'driver', label: 'Driver', sortKey: 'driver', render: (w) => <span>{whoOf(w)} <span className="ops-ref sg-num">{refFrom(w, 'driver_ref', 'Driver')}</span></span> },
     { key: 'amount', label: 'Amount', num: true, sortKey: 'amount', render: (w) => formatWhole(w.amount_minor, w.currency) },
     { key: 'status', label: 'Status', render: (w) => <PayoutStatus w={w} /> },
     {
@@ -325,7 +326,7 @@ function PayoutsInner() {
           {bulk === 'approve' && mixProblem ? <span className="ops-confirm__warn">{mixProblem}</span> : null}
           <ul className="ops-reclist">
             {rows.filter((r) => (bulk === 'approve' ? toApprove : toReject).includes(r.id)).map((r) => (
-              <li key={r.id}><span className="sg-num">PO-{r.id}</span> {whoOf(r)} <b className="sg-num">{exact(r)}</b></li>
+              <li key={r.id}><span className="sg-num">{refOf(r) !== '—' ? refOf(r) : 'Payout'}</span> {whoOf(r)} <b className="sg-num">{exact(r)}</b></li>
             ))}
           </ul>
           <label className="sr-only" htmlFor="bulk-note">{bulk === 'reject' ? 'Reason for rejecting (the driver reads it)' : 'Note for the audit log'}</label>
@@ -533,8 +534,8 @@ function PayoutRecord({ row, onClose, onChanged }: {
     try {
       const done = await api.post<SelfCheck>(`/approvals/admin/requests/${selfId}/approve/`, { reason: selfReason.trim() });
       await onChanged(done.status === 'executed'
-        ? { kind: 'done', text: `Released ${amount} to ${who}.${own ? ` Recorded as self-approved (APR-${selfId}).` : ` APR-${selfId} approved.`}` }
-        : { kind: 'done', text: `APR-${selfId} was approved, but the payout did not go out${done.error ? `: ${done.error}` : '.'}` });
+        ? { kind: 'done', text: `Released ${amount} to ${who}.${own ? ' Recorded as self-approved.' : ' The request was approved.'}` }
+        : { kind: 'done', text: `The payout request was approved, but the payout did not go out${done.error ? `: ${done.error}` : '.'}` });
     } catch (err) {
       setActionError(failureText(err, 'That did not go through. Nothing was released.'));
     } finally {
@@ -551,9 +552,9 @@ function PayoutRecord({ row, onClose, onChanged }: {
     <RecordPanel
       label="Payout"
       title={whoOf(row)}
-      refId={`PO-${row.id}`}
+      refId={refOf(row)}
       onClose={onClose}
-      subtitle={<>D-{row.driver_id} · {cityName(row.city)}</>}
+      subtitle={<>{refFrom(row, 'driver_ref', 'Driver')} · {cityName(row.city)}</>}
       status={<PayoutStatus w={current} />}
       actions={acting === null && selfId === null ? (
         <>
@@ -590,7 +591,7 @@ function PayoutRecord({ row, onClose, onChanged }: {
               {selfId !== null && (
                 <div className="ops-confirm">
                   <b>Approve now: release {amount} to {who}</b>
-                  <span>{own ? SELF_APPROVAL_LINE : `APR-${selfId} is waiting for a checker. Approving it releases the money now.`}</span>
+                  <span>{own ? SELF_APPROVAL_LINE : `The payout request is waiting for a checker. Approving it releases the money now.`}</span>
                   <label className="sr-only" htmlFor="payout-self-reason">{own ? 'Reason (required)' : 'Note (optional)'}</label>
                   <textarea id="payout-self-reason" className="input" rows={3} value={selfReason}
                     onChange={(e) => setSelfReason(e.target.value)}
@@ -609,7 +610,7 @@ function PayoutRecord({ row, onClose, onChanged }: {
               )}
               {blockedBy && selfId === null && (
                 <div className="ops-note ops-note--warn" role="status">
-                  <b>APR-{blockedBy.id} cannot be approved yet: {blockedBy.blockers.join('; ')}.</b>{' '}
+                  <b>{refOf(blockedBy) !== '—' ? refOf(blockedBy) : 'This approval request'} cannot be approved yet: {blockedBy.blockers.join('; ')}.</b>{' '}
                   Add the payout details first, or reject the payout to return the amount to the driver.</div>
               )}
               {can.awaitingChecker && selfId === null && !blockedBy && (
@@ -655,7 +656,7 @@ function PayoutRecord({ row, onClose, onChanged }: {
                 <RecordStat label="Waiting" value={ageLabel(row.age_seconds)} />
               </div>
               <RecordFacts rows={[
-                ['Driver', <PageLink key="d" page="drivers" href={`/ops/drivers/${row.driver_id}`}>{whoOf(row)} (D-{row.driver_id})</PageLink>],
+                ['Driver', <PageLink key="d" page="drivers" href={`/ops/drivers/${row.driver_id}`}>{whoOf(row)} ({refFrom(row, 'driver_ref', 'Driver')})</PageLink>],
                 ['Phone', detail ? <Revealable key="p" value={detail.driver_phone || '—'} label="driver phone" target={target} field="driver_phone" /> : '—'],
                 ['Pays to', row.payout_method === 'bank'
                   ? (row.bank_account || 'No bank account on file')
@@ -672,7 +673,7 @@ function PayoutRecord({ row, onClose, onChanged }: {
                 ['Approval', current.approval ? (
                   <span key="a">
                     {current.approval.batch ? 'Payout run · ' : ''}
-                    <PageLink page="approvals" href={`/ops/approvals?id=${current.approval.id}`}>APR-{current.approval.id}</PageLink>
+                    <PageLink page="approvals" href={`/ops/approvals?id=${current.approval.id}`}>{refOf(current.approval) !== '—' ? refOf(current.approval) : 'approval request'}</PageLink>
                     {' '}· {current.approval.status} · asked by {current.approval.maker.label || 'an operator'}
                     {current.approval.checker ? ` · checked by ${current.approval.checker.label || 'an operator'}` : ''}
                   </span>

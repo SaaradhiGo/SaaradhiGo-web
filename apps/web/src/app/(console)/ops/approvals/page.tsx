@@ -1,5 +1,6 @@
 'use client';
 
+import { marketName, placeName } from '@/lib/places';
 import { formatAge } from '@/lib/commandCentre';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
@@ -44,6 +45,8 @@ type ApprovalRow = {
   id: number;
   ref: string;
   title: string;
+  /** 24 Nov: exactly what changes ("Hyderabad daily driver fee: Auto ₹20 a day"). */
+  summary?: string;
   action_key: string;
   country: string;
   scope: string | null;
@@ -162,14 +165,14 @@ function ApprovalsPage() {
     { key: 'ref', label: 'Request', primary: true, sortKey: 'id', render: (r) => <span className="sg-num">{r.ref}</span> },
     {
       key: 'title', label: 'What', sortKey: 'action', render: (r) => (
-        <span title={r.title} className="ops-chips">
-          {r.title}
+        <span title={r.summary || r.title} className="ops-what">
+          {r.summary || r.title}
           {r.blockers.length ? <StatusChip tone="caution">Blocked</StatusChip> : null}
         </span>
       ),
     },
     { key: 'amount', label: 'Amount', num: true, sortKey: 'amount', render: (r) => amountOf(r) },
-    { key: 'place', label: 'Place', render: (r) => r.scope ?? r.country },
+    { key: 'place', label: 'Place', render: (r) => placeName(r.scope ?? r.country) },
     { key: 'maker', label: 'Raised by', sortKey: 'maker', render: (r) => <span title={r.maker?.email}>{r.maker?.label || r.maker?.email || '—'}</span> },
     { key: 'age', label: 'Waiting', num: true, render: (r) => (r.status === 'requested' ? waitingFor(r.requested_at) : '—') },
     {
@@ -188,7 +191,7 @@ function ApprovalsPage() {
       const { rows, truncated } = await fetchAllPages<ApprovalRow>((p, size) => listPath(view, p, size, ordering));
       const header = ['Request', 'What', 'Amount', 'Currency', 'Place', 'Raised by', 'Raised', 'Status', 'Decided by', 'Decision reason'];
       const body = rows.map((r) => [
-        r.ref, r.title, amountOf(r), r.currency ?? '', r.scope ?? r.country, r.maker?.label || r.maker?.email || '',
+        r.ref, r.summary || r.title, amountOf(r), r.currency ?? '', placeName(r.scope ?? r.country), r.maker?.label || r.maker?.email || '',
         stamp(r.requested_at, timeZoneFor(r.scope)), STATUS_WORDS[r.status] ?? r.status,
         r.checker?.label || r.checker?.email || '', r.decision_reason,
       ]);
@@ -262,7 +265,7 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
     try {
       setRow(await api.get<ApprovalRow>(`/approvals/admin/requests/${id}/`));
     } catch {
-      setError(`Request APR-${id} could not be opened.`);
+      setError('That request could not be opened.');
     }
   }, [id]);
   useEffect(() => { void load(); }, [load]);
@@ -313,10 +316,10 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
   return (
     <RecordPanel
       label="Approval request"
-      title={row.title}
+      title={row.summary || row.title}
       refId={row.ref}
       onClose={onClose}
-      subtitle={<>{row.scope ?? row.country} · raised by {row.maker?.label || row.maker?.email || '—'}</>}
+      subtitle={<>{placeName(row.scope ?? row.country)} · raised by {row.maker?.label || row.maker?.email || '—'}</>}
       status={(
         <>
           <StatusChip tone={statusTone(row.status)}>{STATUS_WORDS[row.status] ?? row.status}</StatusChip>
@@ -372,7 +375,7 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
                 {open ? <RecordStat label="Waiting" value={waitingFor(row.requested_at)} /> : null}
               </div>
               <RecordFacts rows={[
-                ['Place', row.scope ?? row.country],
+                ['Place', placeName(row.scope ?? row.country)],
                 ['Raised by', row.maker?.label || row.maker?.email || '—'],
                 ['Raised', stamp(row.requested_at, tz)],
                 row.expires_at ? ['Expires', stamp(row.expires_at, tz)] : null,
@@ -422,10 +425,12 @@ const HIDDEN_KEYS = /(^|_)(id|ids|key|idempotency_key|version)$/;
 function changeLines(payload: Record<string, unknown> | null | undefined): Array<[string, string]> {
   const out: Array<[string, string]> = [];
   const word = (k: string) => k.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+  // 24 Nov (owner): plain words, never a system key ("driver_fee_plan" reads "Driver fee plan").
   const text = (v: unknown): string => (v === null || v === undefined ? '—'
-    : typeof v === 'object' ? JSON.stringify(v).slice(0, 160) : String(v));
+    : typeof v === 'object' ? JSON.stringify(v).slice(0, 160)
+      : typeof v === 'string' && /^[a-z]+(_[a-z]+)+$/.test(v) ? word(v) : String(v));
   for (const [k, v] of Object.entries(payload ?? {})) {
-    if (HIDDEN_KEYS.test(k)) continue;
+    if (HIDDEN_KEYS.test(k) || k === 'kind') continue;
     if (v && typeof v === 'object' && !Array.isArray(v)) {
       for (const [k2, v2] of Object.entries(v as Record<string, unknown>)) {
         if (!HIDDEN_KEYS.test(k2)) out.push([`${word(k)} · ${word(k2).toLowerCase()}`, text(v2)]);

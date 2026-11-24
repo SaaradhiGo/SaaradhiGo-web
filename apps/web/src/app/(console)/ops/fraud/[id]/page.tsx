@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
@@ -149,7 +150,7 @@ export default function FlagPage() {
                 <p>
                   <b>Trips</b>{data.related.trip_count > data.related.trips.length ? ` (latest ${data.related.trips.length} of ${data.related.trip_count})` : ''}:{' '}
                   {data.related.trips.map((t, i) => (
-                    <span key={t.id}>{i > 0 ? ', ' : ''}<PageLink page="trips" href={t.href}>#{t.id}</PageLink></span>
+                    <span key={t.id}>{i > 0 ? ', ' : ''}<PageLink page="trips" href={t.href}>{refOf(t) !== '—' ? refOf(t) : 'Trip'}</PageLink></span>
                   ))}
                 </p>
               ) : null}
@@ -212,7 +213,7 @@ export default function FlagPage() {
         <RecordPanel
           label="Fraud flag"
           title={KIND_WORDS[data.kind] ?? data.kind}
-          refId={`Flag #${data.id}`}
+          refId={refOf(data)}
           subtitle={<>
             {data.subject.href ? <PageLink page={subjectPage} href={data.subject.href}>{data.subject.ref}</PageLink> : data.subject.ref}
             {data.scope_name ? ` · ${data.scope_name}` : ''}

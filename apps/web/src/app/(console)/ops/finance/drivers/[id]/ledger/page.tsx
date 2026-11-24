@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom, refOf } from '@/lib/refs';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
@@ -125,7 +126,7 @@ function LedgerInner() {
           {e.trip_id ? <> · <PageLink page="trips" href={`/ops/trips/${e.trip_id}`}>trip #{e.trip_id}</PageLink></> : null}
           {e.adjustment ? (
             <span className="muted">
-              {' '}· {(e.adjustment.reason_code ?? '').replace(/_/g, ' ')}{e.adjustment.note ? `: ${e.adjustment.note}` : ''} · APR-{e.adjustment.approval_request_id}
+              {' '}· {(e.adjustment.reason_code ?? '').replace(/_/g, ' ')}{e.adjustment.note ? `: ${e.adjustment.note}` : ''} · {refFrom(e.adjustment, 'approval_ref', 'approval request')}
             </span>
           ) : null}
           {e.settlement ? (
@@ -151,7 +152,7 @@ function LedgerInner() {
     data.payout_hold || (data.recovery?.debts.length ?? 0) > 0 || (data.held_rewards?.minor ?? 0) > 0));
   // Kept across reloads so the panel does not read as a different record while the page reloads.
   const who = useRef({ name: '', code: '' });
-  if (data) who.current = { name: data.driver.driver_name || `Driver #${data.driver.id}`, code: `D-${data.driver.id}` };
+  if (data) who.current = { name: data.driver.driver_name || refOf(data.driver), code: refOf(data.driver) };
 
   const tabs: RecordTab[] = [
     { key: 'statement', label: 'Statement', content: (
@@ -224,7 +225,7 @@ function LedgerInner() {
           {data.payout_hold ? (
             <div className="ops-note ops-note--warn mb-3" role="status">
               <b>Payouts are on hold until {stamp(data.payout_hold.expires_at, tz)}.</b>{' '}
-              A suspended driver, approved by a second admin (APR-{data.payout_hold.approval_request_id}); it ends by
+              A suspended driver, approved by a second admin ({refFrom(data.payout_hold, 'approval_ref', 'approval request')}); it ends by
               itself after at most {data.payout_hold.max_days} days unless it is renewed. The weekly run skips this driver
               and lists them as held.{' '}
               {can(access, 'finance.payout') ? (
@@ -245,7 +246,7 @@ function LedgerInner() {
             <DataTable caption="Recoveries of rewards" rows={data.recovery?.debts ?? []} rowKey={(d) => d.id}
               density="compact" maxHeight={false}
               columns={[
-                { key: 'id', label: 'Recovery', width: '8rem', render: (d) => `#${d.id} · APR-${d.approval_request_id}` },
+                { key: 'id', label: 'Recovery', width: '8rem', render: (d) => refFrom(d, 'approval_ref', 'Recovery request') },
                 { key: 'req', label: 'Approved', num: true, render: (d) => formatMinor(d.requested_minor, d.currency) },
                 { key: 'rec', label: 'Collected', num: true, render: (d) => formatMinor(d.recovered_minor, d.currency) },
                 { key: 'rem', label: 'Carry-over', num: true, render: (d) => formatMinor(d.remaining_minor, d.currency) },
@@ -283,7 +284,7 @@ function LedgerInner() {
         <RecordPanel
           label="Driver ledger"
           title={who.current.name || `Driver ${id}`}
-          refId={who.current.code || `D-${id}`}
+          refId={who.current.code || '—'}
           subtitle={data ? (
             <>
               {cityName(data.driver.home_city)} · days are {data.range.timezone} days ·{' '}
@@ -311,7 +312,7 @@ function LedgerInner() {
       ) : null}
       {adjusting && data && cur ? (
         <AdjustBalanceDrawer
-          driverId={data.driver.id} driverName={data.driver.driver_name || `Driver #${data.driver.id}`}
+          driverId={data.driver.id} driverName={data.driver.driver_name || refOf(data.driver)}
           currency={cur} balanceMinor={data.balance_minor ?? null}
           onClose={() => setAdjusting(false)}
           onDone={(text, kind) => { setNotice({ text, kind }); void load(); }}

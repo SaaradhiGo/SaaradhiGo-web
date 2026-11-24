@@ -24,7 +24,7 @@ vi.mock('@/lib/adminScope', async (importActual) => {
 });
 
 const DETAIL = {
-  id: 77, user_details: { id: 3, full_name: 'Asha Rao', phone_number: '+91 9999', email: null, is_active: true },
+  id: 77, ref: 'R-HYD-9MX2', user_details: { id: 3, full_name: 'Asha Rao', phone_number: '+91 9999', email: null, is_active: true },
   city: { code: 'IN-TG-HYD', name: 'Hyderabad', timezone: 'Asia/Kolkata' }, joined_at: '2026-01-01T00:00:00Z', last_trip_at: null,
   blocked: false, flagged: false, block: { active: false }, flags: [],
   wallet: { balances: [{ currency: 'INR', balance_minor: 25000 }], transactions: {}, rows_per_currency: 20 },
@@ -40,7 +40,7 @@ const respond = (_url: string) => DETAIL;
 describe('rider record page', () => {
   it('shows the ref and moves between tabs', async () => {
     render(<Page />);
-    expect(await screen.findByText('R-77')).toBeTruthy();
+    expect(await screen.findByText('R-HYD-9MX2')).toBeTruthy();
     expect(screen.queryByText(/Balance \(INR\)/)).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'Money' }));
     expect(screen.getByText(/Balance \(INR\)/)).toBeTruthy();
