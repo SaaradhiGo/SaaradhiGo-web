@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom } from '@/lib/refs';
 import { marketName, placeName } from '@/lib/places';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
@@ -406,7 +407,7 @@ function RuleDrawer({ ruleId, may, onClose, onDone }: {
               <Fact label="Until">{rule.effective_to ? stamp(rule.effective_to) : 'until replaced'}</Fact>
               <Fact label="Asked by">{rule.created_by.label || '—'}</Fact>
               <Fact label="Why">{rule.reason || '—'}</Fact>
-              {rule.approval_request_id ? <Fact label="Approval request">#{rule.approval_request_id}</Fact> : null}
+              {rule.approval_request_id ? <Fact label="Approval request">{refFrom(rule, 'approval_ref', 'Approval request')}</Fact> : null}
             </Facts>
 
             {isDraft && editing ? (

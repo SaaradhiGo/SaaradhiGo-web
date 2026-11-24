@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
@@ -84,7 +85,7 @@ function QueueInner() {
     { key: 'sev', label: 'Severity', render: (f) => <FlagSeverity severity={f.severity} /> },
     {
       key: 'flag', label: 'Flag', primary: true,
-      render: (f) => <Link href={`/ops/fraud/${f.id}`} className="fr-open">{f.subject.ref}<span className="muted"> #{f.id}</span></Link>,
+      render: (f) => <Link href={`/ops/fraud/${f.id}`} className="fr-open">{f.subject.ref}<span className="muted"> {refOf(f)}</span></Link>,
     },
     { key: 'kind', label: 'Kind', render: (f) => KIND_WORDS[f.kind] ?? f.kind },
     { key: 'what', label: 'What the rule saw', render: (f) => <span className="pm-wrap">{evidenceSummary(f)}</span> },

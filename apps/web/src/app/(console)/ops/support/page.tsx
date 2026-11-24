@@ -169,7 +169,7 @@ function SupportInner() {
   if (filters.dateFrom || filters.dateTo) chips.push({ key: 'dates', label: `Opened ${filters.dateFrom || '…'} to ${filters.dateTo || '…'}`, onRemove: drop({ dateFrom: '', dateTo: '' }) });
 
   const columns: ListColumn<TicketRow>[] = [
-    { key: 'id', label: 'Ticket', primary: true, render: (t) => <span className="sg-num">TKT-{t.id}</span> },
+    { key: 'id', label: 'Ticket', primary: true, render: (t) => <span className="sg-num">{refOf(t) !== '—' ? refOf(t) : 'Ticket'}</span> },
     {
       key: 'priority', label: 'Priority', sortKey: 'priority',
       render: (t) => <StatusChip tone={PRIORITY_TONE[t.priority] ?? 'neutral'}>{PRIORITY_LABEL[t.priority] ?? t.priority}</StatusChip>,
@@ -445,7 +445,7 @@ function TicketRecord({ id, onClose, onChanged }: {
                 {ticket.trip ? (
                   <RecordSection title="Trip">
                     <RecordFacts rows={[
-                      ['Trip', <PageLink key="t" page="trips" href={`/ops/trips/${ticket.trip.id}`}><span className="sg-num">T-{ticket.trip.id}</span></PageLink>],
+                      ['Trip', <PageLink key="t" page="trips" href={`/ops/trips/${ticket.trip.id}`}><span className="sg-num">{refOf(ticket.trip) !== '—' ? refOf(ticket.trip) : 'Trip'}</span></PageLink>],
                       ['Status', words(ticket.trip.status)],
                     ]} />
                     {ticket.trip.payment ? (
@@ -457,7 +457,7 @@ function TicketRecord({ id, onClose, onChanged }: {
                     ) : null}
                     {waitingRefunds.map((r) => (
                       <p key={r.id} className="ops-confirm">
-                        Refund of {formatMinor(r.amount_minor, r.currency)} waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>APR-{r.id}</PageLink>
+                        Refund of {formatMinor(r.amount_minor, r.currency)} waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>{refOf(r) !== '—' ? refOf(r) : 'approval request'}</PageLink>
                       </p>
                     ))}
                   </RecordSection>

@@ -203,7 +203,7 @@ export function IncidentActionDrawer({
             <div className="ops-form__row">
               <label className="ops-form__label" htmlFor="act-driver">Driver</label>
               <select id="act-driver" className="ops-select" value={driverId} onChange={(e) => setDriverId(e.target.value)}>
-                {drivers.map((d) => <option key={d.id} value={d.id}>{d.driver_name || `Driver #${d.id}`}</option>)}
+                {drivers.map((d) => <option key={d.id} value={d.id}>{d.driver_name || 'Driver'}</option>)}
               </select>
             </div>
           )
@@ -214,7 +214,7 @@ export function IncidentActionDrawer({
             <div className="ops-form__row">
               <label className="ops-form__label" htmlFor="act-rider">Rider</label>
               <select id="act-rider" className="ops-select" value={riderId} onChange={(e) => setRiderId(e.target.value)}>
-                {riders.map((r) => <option key={r.id} value={r.id}>{r.rider_name || `Rider #${r.id}`}</option>)}
+                {riders.map((r) => <option key={r.id} value={r.id}>{r.rider_name || 'Rider'}</option>)}
               </select>
             </div>
           )

@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { plainAmount } from '@/lib/money';
 
 import Link from 'next/link';
@@ -234,7 +235,7 @@ export default function ZoneDetailPage() {
           caption="Requests waiting for approval for this zone" maxHeight={false} density="compact"
           rows={pending} rowKey={(r) => r.id}
           columns={[
-            { key: 'id', label: 'Request', width: '7rem', render: (r) => <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>APR-{r.id}</PageLink> },
+            { key: 'id', label: 'Request', width: '7rem', render: (r) => <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>{refOf(r) !== '—' ? refOf(r) : 'approval request'}</PageLink> },
             { key: 'what', label: 'What', render: (r) => requestWords(r) },
             { key: 'who', label: 'Asked by', hideBelow: 1100, render: (r) => r.maker?.label || r.maker?.email || '—' },
             { key: 'why', label: 'Reason', hideBelow: 1100, render: (r) => r.request_reason || '—' },

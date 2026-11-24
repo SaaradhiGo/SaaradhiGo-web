@@ -1,6 +1,6 @@
 'use client';
 
-import { refOf } from '@/lib/refs';
+import { refFrom, refOf } from '@/lib/refs';
 import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -120,7 +120,7 @@ export default function RiderDetailPage() {
     return (
       <>
         <p className="ops-record-page__back"><Link href="/ops/riders">All riders</Link></p>
-        <PageHeader title={`Rider #${id}`} />
+        <PageHeader title="Rider" />
         <ErrorState title="This rider could not be loaded" detail={error ?? undefined} onRetry={() => void load()} />
       </>
     );
@@ -137,7 +137,7 @@ export default function RiderDetailPage() {
   const pending = data.approval_requests.filter((a) => a.status === 'requested');
 
   const tripColumns: Column<TripRow>[] = [
-    { key: 'id', label: 'Trip', width: '6rem', render: (t) => <PageLink page="trips" href={`/ops/trips/${t.id}`}>#{t.id}</PageLink> },
+    { key: 'id', label: 'Trip', width: '6rem', render: (t) => <PageLink page="trips" href={`/ops/trips/${t.id}`}>{refOf(t) !== '—' ? refOf(t) : 'Open'}</PageLink> },
     { key: 'status', label: 'Status', width: '8rem', render: (t) => <Pill tone={TONE[t.status ?? ''] ?? 'neutral'}>{words(t.status)}</Pill> },
     { key: 'city', label: 'City', width: '8rem', hideBelow: 1100, render: (t) => t.city_code ?? '—' },
     { key: 'fare', label: 'Fare', num: true, width: '8rem', render: (t) => formatMinor(t.fare_minor, t.currency) },
@@ -151,15 +151,15 @@ export default function RiderDetailPage() {
       render: (t) => formatMinor(t.txn_type === 'debit' ? -t.amount_minor : t.amount_minor, t.currency, { signed: true }) },
   ];
   const ticketColumns: Column<TicketRow>[] = [
-    { key: 'id', label: 'Ticket', width: '6rem', render: (t) => <PageLink page="support" href={`/ops/support/${t.id}`}>#{t.id}</PageLink> },
+    { key: 'id', label: 'Ticket', width: '6rem', render: (t) => <PageLink page="support" href={`/ops/support/${t.id}`}>{refOf(t) !== '—' ? refOf(t) : 'Open'}</PageLink> },
     { key: 'status', label: 'Status', width: '8rem', render: (t) => <Pill tone={TONE[t.status] ?? 'neutral'}>{words(t.status.toLowerCase())}</Pill> },
     { key: 'issue', label: 'Issue', render: (t) => words(t.issue_type) },
     { key: 'when', label: 'Opened', num: true, width: '10rem', render: (t) => cityTime(t.created_at, tz) },
   ];
   const sosColumns: Column<SosRow>[] = [
-    { key: 'id', label: 'SOS', width: '6rem', render: (s) => <PageLink page="safety" href="/ops/safety-ops">#{s.id}</PageLink> },
+    { key: 'id', label: 'SOS', width: '6rem', render: (s) => <PageLink page="safety" href="/ops/safety-ops">{refOf(s) !== '—' ? refOf(s) : 'Open'}</PageLink> },
     { key: 'status', label: 'Status', width: '8rem', render: (s) => <Pill tone={TONE[s.status] ?? 'neutral'}>{words(s.status)}</Pill> },
-    { key: 'trip', label: 'Trip', width: '6rem', render: (s) => (s.trip_id ? <PageLink page="trips" href={`/ops/trips/${s.trip_id}`}>#{s.trip_id}</PageLink> : <span className="muted">none</span>) },
+    { key: 'trip', label: 'Trip', width: '6rem', render: (s) => (s.trip_id ? <PageLink page="trips" href={`/ops/trips/${s.trip_id}`}>{refFrom(s, 'trip_ref', 'Trip')}</PageLink> : <span className="muted">none</span>) },
     { key: 'when', label: 'Raised', num: true, width: '10rem', render: (s) => cityTime(s.created_at, tz) },
   ];
   const auditColumns: Column<AuditRow>[] = [
@@ -202,7 +202,7 @@ export default function RiderDetailPage() {
             </p>
           ))}
           {pending.map((a) => (
-            <p key={a.id} className="ops-confirm">Waiting for a checker · APR-{a.id} ({words(a.action_key)})</p>
+            <p key={a.id} className="ops-confirm">Waiting for a checker · {refOf(a) !== '—' ? refOf(a) : 'approval request'} ({words(a.action_key)})</p>
           ))}
           {rail.length === 0 ? <p className="help m-0">You can view this rider but not change them.</p> : null}
         </div>

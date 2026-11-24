@@ -1,6 +1,6 @@
 'use client';
 
-import { refOf } from '@/lib/refs';
+import { refFrom, refOf } from '@/lib/refs';
 import { DateField } from '@/components/console/kit/DateField';
 import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
@@ -177,7 +177,7 @@ function routeOf(t: TripRow): string {
   return `${from ?? '—'} → ${to ?? '—'}`;
 }
 
-const driverOf = (t: TripRow) => t.driver_name || (t.driver_id ? `Driver #${t.driver_id}` : null);
+const driverOf = (t: TripRow) => t.driver_name || (t.driver_id ? 'Driver' : null);
 
 /** A search hit as a list row: what the search answers, nothing invented. */
 function rowFromHit(h: TripHit): TripRow {
@@ -502,7 +502,7 @@ function TripRecord({ row, showMoney, onClose, onChanged }: {
   const rail = visibleActions(data.actions, access);
   const target = { type: 'trip', id: data.id } as const;
   const riderName = data.rider?.full_name?.trim() || data.rider?.phone_number || 'the rider';
-  const driverName = data.driver?.full_name?.trim() || (data.driver ? `Driver #${data.driver.driver_id}` : null);
+  const driverName = data.driver?.full_name?.trim() || (data.driver ? 'Driver' : null);
   const pending = (data.approval_requests ?? []).filter((r) => r.status === 'requested');
   const state = data.status ?? row.status ?? '';
 
@@ -542,15 +542,15 @@ function TripRecord({ row, showMoney, onClose, onChanged }: {
                 <RecordFacts rows={[
                   ['Rider', data.rider ? (
                     <span key="r">
-                      <PageLink page="riders" href={`/ops/riders/${data.rider.user_id}`}>{data.rider.full_name?.trim() || `Rider #${data.rider.user_id}`}</PageLink>
-                      {' '}<span className="ops-ref sg-num">R-{data.rider.user_id}</span>
+                      <PageLink page="riders" href={`/ops/riders/${data.rider.user_id}`}>{data.rider.full_name?.trim() || 'Rider'}</PageLink>
+                      {' '}<span className="ops-ref sg-num">{refFrom(data.rider, 'rider_ref', 'Rider')}</span>
                       {' · '}<Revealable value={data.rider.phone_number ?? '—'} label="rider phone" target={target} field="rider_phone" compact />
                     </span>
                   ) : '—'],
                   ['Driver', data.driver ? (
                     <span key="d">
                       <PageLink page="drivers" href={`/ops/drivers/${data.driver.driver_id}`}>{driverName}</PageLink>
-                      {' '}<span className="ops-ref sg-num">D-{data.driver.driver_id}</span>
+                      {' '}<span className="ops-ref sg-num">{refFrom(data.driver, 'driver_ref', 'Driver')}</span>
                       {' · '}<Revealable value={data.driver.phone_number ?? '—'} label="driver phone" target={target} field="driver_phone" compact />
                     </span>
                   ) : 'Unassigned'],
@@ -563,7 +563,7 @@ function TripRecord({ row, showMoney, onClose, onChanged }: {
                 ]} />
                 {pending.map((r) => (
                   <p key={r.id} className="ops-confirm">
-                    Waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>APR-{r.id}</PageLink>
+                    Waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>{refOf(r) !== '—' ? refOf(r) : 'approval request'}</PageLink>
                     {' '}({words(r.action_key)}{r.amount != null && r.currency ? ` · ${formatMinor(r.amount, r.currency)}` : ''})
                   </p>
                 ))}
@@ -605,7 +605,7 @@ function TripRecord({ row, showMoney, onClose, onChanged }: {
                   <ul className="ops-reclist">
                     {(data.support_tickets ?? []).map((t) => (
                       <li key={t.id}>
-                        <PageLink page="support" href={`/ops/support/${t.id}`}><span className="sg-num">TKT-{t.id}</span></PageLink>
+                        <PageLink page="support" href={`/ops/support/${t.id}`}><span className="sg-num">{refOf(t) !== '—' ? refOf(t) : 'Ticket'}</span></PageLink>
                         <span>{words(t.issue_type)}</span>
                         <StatusChip tone={t.status === 'CLOSED' ? 'good' : 'info'}>{t.status === 'CLOSED' ? 'Closed' : 'Open'}</StatusChip>
                       </li>

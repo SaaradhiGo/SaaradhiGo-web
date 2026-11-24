@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom } from '@/lib/refs';
 import { Suspense, useEffect, useState } from 'react';
 import { cityTimeZone, stamp } from '@/lib/consoleTime';
 import {
@@ -75,8 +76,8 @@ function SettlementRecord({ row, onClose }: { row: Row; onClose: () => void }) {
               <RecordStat label="Driver net" value={formatMinor(row.driver_net_minor, row.currency)} />
             </div>
             <Facts>
-              <Fact label="Trip"><PageLink page="trips" href={`/ops/trips/${row.trip_id}`}>T-{row.trip_id}</PageLink></Fact>
-              <Fact label="Driver"><PageLink page="drivers" href={`/ops/drivers/${row.driver_id}`}>D-{row.driver_id}</PageLink></Fact>
+              <Fact label="Trip"><PageLink page="trips" href={`/ops/trips/${row.trip_id}`}>{refFrom(row, 'trip_ref', 'Trip')}</PageLink></Fact>
+              <Fact label="Driver"><PageLink page="drivers" href={`/ops/drivers/${row.driver_id}`}>{refFrom(row, 'driver_ref', 'Driver')}</PageLink></Fact>
               <Fact label="Payment method">{words(row.payment_method)}</Fact>
               <Fact label="Currency">{row.currency}</Fact>
               <Fact label="Version">{row.version}</Fact>
@@ -99,7 +100,7 @@ function SettlementsInner() {
   const columns: ListColumn<Row>[] = [
     {
       key: 'trip', label: 'Trip', width: '7rem', primary: true,
-      render: (r) => <PageLink page="trips" href={`/ops/trips/${r.trip_id}`}>T-{r.trip_id}</PageLink>,
+      render: (r) => <PageLink page="trips" href={`/ops/trips/${r.trip_id}`}>{refFrom(r, 'trip_ref', 'Trip')}</PageLink>,
     },
     { key: 'city', label: 'City', render: (r) => cityName(r.city) },
     {

@@ -183,7 +183,7 @@ function MessageRecord({ id, onClose }: { id: number; onClose: () => void }) {
 
   if (!m || m.id !== id) {
     return (
-      <RecordPanel label="Message" title="Message" refId={`#${id}`} onClose={onClose}
+      <RecordPanel label="Message" title="Message" refId="Message" onClose={onClose}
         tabs={[{ key: 'sent', label: 'Message', content: error ? (
           <div>
             <p className="alert-error" role="alert">{error}</p>
@@ -197,7 +197,7 @@ function MessageRecord({ id, onClose }: { id: number; onClose: () => void }) {
     <RecordPanel
       label="Message"
       title={templateName(m.template_key)}
-      refId={`#${m.id}`}
+      refId="Message"
       subtitle={<>{CHANNEL_WORDS[m.channel]} · {m.city ? m.city.name : 'Unplaced'} · {stamp(m.created_at, tz)}</>}
       status={<MessageChip status={m.status} />}
       onClose={onClose}

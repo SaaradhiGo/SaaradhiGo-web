@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
@@ -136,7 +137,7 @@ function RuleCard({ country, rule, mayEdit, onEdit }: {
       ) : null}
       {rule.pending.map((p) => (
         <div key={p.id} className="fr-pending" role="status">
-          <b>Waiting for a second approver · APR-{p.id}</b>
+          <b>Waiting for a second approver · {refOf(p) !== '—' ? refOf(p) : 'approval request'}</b>
           <span>
             {Object.entries(p.thresholds)
               .filter(([k, v]) => rule.thresholds.some((t) => t.key === k && t.value !== v))

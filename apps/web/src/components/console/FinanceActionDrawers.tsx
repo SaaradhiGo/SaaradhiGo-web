@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom } from '@/lib/refs';
 import { useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import {
@@ -84,7 +85,7 @@ export function AdjustBalanceDrawer({
             <b>{outcome.message}</b>
             {outcome.kind === 'pending' ? (
               <span>
-                Nothing has moved yet. A second finance admin decides APR-{outcome.requestId}; the
+                Nothing has moved yet. A second finance admin decides {refFrom(outcome, 'approval_ref', 'approval request')}; the
                 balance changes only when they approve it.
               </span>
             ) : null}
@@ -207,7 +208,7 @@ export function CreditWalletDrawer({
             <b>{outcome.message}</b>
             {outcome.kind === 'pending' ? (
               <span>
-                The wallet has not changed. A second finance admin decides APR-{outcome.requestId}.
+                The wallet has not changed. A second finance admin decides {refFrom(outcome, 'approval_ref', 'approval request')}.
                 {ticket.trim() ? ' The ticket has an internal note; the rider is told only once the credit is added.' : ''}
               </span>
             ) : null}

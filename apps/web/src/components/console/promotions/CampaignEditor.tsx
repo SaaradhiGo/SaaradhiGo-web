@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom } from '@/lib/refs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
@@ -279,8 +280,8 @@ function Summary({ c }: { c: Campaign }) {
         <Fact label="Where">{c.scope_name ?? '—'}</Fact>
         <Fact label="Runs">{stamp(c.starts_at)} to {stamp(c.ends_at)}</Fact>
         <Fact label="Asked by">{c.created_by.label || '—'}</Fact>
-        {c.approval_request_id ? <Fact label="Approval request">#{c.approval_request_id}</Fact> : null}
-        {c.budget_request_id ? <Fact label="Budget request">#{c.budget_request_id}</Fact> : null}
+        {c.approval_request_id ? <Fact label="Approval request">{refFrom(c, 'approval_ref', 'Approval request')}</Fact> : null}
+        {c.budget_request_id ? <Fact label="Budget request">{'Open'}</Fact> : null}
       </Facts>
       {c.state !== 'draft' ? (
         <section aria-label="Budget">
@@ -291,7 +292,7 @@ function Summary({ c }: { c: Campaign }) {
       {c.state === 'pending_approval' ? (
         <div className="ops-confirm" role="status">
           <b>Waiting for a second admin</b>
-          <span>Nothing goes live until a different admin approves APR-{c.approval_request_id}. You can still cancel it.</span>
+          <span>Nothing goes live until a different admin approves {refFrom(c, 'approval_ref', 'approval request')}. You can still cancel it.</span>
         </div>
       ) : null}
       {c.state === 'exhausted' ? (
@@ -360,7 +361,7 @@ function ActivityPanel({ c, activity, error }: { c: Campaign; activity: Activity
               <thead><tr><th scope="col">Rider</th><th scope="col">Trip</th><th scope="col">Discount</th><th scope="col">State</th><th scope="col">When</th></tr></thead>
               <tbody>
                 {activity.results.map((r) => (
-                  <tr key={r.id}><td>{r.who}</td><td>{r.trip_id ? `#${r.trip_id}` : '—'}</td>
+                  <tr key={r.id}><td>{r.who}</td><td>{r.trip_id ? refFrom(r, 'trip_ref', 'Trip') : '—'}</td>
                     <td>{formatMinor(r.discount_minor, currency)}</td><td>{REDEMPTION_WORDS[r.state]}</td><td>{stamp(r.created_at)}</td></tr>
                 ))}
               </tbody>
