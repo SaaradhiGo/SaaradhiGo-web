@@ -8,7 +8,6 @@ import { usePathname } from 'next/navigation';
  * (the same capability), so it is drawn whole or not at all (the link rule).
  */
 const TABS = [
-  { href: '/ops/pricing', label: 'Commission' },
   { href: '/ops/pricing/fare-cards', label: 'Fare cards' },
   { href: '/ops/pricing/fee-plans', label: 'Driver fee plans' },
   { href: '/ops/pricing/vehicle-classes', label: 'Vehicle classes' },
@@ -16,9 +15,7 @@ const TABS = [
 
 export function PricingNav() {
   const pathname = usePathname() ?? '';
-  const current = TABS.find((t) => (t.href === '/ops/pricing'
-    ? pathname === t.href
-    : pathname === t.href || pathname.startsWith(`${t.href}/`)))?.href;
+  const current = TABS.find((t) => pathname === t.href || pathname.startsWith(`${t.href}/`))?.href;
   return (
     <nav className="ops-subnav" aria-label="Pricing">
       {TABS.map((t) => (
