@@ -31,6 +31,7 @@ import {
 import { Drawer, Fact, Facts, Skeleton } from '@/components/console/ui';
 import { marketDate } from '@/lib/consoleTime';
 import { DocExpiry } from '@/components/console/DocExpiry';
+import { classWord } from '@/lib/pricingWords';
 
 /**
  * Drivers: the fleet and the KYC queue, as a list with the driver beside it
@@ -251,7 +252,7 @@ function DriversInner() {
         ? <span className="muted">{d.checklist.missing.map(words).join(', ')}</span>
         : <StatusChip tone="good">Complete</StatusChip>),
     },
-    { key: 'vehicle', label: 'Vehicle', render: (d) => d.vehicle_type ?? 'None' },
+    { key: 'vehicle', label: 'Vehicle', render: (d) => (d.vehicle_type ? classWord(d.vehicle_type) : 'None') },
   ] : [
     { key: 'id', label: 'Driver', primary: true, sortKey: 'id', render: nameCell },
     { key: 'now', label: 'Now', render: (d) => <NowChip d={d} /> },
@@ -273,7 +274,7 @@ function DriversInner() {
         refOf(d), driverName(d.user_details, d.id), d.user_details?.phone_number ?? '',
         d.suspended ? 'Suspended' : d.online ? 'Online' : words(d.status), d.home_city?.name ?? '',
         KYC_LABEL[d.kyc_state ?? '']?.[0] ?? words(d.kyc_state), rating(d.ratings), d.total_trips ?? 0,
-        [d.vehicle_type, d.vehicle_number].filter(Boolean).join(' '), cityTime(d.joined_at, d.home_city?.timezone, { zone: true }),
+        [d.vehicle_type ? classWord(d.vehicle_type) : null, d.vehicle_number].filter(Boolean).join(' '), cityTime(d.joined_at, d.home_city?.timezone, { zone: true }),
       ]);
       downloadCsv(`drivers-${view}.csv`, toCsv(header, body));
       if (truncated) setNotice({ kind: 'done', text: `Exported the first ${all.length.toLocaleString('en-IN')} drivers. Narrow the view to export the rest.` });
@@ -438,7 +439,7 @@ function DriverRecord({ row, queue, onClose, onChanged }: {
     .map((r) => ({ at: when(r.created_at), text: <>{words(r.action)}{r.reason ? ` · ${r.reason}` : ''}</>, who: r.created_by?.label ?? null }));
   // 13 Nov: a vehicle replaced by a newer one is history, not part of the overview.
   for (const v of data.vehicles.filter((x) => x.status === 'archived')) {
-    history.push({ at: 'Archived', text: <>Earlier vehicle · {[v.type, v.vehicle_number].filter(Boolean).join(' · ')}</>, who: null });
+    history.push({ at: 'Archived', text: <>Earlier vehicle · {[v.type ? classWord(v.type) : null, v.vehicle_number].filter(Boolean).join(' · ')}</>, who: null });
   }
 
   const tone = (t: string): ChipTone => chipTone(t);
@@ -507,7 +508,7 @@ function DriverRecord({ row, queue, onClose, onChanged }: {
                   </p>
                 ))}
                 <RecordFacts rows={[
-                  ['Vehicle', data.vehicles.filter((v) => v.is_active_vehicle).map((v) => [v.type, v.vehicle_number].filter(Boolean).join(' · ')).join(', ') || 'None active'],
+                  ['Vehicle', data.vehicles.filter((v) => v.is_active_vehicle).map((v) => [v.type ? classWord(v.type) : null, v.vehicle_number].filter(Boolean).join(' · ')).join(', ') || 'None active'],
                   ['Licence expiry', data.license_expiry ? marketDate(data.license_expiry, (data.home_city?.code ?? 'IN').split('-')[0]) : 'Not set'],
                   ['Joined', when(data.joined_at)],
                   ['Account active', data.user.is_active ? 'Yes' : 'No'],

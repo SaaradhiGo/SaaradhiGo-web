@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { messageOf } from '@/components/console/notifications';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { Revealable } from '@/components/console/Revealable';
+import { classWord } from '@/lib/pricingWords';
 
 /**
  * Drivers › Applications (17 Nov): people who applied to drive before sign-up opened, in your
@@ -23,7 +24,7 @@ const COLUMNS: ListColumn<Application>[] = [
       render={(v) => (v ? <a href={`tel:${String(v)}`}>{String(v)}</a> : 'Not on file')} />
   ) },
   { key: 'city', label: 'City', render: (a) => a.city },
-  { key: 'vehicle', label: 'Vehicle', render: (a) => a.vehicle_type },
+  { key: 'vehicle', label: 'Vehicle', render: (a) => classWord(a.vehicle_type) },
   { key: 'email', label: 'Email', render: (a) => (a.email
     ? <Revealable value={a.email} label="applicant email" target={{ type: 'driver_application', id: a.id }} field="email" compact />
     : '—') },

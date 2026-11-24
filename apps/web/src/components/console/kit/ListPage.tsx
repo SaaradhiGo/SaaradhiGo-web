@@ -2,6 +2,7 @@
 
 import { type CSSProperties, type ReactNode, useEffect, useState } from 'react';
 import { textOf } from '@/lib/cellText';
+import { useFitOrCards } from '@/lib/useFitOrCards';
 
 /**
  * The everyday pattern, list half (design board B): saved views with counts,
@@ -108,6 +109,8 @@ export function ListPage<T>({
   onSavedView?: (query: string) => void;
 }) {
   const [saved, setSaved] = useState<SavedView[]>([]);
+  const [tableBox, cards] = useFitOrCards<HTMLDivElement>([rows, columns.length]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   useEffect(() => setSaved(readSaved(pageKey)), [pageKey]);
   const pages = total === null ? 1 : Math.max(1, Math.ceil(total / pageSize));
   const from = total ? (page - 1) * pageSize + 1 : 0;
@@ -168,7 +171,15 @@ export function ListPage<T>({
             ))}
           </div>
         ) : null}
-        {filterSlot}
+        {/* 25 Nov (owner): on a phone the date presets and filters sit behind one "Filters" button,
+            so the first row shows on the first screen. */}
+        {filterSlot ? (
+          <button type="button" className="ops-list__filtertoggle sg-btn sg-btn--secondary sg-btn--sm"
+            aria-expanded={filtersOpen} onClick={() => setFiltersOpen((o) => !o)}>
+            Filters{chips.length ? ` (${chips.length})` : ''}
+          </button>
+        ) : null}
+        {filterSlot ? <div className="ops-list__filterbody" data-open={filtersOpen || undefined}>{filterSlot}</div> : null}
         <span className="ops-list__count sg-num">
           {total === null ? '' : total === 0 ? 'No matches' : `${plural(total, 'match', 'matches')} · showing ${from}–${to}`}
         </span>
@@ -193,7 +204,7 @@ export function ListPage<T>({
 
       {error ? <p className="alert-error" role="alert">{error}</p> : null}
 
-      <div className="ops-list__table" aria-busy={loading || undefined}>
+      <div ref={tableBox} className={`ops-list__table${cards ? ' is-cards' : ''}`} aria-busy={loading || undefined}>
         <table className="ops-table ops-table--compact">
           <caption className="sr-only">{title}</caption>
           <thead>

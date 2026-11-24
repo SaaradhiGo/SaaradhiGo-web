@@ -15,7 +15,7 @@ import { PlatformNav, PlatformNoAccess } from '@/components/console/platform';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { RecordPanel } from '@/components/console/kit/RecordPanel';
 import { StatusChip } from '@/components/console/kit/StatusChip';
-import { Drawer, PageHeader } from '@/components/console/ui';
+import { Drawer, PageHeader, FitBox } from '@/components/console/ui';
 
 /**
  * Platform settings: Audit log.
@@ -252,7 +252,7 @@ function EntryRecord({ id, zone, onClose }: { id: number; zone: string; onClose:
           key: 'diff', label: 'Before and after', content: rows.length === 0 ? (
             <p className="ops-record__empty">This entry records that something happened, not what changed.</p>
           ) : (
-            <div className="ops-table-wrap"><table className="ps-diff">
+            <FitBox><table className="ps-diff">
               <caption className="ops-form__label">Before and after (personal details masked)</caption>
               <thead><tr><th scope="col">What</th><th scope="col">Before</th><th scope="col">After</th></tr></thead>
               <tbody>
@@ -262,7 +262,7 @@ function EntryRecord({ id, zone, onClose }: { id: number; zone: string; onClose:
                   </tr>
                 ))}
               </tbody>
-            </table></div>
+            </table></FitBox>
           ),
         },
       ]}

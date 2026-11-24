@@ -256,18 +256,25 @@ export function canRevealPii(access: AdminAccess | null): boolean {
 /** A label for the scope being viewed, for the shell to display. */
 export function scopeLabel(access: AdminAccess | null): string {
   if (!access) return '';
-  if (access.access_model === 'legacy_unscoped') return 'All regions';
+  if (access.access_model === 'legacy_unscoped') return 'All countries';
+  // 25 Nov (owner): headings follow the place path, so the top reads "All countries", never "Global".
+  const named = (s: AdminScope) => (s.kind === 'global' ? 'All countries' : s.name);
   const code = readSelectedScope();
   if (code) {
     const match = access.scopes.find((s) => s.code === code);
-    if (match) return match.name;
+    if (match) return named(match);
   }
-  if (access.scopes.length === 1) return access.scopes[0].name;
-  const shallowest = access.scopes.reduce<AdminScope | null>(
+  const scopes = access.scopes.filter((s) => s.status !== 'archived');
+  if (scopes.length === 1) return named(scopes[0]);
+  const cities = scopes.filter((s) => s.kind === 'city');
+  if (cities.length === 1 && scopes.every((s) => s.kind === 'city')) return cities[0].name;
+  const shallowest = scopes.reduce<AdminScope | null>(
     (best, s) => (!best || s.depth < best.depth ? s : best),
     null,
   );
-  return shallowest ? `${shallowest.name} (all)` : '';
+  if (!shallowest) return '';
+  if (shallowest.kind === 'global' || scopes.filter((s) => s.depth === shallowest.depth).length > 1) return 'All countries';
+  return shallowest.name;
 }
 
 

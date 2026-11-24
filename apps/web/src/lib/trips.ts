@@ -71,7 +71,8 @@ export const SORT_OPTIONS = [
 export const PAGE_SIZES = [20, 50, 100] as const;
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const ID = /^\d+$/;
+// A trip reference (HYD-261116-K7Q4), an old one (T-232) or a bare number.
+const ID = /^[A-Za-z0-9-]{1,24}$/;
 
 /** Filters from the page URL. Anything malformed is dropped, not guessed. */
 export function filtersFromSearch(params: URLSearchParams): TripFilters {

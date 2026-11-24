@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { marketDate } from '@/lib/consoleTime';
 import { RecordSection } from '@/components/console/kit/ListBits';
+import { FitBox } from '@/components/console/ui';
 
 type Person = { role: 'primary' | 'backup' | 'head'; name: string; phone: string };
 type Rota = {
@@ -108,7 +109,7 @@ export function OnCallRota() {
               </div>
             </div>
           ) : (
-            <div className="ops-table-wrap"><table className="ops-config__table" data-testid={`oncall-${row.city.code}`}>
+            <FitBox><table className="ops-config__table" data-testid={`oncall-${row.city.code}`}>
               <caption className="sr-only">On call in {row.city.name}</caption>
               <thead><tr><th scope="col">Order</th><th scope="col">Name</th><th scope="col">Phone</th></tr></thead>
               <tbody>
@@ -116,7 +117,7 @@ export function OnCallRota() {
                   <tr key={p.role}><td>{ROLE_LABEL[p.role]}</td><td>{p.name || 'Not set'}</td><td>{p.phone || 'Not set'}</td></tr>
                 ))}
               </tbody>
-            </table></div>
+            </table></FitBox>
           )}
         </RecordSection>
       ))}

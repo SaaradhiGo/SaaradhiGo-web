@@ -73,6 +73,7 @@ export type LiveAlert = {
   sos_id?: number | null;
   sos_status?: string | null;
   incident_id?: number | null;
+  incident_ref?: string | null;
   /** ISO instant by which the SOS must be acknowledged, or null. */
   ack_due_at?: string | null;
 };
@@ -519,7 +520,8 @@ export function ackText(remaining: number): string {
   return remaining >= 0 ? `Acknowledge due in ${clock(remaining)}` : `Overdue by ${clock(remaining)}`;
 }
 
-export const sosLabel = (a: LiveAlert) => `SOS-${a.sos_id ?? a.id}`;
+/** 25 Nov (owner): an SOS is named by its case's reference (INC-HYD-4MQ9), never a database id. */
+export const sosLabel = (a: LiveAlert) => (a.incident_ref ? `SOS ${a.incident_ref}` : 'SOS');
 
 /** Open SOS that carry a deadline, soonest first: the ones that raise the alarm. */
 export function alarmingSos(alerts: LiveAlert[]): LiveAlert[] {

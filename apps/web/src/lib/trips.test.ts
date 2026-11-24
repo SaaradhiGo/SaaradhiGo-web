@@ -79,7 +79,7 @@ describe('filters and the query string', () => {
 
   it('drops malformed values instead of guessing', () => {
     const f = filtersFromSearch(new URLSearchParams(
-      'status=bogus,completed&date_from=01/10/2026&id=12a&ordering=rider&page=-1&page_size=7'));
+      'status=bogus,completed&date_from=01/10/2026&id=12_a!&ordering=rider&page=-1&page_size=7'));
     expect(f.status).toEqual(['completed']);
     expect(f.dateFrom).toBe('');
     expect(f.id).toBe('');

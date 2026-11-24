@@ -14,6 +14,7 @@ import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
 import { BudgetBar } from '@/components/console/promotions';
 import { messageOf } from '@/components/console/notifications';
 import { Fact, Facts } from '@/components/console/ui';
+import { classWord } from '@/lib/pricingWords';
 
 /**
  * One campaign beside the list: its budget (exact), its rules and its
@@ -155,7 +156,7 @@ export function CampaignRecord({ id, onClose, onManage, refreshKey = 0 }: {
                   <Fact label="Trips to complete">{cfg.target_trips ?? '—'}</Fact>
                   <Fact label="Reward">{formatMinor(cfg.reward_minor ?? 0, c.currency)}</Fact>
                   {cfg.zone_code ? <Fact label="Zone">{cfg.zone_code}</Fact> : null}
-                  {cfg.vehicle_type ? <Fact label="Vehicle class">{cfg.vehicle_type}</Fact> : null}
+                  {cfg.vehicle_type ? <Fact label="Vehicle class">{classWord(String(cfg.vehicle_type))}</Fact> : null}
                 </>
               ) : null}
               {c.kind === 'referral' ? (

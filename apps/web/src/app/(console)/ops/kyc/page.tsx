@@ -22,6 +22,7 @@ import { RecordPanel } from '@/components/console/kit/RecordPanel';
 import { Empty, ErrorState, Skeleton } from '@/components/console/ui';
 import { marketDate } from '@/lib/consoleTime';
 import { EXPIRY_WARN_DAYS } from '@/components/console/DocExpiry';
+import { classWord } from '@/lib/pricingWords';
 
 /**
  * KYC review, built for throughput (design board E).
@@ -361,7 +362,8 @@ export default function KycReviewPage() {
 
   const name = driverName(detail.user, detail.id);
   const active = detail.vehicles.find((v) => v.is_active_vehicle) ?? detail.vehicles[0] ?? null;
-  const vehicleClass = active?.type ?? current.vehicle_type ?? null;
+  const rawClass = active?.type ?? current.vehicle_type ?? null;
+  const vehicleClass = rawClass ? classWord(rawClass) : null;
   const multiVehicle = detail.vehicles.length > 1;
   const plateOf = (id: number | null) => {
     const v = detail.vehicles.find((x) => x.id === id);
@@ -383,7 +385,7 @@ export default function KycReviewPage() {
   const upNext = queue.slice(position, position + 8);
   const queueColumns: ListColumn<QueueRow>[] = [
     { key: 'driver', label: 'Driver', primary: true, render: (r) => <span>{r.user_details?.full_name || 'Driver'} <span className="ops-ref sg-num">{refOf(r) !== '—' ? refOf(r) : 'Driver'}</span></span> },
-    { key: 'vehicle', label: 'Vehicle', render: (r) => r.vehicle_type ?? <span className="muted">None</span> },
+    { key: 'vehicle', label: 'Vehicle', render: (r) => (r.vehicle_type ? classWord(r.vehicle_type) : null) ?? <span className="muted">None</span> },
     { key: 'waiting', label: 'Waiting', num: true, render: (r) => (
       <span>{waitingLabel(r.waiting_seconds ?? null)}{r.past_target ? <> <StatusChip tone="critical">Past target</StatusChip></> : null}</span>
     ) },

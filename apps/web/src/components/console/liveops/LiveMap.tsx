@@ -9,6 +9,7 @@ import {
   type Dot, type HeatCell, type LiveAlert, type LiveTrip, type ZoneOutline,
 } from '@/lib/liveOps';
 import { boundsOf, makeProjector, ringPath, type Bounds, type Position } from '@/lib/zones';
+import { classWord } from '@/lib/pricingWords';
 
 /**
  * The live map: Google Maps when the build has a browser key, a scaled SVG when it does not.
@@ -163,7 +164,7 @@ function OutlineLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref,
         {layers.drivers ? dots.map((d) => {
           const p = at(d.lat, d.lng);
           if (!inside(p)) return null;
-          const label = `Driver ${d.driver_id}, ${STATUS_WORDS[d.status].toLowerCase()}${d.vehicle_class ? `, ${d.vehicle_class}` : ''}`;
+          const label = `Driver, ${STATUS_WORDS[d.status].toLowerCase()}${d.vehicle_class ? `, ${classWord(d.vehicle_class)}` : ''}`;
           const href = driverHref(d.driver_id);
           const circle = <circle cx={p.x} cy={p.y} r={5} className={`lo-dot lo-dot--${d.status}`}><title>{label}</title></circle>;
           if (onPick) return <g key={d.driver_id} onClick={() => onPick({ kind: 'driver', id: d.driver_id })}>{circle}</g>;
@@ -384,7 +385,7 @@ function GoogleLiveMap({ zones, dots, trips, alerts, cells, layers, driverHref, 
         path: maps.SymbolPath.CIRCLE, scale: 5, fillOpacity: 1, strokeColor: palette.noir, strokeWeight: 1.5,
         fillColor: d.status === 'on_trip' ? palette.gold : palette.pickup,
       };
-      const title = `Driver ${d.driver_id}, ${STATUS_WORDS[d.status].toLowerCase()}${d.vehicle_class ? `, ${d.vehicle_class}` : ''}`;
+      const title = `Driver, ${STATUS_WORDS[d.status].toLowerCase()}${d.vehicle_class ? `, ${classWord(d.vehicle_class)}` : ''}`;
       const existing = markers.get(d.driver_id);
       if (existing) {
         existing.setPosition(position);

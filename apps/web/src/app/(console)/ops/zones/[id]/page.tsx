@@ -20,9 +20,9 @@ import { ZoneMap, type MapZone, type PointMark } from '@/components/console/zone
 import { ZoneEditor } from '@/components/console/zones/ZoneEditor';
 import { PointTester } from '@/components/console/zones/PointTester';
 import {
-  DataTable, Empty, ErrorState, Fact, Facts, Panel, Pill, Skeleton, type Column,
-} from '@/components/console/ui';
+  DataTable, Empty, ErrorState, Fact, Facts, Panel, Pill, Skeleton, type Column, FitBox } from '@/components/console/ui';
 import { PageHead } from '@/components/console/kit/ListBits';
+import { classWord } from '@/lib/pricingWords';
 
 /**
  * One zone: its polygon, settings, pending requests and history, a point tester, and a draft
@@ -267,7 +267,7 @@ export default function ZoneDetailPage() {
       ) : cards.length === 0 ? (
         <p className="help m-0">This zone has no fare card of its own, so its pickups use its parent&apos;s. Fares are under <Link href="/ops/pricing/fare-cards" className="ops-linkbtn">Pricing</Link>.</p>
       ) : (
-        <div className="ops-table-wrap">
+        <FitBox>
           <table className="ops-table ops-table--compact ops-table--auto">
             <caption className="sr-only">Active fare cards of {zone.name}</caption>
             <thead><tr><th scope="col">Class</th><th scope="col" className="num">Base</th><th scope="col" className="num">
@@ -277,14 +277,14 @@ export default function ZoneDetailPage() {
             <tbody>
               {cards.map((c) => (
                 <tr key={c.id}>
-                  <th scope="row">{c.vehicle_type_name} <span className="muted">v{c.version}</span></th>
+                  <th scope="row">{classWord(c.vehicle_type_name)} <span className="muted">v{c.version}</span></th>
                   <td className="num">{symbol}{c.base_fare}</td><td className="num">{symbol}{c.per_km_fare}</td>
                   <td className="num">{symbol}{c.per_min_fare}</td><td className="num">{symbol}{c.min_fare}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </FitBox>
       ),
     },
   ];
