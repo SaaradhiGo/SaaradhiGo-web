@@ -69,7 +69,7 @@ export default function DeliveryPage() {
   const apply = (next: Filters) => { setFilters(next); setDraft(next); setPage(1); };
   const columns: ListColumn<Message>[] = [
     { key: 'when', label: 'Queued', render: (m) => stamp(m.created_at, zoneOf(m)) },
-    { key: 'tpl', label: 'Template', primary: true, render: (m) => <>{templateName(m.template_key)} <small className="muted ops-code">v{m.template_version}</small></> },
+    { key: 'tpl', label: 'Template', primary: true, render: (m) => templateName(m.template_key) },
     { key: 'ch', label: 'Channel', render: (m) => CHANNEL_WORDS[m.channel] },
     { key: 'to', label: 'Recipient', render: (m) => <span className="nf-masked">{m.recipient || '—'}</span> },
     { key: 'place', label: 'Place', render: (m) => (m.city ? m.city.name : 'Unplaced') },

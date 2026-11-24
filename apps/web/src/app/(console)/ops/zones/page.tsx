@@ -92,14 +92,14 @@ export default function ZonesPage() {
     return (all ?? []).filter((z) => !hiddenCityName(z.city) && (view === 'active' ? z.is_active : view === 'inactive' ? !z.is_active
       : view === 'pending' ? pendingFor.has(String(z.id)) : true)
       && (!needle || [z.name, z.code, z.city, z.state_code, z.country].some((t) => (t ?? '').toLowerCase().includes(needle))));
-  }, [all, view, q, pendingFor]);
+  }, [all, view, q, pendingFor, access]);
 
   // The map labels zones by code; an inactive and an active zone can share a code over time, so
   // the id stays the row key and the code is the visible key.
   const mapZones = useMemo<MapZone[]>(() => (all ?? []).filter((z) => !hiddenCityName(z.city)).map((z) => ({
     key: z.code, label: z.name, rings: outerRings(z.polygon_geojson),
     tone: z.is_active ? 'live' : 'inactive',
-  })), [all]);
+  })), [all, access]);
   // 24 Nov (owner): open on the live zones in scope, not the whole world. Across two countries
   // the map opens on the one with the most live zones; the place bar picks the other.
   const fitRings = useMemo(() => {
@@ -108,7 +108,7 @@ export default function ZonesPage() {
     for (const z of live) by.set(z.country, [...(by.get(z.country) ?? []), z]);
     const top = [...by.values()].sort((x, y) => y.length - x.length)[0] ?? [];
     return top.flatMap((z) => outerRings(z.polygon_geojson));
-  }, [all]);
+  }, [all, access]);
   const openCode = (code: string) => {
     const z = (all ?? []).find((x) => x.code === code);
     if (z) router.push(`/ops/zones/${z.id}`);
@@ -121,9 +121,7 @@ export default function ZonesPage() {
     },
     { key: 'where', label: 'Where', render: (z) => `${z.city}, ${marketName(z.country, z.state_code)}`.replace(', All of ', ', ') },
     { key: 'type', label: 'Type', render: (z) => (TYPE_WORDS[z.zone_type] ?? z.zone_type).split(' (')[0] },
-    { key: 'priority', label: 'Priority', num: true, render: (z) => z.priority },
     { key: 'area', label: 'Area', num: true, render: (z) => (z.area_km2 === null ? '—' : `${z.area_km2.toLocaleString('en')} km²`) },
-    { key: 'version', label: 'Version', num: true, render: (z) => `v${z.version}` },
     { key: 'changed', label: 'Last changed', render: (z) => stamp(z.updated_at, z.timezone_name) },
     {
       key: 'status', label: 'Status',

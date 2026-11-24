@@ -34,7 +34,7 @@ export function channelName(key: string | null | undefined): string {
 }
 
 const PROVIDERS: Record<string, string> = {
-  stub: 'Test sender (no message sent)', msg91: 'MSG91', twilio: 'Twilio', ses: 'Amazon SES', fcm: 'Firebase push',
+  stub: 'Test sender', msg91: 'MSG91', twilio: 'Twilio', ses: 'Amazon SES', fcm: 'Firebase push',
   in_app: 'In-app inbox', aws_sns: 'Amazon SNS', stripe_connect: 'Stripe Connect', google_maps: 'Google Maps',
   razorpay: 'Razorpay', cashfree: 'Cashfree', stripe: 'Stripe', sns: 'Amazon SNS',
   s3_compatible: 'Cloudflare R2 storage', sentry: 'Sentry',
