@@ -24,7 +24,7 @@ vi.mock('@/lib/adminScope', async (importActual) => {
 });
 
 const LEDGER = {
-  driver: { id: 9, driver_name: 'Suresh R.', home_city: { code: 'IN-TG-HYD', name: 'Hyderabad' } },
+  driver: { id: 9, ref: 'D-HYD-7K3Q', driver_name: 'Suresh R.', home_city: { code: 'IN-TG-HYD', name: 'Hyderabad' } },
   range: { from: '2026-01-01', to: '2026-01-07', timezone: 'Asia/Kolkata' }, has_wallet: true, currency: 'INR',
   opening_minor: 0, credits_minor: 50000, debits_minor: 0, closing_minor: 50000, balance_minor: 50000, unexplained_minor: 0,
   entries: { count: 1, page: 1, page_size: 50, results: [{
@@ -37,7 +37,7 @@ const respond = (_url: string) => LEDGER;
 describe('driver ledger page', () => {
   it('shows the driver and D-ref in the header and the statement in the main tab', async () => {
     render(<Page />);
-    expect(await screen.findByText('D-9')).toBeTruthy();
+    expect(await screen.findByText('D-HYD-7K3Q')).toBeTruthy();
     expect(screen.getAllByText('Suresh R.').length).toBeGreaterThan(0);
     expect(await screen.findByText('Trip earning')).toBeTruthy();
     fireEvent.click(screen.getByRole('tab', { name: /Memo/ }));

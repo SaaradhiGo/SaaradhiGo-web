@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { DateField } from '@/components/console/kit/DateField';
 import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
@@ -182,7 +183,7 @@ const driverOf = (t: TripRow) => t.driver_name || (t.driver_id ? `Driver #${t.dr
 function rowFromHit(h: TripHit): TripRow {
   const tz = timeZoneFor(h.city_code);
   return {
-    id: h.id, ref: `T-${h.id}`, status: h.status, requested_at: h.requested_at ?? undefined,
+    id: h.id, ref: (h as { ref?: string }).ref, status: h.status, requested_at: h.requested_at ?? undefined,
     user: h.rider ? (h.rider.full_name?.trim() || h.rider.phone) : null,
     driver_name: h.driver ? (h.driver.full_name?.trim() || h.driver.phone) : null,
     driver_id: h.driver?.id ?? null,
@@ -299,10 +300,10 @@ function TripsInner() {
   if (filters.stale) chips.push({ key: 'stale', label: 'Stale', onRemove: drop({ stale: false }) });
   if (filters.flagged) chips.push({ key: 'flagged', label: 'Flagged', onRemove: drop({ flagged: false }) });
   if (filters.hasSos) chips.push({ key: 'sos', label: 'Had an SOS', onRemove: drop({ hasSos: false }) });
-  if (filters.id) chips.push({ key: 'id', label: `T-${filters.id}`, onRemove: drop({ id: '' }) });
+  if (filters.id) chips.push({ key: 'id', label: 'One trip', onRemove: drop({ id: '' }) });
 
   const columns: ListColumn<TripRow>[] = [
-    { key: 'id', label: 'Trip', primary: true, sortKey: 'id', render: (t) => <span className="sg-num">{t.ref ?? `T-${t.id}`}</span> },
+    { key: 'id', label: 'Trip', primary: true, sortKey: 'id', render: (t) => <span className="sg-num">{refOf(t)}</span> },
     { key: 'status', label: 'Status', sortKey: 'status', render: (t) => <TripStatus t={t} /> },
     { key: 'city', label: 'City', card: 'hide', render: (t) => t.city?.name ?? '—' },
     { key: 'rider', label: 'Rider', cardOrder: 4, render: (t) => t.user || '—' },
@@ -329,7 +330,7 @@ function TripsInner() {
       const header = ['Trip', 'Status', 'Stuck', 'City', 'Rider', 'Driver', 'From', 'To',
         ...(showMoney ? ['Fare', 'Currency', 'Payment'] : []), 'Requested'];
       const body = all.map((t) => [
-        t.ref ?? `T-${t.id}`, STATUS_WORD[t.status ?? ''] ?? words(t.status),
+        refOf(t), STATUS_WORD[t.status ?? ''] ?? words(t.status),
         t.stuck_reason ? (STUCK_WORDS[t.stuck_reason] ?? t.stuck_reason) : '', t.city?.name ?? '',
         t.user ?? '', driverOf(t) ?? '', t.pickup_locality ?? '', t.drop_locality ?? '',
         ...(showMoney ? [formatWhole(t.charged_fare_minor ?? null, t.currency), t.currency ?? '', t.payment_method ?? ''] : []),
@@ -517,7 +518,7 @@ function TripRecord({ row, showMoney, onClose, onChanged }: {
     <>
       <RecordPanel
         label="Trip"
-        title={row.ref ?? `T-${data.id}`}
+        title={refOf(row)}
         onClose={onClose}
         subtitle={<>{[data.city?.name ?? row.city?.name, routeOf(row)].filter(Boolean).join(' · ')} · requested {when(data.timeline.requested_at ?? row.requested_at)}</>}
         status={(
@@ -712,7 +713,7 @@ function BulkDrawer({ action, ids, onClose, onDone }: {
         {outcome && <div className="alert-success" role="status">{outcome}</div>}
         {rows ? (
           <Facts>
-            {rows.results.map((r) => <Fact key={r.id} label={`T-${r.id}`}>{words(r.result)}</Fact>)}
+            {rows.results.map((r) => <Fact key={r.id} label={refOf(r)}>{words(r.result)}</Fact>)}
           </Facts>
         ) : null}
       </div>

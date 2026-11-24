@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
@@ -78,24 +79,24 @@ export function DetailPanel({
     );
   } else if (detail.kind === 'driver') {
     const d = detail.dot;
-    title = `D-${d.driver_id}`;
+    title = (d as { driver_ref?: string }).driver_ref || 'Driver';
     pin = [d.lat, d.lng];
     body = (
       <>
-        <p className="lo-detail__row"><span>Driver</span>{linkOr(driverHref(d.driver_id), `D-${d.driver_id}`)}</p>
+        <p className="lo-detail__row"><span>Driver</span>{linkOr(driverHref(d.driver_id), (d as { driver_ref?: string }).driver_ref || 'Driver')}</p>
         <p className="lo-detail__row"><span>Status</span>{STATUS_WORDS[d.status]}</p>
         <p className="lo-detail__row"><span>Vehicle</span><span className="capitalize">{d.vehicle_class ?? '—'}</span></p>
         <p className="lo-detail__row"><span>Updated</span>{ageText(secondsSince(d.updated_at, now))} ago</p>
-        {d.trip_id ? <p className="lo-detail__row"><span>Trip</span>{linkOr(tripHref(d.trip_id), `T-${d.trip_id}`)}</p> : null}
+        {d.trip_id ? <p className="lo-detail__row"><span>Trip</span>{linkOr(tripHref(d.trip_id), (d as { trip_ref?: string }).trip_ref || 'Trip')}</p> : null}
       </>
     );
   } else if (detail.kind === 'trip') {
     const t = detail.trip;
-    title = `T-${t.id}`;
+    title = refOf(t);
     pin = [t.pickup_lat, t.pickup_lng];
     body = (
       <>
-        <p className="lo-detail__row"><span>Trip</span>{linkOr(tripHref(t.id), `T-${t.id}`)}</p>
+        <p className="lo-detail__row"><span>Trip</span>{linkOr(tripHref(t.id), refOf(t))}</p>
         <p className="lo-detail__row"><span>State</span>{TRIP_STATE_WORDS[t.state] ?? t.state}</p>
         <p className="lo-detail__row"><span>Age</span>{ageText(t.age_s)}</p>
         {t.stale ? <p className="lo-detail__row"><span>Flag</span><b className="lo-late">Stuck: no recent signal</b></p> : null}

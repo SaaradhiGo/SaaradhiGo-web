@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
@@ -151,7 +152,7 @@ function LedgerInner() {
     data.payout_hold || (data.recovery?.debts.length ?? 0) > 0 || (data.held_rewards?.minor ?? 0) > 0));
   // Kept across reloads so the panel does not read as a different record while the page reloads.
   const who = useRef({ name: '', code: '' });
-  if (data) who.current = { name: data.driver.driver_name || `Driver #${data.driver.id}`, code: `D-${data.driver.id}` };
+  if (data) who.current = { name: data.driver.driver_name || refOf(data.driver), code: refOf(data.driver) };
 
   const tabs: RecordTab[] = [
     { key: 'statement', label: 'Statement', content: (
@@ -283,7 +284,7 @@ function LedgerInner() {
         <RecordPanel
           label="Driver ledger"
           title={who.current.name || `Driver ${id}`}
-          refId={who.current.code || `D-${id}`}
+          refId={who.current.code || '—'}
           subtitle={data ? (
             <>
               {cityName(data.driver.home_city)} · days are {data.range.timezone} days ·{' '}

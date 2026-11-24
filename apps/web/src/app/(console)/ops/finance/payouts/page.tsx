@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type ReactNode, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { SELF_APPROVAL_LINE, SELF_APPROVAL_MIN_REASON } from '@/components/console/SelfApprovalNotice';
@@ -534,7 +535,7 @@ function PayoutRecord({ row, onClose, onChanged }: {
       const done = await api.post<SelfCheck>(`/approvals/admin/requests/${selfId}/approve/`, { reason: selfReason.trim() });
       await onChanged(done.status === 'executed'
         ? { kind: 'done', text: `Released ${amount} to ${who}.${own ? ` Recorded as self-approved (APR-${selfId}).` : ` APR-${selfId} approved.`}` }
-        : { kind: 'done', text: `APR-${selfId} was approved, but the payout did not go out${done.error ? `: ${done.error}` : '.'}` });
+        : { kind: 'done', text: `The payout request was approved, but the payout did not go out${done.error ? `: ${done.error}` : '.'}` });
     } catch (err) {
       setActionError(failureText(err, 'That did not go through. Nothing was released.'));
     } finally {
@@ -551,7 +552,7 @@ function PayoutRecord({ row, onClose, onChanged }: {
     <RecordPanel
       label="Payout"
       title={whoOf(row)}
-      refId={`PO-${row.id}`}
+      refId={refOf(row)}
       onClose={onClose}
       subtitle={<>D-{row.driver_id} · {cityName(row.city)}</>}
       status={<PayoutStatus w={current} />}
@@ -590,7 +591,7 @@ function PayoutRecord({ row, onClose, onChanged }: {
               {selfId !== null && (
                 <div className="ops-confirm">
                   <b>Approve now: release {amount} to {who}</b>
-                  <span>{own ? SELF_APPROVAL_LINE : `APR-${selfId} is waiting for a checker. Approving it releases the money now.`}</span>
+                  <span>{own ? SELF_APPROVAL_LINE : `The payout request is waiting for a checker. Approving it releases the money now.`}</span>
                   <label className="sr-only" htmlFor="payout-self-reason">{own ? 'Reason (required)' : 'Note (optional)'}</label>
                   <textarea id="payout-self-reason" className="input" rows={3} value={selfReason}
                     onChange={(e) => setSelfReason(e.target.value)}

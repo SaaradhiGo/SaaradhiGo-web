@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
@@ -566,7 +567,7 @@ export default function KycReviewPage() {
         <RecordPanel
           label="KYC review"
           title={name}
-          refId={`D-${detail.id}`}
+          refId={refOf(detail)}
           subtitle={<>{vehicleClass ?? 'No vehicle class'} · <Link href={`/ops/drivers/${detail.id}`}>Driver record</Link></>}
           status={<StatusChip tone={detail.approved ? 'good' : 'info'}>{detail.approved ? 'Approved' : 'Waiting for review'}</StatusChip>}
           tabs={[{ key: 'review', label: 'Review', content: reviewTab }]}

@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { formatAge } from '@/lib/commandCentre';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
@@ -123,7 +124,7 @@ function SettingsInner() {
                     <div className="ops-confirm mt-3" role="status">
                       <b>{c.pending_changes.length} change{c.pending_changes.length === 1 ? '' : 's'} waiting for a second admin</b>
                       <span>
-                        {c.pending_changes.map((p) => `APR-${p.id} (asked by ${p.maker.label || 'an operator'})`).join(' · ')}
+                        {c.pending_changes.map((p) => `${refOf(p)} (asked by ${p.maker.label || 'an operator'})`).join(' · ')}
                       </span>
                     </div>
                   )}
@@ -166,7 +167,7 @@ function SettingsInner() {
                             </>
                           ) },
                           { key: 'skip', label: 'No payout handle', render: (r) => (r.skipped_count
-                            ? `${r.skipped_count} skipped (driver ${(r.skipped ?? []).slice(0, 5).map((x) => `D-${x.driver_id}`).join(', ')}${(r.skipped_count ?? 0) > 5 ? ' …' : ''})`
+                            ? `${r.skipped_count} skipped (driver ${(r.skipped ?? []).slice(0, 5).map((x) => refOf(x)).join(', ')}${(r.skipped_count ?? 0) > 5 ? ' …' : ''})`
                             : '—') },
                         ]} />
                     </div>

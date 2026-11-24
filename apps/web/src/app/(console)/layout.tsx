@@ -194,6 +194,17 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
               once, here, with the way to fix it. */}
           <RecoveryLowBanner />
 
+          {/* 24 Nov (owner): anyone without two-step sign-in is told, with the way to fix it. */}
+          {access?.two_step && !access.two_step.set_up ? (
+            <div className="ops-banner ops-banner--notice" role="status" data-severity="warning">
+              <b>Two-step sign-in is not set up</b>
+              <span>
+                In production you cannot sign in, approve anything or move money without it.{' '}
+                <a href="/ops/settings/security">Set it up now</a>.
+              </span>
+            </div>
+          ) : null}
+
           {access === undefined ? (
             /* Nothing is rendered until we know what this operator holds.
                Rendering the page first meant it fired its own fetch during

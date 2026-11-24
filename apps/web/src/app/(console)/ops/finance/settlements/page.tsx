@@ -56,7 +56,7 @@ function SettlementRecord({ row, onClose }: { row: Row; onClose: () => void }) {
     <RecordPanel
       label="Settlement"
       title={row.driver_name || `Driver D-${row.driver_id}`}
-      refId={`T-${row.trip_id}`}
+      refId={(row as { trip_ref?: string }).trip_ref || '—'}
       subtitle={<>{cityName(row.city)} · settled {stamp(row.settled_at, tz)}</>}
       status={<SourceChip source={row.source} />}
       onClose={onClose}
@@ -104,7 +104,7 @@ function SettlementsInner() {
     { key: 'city', label: 'City', render: (r) => cityName(r.city) },
     {
       key: 'driver', label: 'Driver',
-      render: (r) => <PageLink page="drivers" href={`/ops/drivers/${r.driver_id}`}>{r.driver_name || `D-${r.driver_id}`}</PageLink>,
+      render: (r) => <PageLink page="drivers" href={`/ops/drivers/${r.driver_id}`}>{r.driver_name || (r as { driver_ref?: string }).driver_ref || '—'}</PageLink>,
     },
     { key: 'gross', label: 'Gross', num: true, render: (r) => formatWhole(r.gross_fare_minor, r.currency) },
     {

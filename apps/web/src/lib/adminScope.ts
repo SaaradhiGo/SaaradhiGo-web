@@ -80,6 +80,8 @@ export type AdminAccess = {
    * it is a prompt to act, and everyone else can do nothing about it.
    */
   super_admin_shortfall: number;
+  /** 24 Nov (owner): is two-step sign-in set up, and does this environment require it? */
+  two_step?: { set_up: boolean; required_here: boolean };
   /**
    * Active console maintenance notices for this operator's scope (module 15): the banner.
    * Optional so an older backend, which does not send it, draws none.
