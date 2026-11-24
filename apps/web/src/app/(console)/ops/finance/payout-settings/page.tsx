@@ -174,7 +174,7 @@ function SettingsInner() {
                   )}
 
                   <div className="mt-4">
-                    <DataTable caption={`Version history for ${c.name}`} rows={c.history} rowKey={(h) => h.id}
+                    <DataTable wrap caption={`Version history for ${c.name}`} rows={c.history} rowKey={(h) => h.id}
                       density="compact" maxHeight={false}
                       columns={[
                         { key: 'v', label: 'Version', width: '6rem', render: (h) => (

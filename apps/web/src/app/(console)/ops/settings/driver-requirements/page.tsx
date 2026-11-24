@@ -72,7 +72,7 @@ export default function DriverRequirementsPage() {
         {rows === null ? <Skeleton kind="row" count={2} /> : error ? (
           <ErrorState title="The driver requirements could not be loaded" detail={error} onRetry={() => void load()} />
         ) : (
-          <DataTable caption="Driver requirements by market" rows={rows} rowKey={(r) => `${r.country}-${r.state_code}`}
+          <DataTable caption="Driver requirements by market" wrap rows={rows} rowKey={(r) => `${r.country}-${r.state_code}`}
             density="compact" maxHeight={false}
             columns={[
               { key: 'where', label: 'Where', render: (r) => where(r) },
