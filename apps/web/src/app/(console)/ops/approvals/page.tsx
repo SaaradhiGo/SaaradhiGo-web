@@ -165,7 +165,7 @@ function ApprovalsPage() {
     { key: 'ref', label: 'Request', primary: true, sortKey: 'id', render: (r) => <span className="sg-num">{r.ref}</span> },
     {
       key: 'title', label: 'What', sortKey: 'action', render: (r) => (
-        <span title={r.title} className="ops-chips">
+        <span title={r.summary || r.title} className="ops-what">
           {r.summary || r.title}
           {r.blockers.length ? <StatusChip tone="caution">Blocked</StatusChip> : null}
         </span>
@@ -425,10 +425,12 @@ const HIDDEN_KEYS = /(^|_)(id|ids|key|idempotency_key|version)$/;
 function changeLines(payload: Record<string, unknown> | null | undefined): Array<[string, string]> {
   const out: Array<[string, string]> = [];
   const word = (k: string) => k.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+  // 24 Nov (owner): plain words, never a system key ("driver_fee_plan" reads "Driver fee plan").
   const text = (v: unknown): string => (v === null || v === undefined ? '—'
-    : typeof v === 'object' ? JSON.stringify(v).slice(0, 160) : String(v));
+    : typeof v === 'object' ? JSON.stringify(v).slice(0, 160)
+      : typeof v === 'string' && /^[a-z]+(_[a-z]+)+$/.test(v) ? word(v) : String(v));
   for (const [k, v] of Object.entries(payload ?? {})) {
-    if (HIDDEN_KEYS.test(k)) continue;
+    if (HIDDEN_KEYS.test(k) || k === 'kind') continue;
     if (v && typeof v === 'object' && !Array.isArray(v)) {
       for (const [k2, v2] of Object.entries(v as Record<string, unknown>)) {
         if (!HIDDEN_KEYS.test(k2)) out.push([`${word(k)} · ${word(k2).toLowerCase()}`, text(v2)]);
