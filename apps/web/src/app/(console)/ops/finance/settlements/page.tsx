@@ -71,7 +71,7 @@ function SettlementRecord({ row, onClose }: { row: Row; onClose: () => void }) {
           <div className="grid gap-3">
             <div className="ops-record__stats">
               <RecordStat label="Gross" value={formatMinor(row.gross_fare_minor, row.currency)} />
-              <RecordStat label="Commission" value={formatMinor(row.commission_amount_minor, row.currency)} note={`${Number(row.commission_percent)}% as applied`} />
+              <RecordStat label="Driver fee" value={formatMinor(row.commission_amount_minor, row.currency)} note={`${Number(row.commission_percent)}% as applied`} />
               <RecordStat label="Driver net" value={formatMinor(row.driver_net_minor, row.currency)} />
             </div>
             <Facts>
@@ -130,7 +130,7 @@ function SettlementsInner() {
         <ListPage<Row>
           pageKey="finance-settlements"
           title="Settlements"
-          summary={data ? <CurrencyTotals totals={data.totals ?? []} noun="trip" amount="gross_minor" /> : 'What each settled trip paid out: gross, commission as applied, driver net.'}
+          summary={data ? <CurrencyTotals totals={data.totals ?? []} noun="trip" amount="gross_minor" /> : 'What each settled trip paid out: gross, the driver fee as applied, driver net.'}
           views={views}
           view={filters.method}
           onView={(method) => go({ ...filters, method, page: 1 })}

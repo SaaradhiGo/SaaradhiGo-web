@@ -288,7 +288,7 @@ export type OverviewRow = {
 
 export const OVERVIEW_COLUMNS = [
   ['gross_minor', 'Gross collected'],
-  ['commission_minor', 'Commission'],
+  ['commission_minor', 'Driver fee'],
   ['driver_net_minor', 'Driver net'],
   ['refunds_minor', 'Refunds'],
   ['payouts_paid_minor', 'Payouts paid'],

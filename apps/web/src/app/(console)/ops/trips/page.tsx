@@ -366,7 +366,7 @@ function TripsInner() {
           actionsSlot={(
             <form className="ops-search" role="search" aria-label="Find a trip" onSubmit={(e) => { e.preventDefault(); find(); }}>
               <label className="sr-only" htmlFor="trip-find">Find a trip by T- number or rider phone</label>
-              <input id="trip-find" className="ops-select" value={term} placeholder="T-881230 or rider phone"
+              <input id="trip-find" className="ops-select" value={term} placeholder="HYD-261116-K7Q4 or rider phone"
                 onChange={(e) => setTerm(e.target.value)} size={24} />
               <button type="submit" className="sg-btn sg-btn--secondary sg-btn--sm">Find</button>
             </form>

@@ -1,5 +1,6 @@
 'use client';
 
+import { mapsCallName } from '@/lib/templateNames';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { DataTable, Panel, Skeleton } from '@/components/console/ui';
@@ -84,7 +85,7 @@ export function MapsCostPanel({ mayEdit }: { mayEdit: boolean }) {
             ) : null}
             <DataTable caption={`Google Maps calls and cost in ${c.country}`} rows={skus} rowKey={(s) => s} density="compact" maxHeight={false}
               columns={[
-                { key: 'sku', label: 'SKU', render: (s) => <code>{s}</code> },
+                { key: 'sku', label: 'Maps call', render: (s) => mapsCallName(s) },
                 { key: 'today', label: 'Today', num: true, render: (s) => c.summary.today[s] ?? 0 },
                 { key: 'month', label: 'This month', num: true, render: (s) => c.summary.month[s] ?? 0 },
                 { key: 'free', label: 'Free used', num: true, render: (s) => {
@@ -105,7 +106,7 @@ export function MapsCostPanel({ mayEdit }: { mayEdit: boolean }) {
           onClose={() => setBudgetOf(null)} onDone={() => { setBudgetOf(null); void load(); }} />
       ) : null}
       {priceOf ? (
-        <FieldsDrawer title={`List price · ${priceOf.sku}`} fields={PRICE_FIELDS} reasonRequired={false}
+        <FieldsDrawer title={`List price · ${mapsCallName(priceOf.sku)}`} fields={PRICE_FIELDS} reasonRequired={false}
           initial={Object.fromEntries(PRICE_FIELDS.map((f) => [f.key, toText((priceOf as Record<string, unknown>)[f.key])]))}
           note={priceOf.note}
           send={(changes, reason) => api.put(`/platform/admin/maps/prices/${priceOf.sku}/`, { ...changes, reason })}

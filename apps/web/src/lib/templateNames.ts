@@ -51,3 +51,15 @@ export function keyWords(key: string | null | undefined): string {
   const w = key.replace(/[._]+/g, ' ').trim();
   return w.charAt(0).toUpperCase() + w.slice(1);
 }
+
+const MAPS_CALLS: Record<string, string> = {
+  directions_legacy: 'Directions (older API)', geocoding: 'Address lookup', places_autocomplete: 'Place search',
+  places_autocomplete_session: 'Place search (per session)', places_details: 'Place details',
+  routes_essentials: 'Routes', routes_pro: 'Routes with traffic', distance_matrix: 'Distance matrix',
+  static_maps: 'Map images', dynamic_maps: 'Map loads',
+};
+
+/** "Place search" for "places_autocomplete": a Maps call as a person would name it. */
+export function mapsCallName(sku: string): string {
+  return MAPS_CALLS[sku] ?? keyWords(sku);
+}

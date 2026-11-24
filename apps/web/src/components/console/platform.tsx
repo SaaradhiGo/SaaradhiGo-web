@@ -1,5 +1,6 @@
 'use client';
 
+import { mapsCallName } from '@/lib/templateNames';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useId, useState } from 'react';
@@ -140,7 +141,7 @@ export function MapsCallsPanel({ calls }: { calls?: MapsCalls | null }) {
         rowKey={(sku) => sku}
         maxHeight={false}
         columns={[
-          { key: 'sku', label: 'SKU', render: (sku) => <code>{sku}</code> },
+          { key: 'sku', label: 'Maps call', render: (sku) => mapsCallName(sku) },
           { key: 'today', label: 'Today (UTC)', num: true, render: (sku) => calls.today[sku] ?? 0 },
           { key: 'week', label: 'Last 7 days', num: true, render: (sku) => week[sku] ?? 0 },
         ]}
