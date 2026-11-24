@@ -1,5 +1,6 @@
 'use client';
 
+import { DateField } from '@/components/console/kit/DateField';
 import { DatePresets } from '@/components/console/kit/DatePresets';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
@@ -110,18 +111,9 @@ export default function DashboardPage() {
         >
           <div className="ops-form__row">
             <label className="ops-form__label" htmlFor="d-from">From</label>
-            <input id="d-from" type="date" className="ops-select" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+            <DateField id="d-from" className="ops-select" value={dateFrom} onChange={(v) => setDateFrom(v)} />
             <label className="ops-form__label" htmlFor="d-to">To</label>
-            <input id="d-to" type="date" className="ops-select" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
-            {cities.length > 1 ? (
-              <>
-                <label className="ops-form__label" htmlFor="d-city">City</label>
-                <select id="d-city" className="ops-select" value={scope} onChange={(e) => setScope(e.target.value)}>
-                  <option value="">All I hold</option>
-                  {cities.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-                </select>
-              </>
-            ) : null}
+            <DateField id="d-to" className="ops-select" value={dateTo} onChange={(v) => setDateTo(v)} />
             <button type="submit" className="sg-btn sg-btn--primary sg-btn--sm" disabled={Boolean(rangeError)}>Show</button>
           </div>
           <p className="help m-0" id="d-help">

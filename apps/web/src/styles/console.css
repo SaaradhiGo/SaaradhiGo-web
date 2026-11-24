@@ -2692,3 +2692,39 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 /* 23 Nov: date presets keep their width and wrap to a second line on a phone (never squeezed). */
 .ops-presets { display: flex; flex-wrap: wrap; max-width: 100%; min-width: min(100%, 18rem); height: auto; }
 .ops-presets .ops-seg__btn { flex: none; min-width: 44px; min-height: 44px; white-space: nowrap; }
+
+/* ===========================================================================
+   24 Nov (owner): console final pass.
+   =========================================================================== */
+/* One place control, at the top of the content: a path, then the next level as chips. */
+.ops__top > .ops__search { flex: 1 1 420px; max-width: 560px; }
+.ops-placebar { display: grid; gap: 10px; margin: 0 0 20px; }
+.ops-placebar__path { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; list-style: none; margin: 0; padding: 0; font: 600 14px/1.4 var(--font-sans); }
+.ops-placebar__path li + li::before { content: '›'; margin: 0 6px 0 2px; color: var(--ops-ink-4); }
+.ops-placebar__step { background: none; border: 0; padding: 10px 2px; min-height: 44px; color: var(--ops-ink-2, var(--ink)); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--ops-hairline); }
+.ops-placebar__step:hover { color: var(--ink); text-decoration-color: var(--gold-500); }
+.ops-placebar__here { color: var(--ink); }
+.ops-placebar__chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ops-placebar__chips .ops-placechip small { font-weight: 400; color: var(--ops-ink-3, var(--ink)); }
+.ops-placebar__toggle { background: none; border: 0; min-height: 44px; padding: 0 8px; color: var(--ops-ink-3, var(--ink)); font: 500 14px/1 var(--font-sans); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+/* The footer sits at the bottom of the window on short pages and after the content on long ones. */
+.ops__main { min-height: 100vh; min-height: 100dvh; }
+.ops__content { display: flex; flex-direction: column; }
+.ops__page { flex: 1 0 auto; min-width: 0; }
+.ops__content > .sg-legal-line--console { margin-top: auto; }
+.ops-code { font-size: 14px; font-weight: 400; margin-left: 6px; }
+.ops-list-plain { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+
+/* 24 Nov (owner): tables fit at 1440 without sideways scroll. Columns size to their content;
+   names, IDs and numbers stay on one line; long places end in an ellipsis with the full text on hover. */
+@media (min-width: 1100px) {
+  .ops__content td, .ops__content th { min-width: 0; }
+  .ops__content td.num, .ops__content th.num, .ops__content .sg-num, .ops__content td:first-child { white-space: nowrap; }
+  .ops__content td .ops-ellipsis { display: block; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ops-board__lanes { grid-template-columns: repeat(4, minmax(0, 1fr)); overflow-x: visible; }
+  .ops-board__lanes > * { min-width: 0; }
+}
+.ops-datefield { width: 9.5em; max-width: 100%; min-width: 0; box-sizing: border-box; }
+.ops-rangebar__field { min-width: 0; max-width: 100%; grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 400px) { .ops-rangebar__field { flex: 1 1 100%; } .ops-rangebar__field .ops-datefield { width: 100%; } }

@@ -71,7 +71,7 @@ describe('approvals', () => {
     routeFetch({ country: 'US', scope: 'US-ID-TV', currency: 'USD', requested_at: '2026-11-15T00:58:00Z' });
     render(<ApprovalsPage />);
     await screen.findByRole('button', { name: 'Approve' });
-    expect(screen.getAllByText(/Nov 14, 5:58 PM MST/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/14 Nov 2026, 5:58 PM MST/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/EST/)).toBeNull();
   });
 

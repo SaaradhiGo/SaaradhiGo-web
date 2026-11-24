@@ -109,9 +109,9 @@ export default function MarketsPage() {
       key: 'place', label: 'Place', primary: true,
       render: (l) => (
         <span className={`ops-tree ops-tree--${l.level}`}>
-          {l.level === 0 ? <>{l.country.name} <span className="muted">{l.country.code}</span></>
-            : l.level === 1 ? <>{l.name} <span className="muted">{l.code}</span></>
-              : <>{l.city.name} <span className="muted">{l.city.code}</span></>}
+          {l.level === 0 ? <>{l.country.name} <small className="muted ops-code">{l.country.code}</small></>
+            : l.level === 1 ? <>{l.name} <small className="muted ops-code">{l.code}</small></>
+              : <>{l.city.name} <small className="muted ops-code">{l.city.code}</small></>}
         </span>
       ),
     },

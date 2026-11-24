@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import { api } from '@/lib/api';
 import { messageOf } from '@/components/console/notifications';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
@@ -26,7 +27,7 @@ const COLUMNS: ListColumn<Application>[] = [
   { key: 'email', label: 'Email', render: (a) => (a.email
     ? <Revealable value={a.email} label="applicant email" target={{ type: 'driver_application', id: a.id }} field="email" compact />
     : '—') },
-  { key: 'when', label: 'Applied', render: (a) => new Date(a.created_at).toLocaleString() },
+  { key: 'when', label: 'Applied', render: (a) => stamp(a.created_at, timeZoneFor(a.city_code)) },
 ];
 
 export default function DriverApplicationsPage() {

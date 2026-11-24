@@ -242,7 +242,7 @@ describe('the cost projection', () => {
   it('prices a flat promo and counts what the budget funds', () => {
     const cost = projectCost(promo({ discountFlat: '50', budget: '1000' }), INR);
     expect(cost).toMatchObject({ budgetMinor: 100000, averageMinor: 5000, maxRedemptions: 20 });
-    expect(costWords(cost, 'rider_promo', INR)).toBe('Funds about 20 rides at ₹50.00 each.');
+    expect(costWords(cost, 'rider_promo', INR)).toBe('Funds about 20 rides at ₹50 each.');
   });
 
   it('never funds more than the total redemptions cap', () => {
@@ -275,7 +275,7 @@ describe('the cost projection', () => {
       averageMinor: 15000, maxRedemptions: 33,
     });
     expect(costWords(projectCost(incentive({ reward: '300', budget: '300' }), INR), 'driver_incentive', INR))
-      .toBe('Funds about 1 driver reward at ₹300.00 each.');
+      .toBe('Funds about 1 driver reward at ₹300 each.');
   });
 
   it('has no budget until a valid one is typed', () => {
@@ -385,13 +385,13 @@ describe('a campaign in a line, and totals', () => {
 
   it('states the terms of each kind', () => {
     expect(termsWords({ ...base, kind: 'rider_promo', config: { code: 'WELCOME50', discount_type: 'flat', discount_flat_minor: 5000 } }))
-      .toBe('WELCOME50 · ₹50.00 off');
+      .toBe('WELCOME50 · ₹50 off');
     expect(termsWords({ ...base, kind: 'rider_promo', config: { auto_apply: true, discount_type: 'percent', discount_percent: '10.00', max_discount_minor: 3000 } }))
-      .toBe('Applied automatically · 10.00% off up to ₹30.00');
+      .toBe('Applied automatically · 10.00% off up to ₹30');
     expect(termsWords({ ...base, kind: 'driver_incentive', config: { target_trips: 3, reward_minor: 30000, zone_code: 'HYD-N', hour_from: 22, hour_to: 6 } }))
-      .toBe('3 trips, ₹300.00 reward (HYD-N, 22:00 to 6:00)');
+      .toBe('3 trips, ₹300 reward (HYD-N, 22:00 to 6:00)');
     expect(termsWords({ ...base, kind: 'referral', config: { audience: 'driver', required_trips: 2, referrer_reward_minor: 10000, referee_reward_minor: 5000 } }))
-      .toBe('After 2 trips · ₹100.00 to the referrer, ₹50.00 to the new driver (drivers)');
+      .toBe('After 2 trips · ₹100 to the referrer, ₹50 to the new driver (drivers)');
   });
 
   it('adds budgets per currency and never across them, skipping uncapped codes', () => {

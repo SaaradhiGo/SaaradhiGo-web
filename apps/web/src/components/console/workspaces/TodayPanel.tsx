@@ -1,6 +1,6 @@
 'use client';
 
-import { marketDate } from '@/lib/consoleTime';
+import { marketDate, stamp } from '@/lib/consoleTime';
 import { todayLocal } from '@/lib/reports';
 import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
@@ -116,7 +116,6 @@ export function TodayPanel({ data, placeName, onOpenCountry, range, onRange }: {
   range?: Range | null; onRange?: (r: Range | null) => void;
 }) {
   if (!data) return null;
-  const at = new Date(data.generated_at);
   const today = todayLocal();
   return (
     <section className="ops-today" aria-label="Today">
@@ -126,7 +125,7 @@ export function TodayPanel({ data, placeName, onOpenCountry, range, onRange }: {
       ) : null}
       <CountryTiles countries={data.countries} onOpen={onOpenCountry} range={range} />
       <TodayCities data={data} placeName={placeName} />
-      <p className="ops-today__refresh help">{data.refresh} · last update {at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+      <p className="ops-today__refresh help">{data.refresh} · last update {stamp(data.generated_at, data.cities.length === 1 ? data.cities[0].timezone : null)}</p>
     </section>
   );
 }

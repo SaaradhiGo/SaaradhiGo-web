@@ -131,14 +131,14 @@ describe('the started-trip release', () => {
     const byLabel = Object.fromEntries(rows.map((r) => [r.label, r.value]));
     expect(byLabel['Distance driven']).toBe('2.00 km (from the recorded trail)');
     expect(byLabel['Time charged']).toMatch(/^3\.00 min/);
-    expect(byLabel['Rider pays']).toBe('₹49.00');
+    expect(byLabel['Rider pays']).toBe('₹49');
     expect(byLabel['Driver earns']).toBe('₹39.20 after 20.00% commission');
     expect(byLabel['Paid by']).toBe('The rider');
   });
 
   it('shows the cap when it applied', () => {
     const rows = previewRows({ ...preview, cap_applied: true, uncapped_fare_minor: 25000, capped_fare_minor: 5300, rider_pays_minor: 5300 });
-    expect(rows.find((r) => r.label === 'Fare for the distance driven')?.value).toBe('₹53.00 (capped from ₹250.00)');
+    expect(rows.find((r) => r.label === 'Fare for the distance driven')?.value).toBe('₹53 (capped from ₹250)');
   });
 
   it('says "Not charged" and who funds it on the platform rule', () => {
@@ -150,8 +150,8 @@ describe('the started-trip release', () => {
   it('shows a promo honoured on the capped fare, and what the rider then pays', () => {
     const rows = previewRows({ ...preview, promo_discount_minor: 2000, rider_pays_after_promo_minor: 2900 });
     const byLabel = Object.fromEntries(rows.map((r) => [r.label, r.value]));
-    expect(byLabel['Promo discount']).toBe('₹20.00 (paid by SaaradhiGo)');
-    expect(byLabel['Rider pays']).toBe('₹29.00');
+    expect(byLabel['Promo discount']).toBe('₹20 (paid by SaaradhiGo)');
+    expect(byLabel['Rider pays']).toBe('₹29');
     expect(byLabel['Driver earns']).toBe('₹39.20 after 20.00% commission');   // still on the full capped fare
   });
 
@@ -209,7 +209,7 @@ describe('the started-trip release', () => {
   it('says there is no trail when none was recorded, and how cash is handled', () => {
     const rows = previewRows({ ...preview, distance_km: '0.00', distance_source: 'none', payment_method: 'cash', driver_collects_cash: true });
     expect(rows[0].value).toBe('0.00 km (no trail recorded, counted as 0)');
-    expect(rows.find((r) => r.label === 'Cash trip')?.value).toMatch(/owes the commission/);
+    expect(rows.find((r) => r.label === 'Cash trip')?.value).toMatch(/owes the driver fee/);
   });
 
   it('reports the started-trip outcome by rule', () => {

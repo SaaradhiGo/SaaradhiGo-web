@@ -216,7 +216,7 @@ export function formatCell(col: ReportColumn, value: unknown, currency?: string 
 export function periodLabel(period: string, granularity: Granularity): string {
   const d = new Date(`${period}T00:00:00Z`);
   if (granularity === 'month') return d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' });
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 }
 
 // ---------------------------------------------------------------------------

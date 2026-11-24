@@ -48,12 +48,9 @@ export function zoneAbbreviation(timeZone: string | null | undefined): string {
   return zoneLabelAt(new Date(), timeZone || 'UTC');
 }
 
-/**
- * 15 Nov (owner): a US city's times in US style ("Nov 14, 7:58 PM MST"); India keeps "14 Nov, 19:58 IST".
- */
-const usZone = (timeZone: string | null | undefined) => !!timeZone && timeZone.startsWith('America/');
 /** Intl puts a narrow no-break space before AM/PM; a plain space reads and searches the same. */
 const plain = (s: string) => s.replace(/[  ]/g, ' ');
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function parse(iso: string | null | undefined): Date | null {
   if (!iso) return null;
@@ -61,58 +58,63 @@ function parse(iso: string | null | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** "14:05"; a US city's "2:05 PM". */
+/** The parts of a moment in a zone: one formatter, so every console stamp agrees. */
+function partsIn(d: Date, timeZone: string) {
+  const f = new Intl.DateTimeFormat('en-US', {
+    timeZone, year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
+  }).formatToParts(d);
+  const get = (t: string) => f.find((p) => p.type === t)?.value ?? '';
+  return {
+    date: `${Number(get('day'))} ${MON[Number(get('month')) - 1]} ${get('year')}`,
+    time: `${Number(get('hour'))}:${get('minute')} ${get('dayPeriod').toUpperCase()}`,
+  };
+}
+
+/** "9:37 PM" in the zone (UTC when none). Owner 24 Nov: one console format for every staff member. */
 export function clock(iso: string | null | undefined, timeZone?: string | null): string {
   const d = parse(iso);
   if (!d) return '—';
-  try {
-    if (usZone(timeZone)) {
-      return plain(new Intl.DateTimeFormat('en-US', { timeZone: timeZone!, hour: 'numeric', minute: '2-digit', hour12: true }).format(d));
-    }
-    return new Intl.DateTimeFormat('en-GB', {
-      timeZone: timeZone || 'UTC', hour: '2-digit', minute: '2-digit', hour12: false,
-    }).format(d);
-  } catch {
-    return iso!.slice(11, 16);
-  }
+  try { return partsIn(d, timeZone || 'UTC').time; } catch { return iso!.slice(11, 16); }
 }
 
-/** The zone's short name AT that moment ("IST", "CST" in winter, "CDT" in summer). */
+/** The zone's short name AT that moment ("IST", "MST" in winter, "MDT" in summer). */
 export function zoneLabelAt(d: Date, timeZone: string): string {
   try {
-    const parts = new Intl.DateTimeFormat('en', { timeZone, timeZoneName: 'short' }).formatToParts(d);
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'short' }).formatToParts(d);
     const name = parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
-    // Intl spells India "GMT+5:30" in the 'en' locale; people say IST.
-    return timeZone === 'Asia/Kolkata' ? 'IST' : name;
+    return timeZone === 'Asia/Kolkata' ? 'IST' : plain(name);
   } catch {
     return '';
   }
 }
 
-/** "27 Oct, 14:05 IST" -- date and time with its zone, for a list that spans days.
- *  No zone given means UTC, labelled; never the viewer's browser zone. */
+/** "16 Nov 2026, 9:37 PM IST": the one console format (owner 24 Nov). No zone given means UTC,
+ *  labelled; never the viewer's browser zone. */
 export function stamp(iso: string | null | undefined, timeZone?: string | null): string {
   const d = parse(iso);
   if (!d) return '—';
   const tz = timeZone || 'UTC';
   try {
-    const text = usZone(tz)
-      ? plain(new Intl.DateTimeFormat('en-US', { timeZone: tz, month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true }).format(d))
-      : new Intl.DateTimeFormat('en-GB', {
-        timeZone: tz, day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
-      }).format(d);
+    const { date, time } = partsIn(d, tz);
     const label = zoneLabelAt(d, tz);
-    return label ? `${text} ${label}` : text;
+    return `${date}, ${time}${label ? ` ${label}` : ''}`;
   } catch {
     return `${iso!.replace('T', ' ').slice(0, 16)} UTC`;
   }
 }
 
+/** "16 Nov 2026": the day a moment falls on in the zone (UTC when none). */
+export function dayIn(iso: string | null | undefined, timeZone?: string | null): string {
+  const d = parse(iso);
+  if (!d) return '—';
+  try { return partsIn(d, timeZone || 'UTC').date; } catch { return iso!.slice(0, 10); }
+}
+
 /** "Monday 27 October" for the page header. */
 export function longDate(date: Date, timeZone?: string): string {
   try {
-    return new Intl.DateTimeFormat(usZone(timeZone) ? 'en-US' : 'en-GB', {
-      timeZone, weekday: 'long', day: 'numeric', month: 'long',
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     }).format(date);
   } catch {
     return date.toDateString();
@@ -120,8 +122,8 @@ export function longDate(date: Date, timeZone?: string): string {
 }
 
 /**
- * A calendar date ("2028-10-31" or an ISO timestamp) as the market writes it: "31 Oct 2028" for
- * India (the default; owner 22 Nov), "Oct 31, 2028" for the USA. Never shifted by a time zone.
+ * A calendar date ("2028-10-31" or an ISO timestamp) as the console writes it: "31 Oct 2028" in
+ * every market (owner 24 Nov). Never shifted by a time zone.
  */
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
@@ -149,6 +151,6 @@ export function marketDate(iso: string | null | undefined, country: string = 'IN
   const [, y, mo, d] = m;
   const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(mo) - 1];
   if (!month) return iso ?? '';
-  if (country.toUpperCase() === 'US') return `${month} ${Number(d)}, ${y}`;
+  void country; // owner 24 Nov: the console writes every date one way, whatever the market
   return `${Number(d)} ${month} ${y}`;
 }

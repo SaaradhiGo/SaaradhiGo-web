@@ -44,7 +44,7 @@ const TYPE_WORDS: Record<string, string> = {
   per_trip_fee: 'Per-trip fee',
 };
 const rupees = (minor: number | null | undefined, cur = 'INR') =>
-  minor == null ? '—' : `${cur === 'INR' ? '₹' : '$'}${(minor / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  minor == null ? '—' : `${cur === 'INR' ? '₹' : '$'}${(minor / 100).toLocaleString(cur === 'INR' ? 'en-IN' : 'en-US', { maximumFractionDigits: 2 })}`;
 const toMinor = (v: string) => (v.trim() === '' ? null : Math.round(Number(v) * 100));
 
 function amountsWords(p: Plan) {
@@ -54,10 +54,18 @@ function amountsWords(p: Plan) {
       a.daily_pass_minor != null ? `${rupees(a.daily_pass_minor, p.currency)} a day` : null,
       a.fee_free_after_trips != null ? `free after ${a.fee_free_after_trips}` : null,
       a.commission_percent != null ? `${a.commission_percent}%` : null,
-      a.rider_platform_fee_minor != null ? `rider ${rupees(a.rider_platform_fee_minor, p.currency)}` : null,
     ].filter(Boolean);
     return `${classWord(cls)}: ${bits.join(', ') || 'to be decided'}`;
-  }).join(' · ');
+  });
+}
+
+/** 24 Nov (owner): the rider booking fee once per place, not repeated in every class cell. */
+function riderFeeWords(p: Plan): string {
+  const fees = Object.entries(p.amounts).map(([cls, a]) => [cls, a.rider_platform_fee_minor] as const).filter(([, f]) => f != null);
+  if (!fees.length) return 'None';
+  const one = new Set(fees.map(([, f]) => f));
+  if (one.size === 1) return rupees(fees[0][1], p.currency);
+  return fees.map(([cls, f]) => `${classWord(cls)} ${rupees(f, p.currency)}`).join(', ');
 }
 
 /** Classes whose driver fee an ACTIVE plan leaves undecided: an open decision for the owner. */
@@ -120,10 +128,11 @@ export default function FeePlansPage() {
               { key: 'where', label: 'Where', render: (p) => (p.scope_code ? p.scope_name ?? placeWord(p.scope_code, access) : `All of ${p.scope_name ?? placeWord(p.country, access)}`) },
               { key: 'type', label: 'Plan', render: (p) => `${TYPE_WORDS[p.plan_type] ?? p.plan_type} (version ${p.version})` },
               { key: 'status', label: 'Status', render: (p) => <StatusChip tone={TONE[p.status] ?? 'neutral'}>{STATUS_WORDS[p.status] ?? p.status.replace('_', ' ')}</StatusChip> },
-              { key: 'amounts', label: 'Per class', render: (p) => amountsWords(p) },
+              { key: 'amounts', label: 'Driver fee per class', render: (p) => <ul className="ops-list-plain">{amountsWords(p).map((w) => <li key={w}>{w}</li>)}</ul> },
+              { key: 'rider', label: 'Rider booking fee', render: (p) => riderFeeWords(p) },
               { key: 'rules', label: 'Floor · cap · waiver', render: (p) => `${rupees(p.earnings_floor_minor, p.currency)} · ${p.daily_cap_minor == null ? 'no cap' : rupees(p.daily_cap_minor, p.currency)} · ${p.waiver_first_days ? `first ${p.waiver_first_days} days free` : p.waiver_until ? `free until ${marketDate(p.waiver_until, p.country)}` : 'none'}` },
               { key: 'from', label: 'From', render: (p) => (p.effective_from ? `${marketDate(p.effective_from, p.country)}${p.effective_to ? ` to ${marketDate(p.effective_to, p.country)}` : ''}` : '—') },
-              { key: 'note', label: 'Note', hideBelow: 1280, render: (p) => p.note || '—' },
+              { key: 'note', label: 'Note', hideBelow: 1500, render: (p) => p.note || '—' },
               { key: 'act', label: '', render: (p) => (may && p.status === 'draft'
                 ? <button type="button" className="ops-linkbtn" onClick={() => void submit(p)}>Send for approval</button> : null) },
             ]} />

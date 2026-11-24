@@ -1,3 +1,4 @@
+import { stamp } from '@/lib/consoleTime';
 /**
  * The Trips module's client logic, kept out of the pages so it can be tested.
  *
@@ -167,13 +168,15 @@ export function formatMinor(
   const negative = minor < 0;
   const digits = String(Math.abs(minor)).padStart(exp + 1, '0');
   const whole = digits.slice(0, digits.length - exp) || '0';
-  const fraction = exp ? digits.slice(digits.length - exp) : '';
+  let fraction = exp ? digits.slice(digits.length - exp) : '';
+  // Owner 24 Nov: India shows whole rupees ("₹20 off"); real paise (gateway fees) stay exact.
+  if (code === 'INR' && /^0+$/.test(fraction)) fraction = '';
   let text: string;
   try {
     // The amount reaches Intl as the decimal TEXT "1234.50" read once, never
     // as a quotient, so it is the exact value at the currency's own scale.
     text = new Intl.NumberFormat(LOCALE[code] ?? 'en', {
-      style: 'currency', currency: code, minimumFractionDigits: exp, maximumFractionDigits: exp,
+      style: 'currency', currency: code, minimumFractionDigits: fraction.length, maximumFractionDigits: fraction.length,
     }).format(Number(fraction ? `${whole}.${fraction}` : whole));
   } catch {
     text = `${code} ${whole}${fraction ? `.${fraction}` : ''}`;
@@ -223,36 +226,14 @@ export function cityZoneLabel(timeZone: string | null | undefined): string {
   }
 }
 
-/**
- * "02 Oct, 01:30" in the given IANA zone (the trip's city), 24-hour;
- * with `zone: true`, "02 Oct, 01:30 IST". A US city reads month-first on a
- * 12-hour clock (15 Nov): "Oct 2, 1:30 AM MDT".
- */
+/** "16 Nov 2026, 9:37 PM IST" in the trip's city (the one console format, owner 24 Nov).
+ *  No city zone means UTC, labelled; never the viewer's browser zone. */
 export function cityTime(
   iso: string | null | undefined,
   timeZone: string | null | undefined,
-  { zone = false }: { zone?: boolean } = {},
+  _opts: { zone?: boolean } = {},
 ): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  // No city zone means UTC, labelled: never the viewer's browser zone (owner, 2026-11-03).
-  const tz = timeZone || 'UTC';
-  let text: string;
-  try {
-    text = /^America\//.test(tz)
-      ? new Intl.DateTimeFormat('en-US', {
-        timeZone: tz, day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
-      }).format(d).replace(/ /g, ' ')
-      : new Intl.DateTimeFormat('en-GB', {
-        timeZone: tz, day: '2-digit', month: 'short',
-        hour: '2-digit', minute: '2-digit', hour12: false,
-      }).format(d);
-  } catch {
-    return `${iso.replace('T', ' ').slice(0, 16)} UTC`;
-  }
-  const label = zone || !timeZone ? (timeZone ? cityZoneLabel(timeZone) : 'UTC') : '';
-  return label ? `${text} ${label}` : text;
+  return stamp(iso, timeZone);
 }
 
 // ---------------------------------------------------------------------------

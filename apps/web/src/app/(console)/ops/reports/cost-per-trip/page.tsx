@@ -21,7 +21,7 @@ type Report = {
 };
 
 const money = (minor: number | null | undefined, country: string) =>
-  minor == null ? '—' : `${country === 'US' ? '$' : '₹'}${(minor / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  minor == null ? '—' : `${country === 'US' ? '$' : '₹'}${(minor / 100).toLocaleString(country === 'US' ? 'en-US' : 'en-IN', { minimumFractionDigits: country === 'US' ? 2 : 0, maximumFractionDigits: country === 'US' ? 2 : 0 })}`;
 const FIXED: FieldSpec[] = [{ key: 'amount_minor', label: 'Fixed costs this month (minor units, ₹1 = 100)', kind: 'number' }];
 
 export default function CostPerTripPage() {

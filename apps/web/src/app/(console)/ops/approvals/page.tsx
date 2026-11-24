@@ -1,5 +1,6 @@
 'use client';
 
+import { marketName, placeName } from '@/lib/places';
 import { formatAge } from '@/lib/commandCentre';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
@@ -44,6 +45,8 @@ type ApprovalRow = {
   id: number;
   ref: string;
   title: string;
+  /** 24 Nov: exactly what changes ("Hyderabad daily driver fee: Auto ₹20 a day"). */
+  summary?: string;
   action_key: string;
   country: string;
   scope: string | null;
@@ -163,13 +166,13 @@ function ApprovalsPage() {
     {
       key: 'title', label: 'What', sortKey: 'action', render: (r) => (
         <span title={r.title} className="ops-chips">
-          {r.title}
+          {r.summary || r.title}
           {r.blockers.length ? <StatusChip tone="caution">Blocked</StatusChip> : null}
         </span>
       ),
     },
     { key: 'amount', label: 'Amount', num: true, sortKey: 'amount', render: (r) => amountOf(r) },
-    { key: 'place', label: 'Place', render: (r) => r.scope ?? r.country },
+    { key: 'place', label: 'Place', render: (r) => placeName(r.scope ?? r.country) },
     { key: 'maker', label: 'Raised by', sortKey: 'maker', render: (r) => <span title={r.maker?.email}>{r.maker?.label || r.maker?.email || '—'}</span> },
     { key: 'age', label: 'Waiting', num: true, render: (r) => (r.status === 'requested' ? waitingFor(r.requested_at) : '—') },
     {
@@ -188,7 +191,7 @@ function ApprovalsPage() {
       const { rows, truncated } = await fetchAllPages<ApprovalRow>((p, size) => listPath(view, p, size, ordering));
       const header = ['Request', 'What', 'Amount', 'Currency', 'Place', 'Raised by', 'Raised', 'Status', 'Decided by', 'Decision reason'];
       const body = rows.map((r) => [
-        r.ref, r.title, amountOf(r), r.currency ?? '', r.scope ?? r.country, r.maker?.label || r.maker?.email || '',
+        r.ref, r.summary || r.title, amountOf(r), r.currency ?? '', placeName(r.scope ?? r.country), r.maker?.label || r.maker?.email || '',
         stamp(r.requested_at, timeZoneFor(r.scope)), STATUS_WORDS[r.status] ?? r.status,
         r.checker?.label || r.checker?.email || '', r.decision_reason,
       ]);
@@ -313,10 +316,10 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
   return (
     <RecordPanel
       label="Approval request"
-      title={row.title}
+      title={row.summary || row.title}
       refId={row.ref}
       onClose={onClose}
-      subtitle={<>{row.scope ?? row.country} · raised by {row.maker?.label || row.maker?.email || '—'}</>}
+      subtitle={<>{placeName(row.scope ?? row.country)} · raised by {row.maker?.label || row.maker?.email || '—'}</>}
       status={(
         <>
           <StatusChip tone={statusTone(row.status)}>{STATUS_WORDS[row.status] ?? row.status}</StatusChip>
@@ -372,7 +375,7 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
                 {open ? <RecordStat label="Waiting" value={waitingFor(row.requested_at)} /> : null}
               </div>
               <RecordFacts rows={[
-                ['Place', row.scope ?? row.country],
+                ['Place', placeName(row.scope ?? row.country)],
                 ['Raised by', row.maker?.label || row.maker?.email || '—'],
                 ['Raised', stamp(row.requested_at, tz)],
                 row.expires_at ? ['Expires', stamp(row.expires_at, tz)] : null,

@@ -276,7 +276,7 @@ describe('reading the preview', () => {
     expect(cardLine({
       id: 1, version: 1, zone: 'Z', vehicle_type: 1, vehicle_type_name: 'sedan', base_fare: '60.00',
       per_km_fare: '12.00', per_min_fare: '1.50', min_fare: '40.00', effective_from: '2026-01-01T00:00:00Z',
-    }, '₹')).toBe('₹60.00 base · ₹12.00/km · ₹1.50/min · min ₹40.00');
+    }, '₹')).toBe('₹60 base · ₹12/km · ₹1.50/min · min ₹40');
   });
 
   it('words a pending request from its payload', () => {

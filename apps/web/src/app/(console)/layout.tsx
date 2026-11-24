@@ -20,6 +20,7 @@ import { SosBar } from '@/components/console/shell/SosBar';
 import { TopBar } from '@/components/console/TopBar';
 import { RecoveryLowBanner } from '@/components/console/RecoveryLowBanner';
 import { ConsoleLegalLine } from '@/components/console/shell/ConsoleLegalLine';
+import { PlaceBar } from '@/components/console/shell/PlaceBar';
 import '@/styles/console.css';
 
 /**
@@ -179,6 +180,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
         <SosBar access={access ?? null} />
 
         <main className="ops__content" id="ops-content" tabIndex={-1}>
+          <div className="ops__page">
           {/* Console maintenance notices (module 15): a message from the platform's own admins.
               Plain text; it informs and never blocks the console. */}
           {(access?.notices ?? []).map((n) => (
@@ -222,7 +224,14 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
                 show you.
               </span>
             </div>
-          ) : children}
+          ) : (
+            <>
+              {/* Owner 24 Nov: one place control on every page, at the top of the content. */}
+              <PlaceBar access={access ?? null} />
+              {children}
+            </>
+          )}
+          </div>
           <ConsoleLegalLine access={access ?? null} />
         </main>
       </div>

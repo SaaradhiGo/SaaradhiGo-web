@@ -1,5 +1,6 @@
 'use client';
 
+import { DateField } from '@/components/console/kit/DateField';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
@@ -265,15 +266,6 @@ function RidersInner() {
             <MoreFilters count={active}>
               <form className="ops-form" aria-label="Filter riders" onSubmit={(e) => { e.preventDefault(); apply({}); }}>
                 <div className="ops-form__row">
-                  {cities.length > 1 ? (
-                    <>
-                      <label className="ops-form__label" htmlFor="f-city">City</label>
-                      <select id="f-city" className="ops-select" value={draft.scope} onChange={(e) => setDraft({ ...draft, scope: e.target.value })}>
-                        <option value="">All I hold</option>
-                        {cities.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-                      </select>
-                    </>
-                  ) : null}
                   <label className="ops-form__label" htmlFor="f-trips">Completed trips</label>
                   <select id="f-trips" className="ops-select" value={tripBandValue(draft)}
                     onChange={(e) => { const [min, max] = e.target.value.split('|'); setDraft({ ...draft, tripsMin: min, tripsMax: max }); }}>
@@ -284,13 +276,13 @@ function RidersInner() {
                 </div>
                 <div className="ops-form__row">
                   <label className="ops-form__label" htmlFor="f-joined-from">Joined from</label>
-                  <input id="f-joined-from" type="date" className="ops-select" value={draft.joinedFrom} onChange={(e) => setDraft({ ...draft, joinedFrom: e.target.value })} />
+                  <DateField id="f-joined-from" className="ops-select" value={draft.joinedFrom} onChange={(v) => setDraft({ ...draft, joinedFrom: v })} />
                   <label className="ops-form__label" htmlFor="f-joined-to">to</label>
-                  <input id="f-joined-to" type="date" className="ops-select" value={draft.joinedTo} onChange={(e) => setDraft({ ...draft, joinedTo: e.target.value })} />
+                  <DateField id="f-joined-to" className="ops-select" value={draft.joinedTo} onChange={(v) => setDraft({ ...draft, joinedTo: v })} />
                   <label className="ops-form__label" htmlFor="f-last-from">Last trip from</label>
-                  <input id="f-last-from" type="date" className="ops-select" value={draft.lastTripFrom} onChange={(e) => setDraft({ ...draft, lastTripFrom: e.target.value })} />
+                  <DateField id="f-last-from" className="ops-select" value={draft.lastTripFrom} onChange={(v) => setDraft({ ...draft, lastTripFrom: v })} />
                   <label className="ops-form__label" htmlFor="f-last-to">to</label>
-                  <input id="f-last-to" type="date" className="ops-select" value={draft.lastTripTo} onChange={(e) => setDraft({ ...draft, lastTripTo: e.target.value })} />
+                  <DateField id="f-last-to" className="ops-select" value={draft.lastTripTo} onChange={(v) => setDraft({ ...draft, lastTripTo: v })} />
                 </div>
                 <div className="ops-form__row">
                   <label className="ops-form__row"><input type="checkbox" checked={draft.hasOpenTicket} onChange={(e) => apply({ hasOpenTicket: e.target.checked })} /> Open ticket</label>
@@ -425,7 +417,7 @@ function RiderRecord({ id, onClose, onChanged }: {
             key: 'overview', label: 'Overview', content: (
               <>
                 <div className="ops-recstats">
-                  <RecordStat label="Rating" value={Number(data.ratings_summary.rating) > 0 ? Number(data.ratings_summary.rating).toFixed(2) : '—'}
+                  <RecordStat label="Rating" value={data.ratings_summary.rating_count && Number(data.ratings_summary.rating) > 0 ? Number(data.ratings_summary.rating).toFixed(2) : '—'}
                     note={`${data.ratings_summary.rating_count.toLocaleString('en-IN')} rating${data.ratings_summary.rating_count === 1 ? '' : 's'}`} />
                   <RecordStat label="Trips" value={data.trips.total.toLocaleString('en-IN')} />
                   <RecordStat label="Open tickets" value={data.tickets.open} />

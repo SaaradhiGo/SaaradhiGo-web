@@ -1,5 +1,6 @@
 'use client';
 
+import { marketName, placeName } from '@/lib/places';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
@@ -33,7 +34,7 @@ const ITEMS: [string, string][] = [
   ['payout_method', 'Payout method'],
 ];
 const LANGS: [string, string][] = [['en', 'English'], ['te', 'తెలుగు'], ['hi', 'हिन्दी'], ['es', 'Español']];
-const where = (r: Row) => (r.state_code ? `${r.country}-${r.state_code}` : `All of ${r.country}`);
+const where = (r: Row) => marketName(r.country, r.state_code);
 
 export default function DriverRequirementsPage() {
   const access = useAdminAccess();

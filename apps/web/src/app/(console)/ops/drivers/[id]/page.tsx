@@ -209,7 +209,7 @@ export default function DriverDetailPage() {
           <Panel title="Record">
             <Facts>
               <Fact label="Rating">
-                {Number(data.ratings) > 0 ? Number(data.ratings).toFixed(2) : 'No ratings yet'}
+                {Number(data.ratings) > 0 && (data.ratings_summary?.count ?? 1) > 0 ? Number(data.ratings).toFixed(2) : '— · no rated trips yet'}
                 {data.ratings_summary ? ` · ${data.ratings_summary.count} rating${data.ratings_summary.count === 1 ? '' : 's'}` : ''}
               </Fact>
               {data.ratings_summary && data.ratings_summary.count > 0 ? (

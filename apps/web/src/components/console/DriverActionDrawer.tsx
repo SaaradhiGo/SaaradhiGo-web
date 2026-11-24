@@ -1,5 +1,6 @@
 'use client';
 
+import { DateField } from '@/components/console/kit/DateField';
 import { useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { type ApprovalBody, interpretWrite, newIdempotencyKey } from '@/lib/trips';
@@ -219,7 +220,7 @@ export function DocumentReviewDrawer({
             {dated ? (
               <>
                 <label className="ops-form__label" htmlFor="doc-expiry">Valid until, as printed on the document</label>
-                <input id="doc-expiry" type="date" className="input" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
+                <DateField id="doc-expiry" className="input" value={expiry} onChange={(v) => setExpiry(v)} />
                 <p className="help">Needed to approve it unless the driver already entered it. Drivers are reminded 30, 7 and 1 days before.</p>
               </>
             ) : null}

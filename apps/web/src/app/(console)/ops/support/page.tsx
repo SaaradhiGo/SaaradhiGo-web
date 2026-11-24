@@ -1,5 +1,6 @@
 'use client';
 
+import { DateField } from '@/components/console/kit/DateField';
 import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -235,15 +236,6 @@ function SupportInner() {
                   <label className="ops-form__label" htmlFor="f-q">Find</label>
                   <input id="f-q" className="ops-select" value={draft.q} placeholder="Ticket # or last 4 of phone"
                     onChange={(e) => setDraft({ ...draft, q: e.target.value.replace(/^tkt-?/i, '') })} size={24} />
-                  {cities.length > 1 ? (
-                    <>
-                      <label className="ops-form__label" htmlFor="f-city">City</label>
-                      <select id="f-city" className="ops-select" value={draft.scope} onChange={(e) => setDraft({ ...draft, scope: e.target.value })}>
-                        <option value="">All I hold</option>
-                        {cities.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-                      </select>
-                    </>
-                  ) : null}
                   <label className="ops-form__label" htmlFor="f-country">Country</label>
                   <select id="f-country" className="ops-select" value={draft.country} onChange={(e) => setDraft({ ...draft, country: e.target.value })}>
                     <option value="">Any</option>
@@ -263,9 +255,9 @@ function SupportInner() {
                 </div>
                 <div className="ops-form__row">
                   <label className="ops-form__label" htmlFor="f-from">Opened from</label>
-                  <input id="f-from" type="date" className="ops-select" value={draft.dateFrom} onChange={(e) => setDraft({ ...draft, dateFrom: e.target.value })} />
+                  <DateField id="f-from" className="ops-select" value={draft.dateFrom} onChange={(v) => setDraft({ ...draft, dateFrom: v })} />
                   <label className="ops-form__label" htmlFor="f-to">to</label>
-                  <input id="f-to" type="date" className="ops-select" value={draft.dateTo} onChange={(e) => setDraft({ ...draft, dateTo: e.target.value })} />
+                  <DateField id="f-to" className="ops-select" value={draft.dateTo} onChange={(v) => setDraft({ ...draft, dateTo: v })} />
                   <label className="ops-form__row">
                     <input type="checkbox" checked={draft.dueSoon} onChange={(e) => apply({ dueSoon: e.target.checked })} /> Due within the hour
                   </label>

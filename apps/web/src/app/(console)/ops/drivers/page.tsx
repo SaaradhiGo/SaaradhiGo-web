@@ -1,5 +1,6 @@
 'use client';
 
+import { DateField } from '@/components/console/kit/DateField';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
@@ -311,15 +312,6 @@ function DriversInner() {
                   })}
                 </div>
                 <div className="ops-form__row">
-                  {cities.length > 1 ? (
-                    <>
-                      <label className="ops-form__label" htmlFor="f-city">City</label>
-                      <select id="f-city" className="ops-select" value={draft.scope} onChange={(e) => setDraft({ ...draft, scope: e.target.value })}>
-                        <option value="">All I hold</option>
-                        {cities.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-                      </select>
-                    </>
-                  ) : null}
                   <label className="ops-form__label" htmlFor="f-vehicle">Vehicle</label>
                   <input id="f-vehicle" className="ops-select" placeholder="e.g. sedan" value={draft.vehicleType} onChange={(e) => setDraft({ ...draft, vehicleType: e.target.value })} size={10} />
                   <label className="ops-form__label" htmlFor="f-expiring">Documents expiring within</label>
@@ -334,9 +326,9 @@ function DriversInner() {
                 </div>
                 <div className="ops-form__row">
                   <label className="ops-form__label" htmlFor="f-joined-from">Joined from</label>
-                  <input id="f-joined-from" type="date" className="ops-select" value={draft.joinedFrom} onChange={(e) => setDraft({ ...draft, joinedFrom: e.target.value })} />
+                  <DateField id="f-joined-from" className="ops-select" value={draft.joinedFrom} onChange={(v) => setDraft({ ...draft, joinedFrom: v })} />
                   <label className="ops-form__label" htmlFor="f-joined-to">to</label>
-                  <input id="f-joined-to" type="date" className="ops-select" value={draft.joinedTo} onChange={(e) => setDraft({ ...draft, joinedTo: e.target.value })} />
+                  <DateField id="f-joined-to" className="ops-select" value={draft.joinedTo} onChange={(v) => setDraft({ ...draft, joinedTo: v })} />
                   <label className="ops-form__label" htmlFor="f-id">Driver (D-…)</label>
                   <input id="f-id" className="ops-select" inputMode="numeric" value={draft.id} onChange={(e) => setDraft({ ...draft, id: e.target.value.replace(/\D/g, '') })} size={8} />
                 </div>

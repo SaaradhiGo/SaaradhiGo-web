@@ -1,5 +1,7 @@
 'use client';
 
+import { stamp } from '@/lib/consoleTime';
+
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
@@ -95,13 +97,6 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
     <div className="ops-ws">
       <header className="ops-ws__head">
         <div>
-          <nav className="ops-crumbs" aria-label="Place">
-            {places.breadcrumb.slice(0, -1).map((b) => (
-              <button key={b.code} type="button" className="ops-crumbs__link" onClick={() => goToPlace(b.kind === 'global' ? null : b.code)}>
-                {b.name} ›
-              </button>
-            ))}
-          </nav>
           <h1>{node?.name ?? 'Overview'}</h1>
           <p className="sg-num">
             {t.live_cities} live {t.live_cities === 1 ? 'city' : 'cities'}
@@ -112,14 +107,6 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
         </div>
       </header>
 
-      {node?.kind !== 'global' && places.children.length > 1 ? (
-        <nav className="ops-placechips" aria-label={`Places in ${node?.name ?? 'this view'}`}>
-          {/* 22 Nov (owner): states and cities are chips, never a long dropdown. */}
-          {places.children.map((r) => (
-            <button key={r.code} type="button" className="ops-placechip" onClick={() => goToPlace(r.code)}>{r.name}</button>
-          ))}
-        </nav>
-      ) : null}
       <TodayPanel data={today.data} range={today.range} onRange={today.setRange} placeName={node?.name} onOpenCountry={(code) => goToPlace(code)} />
 
       <SuperAdminBanner access={access} />
@@ -188,15 +175,8 @@ function usePulse() {
 
 function cityClock(tz: string | null | undefined, now: number) {
   if (!tz) return '';
-  try {
-    // A US city on its own 12-hour clock ("Sat 7:30 PM MST"); India 24-hour (15 Nov).
-    const text = /^America\//.test(tz)
-      ? new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short', hour: 'numeric', minute: '2-digit' }).format(now).replace(/ /g, ' ').replace(',', '')
-      : new Intl.DateTimeFormat('en-GB', { timeZone: tz, weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
-    return `${text} ${tz === 'Asia/Kolkata' ? 'IST' : new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'short' }).formatToParts(now).find((p) => p.type === 'timeZoneName')?.value ?? ''}`;
-  } catch {
-    return '';
-  }
+  // The one console format (owner 24 Nov): "16 Nov 2026, 9:37 PM IST".
+  return stamp(new Date(now).toISOString(), tz);
 }
 
 function HourlyLine({ hours }: { hours: PulseResponse['hourly'] }) {
@@ -246,11 +226,6 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
     <div className="ops-ws">
       <header className="ops-ws__head">
         <div>
-          <nav className="ops-crumbs" aria-label="Place">
-            {places.breadcrumb.slice(0, -1).map((b) => (
-              <button key={b.code} type="button" className="ops-crumbs__link" onClick={() => goToPlace(b.kind === 'global' ? null : b.code)}>{b.name} ›</button>
-            ))}
-          </nav>
           <h1>{city.name} {square ? <HealthChip health={square.health} reason={square.health_reason} /> : null}</h1>
           <p className="sg-num">{cityClock(tz, now)}{square?.health_reason ? ` · ${square.health_reason}` : ''}</p>
         </div>

@@ -119,7 +119,7 @@ export function consequence(
       return 'The trip ends and the rider is not charged. SaaradhiGo pays the driver their earnings for the distance driven, and Finance is alerted. The driver can take trips again.';
     }
     if (rule === 'standard') {
-      return 'The trip ends. The rider pays the fare for the distance actually driven, never more than the upfront price. The driver earns on that fare with commission as usual, and can take trips again.';
+      return 'The trip ends. The rider pays the fare for the distance actually driven, never more than the upfront price. The driver earns on that fare with the driver fee as usual, and can take trips again.';
     }
     return 'Choose why the trip is being ended. The reason decides what the rider pays and who pays the driver.';
   }
@@ -221,7 +221,7 @@ export function previewRows(p: ReleasePreview): PreviewRow[] {
     value: p.funded_by === 'platform' ? 'SaaradhiGo (platform-funded)' : 'The rider',
   });
   if (p.driver_collects_cash) {
-    rows.push({ label: 'Cash trip', value: 'Recorded as a normal cash trip: the driver owes the commission.' });
+    rows.push({ label: 'Cash trip', value: 'Recorded as a normal cash trip: the driver owes the driver fee.' });
   }
   return rows;
 }
