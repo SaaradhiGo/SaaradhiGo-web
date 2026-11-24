@@ -17,12 +17,19 @@ export function writeShowNotLaunched(on: boolean) {
 
 /** Codes of the held cities that are not live (draft): the ones hidden by default. Pure; tested. */
 export function notLaunchedCodes(scopes: AdminScope[]): Set<string> {
-  return new Set(scopes.filter((s) => s.kind === 'city' && s.status === 'draft').map((s) => s.code));
+  return new Set(scopes.filter((s) => s.kind === 'city' && (s.status === 'draft' || s.status === 'archived')).map((s) => s.code));
+}
+
+/** Archived places (Austin, 24 Nov) stay out of every list even with "Show not launched" on. */
+export function archivedCodes(scopes: AdminScope[]): Set<string> {
+  return new Set(scopes.filter((s) => s.status === 'archived').map((s) => s.code));
 }
 
 /** Is this place (a city code, or a code inside one) hidden right now? */
 export function hiddenPlace(code: string | null | undefined, scopes = getCachedAccess()?.scopes ?? []): boolean {
-  if (!code || readShowNotLaunched()) return false;
+  if (!code) return false;
+  if ([...archivedCodes(scopes)].some((c) => code === c || code.startsWith(`${c}-`))) return true;
+  if (readShowNotLaunched()) return false;
   const off = notLaunchedCodes(scopes);
   return [...off].some((c) => code === c || code.startsWith(`${c}-`));
 }
@@ -42,6 +49,8 @@ export function useLaunchedOnly() {
 
 /** Is the city with this name not launched (and the toggle off)? For rows that carry a name only. */
 export function hiddenCityName(name: string | null | undefined, scopes = getCachedAccess()?.scopes ?? []): boolean {
-  if (!name || readShowNotLaunched()) return false;
+  if (!name) return false;
+  if (scopes.some((s) => s.status === 'archived' && s.name === name)) return true;
+  if (readShowNotLaunched()) return false;
   return scopes.some((s) => s.kind === 'city' && s.status === 'draft' && s.name === name);
 }

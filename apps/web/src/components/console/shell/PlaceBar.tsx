@@ -37,7 +37,8 @@ export function PlaceBar({ access }: { access: AdminAccess | null }) {
   const [showAll, setShowAll] = useState(false);
   useEffect(() => { setSelected(readSelectedScope()); setShowAll(readShowNotLaunched()); }, []);
 
-  const scopes = useMemo(() => access?.scopes ?? [], [access]);
+  // Archived places (owner 24 Nov: Austin) never appear in the place bar.
+  const scopes = useMemo(() => (access?.scopes ?? []).filter((s) => s.status !== 'archived'), [access]);
   if (!access || access.access_model === 'legacy_unscoped' || scopes.length === 0) return null;
 
   const cities = scopes.filter((s) => s.kind === 'city');

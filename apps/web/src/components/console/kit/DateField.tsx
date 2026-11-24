@@ -14,8 +14,8 @@ export function DateField({ value, onChange, className = 'ops-select', ...rest }
   useEffect(() => setText(marketDate(value)), [value]);
   const bad = text.trim() !== '' && parseMarketDate(text) === null;
   return (
-    <input {...rest} type="text" className={className} value={text} inputMode="text" autoComplete="off"
-      placeholder="16 Nov 2026" aria-invalid={bad || undefined} size={11}
+    <input {...rest} type="text" className={`${className} ops-datefield`} value={text} inputMode="text" autoComplete="off"
+      placeholder="16 Nov 2026" aria-invalid={bad || undefined}
       onChange={(e) => {
         setText(e.target.value);
         if (e.target.value.trim() === '') onChange('');

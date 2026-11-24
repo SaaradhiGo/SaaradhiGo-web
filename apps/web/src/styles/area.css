@@ -778,9 +778,3 @@ button.er-bar { cursor: pointer; }
 /* 18 Nov round 3: a notice is a white card with a hairline; the warning colour is its icon only. */
 .anote { background: var(--c-surface); border-color: var(--c-border); }
 .anote__icon { color: var(--c-warn-ink); }
-
-/* 24 Nov (owner): the footer sits at the bottom of the window on short pages, after the content on long ones. */
-.ar { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
-.ar > .ar-main { flex: 1 0 auto; min-height: 0; }
-.dr-body { min-height: 100vh; min-height: 100dvh; }
-.dr-body > .dr-legal { margin-top: auto; }
