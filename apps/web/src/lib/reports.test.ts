@@ -94,12 +94,12 @@ describe('cells', () => {
     expect(formatCell(c('count'), 12345)).toBe('12,345');
     expect(formatCell(c('percent'), 66.666)).toBe('66.7%');
     expect(formatCell(c('seconds'), 252)).toBe('4 min 12 s');
-    expect(formatCell(c('hours'), 9)).toBe('9 h');
+    expect(formatCell(c('hours'), 9)).toBe('9 hours');
     expect(formatCell(c('km'), 12.34)).toBe('12.3 km');
     expect(formatCell(c('count'), null)).toBe('—');
     expect(formatCell(c('count'), 0)).toBe('0');
     expect(secondsWords(45)).toBe('45 s');
-    expect(secondsWords(3720)).toBe('1 h 2 min');
+    expect(secondsWords(3720)).toBe('1 hour 2 min');
   });
 });
 

@@ -1,6 +1,7 @@
 'use client';
 
-import { marketDate } from '@/lib/consoleTime';
+import { marketDate, parseMarketDate } from '@/lib/consoleTime';
+import { DatePresets } from '@/components/console/kit/DatePresets';
 import { readSelectedScope } from '@/lib/adminScope';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -10,8 +11,8 @@ import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import { currentScope, useAdminAccess, withScope } from '@/lib/adminScope';
 import { useDensity } from '@/lib/consolePrefs';
 import {
-  type Catalogue, type ReportBody, type ReportColumn, type ReportFilters, type Row, CHART_DEFAULT,
-  GRANULARITIES, MAX_RANGE_DAYS, RANGE_PRESETS, chartableColumns, currenciesOf, exportPath,
+  type Catalogue, type ReportBody, type ReportColumn, type ReportCountry, type ReportFilters, type Row, CHART_DEFAULT,
+  GRANULARITIES, MAX_RANGE_DAYS, chartableColumns, currenciesOf, exportPath,
   filtersFromParams, filtersToQuery, formatCell, granularityNote, groupWord, pivot, presetRange,
   periodLabel, rangeProblem, reportPath, rowsOfCurrency, todayLocal,
 } from '@/lib/reports';
@@ -58,20 +59,14 @@ function Filters({
   const problem = rangeProblem(draft.from, draft.to);
   const note = granularityNote(draft.granularity, draft.from, draft.to);
   const set = (patch: Partial<ReportFilters>) => setDraft((d) => ({ ...d, ...patch }));
-  const cities = catalogue?.cities ?? [];
+  const market = marketOf(draft.city);
   return (
+    <>
+    <PlaceChips filters={filters} catalogue={catalogue} onApply={onApply} />
     <form className="ops-rangebar" aria-label="Report filters"
       onSubmit={(e) => { e.preventDefault(); if (!problem) onApply(draft); }}>
-      <div className="ops-rangebar__field">
-        <label className="ops-form__label" htmlFor="rp-from">From</label>
-        <input id="rp-from" type="date" className="ops-select" value={draft.from} max={todayLocal()}
-          onChange={(e) => set({ from: e.target.value })} />
-      </div>
-      <div className="ops-rangebar__field">
-        <label className="ops-form__label" htmlFor="rp-to">To</label>
-        <input id="rp-to" type="date" className="ops-select" value={draft.to} max={todayLocal()}
-          onChange={(e) => set({ to: e.target.value })} />
-      </div>
+      <MarketDateField id="rp-from" label="From" value={draft.from} market={market} onChange={(v) => set({ from: v })} />
+      <MarketDateField id="rp-to" label="To" value={draft.to} market={market} onChange={(v) => set({ to: v })} />
       {!noPeriod ? (
       <div className="ops-rangebar__field">
         <label className="ops-form__label" htmlFor="rp-gran">Period</label>
@@ -80,15 +75,6 @@ function Filters({
           {GRANULARITIES.map((g) => <option key={g} value={g}>{GRAN_WORDS[g]}</option>)}
         </select>
       </div>
-      ) : null}
-      {cities.length > 1 ? (
-        <div className="ops-rangebar__field">
-          <label className="ops-form__label" htmlFor="rp-city">City</label>
-          <select id="rp-city" className="ops-select" value={draft.city} onChange={(e) => set({ city: e.target.value })}>
-            <option value="">All in my scope</option>
-            {cities.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-          </select>
-        </div>
       ) : null}
       {showVehicle && (catalogue?.vehicle_types.length ?? 0) > 0 ? (
         <div className="ops-rangebar__field">
@@ -108,15 +94,90 @@ function Filters({
         </div>
       ) : null}
       <button type="submit" className="sg-btn sg-btn--primary sg-btn--sm" disabled={Boolean(problem)}>Show</button>
-      <div className="ops-seg" role="group" aria-label="Date presets">
-        {RANGE_PRESETS.map((p) => (
-          <button key={p.days} type="button" className="ops-seg__btn"
-            onClick={() => { const r = presetRange(p.days); onApply({ ...draft, ...r }); }}>{p.label}</button>
-        ))}
-      </div>
+      <DatePresets from={draft.from} to={draft.to} customFieldId="rp-from" onPick={(r) => onApply({ ...draft, ...r })} />
       {problem ? <span className="ops-rangebar__problem" role="alert">{problem}</span>
         : note ? <span className="help" role="note">{note}</span> : null}
     </form>
+    </>
+  );
+}
+
+/** The market a place code belongs to: its country prefix; nothing chosen reads as India. */
+function marketOf(code: string | null | undefined): string {
+  const c = (code || readSelectedScope() || '').toUpperCase();
+  return c.startsWith('US') ? 'US' : 'IN';
+}
+
+/** A date typed and shown the way the market writes it ("20 Nov 2026", "Nov 20, 2026"); sent as ISO. */
+function MarketDateField({ id, label, value, market, onChange }: {
+  id: string; label: string; value: string; market: string; onChange: (iso: string) => void;
+}) {
+  const [text, setText] = useState(marketDate(value, market));
+  useEffect(() => setText(marketDate(value, market)), [value, market]);
+  const bad = text.trim() !== '' && parseMarketDate(text) === null;
+  return (
+    <div className="ops-rangebar__field">
+      <label className="ops-form__label" htmlFor={id}>{label}</label>
+      <input id={id} type="text" className="ops-select" value={text} inputMode="text" autoComplete="off"
+        placeholder={market === 'US' ? 'Nov 20, 2026' : '20 Nov 2026'} aria-invalid={bad || undefined}
+        onChange={(e) => { setText(e.target.value); const iso = parseMarketDate(e.target.value); if (iso) onChange(iso); }}
+        onBlur={() => { const iso = parseMarketDate(text); if (iso) setText(marketDate(iso, market)); }} />
+    </div>
+  );
+}
+
+/**
+ * 24 Nov (owner): places as chips. More than one country: "All countries" and one chip per
+ * country. A country chosen: its cities as chips. Never a long dropdown.
+ */
+function PlaceChips({ filters, catalogue, onApply }: {
+  filters: ReportFilters; catalogue: Catalogue | null; onApply: (f: ReportFilters) => void;
+}) {
+  const cities = catalogue?.cities ?? [];
+  const countries = [...new Set(cities.map((c) => c.code.split('-')[0]))];
+  const chosen = filters.city.toUpperCase();
+  const country = chosen ? chosen.split('-')[0] : countries.length === 1 ? countries[0] : '';
+  const inCountry = country ? cities.filter((c) => c.code.startsWith(`${country}-`)) : [];
+  if (countries.length < 2 && inCountry.length < 2) return null;
+  const chip = (code: string, label: string) => (
+    <button key={code || 'all'} type="button" className="ops-placechip" aria-pressed={chosen === code}
+      onClick={() => onApply({ ...filters, city: code, group: code ? filters.group : '' })}>{label}</button>
+  );
+  return (
+    <nav className="ops-placechips rp-places" aria-label="Place">
+      {countries.length > 1 ? chip('', 'All countries') : null}
+      {countries.length > 1 && !country ? countries.map((c) => chip(c, COUNTRY_NAMES[c] ?? c)) : null}
+      {country && countries.length > 1 ? chip(country, `All of ${COUNTRY_NAMES[country] ?? country}`) : null}
+      {country && countries.length < 2 && inCountry.length > 1 ? chip('', `All of ${COUNTRY_NAMES[country] ?? country}`) : null}
+      {inCountry.length > 1 ? inCountry.map((c) => chip(c.code, c.name)) : null}
+    </nav>
+  );
+}
+
+const COUNTRY_NAMES: Record<string, string> = { IN: 'India', US: 'United States' };
+
+/** One tile per country, in its own currency and its cities' own days (24 Nov). Never a sum. */
+function CountryReportTiles({ body, onOpen }: { body: ReportBody; onOpen: (code: string) => void }) {
+  const keys = TILE_KEYS[body.report.key] ?? body.columns.slice(0, 4).map((c) => c.key);
+  const cols = keys.map((k) => body.columns.find((c) => c.key === k)).filter(Boolean) as ReportColumn[];
+  const market = (c: ReportCountry) => (c.code === 'US' ? 'US' : 'IN');
+  return (
+    <section className="ops-today__countries rp-countries" aria-label="By country">
+      {(body.countries ?? []).map((c) => {
+        const t = c.totals.find((r) => r.currency === c.currency) ?? c.totals[0] ?? {};
+        return (
+          <button key={c.code} type="button" className="ops-today__country" onClick={() => onOpen(c.code)} aria-label={`Open ${c.name}`}>
+            <span className="ops-today__country-head"><b>{c.name}</b>
+              <span className="muted">{c.currency} · {marketDate(body.params.from, market(c))} to {marketDate(body.params.to, market(c))}, local days</span></span>
+            <dl className="ops-today__facts">
+              {cols.map((col) => (
+                <div key={col.key}><dt>{col.label}</dt><dd className="sg-num">{formatCell(col, t[col.key], c.currency)}</dd></div>
+              ))}
+            </dl>
+          </button>
+        );
+      })}
+    </section>
   );
 }
 
@@ -344,12 +405,17 @@ function ReportInner() {
         </div>
       ) : error ? (
         <ErrorState title="The report could not be loaded" detail={`${error.message} This is not the same as there being no data.`} onRetry={() => void load()} />
-      ) : empty ? (
+      ) : empty && !(body?.countries?.length) ? (
         <Empty title="No data in this range"
-          detail={body?.as_of ? 'Nothing happened in your scope between these dates.' : 'The rollups have not been built for these days. They are rebuilt every 30 minutes for today and yesterday, and nightly for the last week.'} />
+          detail={body?.as_of ? 'Nothing counted in your scope between these dates. Test trips and test accounts are never counted, so on QA this is 0.' : 'The rollups have not been built for these days. They are rebuilt every 30 minutes for today and yesterday, and nightly for the last week.'} />
       ) : body ? (
         <>
-          {body.report.key === 'rider_retention' ? (
+          {(body.countries?.length ?? 0) > 1 ? (
+            <>
+              <CountryReportTiles body={body} onOpen={(code) => go({ ...filters, city: code, group: '' })} />
+              <p className="help" role="note">Countries are never added together: each has its own currency and its own days. Choose a country for its cities, chart and table.</p>
+            </>
+          ) : body.report.key === 'rider_retention' ? (
             <Panel title="Retention by cohort"><CohortTable cohorts={body.cohorts ?? []} /></Panel>
           ) : (
             <>
@@ -360,7 +426,7 @@ function ReportInner() {
                 <ListPage<Row>
                   pageKey={`report-${key}-place`}
                   title="By place"
-                  summary={`${body.params.from} to ${body.params.to}. Counts and money are added up per place${body.report.money ? ' and currency' : ''}; rates and averages are in the period table.`}
+                  summary={`${marketDate(body.params.from, reportMarket())} to ${marketDate(body.params.to, reportMarket())}. Counts and money are added up per place${body.report.money ? ' and currency' : ''}; rates and averages are in the period table.`}
                   views={tableViews}
                   view={tableView}
                   onView={chooseTable}
@@ -377,7 +443,7 @@ function ReportInner() {
                 <ListPage<Row>
                   pageKey={`report-${key}-period`}
                   title="By period"
-                  summary={`${body.rows.length} row${body.rows.length === 1 ? '' : 's'} · ${body.params.from} to ${body.params.to} · days are each city's own`}
+                  summary={`${body.rows.length} row${body.rows.length === 1 ? '' : 's'} · ${marketDate(body.params.from, reportMarket())} to ${marketDate(body.params.to, reportMarket())} · days are each city's own`}
                   views={tableViews}
                   view={tableView}
                   onView={chooseTable}
@@ -414,7 +480,8 @@ function ReportInner() {
 
 /** The market whose date format the report uses: the selected place's country (22 Nov). */
 function reportMarket(): string {
-  return (readSelectedScope() ?? '').startsWith('US') ? 'US' : 'IN';
+  const city = typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('city') ?? '';
+  return (city || readSelectedScope() || '').toUpperCase().startsWith('US') ? 'US' : 'IN';
 }
 
 export default function ReportView() {

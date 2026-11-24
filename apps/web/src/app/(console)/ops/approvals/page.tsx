@@ -1,5 +1,6 @@
 'use client';
 
+import { formatAge } from '@/lib/commandCentre';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
@@ -99,10 +100,7 @@ function statusTone(status: string): ChipTone {
 function waitingFor(iso: string | null): string {
   if (!iso) return '—';
   const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 48) return `${hours} h`;
-  return `${Math.floor(hours / 24)} d`;
+  return formatAge(minutes) ?? '—';
 }
 
 function amountOf(row: ApprovalRow, exact = false): string {

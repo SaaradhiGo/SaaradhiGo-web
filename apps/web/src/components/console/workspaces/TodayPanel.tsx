@@ -1,5 +1,6 @@
 'use client';
 
+import { marketDate } from '@/lib/consoleTime';
 import { todayLocal } from '@/lib/reports';
 import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
@@ -56,13 +57,14 @@ function n(v: number) { return v.toLocaleString('en-IN'); }
 export function CountryTiles({ countries, onOpen, range }: { countries: TodayCountry[]; onOpen: (code: string) => void; range?: Range | null }) {
   // One country shows its tile only for a chosen range: today's figures are on the page already.
   if (countries.length < 2 && !range) return null;
-  const when = range ? (range.from === range.to ? range.from : `${range.from} to ${range.to}`) : 'today, local time';
+  const day = (iso: string, code: string) => marketDate(iso, code === 'US' ? 'US' : 'IN');
+  const whenFor = (code: string) => (range ? (range.from === range.to ? day(range.from, code) : `${day(range.from, code)} to ${day(range.to, code)}`) : 'today, local time');
   return (
     <section className="ops-today__countries" aria-label="All countries">
       {countries.map((c) => (
         <button key={c.code} type="button" className="ops-today__country" onClick={() => onOpen(c.code)}
           aria-label={`Open ${c.name}`}>
-          <span className="ops-today__country-head"><b>{c.name}</b><span className="muted">{c.currency} · {when}</span></span>
+          <span className="ops-today__country-head"><b>{c.name}</b><span className="muted">{c.currency} · {whenFor(c.code)}</span></span>
           <dl className="ops-today__facts">
             <div><dt>Requests</dt><dd className="sg-num">{n(c.requests)}</dd></div>
             <div><dt>Completed</dt><dd className="sg-num">{n(c.completed)}{c.completion_rate !== null ? ` · ${c.completion_rate}%` : ''}</dd></div>

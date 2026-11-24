@@ -1,5 +1,6 @@
 'use client';
 
+import { formatAge } from '@/lib/commandCentre';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
@@ -154,7 +155,7 @@ function SettingsInner() {
                       <DataTable caption={`Scheduled payout runs in ${c.name}`} rows={c.recent_runs}
                         rowKey={(r) => r.id} density="compact" maxHeight={false}
                         columns={[
-                          { key: 'week', label: 'Week of', render: (r) => r.week_start },
+                          { key: 'week', label: 'Week of', render: (r) => marketDate(r.week_start, c.country) },
                           { key: 'n', label: 'Payouts', num: true, render: (r) => r.withdrawal_count },
                           { key: 'amt', label: 'Amount', num: true, render: (r) => formatMinor(r.amount_minor, r.currency) },
                           { key: 'out', label: 'Outcome', render: (r) => (
@@ -180,7 +181,7 @@ function SettingsInner() {
                         ) },
                         { key: 'fee', label: 'Fee', num: true, render: (h) => `${Number(h.fee_percent)}%` },
                         { key: 'min', label: 'Minimum', num: true, render: (h) => formatMinor(h.minimum_withdrawal_minor, c.currency) },
-                        { key: 'stuck', label: 'Stuck after', num: true, render: (h) => (h.stuck_payout_hours ? `${h.stuck_payout_hours} h` : '—') },
+                        { key: 'stuck', label: 'Stuck after', num: true, render: (h) => (h.stuck_payout_hours ? formatAge(h.stuck_payout_hours * 60) : '—') },
                         { key: 'sched', label: 'Schedule', render: (h) => scheduleLabel(h) },
                         { key: 'limit', label: 'Daily limit', hideBelow: 1100, render: (h) => limitWords(h as CycleFields, c.currency) },
                         { key: 'from', label: 'From', render: (h) => marketDate(h.valid_from, c.country) },

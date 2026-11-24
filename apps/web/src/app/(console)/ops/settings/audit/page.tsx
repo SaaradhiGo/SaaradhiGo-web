@@ -6,7 +6,7 @@ import { api, apiDownload } from '@/lib/api';
 import { readSelectedScope, useAdminAccess, withScope } from '@/lib/adminScope';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
-  auditQuery, canReadAudit, chainWords, diffRows, emptyAuditFilters, type AuditDetail, type AuditFilters,
+  auditQuery, canReadAudit, chainWords, emptyAuditFilters, type AuditDetail, type AuditFilters,
   type AuditPage, type AuditRow,
 } from '@/lib/platform';
 import { messageOf } from '@/components/console/notifications';
@@ -44,7 +44,8 @@ export default function AuditPage() {
   useEffect(() => {
     const cities = (access?.roles ?? []).filter((r) => r.scope_kind === 'city');
     const own = cities.length === 1 ? cities[0].scope : null;
-    setViewerZone(timeZoneFor(readSelectedScope() ?? own) ?? undefined);
+    // 24 Nov (owner): one zone for every row. No city and no market selected: UTC, labelled.
+    setViewerZone(timeZoneFor(readSelectedScope() ?? own) ?? 'UTC');
   }, [access]);
 
   const load = useCallback(async () => {
@@ -74,11 +75,11 @@ export default function AuditPage() {
   }
 
   const columns: ListColumn<AuditRow>[] = [
-    { key: 'when', label: 'When', render: (r) => stamp(r.created_at, viewerZone ?? timeZoneFor(r.place)) },
+    { key: 'when', label: 'When', render: (r) => stamp(r.created_at, viewerZone ?? 'UTC') },
     { key: 'actor', label: 'Who', render: (r) => <>{r.actor.label ?? 'The system'} <span className="muted">{r.actor.role}</span></> },
     { key: 'action', label: 'What happened', primary: true, render: (r) => r.summary ?? r.action },
     { key: 'target', label: 'About', render: (r) => r.target_label ?? `${r.target_type} ${r.target_id}`.trim() },
-    { key: 'place', label: 'Place', render: (r) => r.place_name ?? r.place ?? <span className="muted">none</span> },
+    { key: 'place', label: 'Place', render: (r) => r.place_name ?? r.place ?? <span className="muted">Whole platform</span> },
     { key: 'reason', label: 'Reason', render: (r) => r.reason || <span className="muted">—</span> },
   ];
 
@@ -106,14 +107,14 @@ export default function AuditPage() {
       {exportError ? <p className="nf-problems" role="alert">{exportError}</p> : null}
       {data?.chain ? (
         <p className="help ps-chain" role="status">
-          <StatusChip tone={data.chain.status === 'broken' ? 'critical' : 'good'}>{data.chain.status === 'broken' ? 'Hash chain broken' : 'Hash chain intact'}</StatusChip> {chainWords(data.chain)}
+          <StatusChip tone={data.chain.status === 'broken' ? 'critical' : 'good'}>{data.chain.status === 'broken' ? 'Hash chain broken' : data.chain.status === 'ok' ? 'Hash chain verified' : 'Hash chain'}</StatusChip> {chainWords(data.chain)}
         </p>
       ) : null}
       <div className={open !== null ? 'ops-split' : undefined}>
         <ListPage<AuditRow>
           pageKey="settings-audit"
           title="Audit log"
-          summary={`Who changed what, where and when. Personal details are masked. Page views and sign-ins are hidden unless you show them. Times are ${viewerZone ? `in ${viewerZone.split('/').pop()?.replace('_', ' ')} time` : 'in each place\'s own time'}.`}
+          summary={`Who changed what, where and when. Personal details are masked. Page views and sign-ins are hidden unless you show them. Times are ${!viewerZone || viewerZone === 'UTC' ? 'in UTC' : `in ${viewerZone.split('/').pop()?.replace('_', ' ')} time`}.`}
           views={[
             // 23 Nov: Today and 7 days moved into the date presets every page shares.
             { key: '', label: 'All', count: view === '' ? data?.count ?? null : undefined },
@@ -160,7 +161,7 @@ export default function AuditPage() {
             apply(next);
           }}
         />
-        {open !== null ? <EntryRecord id={open} onClose={() => setOpen(null)} /> : null}
+        {open !== null ? <EntryRecord id={open} zone={viewerZone ?? 'UTC'} onClose={() => setOpen(null)} /> : null}
       </div>
 
       <Drawer open={more} title="Filter the audit log" onClose={() => setMore(false)}
@@ -192,7 +193,7 @@ function isoDay(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-function EntryRecord({ id, onClose }: { id: number; onClose: () => void }) {
+function EntryRecord({ id, zone, onClose }: { id: number; zone: string; onClose: () => void }) {
   const [entry, setEntry] = useState<AuditDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -218,23 +219,24 @@ function EntryRecord({ id, onClose }: { id: number; onClose: () => void }) {
         ) : <p className="ops-record__empty" aria-busy="true">Loading the entry…</p> }]} />
     );
   }
-  const rows = diffRows(entry.before, entry.after);
+  // 24 Nov (owner): the change in words (no field names, money as money), never the raw JSON.
+  const rows = (entry.changes ?? []).map((c) => ({ key: c.field, before: c.from === 'nothing' ? '' : c.from, after: c.to, changed: true }));
   return (
     <RecordPanel
       label="Audit entry"
-      title={entry.action}
+      title={entry.summary ?? entry.action}
       refId={`#${entry.id}`}
-      subtitle={<>{entry.summary ?? entry.action} · {entry.actor.label ?? 'The system'} · {stamp(entry.created_at, timeZoneFor(entry.place))}</>}
+      subtitle={<>{entry.actor.label ?? 'The system'} · {stamp(entry.created_at, zone)}</>}
       onClose={onClose}
       tabs={[
         {
           key: 'entry', label: 'Entry', content: (
             <div className="nf-editor">
               <dl className="ps-facts">
-                <div><dt>When</dt><dd>{stamp(entry.created_at, timeZoneFor(entry.place))}</dd></div>
+                <div><dt>When</dt><dd>{stamp(entry.created_at, zone)}</dd></div>
                 <div><dt>Who</dt><dd>{entry.actor.label ?? 'system'} · {entry.actor.role || 'no role'}</dd></div>
-                <div><dt>Target</dt><dd>{entry.target_type} {entry.target_id}</dd></div>
-                <div><dt>Place</dt><dd>{entry.place ?? 'none'}</dd></div>
+                <div><dt>Target</dt><dd>{entry.target_label ?? `${entry.target_type} ${entry.target_id}`.trim()}</dd></div>
+                <div><dt>Place</dt><dd>{entry.place_name ?? entry.place ?? 'Whole platform'}</dd></div>
                 <div><dt>From</dt><dd>{entry.ip ?? 'unknown'}</dd></div>
                 <div><dt>Hash</dt><dd>{entry.hash.hashed ? `${entry.hash.content}… after ${entry.hash.previous}…` : 'written before the chain'}</dd></div>
               </dl>
@@ -251,7 +253,7 @@ function EntryRecord({ id, onClose }: { id: number; onClose: () => void }) {
           ) : (
             <div className="ops-table-wrap"><table className="ps-diff">
               <caption className="ops-form__label">Before and after (personal details masked)</caption>
-              <thead><tr><th scope="col">Field</th><th scope="col">Before</th><th scope="col">After</th></tr></thead>
+              <thead><tr><th scope="col">What</th><th scope="col">Before</th><th scope="col">After</th></tr></thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.key} data-changed={r.changed ? 'true' : undefined}>

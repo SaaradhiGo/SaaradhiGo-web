@@ -210,8 +210,8 @@ describe('addresses and words', () => {
     expect(ageText(42.9)).toBe('42 s');
     expect(ageText(60)).toBe('1 min');
     expect(ageText(7 * 60 + 5)).toBe('7 min');
-    expect(ageText(2 * 3600)).toBe('2 h');
-    expect(ageText(2 * 3600 + 5 * 60)).toBe('2 h 5 min');
+    expect(ageText(2 * 3600)).toBe('2 hours');
+    expect(ageText(2 * 3600 + 5 * 60)).toBe('2 hours 5 min');
     expect(ageText(-5)).toBe('0 s');
     expect(ageText(null)).toBe('—');
   });

@@ -10,6 +10,7 @@
  *     code, and every chart draws one panel per currency;
  *   * the query string, the URL and the API path have one mapping.
  */
+import { formatAge } from '@/lib/commandCentre';
 import { formatMinor } from './trips';
 
 export { formatMinor };
@@ -32,6 +33,10 @@ export type Catalogue = {
   cities: CityInfo[]; vehicle_types: string[]; granularities: Granularity[];
   max_range_days: number; as_of: string | null;
 };
+export type ReportCountry = {
+  code: string; name: string; currency: string; timezone: string; cities: CityInfo[];
+  totals: Array<Record<string, string | number | null | undefined>>;
+};
 export type Cohort = { week: string; size: number; retained: number[]; percent: Array<number | null> };
 export type ReportBody = {
   report: ReportCard & { definitions: string[] };
@@ -42,6 +47,8 @@ export type ReportBody = {
   columns: ReportColumn[];
   rows: Row[];
   totals: Array<Record<string, string | number | null | undefined>>;
+  /** 24 Nov: two or more countries in scope come back as one tile each, never one total. */
+  countries?: ReportCountry[];
   cohorts?: Cohort[];
   extra: {
     funnel?: Array<{ stage: string; count: number }>;
@@ -187,8 +194,7 @@ export function secondsWords(seconds: number): string {
   if (s < 60) return `${s} s`;
   const m = Math.floor(s / 60); const rest = s % 60;
   if (m < 60) return rest ? `${m} min ${rest} s` : `${m} min`;
-  const h = Math.floor(m / 60);
-  return `${h} h ${m % 60} min`;
+  return formatAge(m) ?? '—';
 }
 
 /** A cell, as the table and the tooltip write it. Null is a dash, never a zero. */
@@ -199,7 +205,7 @@ export function formatCell(col: ReportColumn, value: unknown, currency?: string 
     case 'money': return formatMinor(value, currency ?? null);
     case 'percent': return `${value.toFixed(1)}%`;
     case 'seconds': return secondsWords(value);
-    case 'hours': return `${value.toLocaleString('en-US', { maximumFractionDigits: 1 })} h`;
+    case 'hours': return formatAge(value * 60) ?? '—';
     case 'km': return `${value.toLocaleString('en-US', { maximumFractionDigits: 1 })} km`;
     case 'minutes': return `${value.toLocaleString('en-US', { maximumFractionDigits: 0 })} min`;
     default: return value.toLocaleString('en-US');
