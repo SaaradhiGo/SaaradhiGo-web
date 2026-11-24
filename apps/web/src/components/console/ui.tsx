@@ -1,5 +1,6 @@
 'use client';
 
+import { textOf } from '@/lib/cellText';
 import Link from 'next/link';
 import {
   KeyboardEvent as ReactKeyboardEvent,
@@ -729,7 +730,7 @@ export function DataTable<T>({
               >
                 {columns.map((c) => {
                   const content = c.render(row);
-                  const hover = typeof content === 'string' || typeof content === 'number' ? String(content) : undefined;
+                  const hover = textOf(content) || undefined;
                   const keep = hover !== undefined && /^\d{1,2} [A-Z][a-z]{2} \d{4}/.test(hover);
                   return (
                     <td key={c.key} className={cellClass(c)} title={hover}>

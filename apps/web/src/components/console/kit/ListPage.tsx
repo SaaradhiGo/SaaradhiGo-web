@@ -1,6 +1,7 @@
 'use client';
 
 import { type CSSProperties, type ReactNode, useEffect, useState } from 'react';
+import { textOf } from '@/lib/cellText';
 
 /**
  * The everyday pattern, list half (design board B): saved views with counts,
@@ -242,7 +243,7 @@ export function ListPage<T>({
                   {columns.map((c) => {
                     const content = c.render(row);
                     // 24 Nov (owner): one line per row; a cut-off cell shows its full text on hover.
-                    const hover = typeof content === 'string' || typeof content === 'number' ? String(content) : undefined;
+                    const hover = textOf(content) || undefined;
                     const keep = hover !== undefined && /^\d{1,2} [A-Z][a-z]{2} \d{4}/.test(hover); // a date is never cut
                     return (
                       <td key={c.key} className={`${c.num ? 'num' : ''}${c.primary ? ' primary' : ''}`}
@@ -271,3 +272,4 @@ export function ListPage<T>({
     </section>
   );
 }
+

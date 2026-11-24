@@ -107,9 +107,16 @@ function check({ touch }) {
       if (o.overflowX === 'visible' && o.overflowY === 'visible') continue;
       if (o.overflowX === 'auto' || o.overflowX === 'scroll' || o.overflowY === 'auto' || o.overflowY === 'scroll') break;
       const pr = p.getBoundingClientRect();
-      if (r.left < pr.left - 1 || r.right > pr.right + 1 || r.top < pr.top - 1 || r.bottom > pr.bottom + 1) out.push(`cut-off text: ${name(el)} runs past ${name(p)}`);
+      if ((r.left < pr.left - 1 || r.right > pr.right + 1 || r.top < pr.top - 1 || r.bottom > pr.bottom + 1) && !hoverable(p)) out.push(`cut-off text: ${name(el)} runs past ${name(p)}`);
       break;
     }
+  }
+  // 24 Nov (owner): a long value may end in an ellipsis when its full text is one hover away.
+  function hoverable(box) {
+    if (getComputedStyle(box).textOverflow !== 'ellipsis') return false;
+    const full = box.closest('[title]')?.getAttribute('title') ?? '';
+    const text = box.textContent.replace(/\s+/g, ' ').trim();
+    return full.length > 0 && full.replace(/\s+/g, ' ').trim().startsWith(text.slice(0, Math.min(text.length, 12)));
   }
   // Cut-off text: a box hiding overflow that its own text does not fit.
   for (const el of document.querySelectorAll('body *')) {
@@ -120,7 +127,7 @@ function check({ touch }) {
     if (!hidesX && !hidesY) continue;
     const own = [...el.childNodes].some((c) => c.nodeType === 3 && c.textContent.trim());
     if (!own && !(el.children.length === 1 && el.firstElementChild.matches('span, b, strong, a'))) continue;
-    if ((hidesX && el.scrollWidth > el.clientWidth + 1) || (hidesY && el.scrollHeight > el.clientHeight + 2)) {
+    if (((hidesX && el.scrollWidth > el.clientWidth + 1) || (hidesY && el.scrollHeight > el.clientHeight + 2)) && !hoverable(el)) {
       out.push(`cut-off text: ${name(el)} (${el.scrollWidth}x${el.scrollHeight} in ${el.clientWidth}x${el.clientHeight})`);
     }
   }

@@ -89,21 +89,21 @@ export default function ZonesPage() {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return (all ?? []).filter((z) => !hiddenCityName(z.city) && (view === 'active' ? z.is_active : view === 'inactive' ? !z.is_active
+    return (all ?? []).filter((z) => !hiddenCityName(z.city, access?.scopes ?? []) && (view === 'active' ? z.is_active : view === 'inactive' ? !z.is_active
       : view === 'pending' ? pendingFor.has(String(z.id)) : true)
       && (!needle || [z.name, z.code, z.city, z.state_code, z.country].some((t) => (t ?? '').toLowerCase().includes(needle))));
   }, [all, view, q, pendingFor, access]);
 
   // The map labels zones by code; an inactive and an active zone can share a code over time, so
   // the id stays the row key and the code is the visible key.
-  const mapZones = useMemo<MapZone[]>(() => (all ?? []).filter((z) => !hiddenCityName(z.city)).map((z) => ({
+  const mapZones = useMemo<MapZone[]>(() => (all ?? []).filter((z) => !hiddenCityName(z.city, access?.scopes ?? [])).map((z) => ({
     key: z.code, label: z.name, rings: outerRings(z.polygon_geojson),
     tone: z.is_active ? 'live' : 'inactive',
   })), [all, access]);
   // 24 Nov (owner): open on the live zones in scope, not the whole world. Across two countries
   // the map opens on the one with the most live zones; the place bar picks the other.
   const fitRings = useMemo(() => {
-    const live = (all ?? []).filter((z) => z.is_active && !hiddenCityName(z.city));
+    const live = (all ?? []).filter((z) => z.is_active && !hiddenCityName(z.city, access?.scopes ?? []));
     const by = new Map<string, typeof live>();
     for (const z of live) by.set(z.country, [...(by.get(z.country) ?? []), z]);
     const top = [...by.values()].sort((x, y) => y.length - x.length)[0] ?? [];
