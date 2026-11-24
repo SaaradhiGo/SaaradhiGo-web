@@ -89,7 +89,6 @@ const PAGES: PageCase[] = [
   ['Messages', () => import('./notifications/page'), '/notifications/admin/templates/'],
   ['Countries and cities', () => import('./settings/page'), '/platform/admin/markets/'],
   ['Zones', () => import('./zones/page'), '/pricing/admin/zones/'],
-  ['Pricing and commission', () => import('./pricing/page'), '/pricing/admin/commission/'],
   ['Approvals', () => import('./approvals/page'), '/approvals/admin/requests/'],
   ['Fraud and risk', () => import('./fraud/page'), '/fraud/admin/flags/'],
   ['Audit log', () => import('./settings/audit/page'), '/admin-audit/admin/entries/'],

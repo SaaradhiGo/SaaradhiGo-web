@@ -7,6 +7,7 @@ import { useAdminAccess } from '@/lib/adminScope';
 import { canDraftPricing } from '@/lib/pricing';
 import { classWord, placeWord } from '@/lib/pricingWords';
 import { ResolvedPlans } from '@/components/console/pricing/ResolvedPlans';
+import { RegulationPanel } from '@/components/console/pricing/RegulationPanel';
 import { interpretWrite } from '@/lib/trips';
 import { PricingNav } from '@/components/console/pricing';
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
@@ -109,7 +110,7 @@ export default function FeePlansPage() {
       <header className="ops-list__head mb-3">
         <div>
           <h1>Driver fee plans</h1>
-          <p>What drivers pay SaaradhiGo, per market. A change starts the next local day and never reaches a trip already booked.</p>
+          <p>The only way drivers are charged: a daily fee, a commission (% of each fare) or a per-trip fee, per place. A place cannot go live, and riders are offered no class, until a plan is approved. A change starts the next local day and never reaches a trip already booked.</p>
         </div>
         {may ? <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setDrafting(true)}>New draft…</button> : null}
       </header>
@@ -139,6 +140,8 @@ export default function FeePlansPage() {
         )}
       <div className="mt-4"><ResolvedPlans /></div>
       <div className="mt-4"><Simulator /></div>
+      {/* 24 Nov (owner): the legal caps live with the plans they limit (commission is a plan type). */}
+      <div className="mt-4"><RegulationPanel may={may} /></div>
       {drafting ? <DraftDrawer onClose={() => setDrafting(false)} onDone={(t) => { setDrafting(false); setNotice(t); void load(); }} /> : null}
     </>
   );
