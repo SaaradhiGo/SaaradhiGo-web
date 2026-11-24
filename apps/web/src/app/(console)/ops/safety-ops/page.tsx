@@ -368,7 +368,7 @@ function DismissDrawer({ signal, onClose, onDone }: {
     setError(null);
     try {
       await api.post(`/safety/admin/signals/${signal.id}/dismiss/`, { reason: reason.trim() });
-      onDone(`${SIGNAL_LABEL[signal.kind] ?? 'Signal'} on T-${signal.trip_id} dismissed.`);
+      onDone(`${SIGNAL_LABEL[signal.kind] ?? 'Signal'} on ${refFrom(signal, 'trip_ref', 'the trip')} dismissed.`);
     } catch (err) {
       setError(err instanceof ApiError && err.fromServer ? err.message : 'That did not go through.');
     } finally {
@@ -379,7 +379,7 @@ function DismissDrawer({ signal, onClose, onDone }: {
   return (
     <Drawer
       open
-      title={`Dismiss ${SIGNAL_LABEL[signal.kind] ?? 'signal'} · T-${signal.trip_id}`}
+      title={`Dismiss ${SIGNAL_LABEL[signal.kind] ?? 'signal'} · ${refFrom(signal, 'trip_ref', 'trip')}`}
       onClose={onClose}
       footer={(
         <>

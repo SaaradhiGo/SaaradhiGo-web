@@ -16,8 +16,16 @@ export function writeShowNotLaunched(on: boolean) {
 }
 
 /** Codes of the held cities that are not live (draft): the ones hidden by default. Pure; tested. */
+/** Not launched: a draft city with no active zone (a coming-soon city stays in), or an archived one. */
+export function isNotLaunched(s: AdminScope): boolean {
+  if (s.kind !== 'city') return false;
+  if (s.status === 'archived') return true;
+  if (s.launch_state) return s.launch_state === 'not_launched';
+  return s.status === 'draft';
+}
+
 export function notLaunchedCodes(scopes: AdminScope[]): Set<string> {
-  return new Set(scopes.filter((s) => s.kind === 'city' && (s.status === 'draft' || s.status === 'archived')).map((s) => s.code));
+  return new Set(scopes.filter(isNotLaunched).map((s) => s.code));
 }
 
 /** Archived places (Austin, 24 Nov) stay out of every list even with "Show not launched" on. */
@@ -52,5 +60,5 @@ export function hiddenCityName(name: string | null | undefined, scopes = getCach
   if (!name) return false;
   if (scopes.some((s) => s.status === 'archived' && s.name === name)) return true;
   if (readShowNotLaunched()) return false;
-  return scopes.some((s) => s.kind === 'city' && s.status === 'draft' && s.name === name);
+  return scopes.some((s) => isNotLaunched(s) && s.name === name);
 }

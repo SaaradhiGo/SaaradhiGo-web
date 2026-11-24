@@ -1,6 +1,6 @@
 'use client';
 
-import { refOf } from '@/lib/refs';
+import { refFrom, refOf } from '@/lib/refs';
 import { formatAge } from '@/lib/commandCentre';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
@@ -162,7 +162,7 @@ function SettingsInner() {
                           { key: 'out', label: 'Outcome', render: (r) => (
                             <>
                               {RUN_WORDS[r.outcome] ?? r.outcome}
-                              {r.approval_request_id ? ` · APR-${r.approval_request_id}` : ''}
+                              {r.approval_request_id ? ` · ${refFrom(r, 'approval_ref', 'approval request')}` : ''}
                               {r.truncated ? ' · cut at the weekly cap' : ''}
                             </>
                           ) },

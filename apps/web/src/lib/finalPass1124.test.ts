@@ -18,6 +18,7 @@ describe('console final pass (owner 24 Nov)', () => {
     expect(childrenOf(scopes, scopes[0]).map((s) => s.code)).toEqual(['IN', 'US']);
     expect(childrenOf(scopes, scopes[3]).map((s) => s.code)).toEqual(['IN-TG-HYD', 'IN-TG-WGL']);
     expect(isLaunched(scopes[5])).toBe(false);
+    expect(isLaunched({ ...scopes[5], launch_state: 'coming_soon' })).toBe(true);
     expect([...notLaunchedCodes(scopes)]).toEqual(['IN-TG-WGL']);
   });
   it('names places, never codes', () => {

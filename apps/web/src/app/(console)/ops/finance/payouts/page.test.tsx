@@ -88,7 +88,7 @@ describe('payout release by the sole Super Admin', () => {
       expect(call).toBeTruthy();
       expect(JSON.parse(String((call?.[1] as RequestInit).body))).toEqual({ reason: 'Weekly payout, checked.' });
     });
-    expect(await screen.findByText(/Recorded as self-approved \(APR-9\)/)).toBeTruthy();
+    expect(await screen.findByText(/Recorded as self-approved\./)).toBeTruthy();
   });
 
   it('closes on "sent for approval" when the request cannot be self-approved', async () => {
@@ -105,7 +105,7 @@ describe('payout release by the sole Super Admin', () => {
     expect((approveNow as HTMLButtonElement).disabled).toBe(false);
     fireEvent.click(approveNow);
     await waitFor(() => expect(fetchMock.mock.calls.some((c) => String(c[0]).endsWith('/approvals/admin/requests/9/approve/'))).toBe(true));
-    expect(await screen.findByText(/APR-9 approved/)).toBeTruthy();
+    expect(await screen.findByText(/The request was approved/)).toBeTruthy();
   });
 
   it('does not offer Approve now for a blocked request', async () => {

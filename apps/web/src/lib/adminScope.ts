@@ -37,6 +37,8 @@ export type AdminScope = {
   name: string;
   kind: 'global' | 'country' | 'state' | 'city' | string;
   status: string;
+  /** 24 Nov: a city's launch state: live, coming_soon (draft with an active zone), not_launched, paused, archived. */
+  launch_state?: string | null;
   depth: number;
   /** Materialised path (`/IN/IN-TG/IN-TG-HYD/`): lets a per-city link be decided. */
   path?: string;

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 const ROOTS = ['src/app/(console)', 'src/components/console'];
 const BAD = [
   /(^|[^A-Za-z`$])(T|D|R|PO|TKT|APR|W)-\{[A-Za-z_][\w.]*\}/, // JSX: T-{t.id}
-  /`(T|D|R|PO|TKT|APR|W)-\$\{/, // template: `T-${id}`
+  /(^|[^A-Za-z0-9_])(T|D|R|PO|TKT|APR|W)-\$\{/, // template: `T-${id}`, ` · APR-${id}`
   />#\{[\w.]*id\}</, // JSX: >#{t.id}<
   /`(Driver |Rider |Flag )?#\$\{[\w.]*id\}`/, // template: `#${id}`
 ];

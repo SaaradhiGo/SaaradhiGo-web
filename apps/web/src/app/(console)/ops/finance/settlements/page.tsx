@@ -56,7 +56,7 @@ function SettlementRecord({ row, onClose }: { row: Row; onClose: () => void }) {
   return (
     <RecordPanel
       label="Settlement"
-      title={row.driver_name || `Driver D-${row.driver_id}`}
+      title={row.driver_name || refFrom(row, 'driver_ref', 'Driver')}
       refId={(row as { trip_ref?: string }).trip_ref || '—'}
       subtitle={<>{cityName(row.city)} · settled {stamp(row.settled_at, tz)}</>}
       status={<SourceChip source={row.source} />}
