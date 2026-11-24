@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import type { ReactNode } from 'react';
 
 import {
@@ -76,7 +77,7 @@ export function AttentionQueue({
                 ) : null}
                 {trip ? (
                   <>
-                    <b>{item.kind === 'stale' ? 'Stuck trip' : 'Waiting for a driver'} · T-{trip.id}</b>
+                    <b>{item.kind === 'stale' ? 'Stuck trip' : 'Waiting for a driver'} · {refOf(trip) !== '—' ? refOf(trip) : 'Trip'}</b>
                     <span className="lo-q__sub">{TRIP_STATE_WORDS[trip.state] ?? trip.state} · {ageText(trip.age_s)}</span>
                   </>
                 ) : null}

@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom } from '@/lib/refs';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
@@ -199,14 +200,14 @@ export function CampaignEditor({ campaignId, onClose, onDone, onOpen }: {
                 <Fact label="Template">{detail.template.key} v{detail.template.version} · {CHANNEL_WORDS[detail.template.channel]}</Fact>
                 <Fact label="Asked by">{detail.created_by.label || '—'}</Fact>
                 <Fact label="Scheduled">{detail.scheduled_at ? stamp(detail.scheduled_at) : 'as soon as approved'}</Fact>
-                {detail.approval_request_id ? <Fact label="Approval request">#{detail.approval_request_id}</Fact> : null}
+                {detail.approval_request_id ? <Fact label="Approval request">{refFrom(detail, 'approval_ref', 'Approval request')}</Fact> : null}
                 {detail.finished_at ? <Fact label="Finished">{stamp(detail.finished_at)}</Fact> : null}
               </Facts>
             ) : null}
             {detail?.status === 'pending_approval' ? (
               <div className="ops-confirm" role="status">
                 <b>Waiting for a second admin</b>
-                <span>Nothing is sent until a different admin approves APR-{detail.approval_request_id}. You can still cancel it.</span>
+                <span>Nothing is sent until a different admin approves {refFrom(detail, 'approval_ref', 'approval request')}. You can still cancel it.</span>
               </div>
             ) : null}
 

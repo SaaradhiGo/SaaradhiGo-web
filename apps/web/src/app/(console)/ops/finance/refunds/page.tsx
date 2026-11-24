@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom } from '@/lib/refs';
 import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
@@ -57,7 +58,7 @@ function RefundsInner() {
   const columns: ListColumn<RefundRow>[] = [
     {
       key: 'trip', label: 'Trip', width: '7rem', primary: true,
-      render: (r) => <PageLink page="trips" href={`/ops/trips/${r.trip_id}`}>T-{r.trip_id}</PageLink>,
+      render: (r) => <PageLink page="trips" href={`/ops/trips/${r.trip_id}`}>{refFrom(r, 'trip_ref', 'Trip')}</PageLink>,
     },
     { key: 'amount', label: 'Amount', num: true, render: (r) => formatWhole(r.amount_minor, r.currency) },
     {

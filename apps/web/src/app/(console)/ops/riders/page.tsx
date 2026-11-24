@@ -1,6 +1,6 @@
 'use client';
 
-import { refOf } from '@/lib/refs';
+import { refFrom, refOf } from '@/lib/refs';
 import { DateField } from '@/components/console/kit/DateField';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -205,7 +205,7 @@ function RidersInner() {
   const columns: ListColumn<RiderRow>[] = [
     {
       key: 'id', label: 'Rider', primary: true, sortKey: 'id',
-      render: (r) => <span>{riderName(r.user_details, r.id)} <span className="ops-ref sg-num">R-{r.id}</span></span>,
+      render: (r) => <span>{riderName(r.user_details, r.id)} <span className="ops-ref sg-num">{refOf(r) !== '—' ? refOf(r) : 'Rider'}</span></span>,
     },
     { key: 'state', label: 'State', render: (r) => (q ? <span className="muted">—</span> : <StateChips r={r} />) },
     { key: 'city', label: 'City', render: (r) => r.city?.name ?? <span className="muted">No trips</span> },
@@ -440,7 +440,7 @@ function RiderRecord({ id, onClose, onChanged }: {
                 ))}
                 {waiting.map((r) => (
                   <p key={r.id} className="ops-confirm">
-                    Waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>APR-{r.id}</PageLink> ({words(r.action_key)})
+                    Waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>{refOf(r) !== '—' ? refOf(r) : 'approval request'}</PageLink> ({words(r.action_key)})
                   </p>
                 ))}
                 <RecordFacts rows={[
@@ -465,7 +465,7 @@ function RiderRecord({ id, onClose, onChanged }: {
                 <ul className="ops-reclist">
                   {data.trips.recent.map((t) => (
                     <li key={t.id}>
-                      <PageLink page="trips" href={`/ops/trips/${t.id}`}><span className="sg-num">T-{t.id}</span></PageLink>
+                      <PageLink page="trips" href={`/ops/trips/${t.id}`}><span className="sg-num">{refOf(t) !== '—' ? refOf(t) : 'Trip'}</span></PageLink>
                       <StatusChip tone={t.status === 'completed' ? 'good' : t.status === 'cancelled' ? 'neutral' : 'info'}>{words(t.status)}</StatusChip>
                       <span className="sg-num">{formatMinor(t.fare_minor, t.currency)}</span>
                       <span className="muted">{cityTime(t.requested_at, tz)}</span>
@@ -484,7 +484,7 @@ function RiderRecord({ id, onClose, onChanged }: {
                     <ul className="ops-reclist">
                       {data.tickets.recent.map((t) => (
                         <li key={t.id}>
-                          <PageLink page="support" href={`/ops/support/${t.id}`}><span className="sg-num">TKT-{t.id}</span></PageLink>
+                          <PageLink page="support" href={`/ops/support/${t.id}`}><span className="sg-num">{refOf(t) !== '—' ? refOf(t) : 'Ticket'}</span></PageLink>
                           <span>{words(t.issue_type)}</span>
                           <StatusChip tone={t.status === 'CLOSED' ? 'good' : 'info'}>{t.status === 'CLOSED' ? 'Closed' : words(t.status.toLowerCase())}</StatusChip>
                           <span className="muted">{cityTime(t.created_at, tz)}</span>
@@ -500,7 +500,7 @@ function RiderRecord({ id, onClose, onChanged }: {
                         <li key={s.id}>
                           <PageLink page="safety" href="/ops/safety-ops"><span className="sg-num">SOS-{s.id}</span></PageLink>
                           <StatusChip tone={s.status === 'resolved' ? 'good' : s.status === 'open' ? 'critical' : 'caution'}>{words(s.status)}</StatusChip>
-                          {s.trip_id ? <PageLink page="trips" href={`/ops/trips/${s.trip_id}`}><span className="sg-num">T-{s.trip_id}</span></PageLink> : null}
+                          {s.trip_id ? <PageLink page="trips" href={`/ops/trips/${s.trip_id}`}><span className="sg-num">{refFrom(s, 'trip_ref', 'Trip')}</span></PageLink> : null}
                           <span className="muted">{cityTime(s.created_at, tz)}</span>
                         </li>
                       ))}

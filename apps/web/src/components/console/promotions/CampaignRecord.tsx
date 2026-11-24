@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom } from '@/lib/refs';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
@@ -69,7 +70,7 @@ export function CampaignRecord({ id, onClose, onManage, refreshKey = 0 }: {
 
   if (!c || c.id !== id) {
     return (
-      <RecordPanel label="Campaign" title="Campaign" refId={`#${id}`} onClose={onClose}
+      <RecordPanel label="Campaign" title="Campaign" refId="" onClose={onClose}
         tabs={[{ key: 'budget', label: 'Budget', content: error ? (
           <div>
             <p className="alert-error" role="alert">{error}</p>
@@ -86,7 +87,7 @@ export function CampaignRecord({ id, onClose, onManage, refreshKey = 0 }: {
     <RecordPanel
       label="Campaign"
       title={c.name}
-      refId={`#${c.id}`}
+      refId=""
       subtitle={<>{KIND_WORDS[c.kind]} · {c.scope_name ?? c.country}</>}
       status={<CampaignChip state={c.state} />}
       onClose={onClose}
@@ -123,12 +124,12 @@ export function CampaignRecord({ id, onClose, onManage, refreshKey = 0 }: {
               ) : null}
               {c.state === 'pending_approval' && c.approval_request_id ? (
                 <p className="ops-note" role="status">
-                  Waiting for a second admin: <PageLink page="approvals" href={`/ops/approvals?id=${c.approval_request_id}`}>APR-{c.approval_request_id}</PageLink>. Nothing goes live until they approve.
+                  Waiting for a second admin: <PageLink page="approvals" href={`/ops/approvals?id=${c.approval_request_id}`}>{refFrom(c, 'approval_ref', 'approval request')}</PageLink>. Nothing goes live until they approve.
                 </p>
               ) : null}
               {c.budget_request_id ? (
                 <p className="ops-note" role="status">
-                  Budget raise waiting: <PageLink page="approvals" href={`/ops/approvals?id=${c.budget_request_id}`}>APR-{c.budget_request_id}</PageLink>.
+                  Budget raise waiting: <PageLink page="approvals" href={`/ops/approvals?id=${c.budget_request_id}`}>{refFrom(c, 'approval_ref', 'approval request')}</PageLink>.
                 </p>
               ) : null}
             </div>

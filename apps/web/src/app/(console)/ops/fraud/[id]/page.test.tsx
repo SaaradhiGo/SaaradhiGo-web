@@ -24,7 +24,7 @@ vi.mock('@/lib/adminScope', async (importActual) => {
 });
 
 const DETAIL = {
-  id: 5, kind: 'referral_abuse', status: 'open', severity: 'high', score: 80, rule_key: 'referral_abuse', rule_version: 1, hit_count: 1,
+  id: 5, ref: 'FR-HYD-T9PC', kind: 'referral_abuse', status: 'open', severity: 'high', score: 80, rule_key: 'referral_abuse', rule_version: 1, hit_count: 1,
   subject: { ref: 'R-12', role: 'rider', user_id: 12, href: '/ops/riders/12' }, evidence: { signals: [], measures: {} }, source_ref: '',
   scope: 'IN', scope_name: 'Hyderabad', assigned_to: null, assigned_at: null, decision_reason: '', decision_note: '',
   decided_by: null, decided_at: null, created_at: '2026-01-01T10:00:00Z', last_seen_at: null, age_hours: 3,
@@ -37,7 +37,7 @@ const respond = (_url: string) => DETAIL;
 describe('fraud flag record page', () => {
   it('shows the flag ref and the timeline under History', async () => {
     render(<Page />);
-    expect(await screen.findByText('Flag #5')).toBeTruthy();
+    expect(await screen.findByText('FR-HYD-T9PC')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Confirm fraud' })).toBeTruthy();
     expect(screen.queryByText(/taking this/)).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'History' }));

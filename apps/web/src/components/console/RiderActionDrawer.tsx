@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { BULK_CHECKER_ABOVE, type ApprovalBody, interpretWrite, newIdempotencyKey, words } from '@/lib/trips';
@@ -222,7 +223,7 @@ export function RiderBulkDrawer({ action, ids: picked, onClose, onDone }: {
         {error && <div className="alert-error" role="alert">{error}</div>}
         {rows ? (
           <Facts>
-            {rows.results.map((r) => <Fact key={r.id} label={`#${r.id}`}>{words(r.result)}</Fact>)}
+            {rows.results.map((r) => <Fact key={r.id} label={refOf(r) !== '—' ? refOf(r) : 'Rider'}>{words(r.result)}</Fact>)}
           </Facts>
         ) : null}
       </div>

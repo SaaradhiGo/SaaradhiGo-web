@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom } from '@/lib/refs';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -172,7 +173,7 @@ function SafetyInner() {
 
   const signalColumns: ListColumn<Signal>[] = [
     { key: 'kind', label: 'Signal', width: '9rem', render: (s) => <Pill tone="wait">{SIGNAL_LABEL[s.kind] ?? s.kind}</Pill> },
-    { key: 'trip', label: 'Trip', width: '7rem', render: (s) => <PageLink page="trips" href={`/ops/trips/${s.trip_id}`}>T-{s.trip_id}</PageLink> },
+    { key: 'trip', label: 'Trip', width: '7rem', render: (s) => <PageLink page="trips" href={`/ops/trips/${s.trip_id}`}>{refFrom(s, 'trip_ref', 'Trip')}</PageLink> },
     { key: 'what', label: 'Measured', render: (s) => signalSummary(s) },
     { key: 'city', label: 'City', width: '8rem', render: (s) => s.anchor.node_name ?? <span className="muted">Not placed</span> },
     {
