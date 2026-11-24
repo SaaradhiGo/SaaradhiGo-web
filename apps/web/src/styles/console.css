@@ -2726,3 +2726,5 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
   .ops-board__lanes > * { min-width: 0; }
 }
 .ops-datefield { width: 9.5em; max-width: 100%; min-width: 0; box-sizing: border-box; }
+.ops-rangebar__field { min-width: 0; max-width: 100%; grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 400px) { .ops-rangebar__field { flex: 1 1 100%; } .ops-rangebar__field .ops-datefield { width: 100%; } }
