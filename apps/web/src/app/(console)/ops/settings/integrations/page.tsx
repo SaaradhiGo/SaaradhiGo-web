@@ -53,7 +53,7 @@ export default function IntegrationsPage() {
       ? <StatusChip tone="good">Live</StatusChip>
       : <StatusChip tone={chipToneOf(modeTone(r.mode))}>{r.configured ? MODE_WORDS[r.mode] : 'Not set up'}</StatusChip>) },
     { key: 'ok', label: 'Last success', render: (r) => (r.last_success_at ? stamp(r.last_success_at, timeZoneFor(r.country)) : <span className="muted">None recorded</span>) },
-    { key: 'missing', label: 'What is missing', render: (r) => (r.waits_on || r.note || (r.configured && r.mode === 'live' ? <span className="muted">Nothing</span> : 'Not set up yet.')) },
+    { key: 'missing', label: 'What is missing', render: (r) => <span className="ops-wrap">{r.waits_on || r.note || (r.configured && r.mode === 'live' ? 'Nothing' : 'Not set up yet.')}</span> },
   ];
 
   if (!canReadIntegrations(access)) {
