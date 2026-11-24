@@ -2755,3 +2755,10 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 /* The zones map sits beside its list only where both fit. */
 @media (max-width: 1600px) { .ops-split--map { grid-template-columns: minmax(0, 1fr); } }
 @media (min-width: 1100px) { .ops-cell:has(> .ops-what) { max-width: 18rem; } }
+
+@media (min-width: 1100px) {
+  .ops-table-wrap--wrap td, .ops-table-wrap--wrap td .ops-cell { white-space: normal; overflow: visible; }
+  .ops-table-wrap--wrap td .ops-cell { max-width: 12rem; }
+  .ops-list__table td, .ops-list__table th { padding-left: 6px; padding-right: 6px; }
+}
+@media (min-width: 1100px) { .ops-cell:has(> .ops-wrap) { white-space: normal; max-width: 24rem; overflow: visible; } }

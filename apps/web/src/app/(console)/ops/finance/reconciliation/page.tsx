@@ -1,5 +1,6 @@
 'use client';
 
+import { placeName } from '@/lib/places';
 import { refFrom } from '@/lib/refs';
 import { providerName } from '@/lib/templateNames';
 import Link from 'next/link';
@@ -303,7 +304,7 @@ function ReconciliationInner() {
                   return (
                     <tr key={r.id}>
                       <td>{marketDate(r.date, r.country)}</td>
-                      <td>{r.country} · {r.currency}</td>
+                      <td>{placeName(r.country)} · {r.currency}</td>
                       <td>{providerName(r.gateway)}</td>
                       <td><RunChip status={r.status} /></td>
                       <td className="num">{Object.values(r.new_findings).reduce((a, b) => a + b, 0)}</td>

@@ -124,7 +124,7 @@ export default function FeePlansPage() {
       ) : null}
       {error ? <ErrorState title="The fee plans could not be loaded" detail={error} onRetry={() => void load()} />
         : plans === null ? <Skeleton kind="row" count={4} /> : (
-          <DataTable caption="Driver fee plans" rows={plans} rowKey={(p) => p.id} maxHeight={false}
+          <DataTable caption="Driver fee plans" wrap rows={plans} rowKey={(p) => p.id} maxHeight={false}
             columns={[
               { key: 'where', label: 'Where', render: (p) => (p.scope_code ? p.scope_name ?? placeWord(p.scope_code, access) : `All of ${p.scope_name ?? placeWord(p.country, access)}`) },
               { key: 'type', label: 'Plan', render: (p) => TYPE_WORDS[p.plan_type] ?? p.plan_type },
@@ -136,7 +136,7 @@ export default function FeePlansPage() {
               { key: 'from', label: 'From', render: (p) => (p.effective_from ? `${marketDate(p.effective_from, p.country)}${p.effective_to ? ` to ${marketDate(p.effective_to, p.country)}` : ''}` : '—') },
               { key: 'note', label: 'Note', hideBelow: 1500, render: (p) => p.note || '—' },
               { key: 'act', label: '', render: (p) => (may && p.status === 'draft'
-                ? <button type="button" className="ops-linkbtn" onClick={() => void submit(p)}>Send for approval</button> : null) },
+                ? <button type="button" className="ops-linkbtn" onClick={() => void submit(p)}>Send</button> : null) },
             ]} />
         )}
       <div className="mt-4"><ResolvedPlans /></div>

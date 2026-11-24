@@ -619,6 +619,7 @@ export function DataTable<T>({
   defaultSort = null,
   caption,
   maxHeight = true,
+  wrap = false,
 }: {
   rows: T[];
   columns: Column<T>[];
@@ -630,6 +631,8 @@ export function DataTable<T>({
   caption: string;
   /** Scrolls the body inside the viewport; off for a short table in a panel. */
   maxHeight?: boolean;
+  /** 24 Nov: rows already several lines tall; text wraps inside its column so the table fits. */
+  wrap?: boolean;
 }) {
   const [sort, setSort] = useState<SortState>(defaultSort);
 
@@ -681,7 +684,7 @@ export function DataTable<T>({
   ].filter(Boolean).join(' ') || undefined;
 
   return (
-    <div className={`ops-table-wrap ${maxHeight ? 'ops-table-wrap--tall' : ''}`} tabIndex={0} role="region"
+    <div className={`ops-table-wrap ${maxHeight ? 'ops-table-wrap--tall' : ''} ${wrap ? 'ops-table-wrap--wrap' : ''}`} tabIndex={0} role="region"
       aria-label={typeof caption === 'string' ? caption : 'Table'}>
       <table className={`ops-table ops-table--${density} ${onRow ? 'ops-table--rows' : ''}`}>
         <caption className="sr-only">{caption}</caption>
