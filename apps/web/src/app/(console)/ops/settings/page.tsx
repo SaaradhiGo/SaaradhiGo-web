@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
@@ -257,7 +258,7 @@ function CityRecord({ code, onClose, onDone }: { code: string; onClose: () => vo
             {city.pending_request ? (
               <div className="ops-confirm" role="status">
                 <b>Awaiting a checker</b>
-                <span>Request APR-{city.pending_request.id} from {city.pending_request.maker_label}: {city.pending_request.reason}</span>
+                <span>Request {refOf(city.pending_request) !== '—' ? refOf(city.pending_request) : 'approval request'} from {city.pending_request.maker_label}: {city.pending_request.reason}</span>
               </div>
             ) : null}
             <ul className="ps-checklist" aria-label="Readiness checklist">

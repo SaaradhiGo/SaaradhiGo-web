@@ -38,12 +38,12 @@ vi.mock('@/lib/adminScope', async (importActual) => {
 });
 
 const ROW = {
-  id: 2231, user_details: { full_name: 'Ravi Kumar', phone_number: '+91••••••3210' }, status: 'online',
+  id: 2231, ref: 'D-HYD-7K3Q', user_details: { full_name: 'Ravi Kumar', phone_number: '+91••••••3210' }, status: 'online',
   online: true, kyc_state: 'approved', ratings: '4.42', total_trips: 812,
   home_city: { code: 'IN-TG-HYD', name: 'Hyderabad', timezone: 'Asia/Kolkata' }, joined_at: '2026-01-04T10:00:00Z',
 };
 const DETAIL = {
-  id: 2231, status: 'online', approved: true, ratings: '4.42', total_trips: 812, license_expiry: '2027-01-01',
+  id: 2231, ref: 'D-HYD-7K3Q', status: 'online', approved: true, ratings: '4.42', total_trips: 812, license_expiry: '2027-01-01',
   upi_id: null, user: { id: 9, phone_number: '+91••••••3210', full_name: 'Ravi Kumar', email: null, is_active: true },
   vehicles: [], cancellations: { last_24h: 0, last_7d: 2, last_30d: 5 }, recent_trips: [],
   earnings: { lifetime: '1,000.00', today: '0.00', this_month: '200.00', wallet_balance: '50.00', currency: 'INR' },
@@ -84,7 +84,7 @@ describe('drivers list', () => {
     const urls = fetchMock.mock.calls.map((c) => String(c[0]));
     expect(urls.some((u) => u.includes('/driver/admin/?') && u.includes('online=true') && u.includes('page_size=1'))).toBe(true);
     expect(urls.some((u) => u.includes('/driver/admin/kyc-queue/') && u.includes('page_size=1'))).toBe(true);
-    expect(await screen.findByText('D-2231')).toBeTruthy();
+    expect(await screen.findByText('D-HYD-7K3Q')).toBeTruthy();
   });
 
   it('sorts on the server from a column header', async () => {
@@ -106,7 +106,7 @@ describe('driver record', () => {
   it('opens beside the list on Enter with the server’s actions, and Escape closes it', async () => {
     routeFetch();
     render(<DriversPage />);
-    const cell = await screen.findByText('D-2231', {}, { timeout: 5000 });
+    const cell = await screen.findByText('D-HYD-7K3Q', {}, { timeout: 5000 });
     const row = cell.closest('tr') as HTMLElement;
     fireEvent.keyDown(row, { key: 'Enter' });
     await screen.findByRole('button', { name: 'Suspend…' }, { timeout: 5000 });

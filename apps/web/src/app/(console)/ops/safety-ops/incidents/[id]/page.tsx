@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom, refOf } from '@/lib/refs';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -206,7 +207,7 @@ export default function IncidentPage() {
             <Fact label="Country">{data.country ?? 'Unknown'}</Fact>
             <Fact label="Assignee">{data.assignee ? data.assignee.label : <span className="muted">Unassigned</span>}</Fact>
             <Fact label="Opened">{stamp(data.opened_at, tz)} <span className="muted">· {elapsed(minutesBetween(data.opened_at, now))} ago</span></Fact>
-            <Fact label="Trip">{data.trip_id ? <PageLink page="trips" href={`/ops/trips/${data.trip_id}`}>T-{data.trip_id}</PageLink> : 'None'}</Fact>
+            <Fact label="Trip">{data.trip_id ? <PageLink page="trips" href={`/ops/trips/${data.trip_id}`}>{refFrom(data, 'trip_ref', 'Trip')}</PageLink> : 'None'}</Fact>
             {closed ? (
               <>
                 <Fact label="Closed">{stamp(data.closed_at, tz)}</Fact>
@@ -246,21 +247,21 @@ export default function IncidentPage() {
             {data.people.drivers.map((d) => (
               <li key={`d${d.id}`}>
                 <span className="ops-linklist__kind">Driver</span>
-                {d.in_scope ? <PageLink page="drivers" href={`/ops/drivers/${d.id}`}>{d.driver_name || `Driver #${d.id}`}</PageLink> : <span>{d.driver_name || `Driver #${d.id}`} <span className="muted">(outside your scope)</span></span>}
+                {d.in_scope ? <PageLink page="drivers" href={`/ops/drivers/${d.id}`}>{d.driver_name || 'Driver'}</PageLink> : <span>{d.driver_name || 'Driver'} <span className="muted">(outside your scope)</span></span>}
                 {d.suspended ? <Pill tone="bad">Suspended</Pill> : null}
               </li>
             ))}
             {data.people.riders.map((r) => (
               <li key={`r${r.id}`}>
                 <span className="ops-linklist__kind">Rider</span>
-                {r.in_scope ? <PageLink page="riders" href={`/ops/riders/${r.id}`}>{r.rider_name || `Rider #${r.id}`}</PageLink> : <span>{r.rider_name || `Rider #${r.id}`} <span className="muted">(outside your scope)</span></span>}
+                {r.in_scope ? <PageLink page="riders" href={`/ops/riders/${r.id}`}>{r.rider_name || 'Rider'}</PageLink> : <span>{r.rider_name || 'Rider'} <span className="muted">(outside your scope)</span></span>}
                 {r.blocked ? <Pill tone="bad">Blocked</Pill> : null}
               </li>
             ))}
             {data.people.trips.map((t) => (
               <li key={`t${t.id}`}>
                 <span className="ops-linklist__kind">Trip</span>
-                {t.in_scope ? <PageLink page="trips" href={`/ops/trips/${t.id}`}>T-{t.id}</PageLink> : <span>T-{t.id} <span className="muted">(outside your scope)</span></span>}
+                {t.in_scope ? <PageLink page="trips" href={`/ops/trips/${t.id}`}>{refOf(t) !== '—' ? refOf(t) : 'Trip'}</PageLink> : <span>{refOf(t) !== '—' ? refOf(t) : 'Trip'} <span className="muted">(outside your scope)</span></span>}
                 {t.status ? <span className="muted">{words(t.status)}</span> : null}
                 {t.primary ? <Pill>Primary</Pill> : null}
               </li>
@@ -268,7 +269,7 @@ export default function IncidentPage() {
             {data.people.tickets.map((t) => (
               <li key={`k${t.id}`}>
                 <span className="ops-linklist__kind">Ticket</span>
-                {t.in_scope ? <PageLink page="support" href={`/ops/support/${t.id}`}>TKT-{t.id}</PageLink> : <span>TKT-{t.id} <span className="muted">(outside your scope)</span></span>}
+                {t.in_scope ? <PageLink page="support" href={`/ops/support/${t.id}`}>{refOf(t) !== '—' ? refOf(t) : 'Ticket'}</PageLink> : <span>{refOf(t) !== '—' ? refOf(t) : 'Ticket'} <span className="muted">(outside your scope)</span></span>}
                 <span className="muted">{words(t.issue_type)} · {words(t.status.toLowerCase())}</span>
               </li>
             ))}

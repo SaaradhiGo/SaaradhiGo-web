@@ -1,6 +1,7 @@
 'use client';
 
 import { mapsCallName } from '@/lib/templateNames';
+import { refOf } from '@/lib/refs';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useId, useState } from 'react';
@@ -91,7 +92,7 @@ export function PendingRequests({ title = 'Waiting for a second admin', items, o
             <li key={p.id} className="ps-request">
               <div>
                 <b>{describe(p)}</b>
-                <span className="muted"> · APR-{p.id} from {p.maker_label || 'staff'}{p.requested_at ? `, ${stamp(p.requested_at)}` : ''}</span>
+                <span className="muted"> · {refOf(p) !== '—' ? refOf(p) : 'approval request'} from {p.maker_label || 'staff'}{p.requested_at ? `, ${stamp(p.requested_at)}` : ''}</span>
                 <p className="help mb-0">{p.reason}</p>
               </div>
               {may ? (

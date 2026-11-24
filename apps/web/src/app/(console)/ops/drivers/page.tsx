@@ -233,7 +233,7 @@ function DriversInner() {
   }
 
   const nameCell = (d: DriverRow) => (
-    <span>{driverName(d.user_details, d.id)} <span className="ops-ref sg-num">D-{d.id}</span></span>
+    <span>{driverName(d.user_details, d.id)} <span className="ops-ref sg-num">{refOf(d) !== '—' ? refOf(d) : 'Driver'}</span></span>
   );
   const columns: ListColumn<DriverRow>[] = queue ? [
     { key: 'id', label: 'Driver', primary: true, render: nameCell },
@@ -503,7 +503,7 @@ function DriverRecord({ row, queue, onClose, onChanged }: {
                 ) : null}
                 {waiting.map((r) => (
                   <p key={r.id} className="ops-confirm">
-                    Waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>APR-{r.id}</PageLink> ({words(r.action_key)})
+                    Waiting for a second approver · <PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>{refOf(r) !== '—' ? refOf(r) : 'approval request'}</PageLink> ({words(r.action_key)})
                   </p>
                 ))}
                 <RecordFacts rows={[
@@ -526,7 +526,7 @@ function DriverRecord({ row, queue, onClose, onChanged }: {
               <ul className="ops-reclist">
                 {data.recent_trips.slice(0, 10).map((t) => (
                   <li key={t.id}>
-                    <PageLink page="trips" href={`/ops/trips/${t.id}`}><span className="sg-num">T-{t.id}</span></PageLink>
+                    <PageLink page="trips" href={`/ops/trips/${t.id}`}><span className="sg-num">{refOf(t) !== '—' ? refOf(t) : 'Trip'}</span></PageLink>
                     <StatusChip tone={t.status === 'completed' ? 'good' : t.status === 'cancelled' ? 'neutral' : 'info'}>{words(t.status)}</StatusChip>
                     <span className="muted">{cityTime(t.requested_at, tz)}</span>
                   </li>

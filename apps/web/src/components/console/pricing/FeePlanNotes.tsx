@@ -47,8 +47,8 @@ export function FeePlanNotes() {
       {plans.map((p) => (
         <li key={p.id}>
           <b>{placeWord(p.scope_code, access, p.country === 'IN' ? 'India' : p.country === 'US' ? 'United States' : p.country)}:</b>{' '}
-          {feeWords(p) === 'no platform fee' ? 'no commission and no platform fee.'
-            : <>no commission; drivers pay the {PLAN_NAMES[p.plan_type] ?? p.plan_type} plan ({feeWords(p)}).</>}
+          {feeWords(p) === 'no platform fee' ? 'no driver fee.'
+            : <>drivers pay the {PLAN_NAMES[p.plan_type] ?? p.plan_type} plan ({feeWords(p)}).</>}
         </li>
       ))}
     </ul>

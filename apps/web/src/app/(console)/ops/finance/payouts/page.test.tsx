@@ -31,7 +31,7 @@ vi.mock('@/lib/adminScope', async (importOriginal) => {
 });
 
 const ROW = {
-  id: 31, driver_id: 18, driver_name: 'Ravi Kumar', city: { code: 'IN-TG-HYD', name: 'Hyderabad' },
+  id: 31, public_ref: 'PO-HYD-M3XA', driver_id: 18, driver_name: 'Ravi Kumar', city: { code: 'IN-TG-HYD', name: 'Hyderabad' },
   amount_minor: 125050, currency: 'INR', status: 'pending', status_label: 'Waiting', payout_method: 'upi',
   upi_id: 'r***@upi', bank_account: null, payout_reference: null, failure_count: 0, failure_reason: null,
   requested_at: '2026-11-03T04:00:00Z', processed_at: null, age_seconds: 600,
@@ -60,7 +60,7 @@ function routeFetch(request: Record<string, unknown>, detail: Record<string, unk
 
 async function askToRelease() {
   render(<PayoutsPage />);
-  fireEvent.click(await screen.findByText('PO-31'));
+  fireEvent.click(await screen.findByText('PO-HYD-M3XA'));
   const record = await screen.findByRole('complementary', { name: 'Payout' });
   fireEvent.click(within(record).getByRole('button', { name: 'Ask to release…' }));
   fireEvent.click(within(record).getByRole('button', { name: /^Ask to release ₹/ }));
@@ -119,8 +119,8 @@ describe('payout release by the sole Super Admin', () => {
     routeFetch({ id: 9, status: 'requested', can_decide: true, self_approval: false, blockers: ['No payout details on file for D-18'] },
       { approval: { id: 9, status: 'requested', requested_at: '2026-11-03T05:30:00Z', expires_at: '2026-11-10T05:30:00Z', decided_at: null, maker: { id: 49, label: 'QA Finance', role: 'finance_admin' }, checker: null } });
     render(<PayoutsPage />);
-    fireEvent.click(await screen.findByText('PO-31'));
-    expect(await screen.findByText(/APR-9 cannot be approved yet: No payout details on file for D-18/)).toBeTruthy();
+    fireEvent.click(await screen.findByText('PO-HYD-M3XA'));
+    expect(await screen.findByText(/cannot be approved yet: No payout details on file for D-18/)).toBeTruthy();
     expect(screen.queryByText(/Waiting for a second finance admin/)).toBeNull();
   });
 });

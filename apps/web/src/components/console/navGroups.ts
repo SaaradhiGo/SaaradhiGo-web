@@ -74,7 +74,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/ops/settings', label: 'Countries and cities', Icon: Cog, need: PAGE_NEEDS.platform },
       { href: '/ops/zones', label: 'Zones', Icon: MapPin, need: PAGE_NEEDS.zones },
       // Commission and fare cards (module 8). Readable with `zone.read`.
-      { href: '/ops/pricing', label: 'Pricing and fees', Icon: Percent, need: PAGE_NEEDS.pricing },
+      { href: '/ops/pricing/fee-plans', label: 'Pricing and fees', Icon: Percent, need: PAGE_NEEDS.pricing },
       { href: '/ops/settings/integrations', label: 'Integrations and apps', Icon: Cog, need: ['platform.integrations.read', 'platform.read'] },
     ],
   },

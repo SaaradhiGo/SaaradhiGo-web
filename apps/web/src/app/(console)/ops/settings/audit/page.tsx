@@ -211,7 +211,7 @@ function EntryRecord({ id, zone, onClose }: { id: number; zone: string; onClose:
 
   if (!entry || entry.id !== id) {
     return (
-      <RecordPanel label="Audit entry" title="Audit entry" refId={`#${id}`} onClose={onClose}
+      <RecordPanel label="Audit entry" title="Audit entry" refId="" onClose={onClose}
         tabs={[{ key: 'entry', label: 'Entry', content: error ? (
           <div>
             <p className="alert-error" role="alert">{error}</p>
@@ -226,7 +226,7 @@ function EntryRecord({ id, zone, onClose }: { id: number; zone: string; onClose:
     <RecordPanel
       label="Audit entry"
       title={entry.summary ?? entry.action}
-      refId={`#${entry.id}`}
+      refId=""
       subtitle={<>{entry.actor.label ?? 'The system'} · {stamp(entry.created_at, zone)}</>}
       onClose={onClose}
       tabs={[

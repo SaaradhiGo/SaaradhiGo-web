@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { hiddenCityName } from '@/lib/notLaunched';
 import { marketName, placeName } from '@/lib/places';
 import Link from 'next/link';
@@ -204,7 +205,7 @@ export default function ZonesPage() {
                   const z = byId.get(r.target_id);
                   return (
                     <tr key={r.id}>
-                      <td><PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>APR-{r.id}</PageLink></td>
+                      <td><PageLink page="approvals" href={`/ops/approvals?id=${r.id}`}>{refOf(r) !== '—' ? refOf(r) : 'approval request'}</PageLink></td>
                       <td>{z ? <Link href={`/ops/zones/${z.id}`}>{z.name}</Link> : r.payload?.zone_code ?? r.target_id}</td>
                       <td>{requestWords(r)}</td>
                       <td>{r.maker?.label || r.maker?.email || '—'}</td>

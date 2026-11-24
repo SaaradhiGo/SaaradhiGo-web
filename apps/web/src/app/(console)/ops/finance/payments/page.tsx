@@ -1,5 +1,6 @@
 'use client';
 
+import { refFrom } from '@/lib/refs';
 import { Suspense, useEffect, useState } from 'react';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import {
@@ -47,10 +48,10 @@ function PaymentsInner() {
   useEffect(() => setDraft(filters), [filters.status, filters.method, filters.currency, filters.q]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const columns: ListColumn<PaymentRow>[] = [
-    { key: 'id', label: 'Payment', width: '6rem', primary: true, render: (p) => `#${p.id}` },
+    { key: 'id', label: 'Payment', width: '6rem', primary: true, render: (p) => refFrom(p, 'trip_ref', 'Payment') },
     {
       key: 'trip', label: 'Trip', width: '7rem',
-      render: (p) => <PageLink page="trips" href={`/ops/trips/${p.trip_id}`}>T-{p.trip_id}</PageLink>,
+      render: (p) => <PageLink page="trips" href={`/ops/trips/${p.trip_id}`}>{refFrom(p, 'trip_ref', 'Trip')}</PageLink>,
     },
     { key: 'city', label: 'City', render: (p) => cityName(p.city) },
     { key: 'rider', label: 'Rider', render: (p) => p.rider_name || '—' },

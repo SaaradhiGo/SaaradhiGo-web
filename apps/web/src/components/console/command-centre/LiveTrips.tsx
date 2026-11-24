@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { PageLink } from '@/components/console/PageLink';
 import { canOpen } from '@/lib/consoleLinks';
 import Link from 'next/link';
@@ -79,7 +80,7 @@ export function LiveTrips({ city, timeZone }: { city: string | null; timeZone?: 
   }
 
   const columns: Column<Trip>[] = [
-    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <PageLink page="trips" href={`/ops/trips/${t.id}`}>#{t.id}</PageLink> },
+    { key: 'id', label: 'Trip', width: '5rem', render: (t) => <PageLink page="trips" href={`/ops/trips/${t.id}`}>{refOf(t) !== '—' ? refOf(t) : 'Open'}</PageLink> },
     {
       key: 'status', label: 'Status', width: '8rem',
       render: (t) => {
