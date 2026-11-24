@@ -816,7 +816,7 @@ a.ops-alert:hover { background: var(--ops-wash); }
   border: 1px solid var(--ops-line-strong);
   background: var(--ops-wash);
   font: 600 14px/1.6 var(--font-sans);
-  letter-spacing: 0.04em; text-transform: capitalize; white-space: nowrap;
+  letter-spacing: 0.04em; text-transform: none; white-space: nowrap; /* 24 Nov: sentence case */
   color: var(--ops-ink-2);
 }
 .ops-pill--good { border-color: var(--ops-success-edge); color: var(--ops-success); background: var(--ops-success-wash); }
@@ -949,7 +949,7 @@ a.ops-alert:hover { background: var(--ops-wash); }
 /* --- segmented filters (older pages) -------------------------------------- */
 
 .ops-filters { display: inline-flex; padding: 3px; gap: 2px; background: var(--ops-wash); border: 1px solid var(--line); border-radius: 10px; }
-.ops-filter { appearance: none; border: 0; background: none; cursor: pointer; padding: 6px 12px; border-radius: 7px; font: 600 14px/1.2 var(--font-sans); color: var(--ops-ink-3); text-transform: capitalize; }
+.ops-filter { appearance: none; border: 0; background: none; cursor: pointer; padding: 6px 12px; border-radius: 7px; font: 600 14px/1.2 var(--font-sans); color: var(--ops-ink-3); text-transform: none; }
 .ops-filter:hover { color: var(--ink); }
 .ops-filter[aria-pressed='true'] { background: var(--ops-wash-strong); color: var(--ink); }
 
@@ -1518,7 +1518,7 @@ a.ops-alert:hover { background: var(--ops-wash); }
 .ops-audit { list-style: none; margin: 0; padding: 4px 16px 12px; display: grid; gap: 8px; }
 .ops-audit li { display: grid; grid-template-columns: 11rem 1fr; gap: 2px 12px; font: 400 14px/1.45 var(--font-sans); color: var(--ops-ink-3); }
 .ops-audit time { color: var(--ops-ink-5); font-variant-numeric: tabular-nums; }
-.ops-audit b { color: var(--ink); text-transform: capitalize; }
+.ops-audit b { color: var(--ink); }
 .ops-audit span { grid-column: 2; }
 @media (max-width: 720px) { .ops-audit li { grid-template-columns: 1fr; } .ops-audit span { grid-column: 1; } }
 
@@ -2738,7 +2738,11 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
   .ops-table td.primary { min-width: 0; }
   .ops-cell { display: block; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   td.primary > .ops-cell { max-width: 18rem; }
-  td.num > .ops-cell, .ops-cell--keep, .ops-cell:has(.ops-pill, .ops-chips, .sg-chip) { max-width: none; }
+  td.num > .ops-cell, .ops-cell--keep { max-width: none; }
+  /* A row's status chips stay whole; several wrap inside an 11rem column. */
+  .ops-cell:has(.ops-pill, .ops-chips, .sg-chip) { max-width: 12rem; overflow: visible; white-space: normal; }
+  .ops-cell .ops-chips { flex-wrap: wrap; }
+  .ops-cell .ops-pill, .ops-cell .sg-chip { white-space: normal; max-width: 100%; text-align: left; }
 }
 @media (min-width: 1100px) {
   .ops-table-wrap table.ops-table { width: 100%; min-width: 0; table-layout: auto; }

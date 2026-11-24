@@ -172,7 +172,7 @@ function OverviewInner() {
           {data.totals.flatMap((t) => [
             <MetricCard key={`${t.currency}-gross`} label={`Gross collected · ${t.currency}`}
               value={formatWhole(Number(t.gross_minor), t.currency)}
-              note={`Commission ${formatWhole(Number(t.commission_minor), t.currency)} · driver net ${formatWhole(Number(t.driver_net_minor), t.currency)}`} />,
+              note={`Driver fee ${formatWhole(Number(t.commission_minor), t.currency)} · driver net ${formatWhole(Number(t.driver_net_minor), t.currency)}`} />,
             <MetricCard key={`${t.currency}-pending`} label={`Payouts pending · ${t.currency}`}
               tone={Number(t.payouts_failed_minor) > 0 ? 'caution' : 'neutral'}
               value={formatWhole(Number(t.payouts_pending_minor), t.currency)}

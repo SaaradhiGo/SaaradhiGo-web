@@ -141,7 +141,7 @@ describe('MapsCallsPanel', () => {
       last_7_days: { '2026-11-04': { geocoding: 2, places_details: 1 }, '2026-11-03': { geocoding: 5, places_details: 0 } },
     };
     const { container, rerender } = render(<MapsCallsPanel calls={calls} />);
-    const row = screen.getByText('geocoding').closest('tr')!;
+    const row = screen.getByText('Address lookup').closest('tr')!;
     expect(row.textContent).toContain('2');
     expect(row.textContent).toContain('7');
     rerender(<MapsCallsPanel calls={undefined} />);
