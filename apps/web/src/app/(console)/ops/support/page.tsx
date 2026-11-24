@@ -115,8 +115,8 @@ const VIEWS: Array<{ key: QueueKey; label: string }> = [
 
 const requesterName = (t: { requester?: { id: number; role: string; full_name?: string | null } | null }) =>
   t.requester?.full_name?.trim() || `${t.requester?.role === 'driver' ? 'Driver' : 'Rider'} #${t.requester?.id ?? '—'}`;
-const requesterRef = (t: { requester?: { id: number; role: string } | null }) =>
-  (t.requester ? `${t.requester.role === 'driver' ? 'D' : 'R'}-${t.requester.id}` : '');
+const requesterRef = (t: { requester?: { id: number; role: string; ref?: string | null } | null }) =>
+  t.requester?.ref ?? '';  // 24 Nov (owner): the person's reference, never an id
 
 function SupportInner() {
   const router = useRouter();

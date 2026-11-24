@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   type AdminAccess, type AdminScope, readSelectedScope, writeSelectedScope,
 } from '@/lib/adminScope';
-import { readShowNotLaunched, writeShowNotLaunched } from '@/lib/notLaunched';
+import { isNotLaunched, readShowNotLaunched, writeShowNotLaunched } from '@/lib/notLaunched';
 
 /** The held places directly under `parent` (null: the top of what the operator holds). Pure; tested. */
 export function childrenOf(scopes: AdminScope[], parent: AdminScope | null): AdminScope[] {
@@ -24,7 +24,7 @@ export function ancestry(scopes: AdminScope[], scope: AdminScope): AdminScope[] 
 }
 
 /** A city that is not live is "not launched" and stays out of working lists by default (owner 24 Nov). */
-export const isLaunched = (s: AdminScope) => s.kind !== 'city' || s.status === 'active' || s.status === 'paused';
+export const isLaunched = (s: AdminScope) => !isNotLaunched(s);
 
 /**
  * Where the operator is looking (owner 24 Nov): a clickable path at the top of every page
@@ -78,7 +78,7 @@ export function PlaceBar({ access }: { access: AdminAccess | null }) {
         <div className="ops-placebar__chips">
           {chips.map((s) => (
             <button key={s.code} type="button" className="ops-placechip" onClick={() => choose(s.code)}>
-              {s.name}{!isLaunched(s) ? <small> · not launched</small> : null}
+              {s.name}{!isLaunched(s) ? <small> · not launched</small> : s.launch_state === 'coming_soon' ? <small> · coming soon</small> : null}
             </button>
           ))}
           {anyHidden ? (

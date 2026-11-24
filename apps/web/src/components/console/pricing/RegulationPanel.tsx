@@ -1,5 +1,6 @@
 'use client';
 
+import { placeName } from '@/lib/places';
 import { placeWord } from '@/lib/pricingWords';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
@@ -122,7 +123,7 @@ export function RegulationPanel({ may }: { may: boolean }) {
             <div className="mt-3">
               <DataTable caption="What each city's fare is held to" rows={zones} rowKey={(z) => z.zone} density="compact" maxHeight={false}
                 columns={[
-                  { key: 'zone', label: 'City zone', render: (z) => z.zone },
+                  { key: 'zone', label: 'City zone', render: (z) => placeName(z.zone) },
                   { key: 'card', label: 'Rate card cap', num: true, render: (z) => (z.rate_card_cap ? `${z.rate_card_cap}×` : '—') },
                   { key: 'eff', label: 'Applied band', render: (z) => (z.effective
                     ? `${z.effective.min_dynamic_multiplier ?? '—'}× to ${z.effective.max_dynamic_multiplier}× (cap from the ${z.effective.cap_source.replace('_', ' ')})`

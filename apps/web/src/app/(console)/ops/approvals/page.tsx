@@ -265,7 +265,7 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
     try {
       setRow(await api.get<ApprovalRow>(`/approvals/admin/requests/${id}/`));
     } catch {
-      setError(`Request APR-${id} could not be opened.`);
+      setError('That request could not be opened.');
     }
   }, [id]);
   useEffect(() => { void load(); }, [load]);

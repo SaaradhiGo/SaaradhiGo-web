@@ -534,7 +534,7 @@ function PayoutRecord({ row, onClose, onChanged }: {
     try {
       const done = await api.post<SelfCheck>(`/approvals/admin/requests/${selfId}/approve/`, { reason: selfReason.trim() });
       await onChanged(done.status === 'executed'
-        ? { kind: 'done', text: `Released ${amount} to ${who}.${own ? ` Recorded as self-approved (APR-${selfId}).` : ` APR-${selfId} approved.`}` }
+        ? { kind: 'done', text: `Released ${amount} to ${who}.${own ? ' Recorded as self-approved.' : ' The request was approved.'}` }
         : { kind: 'done', text: `The payout request was approved, but the payout did not go out${done.error ? `: ${done.error}` : '.'}` });
     } catch (err) {
       setActionError(failureText(err, 'That did not go through. Nothing was released.'));

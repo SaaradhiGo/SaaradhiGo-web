@@ -98,7 +98,7 @@ export function ActionDrawer({
   return (
     <Drawer
       open
-      title={`${TITLE[action]} · T-${tripId}`}
+      title={TITLE[action]}
       onClose={onClose}
       footer={outcome ? (
         <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={onClose}>Close</button>
