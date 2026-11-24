@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { DateField } from '@/components/console/kit/DateField';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -199,7 +200,7 @@ function RidersInner() {
   }
   if (filters.joinedFrom || filters.joinedTo) chips.push({ key: 'joined', label: `Joined ${filters.joinedFrom || '…'} to ${filters.joinedTo || '…'}`, onRemove: drop({ joinedFrom: '', joinedTo: '' }) });
   if (filters.lastTripFrom || filters.lastTripTo) chips.push({ key: 'last', label: `Last trip ${filters.lastTripFrom || '…'} to ${filters.lastTripTo || '…'}`, onRemove: drop({ lastTripFrom: '', lastTripTo: '' }) });
-  if (filters.id) chips.push({ key: 'id', label: `R-${filters.id}`, onRemove: drop({ id: '' }) });
+  if (filters.id) chips.push({ key: 'id', label: 'One rider', onRemove: drop({ id: '' }) });
 
   const columns: ListColumn<RiderRow>[] = [
     {
@@ -222,7 +223,7 @@ function RidersInner() {
         : await fetchAllPages<RiderRow>((p, size) => scoped(ridersApiPath({ ...filters, page: p, pageSize: size })));
       const header = ['Rider', 'Name', 'Phone (masked)', 'Blocked', 'Flagged', 'City', 'Completed trips', 'Rating', 'Last trip', 'Joined'];
       const body = all.map((r) => [
-        `R-${r.id}`, riderName(r.user_details, r.id), r.user_details?.phone_number ?? '',
+        refOf(r), riderName(r.user_details, r.id), r.user_details?.phone_number ?? '',
         r.blocked ? 'Yes' : 'No', r.flagged ? 'Yes' : 'No', r.city?.name ?? '', r.trips_completed ?? '',
         r.rating ?? '', cityTime(r.last_trip_at, r.city?.timezone, { zone: true }), cityTime(r.joined_at, r.city?.timezone, { zone: true }),
       ]);
@@ -388,7 +389,7 @@ function RiderRecord({ id, onClose, onChanged }: {
       <RecordPanel
         label="Rider"
         title={name}
-        refId={`R-${data.id}`}
+        refId={refOf(data)}
         onClose={onClose}
         subtitle={data.city ? `${data.city.name} (latest trip)` : 'No trips yet'}
         status={(

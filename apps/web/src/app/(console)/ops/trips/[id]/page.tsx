@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -225,7 +226,7 @@ export default function TripDetailPage() {
       <div aria-busy="true" aria-live="polite">
         <span className="sr-only">Loading the trip</span>
         <p className="ops-record-page__back"><Link href="/ops/trips">All trips</Link></p>
-        <PageHeader title={`T-${id}`} />
+        <PageHeader title="Trip" />
         <TileGrid><Skeleton kind="tile" count={4} /></TileGrid>
         <div className="ops-review"><Skeleton kind="block" /><Skeleton kind="block" /></div>
       </div>
@@ -235,7 +236,7 @@ export default function TripDetailPage() {
     return (
       <>
         <p className="ops-record-page__back"><Link href="/ops/trips">All trips</Link></p>
-        <PageHeader title={`T-${id}`} />
+        <PageHeader title="Trip" />
         <ErrorState title="This trip could not be loaded" detail={error ?? undefined} onRetry={() => void load()} />
       </>
     );
@@ -658,7 +659,7 @@ export default function TripDetailPage() {
         <RecordPanel
           label="Trip"
           title="Trip"
-          refId={`T-${data.id}`}
+          refId={refOf(data)}
           subtitle={<>
             {data.zone ? `${data.zone.name} (${data.zone.code})` : 'No zone'}
             {' · requested '}{cityTime(data.timeline.requested_at, cityTz, { zone: true })}

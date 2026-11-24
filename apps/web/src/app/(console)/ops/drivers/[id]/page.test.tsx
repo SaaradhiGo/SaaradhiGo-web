@@ -24,7 +24,7 @@ vi.mock('@/lib/adminScope', async (importActual) => {
 });
 
 const DETAIL = {
-  id: 2231, status: 'online', approved: true, ratings: '4.42', total_trips: 812, license_expiry: '2027-01-01',
+  id: 2231, ref: 'D-HYD-7K3Q', status: 'online', approved: true, ratings: '4.42', total_trips: 812, license_expiry: '2027-01-01',
   upi_id: null, user: { id: 9, phone_number: '+91 3210', full_name: 'Ravi Kumar', email: null, is_active: true },
   vehicles: [], cancellations: { last_24h: 0, last_7d: 2, last_30d: 5 }, recent_trips: [],
   earnings: { lifetime: '1,000.00', today: '0.00', this_month: '200.00', wallet_balance: '50.00', currency: 'INR' },
@@ -35,7 +35,7 @@ const DETAIL = {
 describe('driver record page', () => {
   it('shows the ref and moves between tabs', async () => {
     render(<Page />);
-    expect(await screen.findByText('D-2231')).toBeTruthy();
+    expect(await screen.findByText('D-HYD-7K3Q')).toBeTruthy();
     expect(screen.queryByText('Wallet')).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'Money' }));
     expect(screen.getByText('Wallet')).toBeTruthy();

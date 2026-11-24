@@ -24,11 +24,11 @@ vi.mock('@/lib/adminScope', async (importActual) => {
 });
 
 const QUEUE = { count: 2, results: [
-  { id: 31, user_details: { full_name: 'Ravi Kumar' }, vehicle_type: 'auto', waiting_seconds: 7200 },
+  { id: 31, ref: 'D-HYD-7K3Q', user_details: { full_name: 'Ravi Kumar' }, vehicle_type: 'auto', waiting_seconds: 7200 },
   { id: 32, user_details: { full_name: 'Meena S' }, vehicle_type: 'bike', waiting_seconds: 3600 },
 ] };
 const detail = (id: number, name: string) => ({
-  id, approved: false, license_expiry: null, user: { full_name: name }, vehicles: [],
+  id, ref: id === 31 ? 'D-HYD-7K3Q' : 'D-HYD-M3XA', approved: false, license_expiry: null, user: { full_name: name }, vehicles: [],
   documents: [{ key: 'licence_front', label: 'Licence (front)', owner: 'driver', vehicle_id: null, present: false, recordable: true,
     viewable: true, url_withheld: false, review_state: 'pending', review: null }],
   actions: { review_documents: true, approve: true }, approval_blockers: [],
@@ -43,9 +43,9 @@ describe('KYC review page', () => {
   it('lists the queue and reviews the active driver in a record panel; a queue row jumps to that driver', async () => {
     render(<Page />);
     const panel = await screen.findByRole('complementary', { name: 'KYC review' });
-    expect(panel.textContent).toContain('D-31');
+    expect(panel.textContent).toContain('D-HYD-7K3Q');
     fireEvent.click(screen.getByText('Meena S', { selector: 'td span' }));
-    await waitFor(() => expect(screen.getByRole('complementary', { name: 'KYC review' }).textContent).toContain('D-32'));
+    await waitFor(() => expect(screen.getByRole('complementary', { name: 'KYC review' }).textContent).toContain('D-HYD-M3XA'));
   });
 });
 

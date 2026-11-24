@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { DateField } from '@/components/console/kit/DateField';
 import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
@@ -188,7 +189,7 @@ function SupportInner() {
       const { rows: all, truncated } = await fetchAllPages<TicketRow>((p, size) => scoped(supportApiPath({ ...filters, page: p, pageSize: size })));
       const header = ['Ticket', 'Priority', 'SLA', 'Issue', 'Raised by', 'City', 'Assignee', 'Status', 'Opened'];
       const body = all.map((t) => [
-        `TKT-${t.id}`, PRIORITY_LABEL[t.priority] ?? t.priority, slaSentence(t.sla),
+        refOf(t), PRIORITY_LABEL[t.priority] ?? t.priority, slaSentence(t.sla),
         t.issue_label ?? ISSUE_LABEL[t.issue_type] ?? t.issue_type, `${requesterName(t)} ${requesterRef(t)}`.trim(),
         t.city?.name ?? '', t.assignee?.label ?? '', STATUS_LABEL[t.status] ?? t.status,
         stamp(t.created_at, cityTimeZone(t.city)),
@@ -364,7 +365,7 @@ function TicketRecord({ id, onClose, onChanged }: {
       <RecordPanel
         label="Ticket"
         title={ticket.issue_label ?? ISSUE_LABEL[ticket.issue_type] ?? words(ticket.issue_type)}
-        refId={`TKT-${ticket.id}`}
+        refId={refOf(ticket)}
         onClose={onClose}
         subtitle={<>Raised by {name} {requesterRef(ticket)} · opened {stamp(ticket.created_at, tz)}{ticket.city ? ` · ${ticket.city.name}` : ''}</>}
         status={(

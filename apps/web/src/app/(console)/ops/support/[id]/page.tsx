@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -158,7 +159,7 @@ export default function SupportTicketPage() {
       <div aria-busy="true" aria-live="polite">
         <span className="sr-only">Loading the ticket</span>
         <p className="ops-record-page__back"><Link href="/ops/support">All tickets</Link></p>
-        <PageHeader title={`TKT-${id}`} />
+        <PageHeader title="Support ticket" />
         <div className="ops-review"><Skeleton kind="block" /><Skeleton kind="block" /></div>
       </div>
     );
@@ -167,7 +168,7 @@ export default function SupportTicketPage() {
     return (
       <>
         <p className="ops-record-page__back"><Link href="/ops/support">All tickets</Link></p>
-        <PageHeader title={`TKT-${id}`} />
+        <PageHeader title="Support ticket" />
         <ErrorState title="This ticket could not be loaded" detail={error ?? undefined} onRetry={() => void load()} />
       </>
     );
@@ -330,7 +331,7 @@ function TicketView({
         <RecordPanel
           label="Ticket"
           title={name}
-          refId={`TKT-${ticket.id}`}
+          refId={refOf(ticket)}
           subtitle={<>
             {ticket.issue_label ?? ISSUE_LABEL[ticket.issue_type] ?? words(ticket.issue_type)}
             {' · opened '}{stamp(ticket.created_at, tz)}
@@ -711,7 +712,7 @@ function TripPanel({
   const cur = trip.currency;
   return (
     <Panel
-      title={`T-${trip.id}`}
+      title={refOf(trip)}
       action={<PageLink page="trips" href={`/ops/trips/${trip.id}`} className="sg-link">Open trip</PageLink>}
     >
       <Facts>

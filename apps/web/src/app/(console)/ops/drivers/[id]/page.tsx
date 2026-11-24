@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -122,7 +123,7 @@ export default function DriverDetailPage() {
       <div aria-busy="true" aria-live="polite">
         <span className="sr-only">Loading the driver</span>
         <p className="ops-record-page__back"><Link href="/ops/drivers">All drivers</Link></p>
-        <PageHeader title={`D-${id}`} />
+        <PageHeader title="Driver" />
         <div className="ops-review"><Skeleton kind="block" /><Skeleton kind="block" /></div>
       </div>
     );
@@ -388,7 +389,7 @@ export default function DriverDetailPage() {
         <RecordPanel
           label="Driver"
           title={name}
-          refId={`D-${data.id}`}
+          refId={refOf(data)}
           subtitle={<>
             <Revealable value={data.user.phone_number ?? '—'} label="driver phone" target={target} field="phone_number" compact />
             {data.user.email ? <> · <Revealable value={data.user.email} label="driver email" target={target} field="email" compact /></> : null}

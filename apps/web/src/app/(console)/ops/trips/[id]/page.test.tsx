@@ -24,7 +24,7 @@ vi.mock('@/lib/adminScope', async (importActual) => {
 });
 
 const DETAIL = {
-  id: 77, status: 'completed', pickup: { address: 'A', lat: null, lng: null }, destination: { address: 'B', lat: null, lng: null },
+  id: 77, ref: 'HYD-261116-K7Q4', status: 'completed', pickup: { address: 'A', lat: null, lng: null }, destination: { address: 'B', lat: null, lng: null },
   timeline: { requested_at: '2026-01-01T10:00:00Z' }, rider: null, driver: null, vehicle: null,
   fare: { estimated_fare: '100', final_fare: '100', estimated_distance_km: null, actual_distance_km: null, surge_multiplier: '1.00', payment_method: 'cash', payment_status: 'paid', breakdown: null },
   payments: [], ratings: [], receipts: [], chat: { total: 1, messages: [{ id: 1, sender_role: 'rider', body: 'Where are you', is_system: false, created_at: null }] },
@@ -36,7 +36,7 @@ const DETAIL = {
 describe('trip record page', () => {
   it('shows the ref, keeps the SOS above the tabs, and switches tabs', async () => {
     render(<Page />);
-    expect(await screen.findByText('T-77')).toBeTruthy();
+    expect(await screen.findByText('HYD-261116-K7Q4')).toBeTruthy();
     expect(screen.getByText('SOS on this trip')).toBeTruthy();
     expect(screen.queryByText('Where are you')).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'Messages' }));

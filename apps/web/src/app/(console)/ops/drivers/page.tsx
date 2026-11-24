@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { DateField } from '@/components/console/kit/DateField';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -225,7 +226,7 @@ function DriversInner() {
     if (filters.joinedFrom || filters.joinedTo) chips.push({ key: 'joined', label: `Joined ${filters.joinedFrom || '…'} to ${filters.joinedTo || '…'}`, onRemove: drop({ joinedFrom: '', joinedTo: '' }) });
     if (filters.approved) chips.push({ key: 'approved', label: filters.approved === 'false' ? 'Not yet approved' : 'Approved', onRemove: drop({ approved: '' }) });
     if (filters.status) chips.push({ key: 'status', label: `Status: ${filters.status}`, onRemove: drop({ status: '' }) });
-    if (filters.id) chips.push({ key: 'id', label: `D-${filters.id}`, onRemove: drop({ id: '' }) });
+    if (filters.id) chips.push({ key: 'id', label: 'One driver', onRemove: drop({ id: '' }) });
   }
   if (filters.scope) {
     chips.push({ key: 'scope', label: `City: ${cities.find((c) => c.code === filters.scope)?.name ?? filters.scope}`, onRemove: drop({ scope: '' }) });
@@ -269,7 +270,7 @@ function DriversInner() {
         queue ? queueApiPath({ ...filters, page: p, pageSize: size }) : driversApiPath({ ...filters, page: p, pageSize: size })));
       const header = ['Driver', 'Name', 'Phone (masked)', 'Now', 'City', 'KYC', 'Rating', 'Trips', 'Vehicle', 'Joined'];
       const body = all.map((d) => [
-        `D-${d.id}`, driverName(d.user_details, d.id), d.user_details?.phone_number ?? '',
+        refOf(d), driverName(d.user_details, d.id), d.user_details?.phone_number ?? '',
         d.suspended ? 'Suspended' : d.online ? 'Online' : words(d.status), d.home_city?.name ?? '',
         KYC_LABEL[d.kyc_state ?? '']?.[0] ?? words(d.kyc_state), rating(d.ratings), d.total_trips ?? 0,
         [d.vehicle_type, d.vehicle_number].filter(Boolean).join(' '), cityTime(d.joined_at, d.home_city?.timezone, { zone: true }),
@@ -448,7 +449,7 @@ function DriverRecord({ row, queue, onClose, onChanged }: {
       <RecordPanel
         label="Driver"
         title={name}
-        refId={`D-${data.id}`}
+        refId={refOf(data)}
         onClose={onClose}
         subtitle={<>{data.home_city?.name ?? 'No home city'}{data.vehicles.find((v) => v.is_active_vehicle)?.vehicle_number ? ` · ${data.vehicles.find((v) => v.is_active_vehicle)?.vehicle_number}` : ''}</>}
         status={(
@@ -665,7 +666,7 @@ function BulkDrawer({ action, ids, onClose, onDone }: {
         {outcome && <div className="alert-success" role="status">{outcome}</div>}
         {rows ? (
           <Facts>
-            {rows.results.map((r) => <Fact key={r.id} label={`D-${r.id}`}>{words(r.result)}</Fact>)}
+            {rows.results.map((r) => <Fact key={r.id} label={refOf(r)}>{words(r.result)}</Fact>)}
           </Facts>
         ) : null}
       </div>

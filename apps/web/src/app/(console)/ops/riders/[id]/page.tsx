@@ -1,5 +1,6 @@
 'use client';
 
+import { refOf } from '@/lib/refs';
 import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -110,7 +111,7 @@ export default function RiderDetailPage() {
       <div aria-busy="true" aria-live="polite">
         <span className="sr-only">Loading the rider</span>
         <p className="ops-record-page__back"><Link href="/ops/riders">All riders</Link></p>
-        <PageHeader title={`R-${id}`} />
+        <PageHeader title="Rider" />
         <div className="ops-review"><Skeleton kind="block" /><Skeleton kind="block" /></div>
       </div>
     );
@@ -325,7 +326,7 @@ export default function RiderDetailPage() {
         <RecordPanel
           label="Rider"
           title={name}
-          refId={`R-${data.id}`}
+          refId={refOf(data)}
           subtitle={<>
             <Revealable value={data.user_details.phone_number ?? '—'} label="rider phone" target={target} field="phone_number" compact />
             {data.user_details.email ? <> · <Revealable value={data.user_details.email} label="rider email" target={target} field="email" compact /></> : null}
