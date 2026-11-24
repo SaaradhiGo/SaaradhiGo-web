@@ -51,7 +51,7 @@ describe('ActionDrawer', () => {
     fireEvent.change(screen.getByLabelText(/Amount \(INR\)/), { target: { value: '500' } });
     fireEvent.change(screen.getByLabelText(/Reason \(required\)/), { target: { value: 'late' } });
     fireEvent.click(screen.getByRole('button', { name: 'Refund' }));
-    await waitFor(() => expect(screen.getByText('Refund of ₹500.00 recorded.')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Refund of ₹500 recorded.')).toBeTruthy());
   });
 
   it('will not send more than is left to refund', () => {

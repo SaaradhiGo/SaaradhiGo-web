@@ -1,5 +1,6 @@
 'use client';
 
+import { DateField } from '@/components/console/kit/DateField';
 import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -390,18 +391,9 @@ function TripsInner() {
                 </div>
                 <div className="ops-form__row">
                   <label className="ops-form__label" htmlFor="f-from">From</label>
-                  <input id="f-from" type="date" className="ops-select" value={draft.dateFrom} onChange={(e) => setDraft({ ...draft, dateFrom: e.target.value })} />
+                  <DateField id="f-from" className="ops-select" value={draft.dateFrom} onChange={(v) => setDraft({ ...draft, dateFrom: v })} />
                   <label className="ops-form__label" htmlFor="f-to">To</label>
-                  <input id="f-to" type="date" className="ops-select" value={draft.dateTo} onChange={(e) => setDraft({ ...draft, dateTo: e.target.value })} />
-                  {cities.length > 1 ? (
-                    <>
-                      <label className="ops-form__label" htmlFor="f-city">City</label>
-                      <select id="f-city" className="ops-select" value={draft.scope} onChange={(e) => setDraft({ ...draft, scope: e.target.value })}>
-                        <option value="">All I hold</option>
-                        {cities.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-                      </select>
-                    </>
-                  ) : null}
+                  <DateField id="f-to" className="ops-select" value={draft.dateTo} onChange={(v) => setDraft({ ...draft, dateTo: v })} />
                   <label className="ops-form__label" htmlFor="f-pay">Payment</label>
                   <select id="f-pay" className="ops-select" value={draft.paymentMethod} onChange={(e) => setDraft({ ...draft, paymentMethod: e.target.value })}>
                     <option value="">Any</option>

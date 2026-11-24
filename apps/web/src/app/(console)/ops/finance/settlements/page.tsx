@@ -108,7 +108,7 @@ function SettlementsInner() {
     },
     { key: 'gross', label: 'Gross', num: true, render: (r) => formatWhole(r.gross_fare_minor, r.currency) },
     {
-      key: 'commission', label: 'Commission', num: true,
+      key: 'commission', label: 'Driver fee', num: true,
       render: (r) => `${formatWhole(r.commission_amount_minor, r.currency)} · ${Number(r.commission_percent)}%`,
     },
     { key: 'net', label: 'Driver net', num: true, render: (r) => formatWhole(r.driver_net_minor, r.currency) },

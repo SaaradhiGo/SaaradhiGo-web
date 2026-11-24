@@ -1,5 +1,6 @@
 'use client';
 
+import { marketName, placeName } from '@/lib/places';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
@@ -26,7 +27,7 @@ type Row = {
   platform_insurance: Insurance | null; service_agent: Agent | null; citations: Record<string, string> | null;
 };
 
-const where = (r: Row) => (r.state_code ? `${r.country}-${r.state_code}` : `All of ${r.country}`);
+const where = (r: Row) => marketName(r.country, r.state_code);
 const yn = (v: boolean | null) => (v === null ? 'Not set here' : v ? 'Yes' : 'No');
 const BOOLS: [keyof Row, string][] = [
   ['cash_allowed', 'Cash accepted'], ['tips_enabled', 'Tips'], ['sales_tax_enabled', 'Sales tax charged'],

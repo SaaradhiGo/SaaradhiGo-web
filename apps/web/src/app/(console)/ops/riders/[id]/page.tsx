@@ -208,7 +208,7 @@ export default function RiderDetailPage() {
         <Panel title="Record">
           <Facts>
             <Fact label="Rating">
-              {Number(r.rating).toFixed(2)} · {r.rating_count} rating{r.rating_count === 1 ? '' : 's'} from drivers
+              {r.rating_count ? `${Number(r.rating).toFixed(2)} · ${r.rating_count} rating${r.rating_count === 1 ? '' : 's'} from drivers` : '— · no rated trips yet'}
               {r.soft_blocked ? ' · below the booking threshold' : ''}
             </Fact>
             {r.received.count > 0 ? (

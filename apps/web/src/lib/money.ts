@@ -119,3 +119,10 @@ export function oneLine(text: string | null): string | null {
   if (text == null) return text;
   return text.replace(/ /g, '\u00A0').replace(/^([−+-])(\u00A0?)/, '$1\u2060$2');
 }
+
+/** A configured amount ("20.00", "12.50") as the console shows it: India drops ".00" (owner 24 Nov). */
+export function plainAmount(value: string | number | null | undefined, currency?: string | null): string {
+  if (value === null || value === undefined || value === '') return '';
+  const text = String(value);
+  return (currency ?? 'INR').toUpperCase() === 'INR' ? text.replace(/\.0+$/, '') : text;
+}

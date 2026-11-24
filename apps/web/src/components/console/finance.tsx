@@ -1,5 +1,6 @@
 'use client';
 
+import { DateField } from '@/components/console/kit/DateField';
 import { DatePresets } from '@/components/console/kit/DatePresets';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -81,13 +82,13 @@ export function RangeBar({
     >
       <div className="ops-rangebar__field">
         <label className="ops-form__label" htmlFor={`${idPrefix}-from`}>From</label>
-        <input id={`${idPrefix}-from`} type="date" className="ops-select" value={draftFrom}
-          max={todayLocal()} onChange={(e) => setDraftFrom(e.target.value)} />
+        <DateField id={`${idPrefix}-from`} className="ops-select" value={draftFrom}
+          max={todayLocal()} onChange={(v) => setDraftFrom(v)} />
       </div>
       <div className="ops-rangebar__field">
         <label className="ops-form__label" htmlFor={`${idPrefix}-to`}>To</label>
-        <input id={`${idPrefix}-to`} type="date" className="ops-select" value={draftTo}
-          max={todayLocal()} onChange={(e) => setDraftTo(e.target.value)} />
+        <DateField id={`${idPrefix}-to`} className="ops-select" value={draftTo}
+          max={todayLocal()} onChange={(v) => setDraftTo(v)} />
       </div>
       <button type="submit" className="sg-btn sg-btn--primary sg-btn--sm" disabled={Boolean(problem)}>Show</button>
       <DatePresets from={from} to={to} onPick={onApply} customFieldId={`${idPrefix}-from`} />

@@ -125,7 +125,7 @@ describe('the driver-earnings preview', () => {
     const lines = previewLines(base);
     expect(lines.map((l) => l.currency)).toEqual(['INR', 'USD']);
     expect(lines[1].total).toContain('$6.00');
-    expect(lines[0].total).toContain('₹120.00');
+    expect(lines[0].total).toContain('₹120');
     expect(lines[0].direction).toBe('less');
     expect(lines[1].direction).toBe('more');
   });
@@ -207,9 +207,9 @@ describe('the rider-fare preview', () => {
   });
 
   it('shows old, new and the change in the zone currency', () => {
-    expect(fareChangeText(rows[0], 'INR')).toContain('₹200.00');
-    expect(fareChangeText(rows[0], 'INR')).toContain('₹220.00');
-    expect(fareChangeText(rows[0], 'INR')).toContain('₹20.00');
+    expect(fareChangeText(rows[0], 'INR')).toContain('₹200');
+    expect(fareChangeText(rows[0], 'INR')).toContain('₹220');
+    expect(fareChangeText(rows[0], 'INR')).toContain('₹20');
     expect(fareChangeText(rows[1], 'INR')).toContain('no change');
     expect(fareChangeText(rows[2], 'USD')).toContain('$125.00');
     expect(fareChangeText(rows[2], 'USD')).toContain('$5.00');
@@ -217,6 +217,6 @@ describe('the rider-fare preview', () => {
   });
 
   it('shows just the fare when there is no old card', () => {
-    expect(fareChangeText({ ...rows[0], old_minor: null, change_minor: null }, 'INR')).toBe('₹220.00');
+    expect(fareChangeText({ ...rows[0], old_minor: null, change_minor: null }, 'INR')).toBe('₹220');
   });
 });

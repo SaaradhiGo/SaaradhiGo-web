@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { can, selectedMarket, useAdminAccess } from '@/lib/adminScope';
+import { can, currentScope, selectedMarket, useAdminAccess } from '@/lib/adminScope';
 import { canOpen } from '@/lib/consoleLinks';
 import { useDensity } from '@/lib/consolePrefs';
 import {
@@ -43,7 +43,9 @@ export default function LiveOpsPage() {
   const aggregate = canSeeAggregate(access);
   const may = full || aggregate;
 
-  const [city, setCity] = useState<string | null>(null);
+  // Owner 24 Nov: the place bar picks the city; this page has no second control for it.
+  const here = currentScope(access);
+  const city = here?.kind === 'city' ? here.code : null;
   const [windowMinutes, setWindowMinutes] = useState(15);
   const [layers, setLayers] = useState<Layers>({ drivers: true, trips: true, alerts: true, heatmap: true });
   const [chip, setChip] = useState<ChipKey | null>(null);
@@ -215,17 +217,7 @@ export default function LiveOpsPage() {
             />
           )}
 
-          {noDrivers && !empty ? (
-            <p className="lo-empty-note" role="status">No drivers online in {noDrivers} right now. The map fills in as drivers go online.</p>
-          ) : null}
           <div className="lo-float">
-            <label className="lo-field">
-              <span className="sr-only">City</span>
-              <select className="ops-select" aria-label="City" value={city ?? ''} onChange={(e) => setCity(e.target.value || null)}>
-                <option value="">All cities in scope</option>
-                {live.cities.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-              </select>
-            </label>
             {full ? (
               <fieldset className="lo-layers">
                 <legend className="sr-only">Layers</legend>
@@ -250,7 +242,11 @@ export default function LiveOpsPage() {
             </label>
           </div>
 
+          {/* 24 Nov: the notes stack in one column, so none sits on top of another. */}
           <div className="lo-notes">
+            {noDrivers && !empty ? (
+              <p className="lo-note" role="status">No drivers online in {noDrivers} right now. The map fills in as drivers go online.</p>
+            ) : null}
             <p className="lo-note">Opening this page is recorded in the audit log.</p>
             {live.error ? <p className="lo-note" role="status">{live.error}</p> : null}
             {snapshot && !snapshot.presence_available && full ? (

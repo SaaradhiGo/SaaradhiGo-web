@@ -260,6 +260,8 @@ export function validateSettingValue(type: SettingType, raw: string): string | n
 
 export type IntegrationMode = 'live' | 'sandbox' | 'stubbed' | 'off';
 export type IntegrationRow = {
+  /** 24 Nov: what the go-live blocker is and who fixes it, in words. */
+  waits_on?: string;
   type: string; label: string; provider: string; country: string; configured: boolean; mode: IntegrationMode;
   env_vars: string[]; blocker: number | null; note: string; last_success_at: string | null; last_error_at: string | null;
 };

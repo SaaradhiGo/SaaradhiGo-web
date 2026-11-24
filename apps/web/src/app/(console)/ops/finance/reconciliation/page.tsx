@@ -1,5 +1,6 @@
 'use client';
 
+import { providerName } from '@/lib/templateNames';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
@@ -302,7 +303,7 @@ function ReconciliationInner() {
                     <tr key={r.id}>
                       <td>{marketDate(r.date, r.country)}</td>
                       <td>{r.country} · {r.currency}</td>
-                      <td>{r.gateway}</td>
+                      <td>{providerName(r.gateway)}</td>
                       <td><RunChip status={r.status} /></td>
                       <td className="num">{Object.values(r.new_findings).reduce((a, b) => a + b, 0)}</td>
                       <td className="num">{r.open_items}</td>

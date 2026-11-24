@@ -1,5 +1,6 @@
 'use client';
 
+import { providerName } from '@/lib/templateNames';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
@@ -42,7 +43,7 @@ export default function ProvidersPage() {
   const columns = useMemo(() => [
     { key: 'ch', label: 'Channel', width: '8rem', sortValue: (r: ProviderRow) => r.channel, render: (r: ProviderRow) => CHANNEL_WORDS[r.channel] },
     { key: 'co', label: 'Country', width: '6rem', sortValue: (r: ProviderRow) => r.country, render: (r: ProviderRow) => r.country },
-    { key: 'p', label: 'Provider', sortValue: (r: ProviderRow) => r.provider, render: (r: ProviderRow) => <b>{r.provider}</b> },
+    { key: 'p', label: 'Provider', sortValue: (r: ProviderRow) => r.provider, render: (r: ProviderRow) => <b>{providerName(r.provider)}</b> },
     { key: 'mode', label: 'Sending', width: '9rem',
       render: (r: ProviderRow) => (r.internal ? <Pill>Internal</Pill> : r.mode === 'live' ? <Pill tone="good">Live</Pill> : <Pill tone="wait">Stub</Pill>) },
     { key: 'cred', label: 'Credentials', width: '11rem',

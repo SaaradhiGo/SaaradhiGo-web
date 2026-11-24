@@ -1,3 +1,4 @@
+import { plainAmount } from '@/lib/money';
 /**
  * Zones and geofences (module 9): the shapes, the draft checks and the impact preview.
  *
@@ -493,5 +494,6 @@ export function impactWarnings(i: Impact): string[] {
 /** Compare a zone's fare card fields the way the tester shows them: symbol first, figures as the server sent. */
 export function cardLine(c: FareCardInfo | null, symbol: string): string {
   if (!c) return 'No fare card';
-  return `${symbol}${c.base_fare} base · ${symbol}${c.per_km_fare}/km · ${symbol}${c.per_min_fare}/min · min ${symbol}${c.min_fare}`;
+  const a = (v: string) => (symbol === '₹' ? plainAmount(v, 'INR') : v);
+  return `${symbol}${a(c.base_fare)} base · ${symbol}${a(c.per_km_fare)}/km · ${symbol}${a(c.per_min_fare)}/min · min ${symbol}${a(c.min_fare)}`;
 }

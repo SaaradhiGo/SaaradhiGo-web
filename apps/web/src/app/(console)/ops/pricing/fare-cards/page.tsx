@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
 import { stamp } from '@/lib/consoleTime';
-import { currencySymbol } from '@/lib/money';
+import { currencySymbol, plainAmount } from '@/lib/money';
 import {
   FARE_FIELDS, canDraftPricing, cardBody, fareChangeText, fareChanges, fareProblem, previewGrid, valuesOf,
   type CardRow, type FareClass, type FarePreview, type FareValues, type FareZone,
@@ -66,7 +66,7 @@ function FareCardsInner() {
   const rows = zones.filter((z) => (view === 'gaps' ? gaps(z) > 0 : view === 'scheduled' ? scheduled(z) > 0 : true)
     && (!needle || [z.name, z.code, z.country].some((t) => t.toLowerCase().includes(needle))));
   const columns: ListColumn<FareZone>[] = [
-    { key: 'zone', label: 'Zone', primary: true, render: (z) => <>{z.name} <span className="muted">{z.code}</span></> },
+    { key: 'zone', label: 'Zone', primary: true, render: (z) => <>{z.name} <small className="muted ops-code">{z.code}</small></> },
     { key: 'cur', label: 'Currency', render: (z) => z.currency },
     ...classes.map((k): ListColumn<FareZone> => ({
       key: `c${k.id}`, label: k.name, num: true,
@@ -132,7 +132,7 @@ function FareCardsInner() {
 }
 
 function money(z: FareZone, v: string | undefined | null): string {
-  return v === undefined || v === null ? '—' : `${currencySymbol(z.currency)}${v}`;
+  return v === undefined || v === null ? '—' : `${currencySymbol(z.currency)}${plainAmount(v, z.currency)}`;
 }
 
 // ---------------------------------------------------------------------------

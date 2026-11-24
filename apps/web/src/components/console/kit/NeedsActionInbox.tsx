@@ -88,7 +88,7 @@ export function NeedsActionInbox({
       <header className="ops-inbox__head">
         <div>
           <h2>{title}</h2>
-          <p>{placeName ? `${placeName} · ` : ''}{data ? `${data.total} open` : 'Loading…'}</p>
+          <p>{data ? `${placeName || 'All places'}: ${data.total} open` : 'Loading…'}</p>
         </div>
         <div className="ops-inbox__tabs" role="tablist" aria-label="Show">
           {([['all', `All ${items.length}`], ['mine', `Mine ${mine}`], ['nobody', `Nobody on it ${nobody}`]] as const).map(([k, label]) => (

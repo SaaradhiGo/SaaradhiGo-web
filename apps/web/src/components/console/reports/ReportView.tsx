@@ -1,8 +1,9 @@
 'use client';
 
+import { DateField } from '@/components/console/kit/DateField';
 import { marketDate, parseMarketDate } from '@/lib/consoleTime';
 import { DatePresets } from '@/components/console/kit/DatePresets';
-import { readSelectedScope } from '@/lib/adminScope';
+import { readSelectedScope, writeSelectedScope } from '@/lib/adminScope';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
@@ -62,7 +63,6 @@ function Filters({
   const market = marketOf(draft.city);
   return (
     <>
-    <PlaceChips filters={filters} catalogue={catalogue} onApply={onApply} />
     <form className="ops-rangebar" aria-label="Report filters"
       onSubmit={(e) => { e.preventDefault(); if (!problem) onApply(draft); }}>
       <MarketDateField id="rp-from" label="From" value={draft.from} market={market} onChange={(v) => set({ from: v })} />
@@ -109,50 +109,17 @@ function marketOf(code: string | null | undefined): string {
 }
 
 /** A date typed and shown the way the market writes it ("20 Nov 2026", "Nov 20, 2026"); sent as ISO. */
-function MarketDateField({ id, label, value, market, onChange }: {
-  id: string; label: string; value: string; market: string; onChange: (iso: string) => void;
+function MarketDateField({ id, label, value, onChange }: {
+  id: string; label: string; value: string; market?: string; onChange: (iso: string) => void;
 }) {
-  const [text, setText] = useState(marketDate(value, market));
-  useEffect(() => setText(marketDate(value, market)), [value, market]);
-  const bad = text.trim() !== '' && parseMarketDate(text) === null;
   return (
     <div className="ops-rangebar__field">
       <label className="ops-form__label" htmlFor={id}>{label}</label>
-      <input id={id} type="text" className="ops-select" value={text} inputMode="text" autoComplete="off"
-        placeholder={market === 'US' ? 'Nov 20, 2026' : '20 Nov 2026'} aria-invalid={bad || undefined}
-        onChange={(e) => { setText(e.target.value); const iso = parseMarketDate(e.target.value); if (iso) onChange(iso); }}
-        onBlur={() => { const iso = parseMarketDate(text); if (iso) setText(marketDate(iso, market)); }} />
+      <DateField id={id} value={value} onChange={onChange} />
     </div>
   );
 }
 
-/**
- * 24 Nov (owner): places as chips. More than one country: "All countries" and one chip per
- * country. A country chosen: its cities as chips. Never a long dropdown.
- */
-function PlaceChips({ filters, catalogue, onApply }: {
-  filters: ReportFilters; catalogue: Catalogue | null; onApply: (f: ReportFilters) => void;
-}) {
-  const cities = catalogue?.cities ?? [];
-  const countries = [...new Set(cities.map((c) => c.code.split('-')[0]))];
-  const chosen = filters.city.toUpperCase();
-  const country = chosen ? chosen.split('-')[0] : countries.length === 1 ? countries[0] : '';
-  const inCountry = country ? cities.filter((c) => c.code.startsWith(`${country}-`)) : [];
-  if (countries.length < 2 && inCountry.length < 2) return null;
-  const chip = (code: string, label: string) => (
-    <button key={code || 'all'} type="button" className="ops-placechip" aria-pressed={chosen === code}
-      onClick={() => onApply({ ...filters, city: code, group: code ? filters.group : '' })}>{label}</button>
-  );
-  return (
-    <nav className="ops-placechips rp-places" aria-label="Place">
-      {countries.length > 1 ? chip('', 'All countries') : null}
-      {countries.length > 1 && !country ? countries.map((c) => chip(c, COUNTRY_NAMES[c] ?? c)) : null}
-      {country && countries.length > 1 ? chip(country, `All of ${COUNTRY_NAMES[country] ?? country}`) : null}
-      {country && countries.length < 2 && inCountry.length > 1 ? chip('', `All of ${COUNTRY_NAMES[country] ?? country}`) : null}
-      {inCountry.length > 1 ? inCountry.map((c) => chip(c.code, c.name)) : null}
-    </nav>
-  );
-}
 
 const COUNTRY_NAMES: Record<string, string> = { IN: 'India', US: 'United States' };
 
@@ -412,7 +379,7 @@ function ReportInner() {
         <>
           {(body.countries?.length ?? 0) > 1 ? (
             <>
-              <CountryReportTiles body={body} onOpen={(code) => go({ ...filters, city: code, group: '' })} />
+              <CountryReportTiles body={body} onOpen={(code) => { writeSelectedScope(code); window.location.reload(); }} />
               <p className="help" role="note">Countries are never added together: each has its own currency and its own days. Choose a country for its cities, chart and table.</p>
             </>
           ) : body.report.key === 'rider_retention' ? (

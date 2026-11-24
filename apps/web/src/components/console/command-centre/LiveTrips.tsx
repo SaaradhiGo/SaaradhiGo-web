@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
 import { clock, zoneAbbreviation } from '@/lib/consoleTime';
-import { currencySymbol } from '@/lib/money';
+import { currencySymbol, plainAmount } from '@/lib/money';
 import {
   Column, DataTable, Empty, ErrorState, Panel, Pill, Skeleton,
 } from '@/components/console/ui';
@@ -45,7 +45,7 @@ const TONE: Record<string, 'good' | 'bad' | 'wait' | 'neutral'> = {
 function fare(t: Trip) {
   const amount = t.final_fare ?? t.estimated_fare;
   if (amount === undefined || amount === null || amount === '') return '—';
-  return `${currencySymbol(t.currency)}${amount}`;
+  return `${currencySymbol(t.currency)}${plainAmount(amount, t.currency)}`;
 }
 
 export function LiveTrips({ city, timeZone }: { city: string | null; timeZone?: string }) {

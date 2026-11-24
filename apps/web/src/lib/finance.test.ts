@@ -54,7 +54,7 @@ describe('totals are grouped by currency, never summed across them', () => {
 
 describe('money is minor units, formatted per currency', () => {
   it('formats each currency in its own locale', () => {
-    expect(formatMinor(210_000, 'INR')).toBe('₹2,100.00');
+    expect(formatMinor(210_000, 'INR')).toBe('₹2,100');
     expect(formatMinor(3_000, 'USD')).toBe('$30.00');
     expect(formatMinor(12_345_678, 'INR')).toBe('₹1,23,456.78');
   });
@@ -70,9 +70,9 @@ describe('money is minor units, formatted per currency', () => {
   });
 
   it('signs a ledger movement', () => {
-    expect(signedMoney(50_000, 'INR')).toBe(oneLine('+₹500.00'));
-    expect(signedMoney(-50_000, 'INR')).toBe(oneLine('−₹500.00'));
-    expect(signedMoney(0, 'INR')).toBe('₹0.00');
+    expect(signedMoney(50_000, 'INR')).toBe(oneLine('+₹500'));
+    expect(signedMoney(-50_000, 'INR')).toBe(oneLine('−₹500'));
+    expect(signedMoney(0, 'INR')).toBe('₹0');
   });
 });
 

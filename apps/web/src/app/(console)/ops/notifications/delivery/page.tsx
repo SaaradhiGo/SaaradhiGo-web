@@ -1,5 +1,6 @@
 'use client';
 
+import { providerName, templateName } from '@/lib/templateNames';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
@@ -68,18 +69,18 @@ export default function DeliveryPage() {
   const apply = (next: Filters) => { setFilters(next); setDraft(next); setPage(1); };
   const columns: ListColumn<Message>[] = [
     { key: 'when', label: 'Queued', render: (m) => stamp(m.created_at, zoneOf(m)) },
-    { key: 'tpl', label: 'Template', primary: true, render: (m) => <>{m.template_key} <span className="muted">v{m.template_version}</span></> },
+    { key: 'tpl', label: 'Template', primary: true, render: (m) => <>{templateName(m.template_key)} <small className="muted ops-code">v{m.template_version}</small></> },
     { key: 'ch', label: 'Channel', render: (m) => CHANNEL_WORDS[m.channel] },
     { key: 'to', label: 'Recipient', render: (m) => <span className="nf-masked">{m.recipient || '—'}</span> },
     { key: 'place', label: 'Place', render: (m) => (m.city ? m.city.name : 'Unplaced') },
-    { key: 'prov', label: 'Provider', render: (m) => m.provider || '—' },
+    { key: 'prov', label: 'Provider', render: (m) => providerName(m.provider) },
     { key: 'status', label: 'Status', render: (m) => <MessageChip status={m.status} /> },
     { key: 'why', label: 'Why', render: (m) => m.suppression_reason || m.last_error || <span className="muted">—</span> },
   ];
   const drop = (k: keyof Filters) => () => apply({ ...filters, [k]: '' });
   const chips = [
     ...(filters.channel ? [{ key: 'channel', label: `Channel: ${CHANNEL_WORDS[filters.channel as keyof typeof CHANNEL_WORDS] ?? filters.channel}`, onRemove: drop('channel') }] : []),
-    ...(filters.provider ? [{ key: 'provider', label: `Provider: ${filters.provider}`, onRemove: drop('provider') }] : []),
+    ...(filters.provider ? [{ key: 'provider', label: `Provider: ${providerName(filters.provider)}`, onRemove: drop('provider') }] : []),
     ...(filters.template ? [{ key: 'template', label: `Template: ${filters.template}`, onRemove: drop('template') }] : []),
     ...(filters.userId ? [{ key: 'user', label: `User ${filters.userId}`, onRemove: drop('userId') }] : []),
   ];
@@ -147,7 +148,7 @@ export default function DeliveryPage() {
             <label className="ops-form__label" htmlFor="d-provider">Provider</label>
             <select id="d-provider" className="ops-select" value={draft.provider} onChange={(e) => setDraft({ ...draft, provider: e.target.value })}>
               <option value="">Any</option>
-              {PROVIDERS.map((p) => <option key={p} value={p}>{p}</option>)}
+              {PROVIDERS.map((p) => <option key={p} value={p}>{providerName(p)}</option>)}
             </select>
           </div>
           <div className="ops-form__row">
@@ -195,7 +196,7 @@ function MessageRecord({ id, onClose }: { id: number; onClose: () => void }) {
   return (
     <RecordPanel
       label="Message"
-      title={m.template_key}
+      title={templateName(m.template_key)}
       refId={`#${m.id}`}
       subtitle={<>{CHANNEL_WORDS[m.channel]} · {m.city ? m.city.name : 'Unplaced'} · {stamp(m.created_at, tz)}</>}
       status={<MessageChip status={m.status} />}
@@ -206,9 +207,9 @@ function MessageRecord({ id, onClose }: { id: number; onClose: () => void }) {
             <div className="grid gap-4">
               <Facts>
                 <Fact label="Recipient"><span className="nf-masked">{m.recipient || '—'}</span> <span className="muted">user {m.recipient_user_id}</span></Fact>
-                <Fact label="Provider">{m.provider || '—'}</Fact>
+                <Fact label="Provider">{providerName(m.provider)}</Fact>
                 <Fact label="Provider message id">{m.provider_message_id || '—'}</Fact>
-                <Fact label="Template">{m.template_key} v{m.template_version} · {m.category}</Fact>
+                <Fact label="Template">{templateName(m.template_key)} <small className="muted ops-code">{m.template_key} v{m.template_version}</small> · {m.category}</Fact>
                 <Fact label="Source">{m.source || '—'}</Fact>
                 <Fact label="Attempts">{m.attempts}</Fact>
                 {m.not_before ? <Fact label="Held until">{stamp(m.not_before, tz)}</Fact> : null}

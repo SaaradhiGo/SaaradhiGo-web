@@ -335,9 +335,9 @@ function ReadOnly({ c }: { c: Campaign }) {
         {c.reason ? <Fact label="Reason">{c.reason}</Fact> : null}
       </Facts>
       {c.kind === 'rider_promo' ? (
-        <p className="help m-0">Paid by the platform. The rider pays the fare less the discount; the driver&apos;s earnings and commission are on the full fare.</p>
+        <p className="help m-0">Paid by the platform. The rider pays the fare less the discount; the driver&apos;s earnings and driver fee are on the full fare.</p>
       ) : c.kind === 'driver_incentive' ? (
-        <p className="help m-0">Paid in the weekly payout as its own line, with no commission. Tax: {c.tax}.</p>
+        <p className="help m-0">Paid in the weekly payout as its own line, with no driver fee. Tax: {c.tax}.</p>
       ) : (
         <p className="help m-0">Paid only after the new person completes the trips, and never across the same device, phone number or payment instrument.</p>
       )}
@@ -477,7 +477,7 @@ function FormBody({ kind, form, set, err, places, options, currency, cost, words
       {kind === 'rider_promo' ? (
         <section className="ops-form" aria-label="The discount">
           <h3 className="ops-subhead">The discount</h3>
-          <p className="help m-0">Paid by the platform. The rider pays the fare less the discount; the driver&apos;s earnings and commission stay on the full fare. A promo may cover the whole fare, and the rider then pays nothing.</p>
+          <p className="help m-0">Paid by the platform. The rider pays the fare less the discount; the driver&apos;s earnings and driver fee stay on the full fare. A promo may cover the whole fare, and the rider then pays nothing.</p>
           <div className="nf-grid">
             {text('pm-code', 'Code', 'code', err('code'), { autoCapitalize: 'characters', disabled: form.autoApply },
               'Letters, digits, dashes. The rider types it on the fare screen.')}
@@ -532,7 +532,7 @@ function FormBody({ kind, form, set, err, places, options, currency, cost, words
       {kind === 'driver_incentive' ? (
         <section className="ops-form" aria-label="The quest">
           <h3 className="ops-subhead">The quest</h3>
-          <p className="help m-0">Paid in the weekly payout as its own line, with no commission. Tax is not configured yet, so none is computed or withheld. A reward is reserved when the driver completes the trips; when the budget is used up, no further reward is paid.</p>
+          <p className="help m-0">Paid in the weekly payout as its own line, with no driver fee. Tax is not configured yet, so none is computed or withheld. A reward is reserved when the driver completes the trips; when the budget is used up, no further reward is paid.</p>
           <div className="nf-grid">
             {whole('pm-target', 'Trips to complete', 'targetTrips', err('targetTrips'))}
             {money('pm-reward', 'Reward', 'reward', err('reward'))}
@@ -561,7 +561,7 @@ function FormBody({ kind, form, set, err, places, options, currency, cost, words
       {kind === 'referral' ? (
         <section className="ops-form" aria-label="The referral">
           <h3 className="ops-subhead">The referral</h3>
-          <p className="help m-0">A reward is earned only after the new person completes the trips below, and never across the same device, phone number or payment instrument; a blocked reward goes to the fraud queue. A rider&apos;s reward is a wallet credit; a driver&apos;s is paid in the weekly payout with no commission.</p>
+          <p className="help m-0">A reward is earned only after the new person completes the trips below, and never across the same device, phone number or payment instrument; a blocked reward goes to the fraud queue. A rider&apos;s reward is a wallet credit; a driver&apos;s is paid in the weekly payout with no driver fee.</p>
           <div className="nf-grid">
             {whole('pm-req', 'Trips the new person must complete', 'requiredTrips', err('requiredTrips'))}
           </div>

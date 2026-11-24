@@ -246,7 +246,7 @@ function OverviewInner() {
                 key: 'days', label: 'By day', content: (
                   <div className="ops-table-wrap"><table className="ops-table ops-table--compact">
                     <caption className="sr-only">{cityName(open.city)} by day</caption>
-                    <thead><tr><th scope="col">Day</th><th scope="col" className="num">Gross</th><th scope="col" className="num">Commission</th><th scope="col" className="num">Payouts pending</th></tr></thead>
+                    <thead><tr><th scope="col">Day</th><th scope="col" className="num">Gross</th><th scope="col" className="num">Driver fee</th><th scope="col" className="num">Payouts pending</th></tr></thead>
                     <tbody>
                       {openDays.map((d) => (
                         <tr key={d.day}>

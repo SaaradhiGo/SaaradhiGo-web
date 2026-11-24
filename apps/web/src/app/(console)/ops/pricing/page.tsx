@@ -1,5 +1,6 @@
 'use client';
 
+import { marketName, placeName } from '@/lib/places';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
@@ -84,7 +85,7 @@ function PricingInner() {
   const ruleColumns: ListColumn<Rule>[] = [
     {
       key: 'scope', label: 'Scope', primary: true,
-      render: (r) => <>{r.country} {r.city_name ?? 'whole country'} · {r.vehicle_type_name ?? 'all classes'}</>,
+      render: (r) => <>{r.city_name ?? `All of ${placeName(r.country)}`} · {r.vehicle_type_name ?? 'all classes'}</>,
     },
     { key: 'level', label: 'Layer', render: (r) => LEVEL_WORDS[r.level] },
     { key: 'pct', label: 'Rate', num: true, render: (r) => pct(r.percent) },
@@ -222,7 +223,7 @@ function CountryPanel({ cfg, matrix, onCell, onDefault, onEditConfig }: {
     <section className="ops-card" aria-labelledby={`pr-${cfg.country}`}>
       <header className="ops-card__head">
         <div>
-          <h2 id={`pr-${cfg.country}`}>{cfg.country} · commission</h2>
+          <h2 id={`pr-${cfg.country}`}>{placeName(cfg.country)} · driver fee by commission</h2>
           <p>
             Default {def ? <button type="button" className="ops-linkbtn" onClick={() => onDefault(def.id)}>{pct(def.percent)} · v{def.version}</button> : 'not set'}
             {' · '}maximum {cfg.max_percent === null ? capWords(cfg) : pct(cfg.max_percent)}
@@ -235,7 +236,7 @@ function CountryPanel({ cfg, matrix, onCell, onDefault, onEditConfig }: {
       </header>
       {!def ? (
         <div className="ops-note ops-note--warn" role="status">
-          <b>No active commission rule for {cfg.country}.</b> Trips cannot be settled there and no city in it can
+          <b>No active commission rule for {placeName(cfg.country)}.</b> Trips cannot be settled there and no city in it can
           go live until a country rule is approved.
         </div>
       ) : missing > 0 ? (
@@ -280,11 +281,12 @@ function CountryPanel({ cfg, matrix, onCell, onDefault, onEditConfig }: {
             {inheriting > 0 ? `${inheriting} cit${inheriting === 1 ? 'y uses' : 'ies use'} the country rates.` : 'Every city has a rule of its own.'}
             {' '}A rate in bold is set for that place; grey is inherited.
           </span>
-          <label className="sr-only" htmlFor={`pr-city-${cfg.country}`}>Look up a city</label>
-          <select id={`pr-city-${cfg.country}`} className="ops-select ops-list__select" value={lookup} onChange={(e) => setLookup(e.target.value)}>
-            <option value="">Look up a city…</option>
-            {grid.cities.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-          </select>
+          {/* 24 Nov (owner): a searchable list, never a long dropdown. */}
+          <label className="sr-only" htmlFor={`pr-city-${cfg.country}`}>Find a city</label>
+          <input id={`pr-city-${cfg.country}`} type="search" className="ops-select ops-list__select" list={`pr-cities-${cfg.country}`}
+            placeholder="Find a city" autoComplete="off"
+            onChange={(e) => setLookup(grid.cities.find((c) => c.name.toLowerCase() === e.target.value.trim().toLowerCase())?.code ?? '')} />
+          <datalist id={`pr-cities-${cfg.country}`}>{grid.cities.map((c) => <option key={c.code} value={c.name} />)}</datalist>
         </div>
       ) : null}
     </section>

@@ -19,10 +19,10 @@ describe('formatWhole', () => {
 describe('times carry their zone', () => {
   const iso = '2026-11-03T08:35:00Z';
   it('shows a city time with its label', () => {
-    expect(stamp(iso, 'Asia/Kolkata')).toBe('03 Nov, 14:05 IST');
+    expect(stamp(iso, 'Asia/Kolkata')).toBe('3 Nov 2026, 2:05 PM IST');
   });
   it('falls back to UTC, labelled, never the browser zone', () => {
-    expect(stamp(iso)).toBe('03 Nov, 08:35 UTC');
-    expect(cityTime(iso, null)).toBe('03 Nov, 08:35 UTC');
+    expect(stamp(iso)).toBe('3 Nov 2026, 8:35 AM UTC');
+    expect(cityTime(iso, null)).toBe('3 Nov 2026, 8:35 AM UTC');
   });
 });

@@ -154,7 +154,8 @@ export function formatMoneyMinor(minor: number | null | undefined, currency: str
   const locale = localeFor(CURRENCY_COUNTRY[code]) ?? undefined;
   try {
     return new Intl.NumberFormat(locale, {
-      style: 'currency', currency: code, minimumFractionDigits: 2, maximumFractionDigits: 2,
+      // Owner 24 Nov: India in whole rupees.
+      style: 'currency', currency: code, minimumFractionDigits: code === 'INR' ? 0 : 2, maximumFractionDigits: code === 'INR' ? 0 : 2,
     }).format(minorToMajor(minor, code));
   } catch {
     return `${code} ${minorToMajor(minor, code).toFixed(2)}`;
