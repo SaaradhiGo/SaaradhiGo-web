@@ -135,8 +135,11 @@ export default function ZonesPage() {
     },
   ];
 
-  const rows = narrowed ? filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : pageRows?.results ?? [];
-  const total = narrowed ? (all ? filtered.length : null) : pageRows ? pageRows.count : null;
+  // 24 Nov (owner): once every zone is loaded the list is filtered here, so not-launched places
+  // stay out of it (they are hidden from every working list unless "Show not launched" is on).
+  const local = narrowed || all !== null;
+  const rows = local ? filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : pageRows?.results ?? [];
+  const total = local ? (all ? filtered.length : null) : pageRows ? pageRows.count : null;
   const allZones = all ?? [];
 
   return (
@@ -171,7 +174,7 @@ export default function ZonesPage() {
           pageSize={PAGE_SIZE}
           onPage={setPage}
           onRow={(z) => router.push(`/ops/zones/${z.id}`)}
-          loading={narrowed ? all === null : pageRows === null}
+          loading={local ? all === null : pageRows === null}
           error={error}
           empty={narrowed ? 'No zone matches.' : may ? 'No service zones in your scope yet. Draw the first one.' : 'No service zones in your scope yet.'}
         />

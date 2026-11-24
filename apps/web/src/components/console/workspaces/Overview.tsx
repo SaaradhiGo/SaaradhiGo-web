@@ -89,6 +89,8 @@ function fmt(n: number | null | undefined) {
 
 function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places: PlacesResponse }) {
   const node = places.node;
+  // 24 Nov (owner): the whole platform is "All countries", the place bar's own words.
+  const nodeName = node?.kind === 'global' ? 'All countries' : node?.name;
   const t = places.totals;
   const today = useToday();
   const money = t.collected_minor ? Object.entries(t.collected_minor) : null;
@@ -97,7 +99,7 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
     <div className="ops-ws">
       <header className="ops-ws__head">
         <div>
-          <h1>{node?.name ?? 'Overview'}</h1>
+          <h1>{nodeName ?? 'Overview'}</h1>
           <p className="sg-num">
             {t.live_cities} live {t.live_cities === 1 ? 'city' : 'cities'}
             {t.paused_cities ? ` · ${t.paused_cities} not live` : ''}
@@ -107,13 +109,13 @@ function PlaceWorkspace({ access, places }: { access: AdminAccess | null; places
         </div>
       </header>
 
-      <TodayPanel data={today.data} range={today.range} onRange={today.setRange} placeName={node?.name} onOpenCountry={(code) => goToPlace(code)} />
+      <TodayPanel data={today.data} range={today.range} onRange={today.setRange} placeName={nodeName} onOpenCountry={(code) => goToPlace(code)} />
 
       <SuperAdminBanner access={access} />
       <SelfApprovalNotice approver={can(access, 'approval.check')} />
 
       {/* 24 Nov (owner): the country tiles above replace "Every city at a glance" and the Countries table. */}
-      <NeedsActionInbox access={access} placeName={node?.name} limit={8} />
+      <NeedsActionInbox access={access} placeName={nodeName} limit={8} />
 
       <div className="ops-ws__grid ops-ws__grid--2">
         {money ? (

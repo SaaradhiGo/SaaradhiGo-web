@@ -127,7 +127,8 @@ export default function FeePlansPage() {
           <DataTable caption="Driver fee plans" rows={plans} rowKey={(p) => p.id} maxHeight={false}
             columns={[
               { key: 'where', label: 'Where', render: (p) => (p.scope_code ? p.scope_name ?? placeWord(p.scope_code, access) : `All of ${p.scope_name ?? placeWord(p.country, access)}`) },
-              { key: 'type', label: 'Plan', render: (p) => `${TYPE_WORDS[p.plan_type] ?? p.plan_type} (version ${p.version})` },
+              { key: 'type', label: 'Plan', render: (p) => TYPE_WORDS[p.plan_type] ?? p.plan_type },
+              { key: 'version', label: 'Version', render: (p) => `v${p.version}` },
               { key: 'status', label: 'Status', render: (p) => <StatusChip tone={TONE[p.status] ?? 'neutral'}>{STATUS_WORDS[p.status] ?? p.status.replace('_', ' ')}</StatusChip> },
               { key: 'amounts', label: 'Driver fee per class', render: (p) => <ul className="ops-list-plain">{amountsWords(p).map((w) => <li key={w}>{w}</li>)}</ul> },
               { key: 'rider', label: 'Rider booking fee', render: (p) => riderFeeWords(p) },
