@@ -212,3 +212,8 @@ export const FALLBACK_FLAG_REASONS: Record<string, string> = {
 export function riderName(user: { full_name?: string | null } | null | undefined, id: number): string {
   return user?.full_name?.trim() || `Rider #${id}`;
 }
+
+/** How a data request reached us; "app" is the person's own, never logged by staff. */
+export const DATA_REQUEST_CHANNELS = [
+  { value: 'email', label: 'Email' }, { value: 'ticket', label: 'Support ticket' }, { value: 'other', label: 'Other' },
+] as const;

@@ -23,6 +23,7 @@ import { Empty, ErrorState, Skeleton } from '@/components/console/ui';
 import { marketDate } from '@/lib/consoleTime';
 import { EXPIRY_WARN_DAYS } from '@/components/console/DocExpiry';
 import { classWord } from '@/lib/pricingWords';
+import { plural } from '@/lib/plural';
 
 /**
  * KYC review, built for throughput (design board E).
@@ -45,6 +46,8 @@ type QueueRow = {
   /** 12 Nov: the city's review target and whether this driver is past it. */
   review_target_days?: number | null;
   past_target?: boolean;
+  /** 25 Nov: who is reviewing this driver; `me` when it is the operator looking. */
+  reviewer?: { id: number; name: string; me: boolean } | null;
 };
 type QueuePage = { count: number; results: QueueRow[] };
 
@@ -82,6 +85,13 @@ type View =
   | { status: 'error'; message: string };
 
 type Notice = { text: string; kind: 'done' | 'pending' | 'error' };
+type ReviewerView = '' | 'me' | 'none';
+const REVIEWER_VIEWS: Array<[ReviewerView, string]> = [['', 'Everyone waiting'], ['me', 'Assigned to me'], ['none', 'Unassigned']];
+
+function reviewerWord(r: QueueRow['reviewer']): string {
+  if (!r) return 'Unassigned';
+  return r.me ? 'You' : r.name;
+}
 
 const QUEUE_SIZE = 50;
 const DATED = DATED_DOCUMENTS;
@@ -117,6 +127,8 @@ export default function KycReviewPage() {
   const [notice, setNotice] = useState<Notice | null>(null);
   const [pace, setPace] = useState<{ drivers: number; medianSeconds: number } | null>(null);
   const reasonBox = useRef<HTMLTextAreaElement>(null);
+  const [reviewer, setReviewer] = useState<ReviewerView>('');
+  const [picked, setPicked] = useState<Array<string | number>>([]);
 
   const current = queue?.[position] ?? null;
   const docs = useMemo(() => detail?.documents ?? [], [detail]);
@@ -126,7 +138,8 @@ export default function KycReviewPage() {
   const loadQueue = useCallback(async () => {
     setQueueError(null);
     try {
-      const page = await api.get<QueuePage>(withScope(queueApiPath({ ...DEFAULT_DRIVER_FILTERS, tab: 'queue', pageSize: QUEUE_SIZE })));
+      const path = queueApiPath({ ...DEFAULT_DRIVER_FILTERS, tab: 'queue', pageSize: QUEUE_SIZE });
+      const page = await api.get<QueuePage>(withScope(reviewer ? `${path}&reviewer=${reviewer}` : path));
       const rows = page.results.filter((r) => !handled.current.has(r.id));
       setQueue(rows);
       setQueueCount(Math.max(0, page.count - (page.results.length - rows.length)));
@@ -135,7 +148,7 @@ export default function KycReviewPage() {
       setQueueError(message(err, 'We could not load the KYC queue.'));
       setQueue([]);
     }
-  }, []);
+  }, [reviewer]);
   useEffect(() => { void loadQueue(); }, [loadQueue]);
 
   const nextDriver = useCallback(() => {
@@ -146,6 +159,20 @@ export default function KycReviewPage() {
     if (queue && position + 1 < queue.length) setPosition(position + 1);
     else void loadQueue();
   }, [current, queue, position, loadQueue]);
+
+  // -- Reviewers (driver.kyc) -----------------------------------------------
+  const mayAssign = can(access, 'driver.kyc');
+  const assign = useCallback(async (to: 'me' | 'none') => {
+    setNotice(null);
+    try {
+      await api.post('/driver/admin/kyc-queue/assign/', { driver_ids: picked.map(Number), reviewer: to });
+      setNotice({ text: to === 'me' ? `${plural(picked.length, 'driver')} assigned to you.` : `${plural(picked.length, 'driver')} unassigned.`, kind: 'done' });
+      setPicked([]);
+      void loadQueue();
+    } catch (err) {
+      setNotice({ text: message(err, 'That did not go through. Nothing was changed.'), kind: 'error' });
+    }
+  }, [picked, loadQueue]);
 
   // -- Driver --------------------------------------------------------------
   const fetchDetail = useCallback(async (id: number) => api.get<Detail>(`/driver/admin/${id}/full/`), []);
@@ -318,7 +345,16 @@ export default function KycReviewPage() {
   const paceNote = pace ? (
     <span className="ops-kyc__pace">You today: {pace.drivers} driver{pace.drivers === 1 ? '' : 's'} · median {shortDuration(pace.medianSeconds)} between reviews</span>
   ) : undefined;
-  const header = <PageHead title={`KYC queue · ${place}`} summary={summaryText} actions={paceNote} />;
+  const reviewerFilter = (
+    <>
+      <label className="sr-only" htmlFor="kyc-reviewer">Whose drivers</label>
+      <select id="kyc-reviewer" className="ops-select ops-list__select" value={reviewer}
+        onChange={(e) => { setReviewer(e.target.value as ReviewerView); setPicked([]); setQueue(null); }}>
+        {REVIEWER_VIEWS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>
+    </>
+  );
+  const header = <PageHead title={`KYC queue · ${place}`} summary={summaryText} actions={<>{reviewerFilter}{paceNote}</>} />;
 
   if (queue === null) {
     return (
@@ -386,6 +422,7 @@ export default function KycReviewPage() {
   const queueColumns: ListColumn<QueueRow>[] = [
     { key: 'driver', label: 'Driver', primary: true, render: (r) => <span>{r.user_details?.full_name || 'Driver'} <span className="ops-ref sg-num">{refOf(r) !== '—' ? refOf(r) : 'Driver'}</span></span> },
     { key: 'vehicle', label: 'Vehicle', render: (r) => (r.vehicle_type ? classWord(r.vehicle_type) : null) ?? <span className="muted">None</span> },
+    { key: 'reviewer', label: 'Reviewer', render: (r) => (r.reviewer ? reviewerWord(r.reviewer) : <span className="muted">Unassigned</span>) },
     { key: 'waiting', label: 'Waiting', num: true, render: (r) => (
       <span>{waitingLabel(r.waiting_seconds ?? null)}{r.past_target ? <> <StatusChip tone="critical">Past target</StatusChip></> : null}</span>
     ) },
@@ -554,7 +591,15 @@ export default function KycReviewPage() {
         views={[{ key: 'queue', label: 'Waiting for review', count: Math.max(remaining, 0) }]}
         view="queue"
         onView={() => undefined}
+        filterSlot={reviewerFilter}
         actionsSlot={paceNote}
+        selectable={mayAssign}
+        selected={picked}
+        onSelected={setPicked}
+        bulkActions={[
+          { key: 'me', label: 'Assign to me', onRun: () => void assign('me') },
+          { key: 'none', label: 'Unassign', onRun: () => void assign('none') },
+        ]}
         columns={queueColumns}
         rows={upNext}
         rowKey={(r) => r.id}
