@@ -1,5 +1,7 @@
 'use client';
 
+import { ChangePreview } from '@/components/console/edit/ChangePreview';
+import { usePreview } from '@/components/console/edit/usePreview';
 import { marketName, placeName } from '@/lib/places';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
@@ -103,16 +105,20 @@ function RulesDrawer({ row, onClose, onDone }: { row: Row; onClose: () => void; 
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const body: Record<string, unknown> = { state_code: row.state_code };
+  for (const [k] of BOOLS) if (bools[k] !== row[k]) body[k] = bools[k];
+  for (const [k] of NUMS) if (nums[k] !== (row[k] == null ? '' : String(row[k])) && nums[k] !== '') body[k] = Number(nums[k]);
+  const tips = presets.split(',').map((x) => Number(x.trim())).filter((n) => Number.isInteger(n) && n > 0);
+  if (tips.join() !== (row.tip_presets ?? []).join() && tips.length) body.tip_presets = tips;
+  if (JSON.stringify(ins) !== JSON.stringify(row.platform_insurance ?? {})) body.platform_insurance = ins;
+  if (JSON.stringify(agent) !== JSON.stringify(row.service_agent ?? {})) body.service_agent = agent;
+  // 25 Nov (owner): the same before/after the approver will see, while editing.
+  const changed = Object.keys(body).length > 1;
+  const preview = usePreview(changed ? `/pricing/admin/regulation/${row.country}/preview/` : null, body);
   async function send(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true); setError(null);
-    const body: Record<string, unknown> = { state_code: row.state_code, reason };
-    for (const [k] of BOOLS) if (bools[k] !== row[k]) body[k] = bools[k];
-    for (const [k] of NUMS) if (nums[k] !== (row[k] == null ? '' : String(row[k])) && nums[k] !== '') body[k] = Number(nums[k]);
-    const tips = presets.split(',').map((x) => Number(x.trim())).filter((n) => Number.isInteger(n) && n > 0);
-    if (tips.join() !== (row.tip_presets ?? []).join() && tips.length) body.tip_presets = tips;
-    if (JSON.stringify(ins) !== JSON.stringify(row.platform_insurance ?? {})) body.platform_insurance = ins;
-    if (JSON.stringify(agent) !== JSON.stringify(row.service_agent ?? {})) body.service_agent = agent;
+    body.reason = reason;
     try {
       const out = await api.put<{ state: string }>(`/pricing/admin/regulation/${row.country}/`, body);
       onDone(out.state === 'pending_approval' ? 'Sent for approval. A second admin approves it before it applies.' : 'Saved.');
@@ -164,12 +170,13 @@ function RulesDrawer({ row, onClose, onDone }: { row: Row; onClose: () => void; 
             </label>
           ))}
         </fieldset>
+        {preview.display ? <ChangePreview display={preview.display} /> : preview.error ? <p className="ops-error" role="alert">{preview.error}</p> : null}
         <label className="ops-field">Why (for the approver and the audit log)
           <textarea className="input" required minLength={5} value={reason} onChange={(e) => setReason(e.target.value)} />
         </label>
         {error && <p className="ops-error" role="alert">{error}</p>}
         <div className="ops-actions">
-          <button type="submit" className="btn btn-primary" disabled={busy || reason.trim().length < 5}>{busy ? 'Sending…' : 'Send for approval'}</button>
+          <button type="submit" className="btn btn-primary" disabled={busy || !changed || reason.trim().length < 5}>{busy ? 'Sending…' : 'Send for approval'}</button>
           <button type="button" className="btn" onClick={onClose}>Cancel</button>
         </div>
       </form>

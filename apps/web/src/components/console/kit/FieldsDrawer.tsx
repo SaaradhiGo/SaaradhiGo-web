@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { ApiError } from '@/lib/api';
 import { interpretWrite } from '@/lib/trips';
 import { Drawer } from '@/components/console/ui';
+import { ChangePreview } from '@/components/console/edit/ChangePreview';
+import { usePreview } from '@/components/console/edit/usePreview';
 
 /**
  * A settings edit as a drawer of plain fields (MVAG 2025 regulation, state caps, payout scopes,
@@ -42,8 +44,11 @@ export function changedBody(fields: FieldSpec[], before: FieldValues, after: Fie
   return body;
 }
 
-export function FieldsDrawer({ title, fields, initial, note, send, onClose, onDone, reasonRequired = true }: {
+export function FieldsDrawer({ title, fields, initial, note, send, onClose, onDone, reasonRequired = true, preview }: {
   title: string;
+  /** 25 Nov (owner): the setting's preview endpoint and body for these changes; the drawer shows the
+   *  before/after (and impact) the approver will see. */
+  preview?: (changes: Record<string, unknown>) => { path: string; body: unknown } | null;
   fields: FieldSpec[];
   initial: FieldValues;
   note?: string;
@@ -57,6 +62,8 @@ export function FieldsDrawer({ title, fields, initial, note, send, onClose, onDo
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const changes = changedBody(fields, initial, values);
+  const ask = preview && Object.keys(changes).length ? preview(changes) : null;
+  const shown = usePreview(ask?.path ?? null, ask?.body ?? null);
   const bad = Object.keys(changes).length === 0 ? 'Nothing differs from the current settings.'
     : reasonRequired && reason.trim().length < 5 ? 'Say why, in a few words.' : null;
 
@@ -91,7 +98,7 @@ export function FieldsDrawer({ title, fields, initial, note, send, onClose, onDo
           const v = values[f.key] ?? '';
           const set = (x: string) => setValues((all) => ({ ...all, [f.key]: x }));
           return (
-            <div key={f.key} className="ops-form">
+            <div key={f.key} className={(initial[f.key] ?? '') !== v ? 'ops-form ops-field is-changed' : 'ops-form'}>
               <label className="ops-form__label" htmlFor={id}>{f.label}</label>
               {f.kind === 'select' || f.kind === 'bool' ? (
                 <select id={id} className="input" value={v} onChange={(e) => set(e.target.value)}>
@@ -109,6 +116,7 @@ export function FieldsDrawer({ title, fields, initial, note, send, onClose, onDo
             </div>
           );
         })}
+        {shown.display ? <ChangePreview display={shown.display} /> : shown.error ? <div className="alert-error" role="alert">{shown.error}</div> : null}
         <label className="ops-form__label" htmlFor="fd-why">Why (kept in the audit log)</label>
         <textarea id="fd-why" className="input" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
         {bad && (reason || Object.keys(changes).length > 0) ? <p className="help m-0" role="note">{bad}</p> : null}
