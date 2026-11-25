@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { currentScope, getCachedAccess, useAdminAccess } from '@/lib/adminScope';
+import { can, currentScope, getCachedAccess, useAdminAccess } from '@/lib/adminScope';
+import { ISSUE_LABEL, PRIORITIES, PRIORITY_LABEL } from '@/lib/supportDesk';
 import { timeZoneFor } from '@/lib/consoleTime';
 import { currencySymbol, distanceInMarketUnit } from '@/lib/money';
 import {
@@ -98,6 +99,8 @@ type TripDetail = {
   chat: { total: number; messages: Array<{ id: number; sender_role: string; body: string; is_system: boolean; created_at: string | null }> };
   driver_cancellations: Array<{ id: number; reason: string; note: string; created_at: string | null }>;
   sos_events: Array<{ id: number; status: string | null; created_at: string | null; acknowledged_at: string | null; resolved_at: string | null }>;
+  /** Masked calls between rider and driver: who, when and how long; never a number. */
+  calls?: Array<{ id: number; from_role: 'rider' | 'driver'; started_at: string; ended_at: string | null; duration_seconds: number | null }>;
   promo: { code: string; discount_type: string; discount_amount: string; created_at: string | null } | null;
   zone: { code: string; name: string; city: string; state_code: string } | null;
   // Trips module (console module 2)
@@ -162,6 +165,8 @@ export default function TripDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [acting, setActing] = useState<ActionKey | null>(null);
+  const [ticketing, setTicketing] = useState(false);
+  const [ticketDone, setTicketDone] = useState<{ id: number; ref: string } | null>(null);
   const access = useAdminAccess();
 
   const tz = timeZoneFor(currentScope(getCachedAccess())?.code);
@@ -506,6 +511,21 @@ export default function TripDetailPage() {
 </div>
     ) },
     { key: 'messages', label: 'Messages', content: (
+<div className="grid gap-4">
+          <Panel title="Calls">
+            {(data.calls ?? []).length === 0 ? (
+              <p className="help m-0">No calls on this trip.</p>
+            ) : (
+              <Facts>
+                {(data.calls ?? []).map((c) => (
+                  <Fact key={c.id} label={cityTime(c.started_at, cityTz)}>
+                    {c.from_role === 'driver' ? 'Driver called the rider' : 'Rider called the driver'}
+                    {' · '}{callLength(c.duration_seconds)}
+                  </Fact>
+                ))}
+              </Facts>
+            )}
+          </Panel>
           <Panel title={`Chat · ${data.chat.total} message${data.chat.total === 1 ? '' : 's'}`}>
             {data.chat.messages.length === 0 ? (
               <Empty title="No messages" detail="Nothing was said in the app on this trip." />
@@ -526,6 +546,7 @@ export default function TripDetailPage() {
               </div>
             )}
           </Panel>
+</div>
     ) },
     { key: 'safety', label: 'Safety & support', content: (
 <div className="grid gap-4">
@@ -617,6 +638,11 @@ export default function TripDetailPage() {
     <>
       <p className="ops-record-page__back"><Link href="/ops/trips">All trips</Link></p>
       {notice && <div className="alert-success mb-4" role="status">{notice}</div>}
+      {ticketDone && (
+        <div className="alert-success mb-4" role="status">
+          Ticket opened: <PageLink page="support" href={`/ops/support/${ticketDone.id}`}>{ticketDone.ref}</PageLink>
+        </div>
+      )}
       {actionError && <div className="alert-error mb-4" role="alert">{actionError}</div>}
       {pending.length > 0 && (
         <div className="ops-banner" role="status">
@@ -667,7 +693,10 @@ export default function TripDetailPage() {
           </>}
           status={<Pill tone={TONE[state] ?? 'neutral'}>{words(state)}</Pill>}
           actions={<>
-            <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void resendReceipt()}>Resend receipt</button>
+            {/* 25 Nov: support resends a completed trip's receipt; other roles would be refused. */}
+            {state === 'completed' && can(access, 'support.reply') ? (
+              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void resendReceipt()}>Resend receipt</button>
+            ) : null}
             {data.actions?.resend_pickup_code ? (
               <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void resendPickupCode()}>Re-send pickup code</button>
             ) : null}
@@ -676,6 +705,10 @@ export default function TripDetailPage() {
                 {ACTION_LABEL[key]}
               </button>
             ))}
+            {can(access, 'support.reply') ? (
+              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy}
+                onClick={() => { setNotice(null); setActionError(null); setTicketDone(null); setTicketing(true); }}>Open support ticket…</button>
+            ) : null}
             {(data.flags ?? []).some((f) => f.active) && data.actions?.flag ? (
               <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={busy} onClick={() => void clearFlags()}>Clear flags</button>
             ) : null}
@@ -699,6 +732,84 @@ export default function TripDetailPage() {
           onDone={(message, kind) => { if (kind === 'done') setNotice(message); void load(true); }}
         />
       )}
+      {ticketing && (
+        <OpenTicketDrawer
+          tripId={data.id} hasDriver={Boolean(data.driver)}
+          onClose={() => setTicketing(false)}
+          onDone={(t) => { setTicketing(false); setTicketDone(t); void load(true); }}
+        />
+      )}
     </>
+  );
+}
+
+/** "2 min 5 s"; a call nobody picked up says so. */
+function callLength(seconds: number | null | undefined): string {
+  if (!seconds) return 'not answered';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const sec = seconds % 60;
+  if (h) return `${h} h ${m} min`;
+  if (m) return sec ? `${m} min ${sec} s` : `${m} min`;
+  return `${sec} s`;
+}
+
+const TICKET_FOR = [['rider', 'Rider'], ['driver', 'Driver']] as const;
+
+function OpenTicketDrawer({ tripId, hasDriver, onClose, onDone }: {
+  tripId: number; hasDriver: boolean; onClose: () => void; onDone: (t: { id: number; ref: string }) => void;
+}) {
+  const [who, setWho] = useState<'rider' | 'driver'>('rider');
+  const [issue, setIssue] = useState('other');
+  const [priority, setPriority] = useState('normal');
+  const [description, setDescription] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const ready = !busy && description.trim().length >= 10;
+
+  async function submit() {
+    setBusy(true); setError(null);
+    try {
+      const r = await api.post<{ ticket_id: number; ticket_ref: string }>(`/ride/admin/trips/${tripId}/ticket/`, {
+        for: who, issue_type: issue, priority, description: description.trim(),
+      });
+      onDone({ id: r.ticket_id, ref: r.ticket_ref });
+    } catch (err) {
+      setError(err instanceof ApiError && err.fromServer ? err.message : 'The ticket could not be opened.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Drawer
+      open title="Open a support ticket" onClose={onClose}
+      footer={<>
+        <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={onClose} disabled={busy}>Back</button>
+        <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => void submit()} disabled={!ready}>
+          {busy ? 'Opening…' : 'Open ticket'}
+        </button>
+      </>}
+    >
+      <div className="ops-form">
+        <div className="ops-filterset" role="radiogroup" aria-label="For">
+          {TICKET_FOR.filter(([v]) => v === 'rider' || hasDriver).map(([v, l]) => (
+            <label key={v}><input type="radio" name="ticket-for" value={v} checked={who === v} onChange={() => setWho(v)} />{l}</label>
+          ))}
+        </div>
+        <label className="ops-form__label" htmlFor="ticket-issue">Category</label>
+        <select id="ticket-issue" className="ops-select" value={issue} onChange={(e) => setIssue(e.target.value)}>
+          {Object.entries(ISSUE_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        </select>
+        <label className="ops-form__label" htmlFor="ticket-priority">Priority</label>
+        <select id="ticket-priority" className="ops-select" value={priority} onChange={(e) => setPriority(e.target.value)}>
+          {PRIORITIES.map((p) => <option key={p} value={p}>{PRIORITY_LABEL[p]}</option>)}
+        </select>
+        <label className="ops-form__label" htmlFor="ticket-description">What it is about (at least 10 characters)</label>
+        <textarea id="ticket-description" className="input" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
+        <p className="help">It is kept as an internal note on the ticket, linked to this trip and assigned to you.</p>
+        {error && <div className="alert-error" role="alert">{error}</div>}
+      </div>
+    </Drawer>
   );
 }

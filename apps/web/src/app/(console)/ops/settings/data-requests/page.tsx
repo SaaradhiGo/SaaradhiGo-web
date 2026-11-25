@@ -12,6 +12,7 @@ import { History, RecordPanel, type HistoryEntry } from '@/components/console/ki
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
 import { ActionNotice, RecordFacts, RecordFailed, RecordLoading, RecordSection } from '@/components/console/kit/ListBits';
 import { plural } from '@/lib/plural';
+import { DATA_REQUEST_CHANNELS as CHANNELS } from '@/lib/riders';
 
 /** Data requests: a person's export or erasure request, logged and answered within the due window. */
 type Row = {
@@ -26,7 +27,6 @@ type List = { count: number; results: Row[]; open: number; overdue: number; due_
 
 const PAGE_SIZE = 25;
 const VIEWS = [{ key: 'open', label: 'Open' }, { key: 'closed', label: 'Closed' }, { key: 'all', label: 'All' }];
-const CHANNELS = [{ value: 'email', label: 'Email' }, { value: 'ticket', label: 'Support ticket' }, { value: 'other', label: 'Other' }];
 const TONES: Record<Row['status'], ChipTone> = { open: 'info', waiting_approval: 'caution', completed: 'good', refused: 'neutral' };
 
 function statusOf(r: Row) {

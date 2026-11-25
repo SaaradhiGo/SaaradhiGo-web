@@ -297,6 +297,7 @@ function TripsInner() {
   if (filters.scope) chips.push({ key: 'scope', label: `City: ${cities.find((c) => c.code === filters.scope)?.name ?? filters.scope}`, onRemove: drop({ scope: '' }) });
   if (filters.paymentMethod) chips.push({ key: 'pay', label: `Paid by ${filters.paymentMethod}`, onRemove: drop({ paymentMethod: '' }) });
   if (filters.vehicleType) chips.push({ key: 'veh', label: `Vehicle: ${filters.vehicleType}`, onRemove: drop({ vehicleType: '' }) });
+  if (filters.plate) chips.push({ key: 'plate', label: `Plate: ${filters.plate}`, onRemove: drop({ plate: '' }) });
   if (filters.stuck) chips.push({ key: 'stuck', label: 'Stuck', onRemove: drop({ stuck: false }) });
   if (filters.stale) chips.push({ key: 'stale', label: 'Stale', onRemove: drop({ stale: false }) });
   if (filters.flagged) chips.push({ key: 'flagged', label: 'Flagged', onRemove: drop({ flagged: false }) });
@@ -338,6 +339,10 @@ function TripsInner() {
         cityTime(t.requested_at, t.city?.timezone, { zone: true }),
       ]);
       downloadCsv(`trips-${view}.csv`, toCsv(header, body));
+      // Every export is in the audit log; the file is already saved, so a failure here is ignored.
+      const logged: Record<string, string> = Object.fromEntries(new URLSearchParams(filtersToQuery({ ...filters, page: 1 })));
+      if (q) logged.q = q;
+      void api.post('/ride/admin/trips/export-log/', { rows: all.length, view, filters: logged }).catch(() => undefined);
       setNotice({ kind: 'done', text: truncated
         ? `Exported the first ${all.length.toLocaleString('en-IN')} trips. Narrow the view to export the rest.`
         : `Exported ${all.length === 1 ? 'the only trip' : `all ${plural(all.length, 'trip')}`} in this view to trips-${view}.csv.` });
@@ -403,6 +408,8 @@ function TripsInner() {
                   </select>
                   <label className="ops-form__label" htmlFor="f-vehicle">Vehicle</label>
                   <input id="f-vehicle" className="ops-select" placeholder="e.g. sedan" value={draft.vehicleType} onChange={(e) => setDraft({ ...draft, vehicleType: e.target.value.trim() })} size={10} />
+                  <label className="ops-form__label" htmlFor="f-plate">Plate</label>
+                  <input id="f-plate" className="ops-select" placeholder="Part of the plate" value={draft.plate} maxLength={20} onChange={(e) => setDraft({ ...draft, plate: e.target.value })} size={14} />
                   <label className="ops-form__label" htmlFor="f-id">Trip reference</label>
                   <input id="f-id" className="ops-select" placeholder="HYD-261116-K7Q4" value={draft.id} onChange={(e) => setDraft({ ...draft, id: e.target.value.replace(/[^A-Za-z0-9-]/g, '').toUpperCase() })} size={16} />
                 </div>

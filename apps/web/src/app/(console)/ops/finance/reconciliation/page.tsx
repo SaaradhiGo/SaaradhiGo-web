@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { useAdminAccess, withScope } from '@/lib/adminScope';
+import { selectedMarket, useAdminAccess, withScope } from '@/lib/adminScope';
 import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import { RECON_KIND_LABEL, canResolve, cityName } from '@/lib/finance';
 import { PageLink } from '@/components/console/PageLink';
@@ -15,8 +15,10 @@ import { FinanceNav } from '@/components/console/finance';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { History, RecordPanel } from '@/components/console/kit/RecordPanel';
 import { StatusChip } from '@/components/console/kit/StatusChip';
-import { Fact, Facts, Skeleton, FitBox } from '@/components/console/ui';
+import { Drawer, Fact, Facts, Skeleton, FitBox } from '@/components/console/ui';
+import { DateField } from '@/components/console/kit/DateField';
 import { marketDate } from '@/lib/consoleTime';
+import { plural } from '@/lib/plural';
 
 /**
  * Reconciliation: where our own records disagree with each other. The
@@ -82,6 +84,7 @@ function ReconciliationInner() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [rerunning, setRerunning] = useState(false);
 
   const loadOverview = useCallback(async () => {
     setOverview(null);
@@ -176,6 +179,9 @@ function ReconciliationInner() {
           view={state}
           onView={(v) => go({ state: v, page: 1 })}
           chips={chips}
+          actionsSlot={mayResolve ? (
+            <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setRerunning(true)}>Run a day again…</button>
+          ) : undefined}
           filterSlot={(
             <>
               <label className="sr-only" htmlFor="recon-kind">Kind of finding</label>
@@ -277,6 +283,14 @@ function ReconciliationInner() {
         </div>
       ) : null}
 
+      {rerunning ? (
+        <RerunDrawer
+          market={selectedMarket(access)}
+          onClose={() => setRerunning(false)}
+          onDone={() => { void loadItems(); void loadOverview(); }}
+        />
+      ) : null}
+
       <section className="ops-card mt-4" aria-labelledby="recon-runs">
         <header className="ops-card__head"><h2 id="recon-runs">Recent runs</h2></header>
         {overview === null && !overviewError ? (
@@ -319,6 +333,83 @@ function ReconciliationInner() {
         )}
       </section>
     </>
+  );
+}
+
+type RerunResult = { country: string; date: string; runs: Array<{ gateway: string; status: string; counts: Record<string, number> }> };
+
+/** Yesterday as YYYY-MM-DD on this machine's clock; the server checks the day against the country's. */
+function yesterday(): string {
+  const d = new Date(Date.now() - 86_400_000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function RerunDrawer({ market, onClose, onDone }: { market: 'IN' | 'US' | null; onClose: () => void; onDone: () => void }) {
+  const countries = market ? [market] : (['IN', 'US'] as const);
+  const [country, setCountry] = useState<string>(countries[0]);
+  const [day, setDay] = useState(yesterday());
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<RerunResult | null>(null);
+  const ready = !busy && Boolean(day) && reason.trim().length >= 5;
+
+  async function submit() {
+    setBusy(true); setError(null);
+    try {
+      setResult(await api.post<RerunResult>('/payments/admin/reconciliation/rerun/', { country, date: day, reason: reason.trim() }));
+      onDone();
+    } catch (err) {
+      setError(err instanceof ApiError && err.fromServer ? err.message : 'The day could not be run again.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Drawer open title="Run a day again" onClose={onClose}
+      footer={result ? (
+        <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={onClose}>Close</button>
+      ) : (
+        <>
+          <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={onClose} disabled={busy}>Back</button>
+          <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => void submit()} disabled={!ready}>
+            {busy ? 'Running…' : 'Run it again'}
+          </button>
+        </>
+      )}>
+      <div className="ops-form">
+        {result ? (
+          <div className="alert-success" role="status">
+            <b>{placeName(result.country)} · {marketDate(result.date, result.country)} was run again.</b>
+            <ul>
+              {result.runs.map((r) => {
+                const found = Object.values(r.counts).reduce((a, b) => a + (Number(b) || 0), 0);
+                return (
+                  <li key={r.gateway}>
+                    {providerName(r.gateway)}: {r.status === 'ok' ? 'no findings' : r.status === 'issues' ? `${plural(found, 'finding')}` : 'the run failed'}
+                  </li>
+                );
+              })}
+            </ul>
+            <span>Findings already raised are not raised twice. The list below is up to date.</span>
+          </div>
+        ) : (
+          <>
+            <p className="help m-0">Compares our own records for one finished day again, after a fix or a late webhook. It moves no money.</p>
+            <label className="ops-form__label" htmlFor="rerun-country">Country</label>
+            <select id="rerun-country" className="ops-select" value={country} onChange={(e) => setCountry(e.target.value)} disabled={countries.length === 1}>
+              {countries.map((c) => <option key={c} value={c}>{placeName(c)}</option>)}
+            </select>
+            <label className="ops-form__label" htmlFor="rerun-day">Day (a finished day in the last 90)</label>
+            <DateField id="rerun-day" value={day} onChange={setDay} />
+            <label className="ops-form__label" htmlFor="rerun-reason">Reason (at least 5 characters)</label>
+            <textarea id="rerun-reason" className="input" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
+          </>
+        )}
+        {error && <div className="alert-error" role="alert">{error}</div>}
+      </div>
+    </Drawer>
   );
 }
 

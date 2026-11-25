@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess } from '@/lib/adminScope';
@@ -244,6 +245,7 @@ export function TemplateEditor({ templateId, defaultCountry, onClose, onDone, on
                 {detail.changed_via_request_id ? <Fact label="Approval request">{'Open'}</Fact> : null}
               </Facts>
             ) : null}
+            {detail && may ? <SendToMe templateId={detail.id} /> : null}
             {detail && detail.status === 'pending_approval' ? (
               <div className="ops-confirm" role="status">
                 <b>Waiting for a second admin</b>
@@ -457,5 +459,50 @@ export function TemplateEditor({ templateId, defaultCountry, onClose, onDone, on
           </div>
         )}
     </Drawer>
+  );
+}
+
+type TestSend = { message_id: number; status: string; channel: Channel; error: string; to: string };
+
+/** The template as written now (a draft too) sent to the operator only, under the usual rules. */
+function SendToMe({ templateId }: { templateId: number }) {
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState<TestSend | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  async function send() {
+    setBusy(true); setProblem(null); setSent(null);
+    try {
+      setSent(await api.post<TestSend>(`/notifications/admin/templates/${templateId}/test-send/`, {}));
+    } catch (err) {
+      setProblem(messageOf(err, 'The test could not be sent.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const how = sent ? CHANNEL_WORDS[sent.channel] ?? sent.channel : '';
+  const outcome = !sent ? null
+    : sent.status === 'failed' ? `It failed${sent.error ? `: ${sent.error}` : '.'}`
+      : sent.status === 'suppressed' ? `It was not sent${sent.error ? `: ${sent.error}` : ': your consent settings or quiet hours stop it.'}`
+        : sent.status === 'queued' || sent.status === 'sending' ? `Queued for you (${sent.to}) by ${how}.`
+          : `Sent to you (${sent.to}) by ${how}.`;
+  const ok = sent && sent.status !== 'failed' && sent.status !== 'suppressed';
+
+  return (
+    <section className="ops-form" aria-label="Send a test">
+      <div className="nf-inline">
+        <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void send()}>
+          {busy ? 'Sending…' : 'Send to me'}
+        </button>
+        <span className="help">With the sample values, to you only. Consent, quiet hours and carrier rules still apply.</span>
+      </div>
+      {outcome ? (
+        <p className={ok ? 'alert-success' : 'alert-error'} role={ok ? 'status' : 'alert'}>
+          {outcome} <Link href="/ops/notifications/delivery" className="sg-link">See the delivery log</Link>
+        </p>
+      ) : null}
+      {problem ? <p className="alert-error" role="alert">{problem}</p> : null}
+    </section>
   );
 }

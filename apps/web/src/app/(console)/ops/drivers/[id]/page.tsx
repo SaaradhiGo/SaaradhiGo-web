@@ -6,7 +6,11 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { useAdminAccess } from '@/lib/adminScope';
+import { can, useAdminAccess } from '@/lib/adminScope';
+import { currencySymbol } from '@/lib/money';
+import { plural } from '@/lib/plural';
+import { classWord } from '@/lib/pricingWords';
+import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
 import {
   type DriverActionKey, type DriverActions, KYC_LABEL, REVIEW_LABEL, documentViewPath, driverName,
   visibleDriverActions, approvedCaveats,
@@ -52,6 +56,10 @@ type Vehicle = {
   vehicle_number: string | null; status: string; is_active_vehicle: boolean;
   insurance_expiry: string | null; permit_expiry: string | null; fitness_expiry: string | null; puc_expiry: string | null;
 };
+type Withdrawal = {
+  id: number; ref?: string; amount: string; status: string; payout_method: string | null;
+  requested_at: string | null; processed_at: string | null; payout_status: string | null; failure_count: number;
+};
 type Trip = { id: number; status: string | null; pickup_address: string | null; destination_address: string | null;
   requested_at: string | null };
 
@@ -73,7 +81,9 @@ type DriverDetail = {
   documents?: Doc[];
   requirements?: Requirements;
   approval_blockers?: Array<{ code: string; message: string }>;
-  ratings_summary?: { average: string; count: number; distribution: Record<string, number> };
+  ratings_summary?: { average: string; computed_average?: number | null; count: number; low?: number; distribution: Record<string, number> };
+  /** The last 10 withdrawal requests, newest first. */
+  withdrawals?: Withdrawal[];
   counts?: { sos_total: number; sos_open: number; tickets_total: number; tickets_open: number };
   suspension?: { active: boolean; reason_label?: string; note?: string; created_at?: string | null;
     created_by?: { label?: string } | null; permanent?: boolean };
@@ -86,6 +96,9 @@ type DriverDetail = {
 
 const TRIP_TONE: Record<string, 'good' | 'bad' | 'wait' | 'neutral'> = {
   completed: 'good', cancelled: 'bad', requested: 'wait', accepted: 'wait', reached: 'wait', in_progress: 'wait',
+};
+const PAYOUT_TONE: Record<string, ChipTone> = {
+  completed: 'good', processed: 'good', approved: 'info', pending: 'info', failed: 'critical', unresolved: 'caution', rejected: 'neutral',
 };
 const RAIL_LABEL: Record<DriverActionKey, string> = {
   approve: 'Approve to drive', suspend: 'Suspend…', reinstate: 'Reinstate…', note: 'Add a note…',
@@ -103,6 +116,8 @@ export default function DriverDetailPage() {
   const [action, setAction] = useState<DriverActionKey | null>(null);
   const [review, setReview] = useState<{ doc: ReviewTarget; decision: 'approve' | 'reject' } | null>(null);
   const [vehicleChange, setVehicleChange] = useState<Vehicle | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [payoutChange, setPayoutChange] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -146,6 +161,10 @@ export default function DriverDetailPage() {
   const rail = visibleDriverActions(data.actions, access, { approved: data.approved, suspended });
   const mayReview = data.actions?.review_documents ?? false;
   const mayVehicles = data.actions?.vehicles ?? false;
+  // Adding a vehicle and changing payout details are driver.write, as the vehicle switch is.
+  const mayWrite = data.actions ? data.actions.vehicles : can(access, 'driver.write');
+  const country = (data.compliance?.country ?? data.home_city?.code ?? '').split('-')[0];
+  const sym = currencySymbol(data.earnings.currency ?? (country === 'US' ? 'USD' : 'INR'));
   const [kycLabel, kycTone] = KYC_LABEL[data.kyc_state ?? ''] ?? [words(data.kyc_state), 'neutral'];
   const documents = data.documents ?? [];
   const blockers = data.approval_blockers ?? [];
@@ -197,6 +216,13 @@ export default function DriverDetailPage() {
       ),
     }] : []),
   ];
+  const payoutColumns: Column<Withdrawal>[] = [
+    { key: 'ref', label: 'Payout', width: '9rem', render: (w) => (refOf(w) !== '—' ? <span className="sg-num">{refOf(w)}</span> : 'Withdrawal') },
+    { key: 'amount', label: 'Amount', num: true, width: '8rem', render: (w) => `${sym}${w.amount}` },
+    { key: 'status', label: 'Status', width: '9rem', render: (w) => <StatusChip tone={PAYOUT_TONE[w.status] ?? 'neutral'}>{words(w.status)}</StatusChip> },
+    { key: 'how', label: 'To', width: '6rem', hideBelow: 1100, render: (w) => (w.payout_method ? words(w.payout_method).toUpperCase() : '—') },
+    { key: 'when', label: 'Asked', num: true, width: '10rem', render: (w) => cityTime(w.requested_at, tz) },
+  ];
   const auditColumns: Column<AuditRow>[] = [
     { key: 'when', label: 'When', width: '10rem', render: (r) => when(r.created_at) },
     { key: 'what', label: 'What', width: '13rem', render: (r) => words(r.action) },
@@ -213,9 +239,6 @@ export default function DriverDetailPage() {
                 {Number(data.ratings) > 0 && (data.ratings_summary?.count ?? 1) > 0 ? Number(data.ratings).toFixed(2) : '— · no rated trips yet'}
                 {data.ratings_summary ? ` · ${data.ratings_summary.count} rating${data.ratings_summary.count === 1 ? '' : 's'}` : ''}
               </Fact>
-              {data.ratings_summary && data.ratings_summary.count > 0 ? (
-                <Fact label="Stars">{['5', '4', '3', '2', '1'].map((s) => `${s}★ ${data.ratings_summary?.distribution[s] ?? 0}`).join(' · ')}</Fact>
-              ) : null}
               <Fact label="Trips">{data.total_trips}</Fact>
               <Fact label="Cancellations">{data.cancellations.last_24h} in 24h · {data.cancellations.last_7d} in 7d · {data.cancellations.last_30d} in 30d</Fact>
               <Fact label="SOS">
@@ -229,7 +252,22 @@ export default function DriverDetailPage() {
               <Fact label="Account active">{data.user.is_active ? 'Yes' : 'No'}</Fact>
             </Facts>
           </Panel>
-          <Panel title="Vehicles" flush>
+          {data.ratings_summary ? (
+            <Panel title="Ratings">
+              {data.ratings_summary.count === 0 ? (
+                <p className="help m-0">No rated trips yet.</p>
+              ) : (
+                <Facts>
+                  <Fact label="Average">{Number(data.ratings_summary.average).toFixed(2)} from {plural(data.ratings_summary.count, 'rating')}</Fact>
+                  <Fact label="Stars">{['5', '4', '3', '2', '1'].map((n) => `${n}★ ${data.ratings_summary?.distribution[n] ?? 0}`).join(' · ')}</Fact>
+                  {data.ratings_summary.low ? <Fact label="Low ratings">{plural(data.ratings_summary.low, 'trip')} rated 1 or 2 stars</Fact> : null}
+                </Facts>
+              )}
+            </Panel>
+          ) : null}
+          <Panel title="Vehicles" flush action={mayWrite ? (
+            <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setAdding(true)}>Add vehicle…</button>
+          ) : undefined}>
             {data.vehicles.length === 0 ? (
               <Empty title="No vehicle on file" detail="A driver cannot be approved without one." />
             ) : (
@@ -304,7 +342,10 @@ export default function DriverDetailPage() {
 </div>
     ) },
     { key: 'money', label: 'Money', content: (
-          <Panel title="Money">
+<div className="grid gap-4">
+          <Panel title="Money" action={mayWrite && country === 'IN' ? (
+            <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setPayoutChange(true)}>Change payout details…</button>
+          ) : undefined}>
             <Facts>
               <Fact label="Wallet">{data.earnings.wallet_balance}</Fact>
               <Fact label="This month">{data.earnings.this_month}</Fact>
@@ -315,6 +356,14 @@ export default function DriverDetailPage() {
             </Facts>
             <p className="help">{data.earnings.currency ? `Amounts in ${data.earnings.currency}.` : 'Currency not determined for these amounts.'}</p>
           </Panel>
+          <Panel title="Payouts" flush action={<LedgerLink driverId={data.id} />}>
+            {(data.withdrawals ?? []).length === 0 ? (
+              <Empty title="No payouts asked for yet" />
+            ) : (
+              <DataTable caption="This driver's latest payouts" rows={data.withdrawals ?? []} columns={payoutColumns} rowKey={(w) => w.id} density="compact" maxHeight={false} />
+            )}
+          </Panel>
+</div>
     ) },
     { key: 'notes', label: 'Notes', content: (
           <Panel title="Internal notes">
@@ -433,6 +482,12 @@ export default function DriverDetailPage() {
           onDone={(text) => done(text)}
         />
       )}
+      {adding && (
+        <AddVehicleDrawer driverId={data.id} country={country} onClose={() => setAdding(false)} onDone={(text) => done(text)} />
+      )}
+      {payoutChange && (
+        <PayoutDetailsDrawer driverId={data.id} driverName={name} onClose={() => setPayoutChange(false)} onDone={(text) => done(text, 'pending')} />
+      )}
       {vehicleChange && (
         <VehicleDrawer driverId={data.id} vehicle={vehicleChange} onClose={() => setVehicleChange(null)} onDone={(text) => done(text)} />
       )}
@@ -491,6 +546,163 @@ function VehicleDrawer({ driverId, vehicle, onClose, onDone }: {
             </div>
             <label className="ops-form__label" htmlFor="veh-note">Note (optional)</label>
             <textarea id="veh-note" className="input" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
+          </>
+        )}
+        {error && <div className="alert-error" role="alert">{error}</div>}
+      </div>
+    </Drawer>
+  );
+}
+
+// The classes the server knows (VehicleType.type); a US driver has no auto or bike.
+const VEHICLE_CLASSES: Record<string, string[]> = {
+  IN: ['bike', 'auto', 'hatchback', 'sedan', 'suv'],
+  US: ['hatchback', 'sedan', 'suv'],
+};
+
+function AddVehicleDrawer({ driverId, country, onClose, onDone }: {
+  driverId: number; country: string; onClose: () => void; onDone: (text: string) => void;
+}) {
+  const classes = VEHICLE_CLASSES[country] ?? VEHICLE_CLASSES.IN;
+  const [form, setForm] = useState({ vehicle_type: classes[0], vehicle_number: '', brand: '', model: '', color: '', note: '' });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+  const set = (k: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value });
+  const ready = !busy && form.vehicle_number.trim() !== '' && form.note.trim().length >= 5;
+
+  async function submit() {
+    setBusy(true); setError(null);
+    try {
+      await api.post(`/driver/admin/${driverId}/vehicles/add/`, {
+        vehicle_type: form.vehicle_type, vehicle_number: form.vehicle_number.trim(), brand: form.brand.trim(),
+        model: form.model.trim(), color: form.color.trim(), note: form.note.trim(),
+      });
+      const text = `Added ${form.vehicle_number.trim()} as inactive. The driver uploads its papers in the app; activate it after review.`;
+      setResult(text);
+      onDone(text);
+    } catch (err) {
+      setError(err instanceof ApiError && err.fromServer ? err.message : 'The vehicle could not be added.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Drawer open title="Add a vehicle" onClose={onClose}
+      footer={result ? (
+        <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={onClose}>Close</button>
+      ) : (
+        <>
+          <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={onClose} disabled={busy}>Back</button>
+          <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => void submit()} disabled={!ready}>
+            {busy ? 'Adding…' : 'Add vehicle'}
+          </button>
+        </>
+      )}>
+      <div className="ops-form">
+        {result ? <div className="alert-success" role="status"><b>{result}</b></div> : (
+          <>
+            <label className="ops-form__label" htmlFor="veh-class">Class</label>
+            <select id="veh-class" className="ops-select" value={form.vehicle_type} onChange={set('vehicle_type')}>
+              {classes.map((c) => <option key={c} value={c}>{classWord(c)}</option>)}
+            </select>
+            <label className="ops-form__label" htmlFor="veh-plate">Plate</label>
+            <input id="veh-plate" className="input" value={form.vehicle_number} onChange={set('vehicle_number')} autoComplete="off" />
+            <label className="ops-form__label" htmlFor="veh-brand">Brand</label>
+            <input id="veh-brand" className="input" value={form.brand} onChange={set('brand')} />
+            <label className="ops-form__label" htmlFor="veh-model">Model</label>
+            <input id="veh-model" className="input" value={form.model} onChange={set('model')} />
+            <label className="ops-form__label" htmlFor="veh-colour">Colour</label>
+            <input id="veh-colour" className="input" value={form.color} onChange={set('color')} />
+            <label className="ops-form__label" htmlFor="veh-add-note">Why you are adding it (at least 5 characters)</label>
+            <textarea id="veh-add-note" className="input" rows={3} value={form.note} onChange={set('note')} />
+            <p className="help">It is added inactive, beside the current vehicle.</p>
+          </>
+        )}
+        {error && <div className="alert-error" role="alert">{error}</div>}
+      </div>
+    </Drawer>
+  );
+}
+
+function PayoutDetailsDrawer({ driverId, driverName: who, onClose, onDone }: {
+  driverId: number; driverName: string; onClose: () => void; onDone: (text: string) => void;
+}) {
+  const [method, setMethod] = useState<'bank' | 'upi'>('bank');
+  const [holder, setHolder] = useState('');
+  const [account, setAccount] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [ifsc, setIfsc] = useState('');
+  const [upi, setUpi] = useState('');
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+  const mismatch = method === 'bank' && confirm !== '' && confirm !== account;
+  const filled = method === 'bank' ? Boolean(holder.trim() && account.trim() && confirm && ifsc.trim()) && !mismatch : Boolean(upi.trim());
+  const ready = !busy && filled && reason.trim().length >= 10;
+
+  async function submit() {
+    setBusy(true); setError(null);
+    try {
+      const body = method === 'bank'
+        ? { method, holder_name: holder.trim(), account_number: account.trim(), account_number_confirm: confirm.trim(), ifsc: ifsc.trim().toUpperCase(), reason: reason.trim() }
+        : { method, upi_id: upi.trim(), reason: reason.trim() };
+      const r = await api.post<{ approval_request: { id: number; ref: string | null; status: string } }>(
+        `/driver/admin/${driverId}/payout-details/`, body);
+      // The account number is not kept on screen once it has been sent.
+      setAccount(''); setConfirm(''); setUpi('');
+      const text = `Sent for approval as ${r.approval_request.ref ?? 'an approval request'}. A second person checks it; when approved, payouts pause for 24 hours and the driver is told.`;
+      setResult(text);
+      onDone(text);
+    } catch (err) {
+      setError(err instanceof ApiError && err.fromServer ? err.message : 'That did not go through. Nothing was changed.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Drawer open title={`Change payout details · ${who}`} onClose={onClose}
+      footer={result ? (
+        <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={onClose}>Close</button>
+      ) : (
+        <>
+          <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={onClose} disabled={busy}>Back</button>
+          <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => void submit()} disabled={!ready}>
+            {busy ? 'Sending…' : 'Send for approval'}
+          </button>
+        </>
+      )}>
+      <div className="ops-form">
+        {result ? <div className="ops-confirm" role="status"><b>{result}</b></div> : (
+          <>
+            <div className="ops-filterset" role="radiogroup" aria-label="Pay to">
+              <label><input type="radio" name="payout-method" checked={method === 'bank'} onChange={() => setMethod('bank')} />Bank account</label>
+              <label><input type="radio" name="payout-method" checked={method === 'upi'} onChange={() => setMethod('upi')} />UPI ID</label>
+            </div>
+            {method === 'bank' ? (
+              <>
+                <label className="ops-form__label" htmlFor="pay-holder">Account holder name</label>
+                <input id="pay-holder" className="input" value={holder} onChange={(e) => setHolder(e.target.value)} autoComplete="off" />
+                <label className="ops-form__label" htmlFor="pay-account">Account number</label>
+                <input id="pay-account" className="input" inputMode="numeric" value={account} onChange={(e) => setAccount(e.target.value)} autoComplete="off" />
+                <label className="ops-form__label" htmlFor="pay-confirm">Account number again</label>
+                <input id="pay-confirm" className="input" inputMode="numeric" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="off" />
+                {mismatch ? <p className="alert-error" role="alert">The two account numbers differ.</p> : null}
+                <label className="ops-form__label" htmlFor="pay-ifsc">IFSC</label>
+                <input id="pay-ifsc" className="input" value={ifsc} onChange={(e) => setIfsc(e.target.value)} autoComplete="off" />
+              </>
+            ) : (
+              <>
+                <label className="ops-form__label" htmlFor="pay-upi">UPI ID</label>
+                <input id="pay-upi" className="input" placeholder="name@okaxis" value={upi} onChange={(e) => setUpi(e.target.value)} autoComplete="off" />
+              </>
+            )}
+            <label className="ops-form__label" htmlFor="pay-reason">Reason (at least 10 characters, e.g. how the driver asked)</label>
+            <textarea id="pay-reason" className="input" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
+            <p className="help">A second person approves it. Then payouts pause for 24 hours and the driver is told.</p>
           </>
         )}
         {error && <div className="alert-error" role="alert">{error}</div>}
