@@ -27,7 +27,7 @@
  * not be.
  */
 const SYMBOLS: Record<string, string> = {
-  INR: '₹',
+  INR: '₹', USD: '$',
 };
 
 export function currencySymbol(currency?: string | null): string {

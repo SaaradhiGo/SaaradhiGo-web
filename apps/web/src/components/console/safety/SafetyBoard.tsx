@@ -7,6 +7,7 @@ import { type AdminAccess, withScope } from '@/lib/adminScope';
 import { canRespond, type IncidentRow } from '@/lib/safety';
 import { sosClock } from '@/lib/workspace';
 import { SosActions } from '@/components/console/safety/SosActions';
+import { placeName } from '@/lib/places';
 
 /**
  * The Safety board (owner, 2026-11-03; design board F): every live SOS at once,
@@ -80,7 +81,7 @@ export function SafetyBoard({ access }: { access: AdminAccess | null }) {
           <button type="button" className="ops-view" aria-pressed={country === null} onClick={() => setCountry(null)}>All countries</button>
           {Object.entries(board?.countries ?? {}).map(([c, n]) => (
             <button key={c} type="button" className="ops-view" aria-pressed={country === c} onClick={() => setCountry(c)}>
-              {c} <span className="sg-num">{n}</span>
+              {placeName(c)}<span className="ops-view__n sg-num">{n}</span>
             </button>
           ))}
           <Link href="/ops/safety-ops?tab=incidents" className="sg-btn sg-btn--ghost sg-btn--sm">All cases</Link>

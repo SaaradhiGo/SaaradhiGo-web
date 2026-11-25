@@ -2873,3 +2873,8 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
   .ops-list__table .ops-table td::before { float: none; display: block; margin-left: 0; width: auto; }
   .ops-list__table .ops-table :is(.ops-linkbtn, button, a) { white-space: normal; max-width: 100%; text-align: left; overflow-wrap: anywhere; }
 }
+
+/* 25 Nov (owner): no sideways scrolling, the safety board included: lanes sit side by side while
+   each gets 15rem, and stack (two, then one) when they do not. */
+.ops-board__lanes { grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); overflow-x: visible; }
+.ops-board__lanes > * { min-width: 0; }
