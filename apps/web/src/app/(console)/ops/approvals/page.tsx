@@ -1,5 +1,6 @@
 'use client';
 
+import { ChangePreview, isDisplay } from '@/components/console/edit/ChangePreview';
 import { marketName, placeName } from '@/lib/places';
 import { formatAge } from '@/lib/commandCentre';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -458,6 +459,9 @@ function changeLines(payload: Record<string, unknown> | null | undefined): Array
 
 /** The change itself, so a checker never approves blind (owner's new-hire run). */
 function WhatChanges({ payload }: { payload?: Record<string, unknown> | null }) {
+  // 25 Nov (owner): an edited setting carries the before/after and impact its editor saw.
+  const shown = payload?.display;
+  if (isDisplay(shown)) return <ChangePreview display={shown} />;
   const lines = changeLines(payload);
   if (lines.length === 0) return null;
   return (

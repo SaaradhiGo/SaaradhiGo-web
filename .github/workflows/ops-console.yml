@@ -199,7 +199,7 @@ jobs:
   # (scripts/fixtures/console). Its own job so the site gates do not wait for it.
   console-sweep:
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 95
     defaults:
       run:
         working-directory: apps/web
@@ -223,6 +223,18 @@ jobs:
           npx next start -p 3100 &
           npx --yes wait-on@8.0.1 -t 60000 http://localhost:3100/
           SITE=http://localhost:3100 PAGES=console MARKETS=US CONCURRENCY=4 SWEEP_OUT=console-sweep-out node scripts/sweep-responsive.mjs
+      # 25 Nov (owner): every console page in the dark theme (and light) at 1440 and 390 meets WCAG AA
+      # contrast (axe colour-contrast). The server above still runs.
+      - name: Console contrast, dark and light
+        timeout-minutes: 25
+        run: SITE=http://localhost:3100 CONTRAST_OUT=console-contrast-out node scripts/contrast-console-dark.mjs
+      - name: Upload contrast failures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: console-contrast-out
+          path: apps/web/console-contrast-out/
+          if-no-files-found: ignore
       - name: Upload console sweep failures
         if: always()
         uses: actions/upload-artifact@v4

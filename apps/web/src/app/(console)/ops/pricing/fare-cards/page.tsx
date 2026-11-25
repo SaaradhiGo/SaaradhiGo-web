@@ -6,12 +6,14 @@ import { useAdminAccess, withScope } from '@/lib/adminScope';
 import { stamp } from '@/lib/consoleTime';
 import { currencySymbol, plainAmount } from '@/lib/money';
 import {
-  FARE_FIELDS, canDraftPricing, cardBody, fareChangeText, fareChanges, fareProblem, previewGrid, valuesOf,
+  FARE_FIELDS, canDraftPricing, cardBody, fareChangeText, fareChanges, fareProblem, isOffered, missingCards, nextDay,
+  previewGrid, valuesOf,
   type CardRow, type FareClass, type FarePreview, type FareValues, type FareZone,
 } from '@/lib/pricing';
 import { interpretWrite } from '@/lib/trips';
 import { PricingNav } from '@/components/console/pricing';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
+import { ChangePreview } from '@/components/console/edit/ChangePreview';
 import { StatusChip } from '@/components/console/kit/StatusChip';
 import { classWord } from '@/lib/pricingWords';
 import {
@@ -41,7 +43,7 @@ function FareCardsInner() {
   const may = canDraftPricing(access);
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [open, setOpen] = useState<{ zone: FareZone; cls: FareClass } | null>(null);
+  const [open, setOpen] = useState<{ zone: FareZone; cls: FareClass; edit: boolean } | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [view, setView] = useState('');
   const [q, setQ] = useState('');
@@ -61,7 +63,7 @@ function FareCardsInner() {
   const classes: { id: number; name: string }[] = [];
   for (const z of zones) for (const c of z.classes) if (!classes.some((x) => x.id === c.vehicle_type)) classes.push({ id: c.vehicle_type, name: classWord(c.vehicle_type_name) });
   const needle = q.trim().toLowerCase();
-  const gaps = (z: FareZone) => z.classes.filter((c) => !c.live).length;
+  const gaps = (z: FareZone) => missingCards(z).length;
   const scheduled = (z: FareZone) => z.classes.filter((c) => c.scheduled).length;
   const rows = zones.filter((z) => (view === 'gaps' ? gaps(z) > 0 : view === 'scheduled' ? scheduled(z) > 0 : true)
     && (!needle || [z.name, z.code, z.country].some((t) => t.toLowerCase().includes(needle))));
@@ -72,14 +74,22 @@ function FareCardsInner() {
       key: `c${k.id}`, label: k.name, num: true,
       render: (z) => {
         const c = z.classes.find((x) => x.vehicle_type === k.id);
-        if (!c) return <span className="muted">—</span>;
+        // 25 Nov (owner): another market's class is not sold here, so it is never "No card".
+        if (!c || !isOffered(c)) return <span className="muted" aria-label={`${k.name} is not sold in ${z.name}`}>—</span>;
+        const what = `${z.name}, ${classWord(c.vehicle_type_name)}`;
         return (
-          <button type="button" className="ops-linkbtn" onClick={() => setOpen({ zone: z, cls: c })}
-            aria-label={`${z.name}, ${classWord(c.vehicle_type_name)}: ${c.live ? `version ${c.live.version}` : 'no card'}`}>
-            {c.live ? <>{money(z, c.live.base_fare)} + {money(z, c.live.per_km_fare)}/{z.distance_unit === 'mi' ? 'mi' : 'km'} <span className="muted">v{c.live.version}</span></>
-              : <StatusChip tone="caution">No card</StatusChip>}
-            {c.scheduled ? <> <StatusChip tone="info">v{c.scheduled.version} scheduled</StatusChip></> : null}
-          </button>
+          <span className="ops-row-actions">
+            <button type="button" className="ops-linkbtn" onClick={() => setOpen({ zone: z, cls: c, edit: false })}
+              aria-label={`${what}: ${c.live ? `version ${c.live.version}, open` : 'no card'}`}>
+              {c.live ? <>{money(z, c.live.base_fare)} + {money(z, c.live.per_km_fare)}/{z.distance_unit === 'mi' ? 'mi' : 'km'} <span className="muted">v{c.live.version}</span></>
+                : <StatusChip tone="caution">No card</StatusChip>}
+              {c.scheduled ? <> <StatusChip tone="info">v{c.scheduled.version} scheduled</StatusChip></> : null}
+            </button>
+            {may ? (
+              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setOpen({ zone: z, cls: c, edit: true })}
+                aria-label={`${c.live || c.scheduled ? 'Edit' : 'Add'} the ${what} card`}>{c.live || c.scheduled ? 'Edit' : 'Add'}</button>
+            ) : null}
+          </span>
         );
       },
     })),
@@ -96,7 +106,7 @@ function FareCardsInner() {
       <ListPage<FareZone>
         pageKey="pricing-fare-cards"
         title="Fare cards"
-        summary="One row per zone, one column per vehicle class: base fare plus the per-km rate in force. Open a cell for the full card, its history and a draft. A change is a request a second admin approves; a card is never edited in place."
+        summary="One row per zone, one column per class the zone's market sells: base fare plus the distance rate in force. Edit a card to change it: you see what a rider would pay before you send it, and it changes only when a second person approves."
         views={[
           { key: '', label: 'All zones', count: data ? zones.length : undefined },
           { key: 'gaps', label: 'Missing a card', count: data ? zones.filter((z) => gaps(z) > 0).length : undefined },
@@ -124,7 +134,7 @@ function FareCardsInner() {
         empty={data && zones.length === 0 ? 'No service zones in your scope. Fare cards belong to a zone.' : 'No zone matches.'}
       />
       {open ? (
-        <CardDrawer zone={open.zone} cls={open.cls} may={may} onClose={() => setOpen(null)}
+        <CardDrawer zone={open.zone} cls={open.cls} may={may} startEditing={open.edit} onClose={() => setOpen(null)}
           onDone={(text, kind) => { setOpen(null); setNotice({ text, kind }); void load(); }} />
       ) : null}
     </>
@@ -137,8 +147,8 @@ function money(z: FareZone, v: string | undefined | null): string {
 
 // ---------------------------------------------------------------------------
 
-function CardDrawer({ zone, cls, may, onClose, onDone }: {
-  zone: FareZone; cls: FareClass; may: boolean; onClose: () => void;
+function CardDrawer({ zone, cls, may, startEditing, onClose, onDone }: {
+  zone: FareZone; cls: FareClass; may: boolean; startEditing: boolean; onClose: () => void;
   onDone: (text: string, kind: Notice['kind']) => void;
 }) {
   const live = cls.live;
@@ -152,7 +162,9 @@ function CardDrawer({ zone, cls, may, onClose, onDone }: {
   const current = base ? valuesOf(base) : null;
   const [draft, setDraft] = useState<FareValues>(current ?? blank);
   const [reason, setReason] = useState('');
-  const [from, setFrom] = useState('');
+  const [editing, setEditing] = useState(startEditing);
+  // 25 Nov (owner): a change starts on the next local day unless another day is chosen.
+  const [day, setDay] = useState(nextDay(zone.local_today));
   const [preview, setPreview] = useState<FarePreview | 'loading' | 'error' | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -160,7 +172,15 @@ function CardDrawer({ zone, cls, may, onClose, onDone }: {
 
   const changes = fareChanges(current, draft);
   const problem = fareProblem(draft, reason, current);
-  const set = (k: keyof FareValues, v: string) => { setDraft((d) => ({ ...d, [k]: v })); setPreview(null); };
+  const set = (k: keyof FareValues, v: string) => setDraft((d) => ({ ...d, [k]: v }));
+  // 25 Nov (owner): the rider-fare preview follows the form while editing (no separate button).
+  const ready = editing && fareProblemFields(draft) === null;
+  useEffect(() => {
+    if (!ready) return;
+    const t = window.setTimeout(() => void runPreview(), 400);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, JSON.stringify(draft)]);
 
   async function runPreview() {
     setPreview('loading');
@@ -179,9 +199,9 @@ function CardDrawer({ zone, cls, may, onClose, onDone }: {
     try {
       const body = base
         ? await api.patch<{ approval_request?: { id: number; status?: string } | null; state?: string }>(
-          `/pricing/admin/rate-cards/${base.id}/`, cardBody(draft, reason, from))
+          `/pricing/admin/rate-cards/${base.id}/`, { ...cardBody(draft, reason, ''), effective_day: day })
         : await api.post<{ approval_request?: { id: number; status?: string } | null; state?: string }>(
-          '/pricing/admin/rate-cards/', { zone: zone.zone, vehicle_type: cls.vehicle_type, ...cardBody(draft, reason, from) });
+          '/pricing/admin/rate-cards/', { zone: zone.zone, vehicle_type: cls.vehicle_type, ...cardBody(draft, reason, ''), effective_day: day });
       const result = interpretWrite(body as never, 'The fare card changed.');
       onDone(result.message, result.kind);
     } catch (err) {
@@ -217,10 +237,12 @@ function CardDrawer({ zone, cls, may, onClose, onDone }: {
               {retiring ? 'Send retire request' : 'Retire this card…'}
             </button>
           ) : null}
-          <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => void runPreview()}
-            disabled={busy || fareProblemFields(draft) !== null}>Preview rider fares</button>
-          <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => void submit()}
-            disabled={busy || problem !== null}>{busy ? 'Working…' : 'Send for approval'}</button>
+          {editing ? (
+            <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => void submit()}
+              disabled={busy || problem !== null}>{busy ? 'Sending…' : 'Send for approval'}</button>
+          ) : (
+            <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setEditing(true)}>{base ? 'Edit' : 'Add a card'}</button>
+          )}
         </>
       ) : undefined}>
       <div className="grid gap-5">
@@ -246,11 +268,12 @@ function CardDrawer({ zone, cls, may, onClose, onDone }: {
           )}
         </section>
 
-        {may ? (
-          <section aria-label="Draft" className="ops-form">
+        {may && editing ? (
+          <section aria-label="Edit" className="ops-form">
             <h3 className="ops-subhead">
-              {base ? `Draft v${base.version + 1}${cls.scheduled ? ` (on top of the scheduled v${base.version})` : ''}` : 'Draft the first card'}
+              {base ? `Edit: becomes v${base.version + 1}${cls.scheduled ? ` (on top of the scheduled v${base.version})` : ''}` : 'The first card'}
             </h3>
+            <p className="help m-0">{live ? `v${live.version} stays in force until a second person approves. ` : ''}Changed values are highlighted.</p>
             <p className="help m-0">
               Amounts are in {zone.currency}. {zone.distance_unit === 'mi'
                 ? 'The distance rate is stored per km; the preview shows sample trips in km.'
@@ -258,22 +281,21 @@ function CardDrawer({ zone, cls, may, onClose, onDone }: {
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               {FARE_FIELDS.map((f) => (
-                <div key={f.key}>
+                <div key={f.key} className={current && Number(current[f.key]) !== Number(draft[f.key]) ? 'ops-field is-changed' : 'ops-field'}>
                   <label className="ops-form__label" htmlFor={`fc-${f.key}`}>{f.label}</label>
                   <input id={`fc-${f.key}`} className="input" inputMode="decimal" value={draft[f.key]}
                     onChange={(e) => set(f.key, e.target.value)} />
                 </div>
               ))}
             </div>
-            <label className="ops-form__label" htmlFor="fc-from">Effective from (blank: when approved)</label>
-            <input id="fc-from" className="input" type="datetime-local" value={from} onChange={(e) => setFrom(e.target.value)} />
-            <label className="ops-form__label" htmlFor="fc-why">Why (kept in the audit log)</label>
+            <label className="ops-form__label" htmlFor="fc-from">Starts on (from midnight, {zone.name} time)</label>
+            <input id="fc-from" className="input" type="date" value={day} min={nextDay(zone.local_today)} onChange={(e) => setDay(e.target.value)} />
+            <p className="help m-0">The next local day by default; it starts at that midnight once approved, never earlier.</p>
+            <label className="ops-form__label" htmlFor="fc-why">Why (the approver and the history see it)</label>
             <textarea id="fc-why" className="input" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />
             {changes.length > 0 && current ? (
-              <div className="ops-confirm">
-                <b>This request will change</b>
-                <span>{changes.map((c) => `${c.label}: ${c.from} to ${c.to}`).join(' · ')}</span>
-              </div>
+              <ChangePreview heading="This request will change" display={{ changes: changes.map((c) => ({
+                label: c.label, from: String(c.from ?? '—'), to: String(c.to) })) }} />
             ) : null}
             {problem && (reason || changes.length > 0) ? <p className="help m-0" role="note">{problem}</p> : null}
           </section>
