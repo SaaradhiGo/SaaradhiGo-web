@@ -8,11 +8,11 @@ import { canDraftPricing } from '@/lib/pricing';
 import { classWord, placeWord } from '@/lib/pricingWords';
 import { ResolvedPlans } from '@/components/console/pricing/ResolvedPlans';
 import { RegulationPanel } from '@/components/console/pricing/RegulationPanel';
-import { interpretWrite } from '@/lib/trips';
 import { PricingNav } from '@/components/console/pricing';
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
 import { DataTable, Drawer, ErrorState, Skeleton } from '@/components/console/ui';
 import { plural } from '@/lib/plural';
+import { FeePlanEditDrawer, FeePlanPanel, type FeePlan } from '@/components/console/pricing/FeePlanEdit';
 
 /**
  * Pricing > Driver fee plans (9 Nov). One active plan per market, resolved city -> state ->
@@ -21,14 +21,7 @@ import { plural } from '@/lib/plural';
  * trip. A plan is drafted here and activated by a second admin; it starts the next local day.
  * The simulator compares plan types and never activates anything.
  */
-type Plan = {
-  id: number; country: string; scope_code: string; currency: string; plan_type: string;
-  amounts: Record<string, Record<string, number>>; earnings_floor_minor: number; daily_cap_minor: number | null;
-  waiver_until: string | null; waiver_first_days: number | null; status: string; version: number;
-  effective_from: string | null; effective_to: string | null; note: string;
-  /** 22 Nov: the place by name, from the server. */
-  scope_name?: string;
-};
+type Plan = FeePlan;
 type SimRow = {
   plan: string; preset: string; trips_per_day: number; fares_per_day_minor: number; driver_pays_day_minor: number;
   driver_pays_month_minor: number; driver_share_percent: number | null; our_cost_day_minor: number;
@@ -85,6 +78,11 @@ export default function FeePlansPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [drafting, setDrafting] = useState(false);
+  const [opened, setOpened] = useState<Plan | null>(null);
+  const [editing, setEditing] = useState<Plan | null>(null);
+  const versionsOf = (p: Plan) => (plans ?? []).filter((x) => x.country === p.country && x.scope_code === p.scope_code);
+  // 25 Nov (owner): the table shows what is in force and what is moving; ended versions live in the history.
+  const current = (plans ?? []).filter((p) => p.status !== 'archived');
   const load = useCallback(async () => {
     setError(null);
     try {
@@ -95,15 +93,19 @@ export default function FeePlansPage() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  async function submit(p: Plan) {
+  async function withdraw(p: Plan) {
+    if (!p.approval_request_id) return;
     try {
-      const body = await api.post(`/pricing/admin/fee-plans/${p.id}/submit/`, { reason: `Activate ${TYPE_WORDS[p.plan_type]} v${p.version}` });
-      setNotice(interpretWrite(body as never, 'Plan activated.').message);
+      await api.post(`/approvals/admin/requests/${p.approval_request_id}/cancel/`, { reason: 'Withdrawn by the editor' });
+      setNotice('Withdrawn. The plan in force is unchanged; the change is back as a draft you can edit.');
+      setOpened(null);
       void load();
     } catch (err) {
       setNotice(err instanceof ApiError && err.fromServer ? err.message : 'That did not go through.');
     }
   }
+
+
 
   return (
     <>
@@ -113,7 +115,8 @@ export default function FeePlansPage() {
           <h1>Driver fee plans</h1>
           <p>The only way drivers are charged: a daily fee, a commission (% of each fare) or a per-trip fee, per place. A place cannot go live, and riders are offered no class, until a plan is approved. A change starts the next local day and never reaches a trip already booked.</p>
         </div>
-        {may ? <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setDrafting(true)}>New draft…</button> : null}
+        {/* 25 Nov (owner): "New draft…" only for a new place or class; a change is Edit on its row. */}
+        {may ? <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setDrafting(true)}>New place or class…</button> : null}
       </header>
       {notice ? <div className="ops-confirm mb-3" role="status"><b>{notice}</b></div> : null}
       {plans && undecided(plans).length ? (
@@ -125,7 +128,7 @@ export default function FeePlansPage() {
       ) : null}
       {error ? <ErrorState title="The fee plans could not be loaded" detail={error} onRetry={() => void load()} />
         : plans === null ? <Skeleton kind="row" count={4} /> : (
-          <DataTable caption="Driver fee plans" wrap rows={plans} rowKey={(p) => p.id} maxHeight={false}
+          <DataTable caption="Driver fee plans" wrap rows={current} rowKey={(p) => p.id} maxHeight={false}
             columns={[
               { key: 'where', label: 'Where', render: (p) => (p.scope_code ? p.scope_name ?? placeWord(p.scope_code, access) : `All of ${p.scope_name ?? placeWord(p.country, access)}`) },
               { key: 'type', label: 'Plan', render: (p) => TYPE_WORDS[p.plan_type] ?? p.plan_type },
@@ -135,15 +138,26 @@ export default function FeePlansPage() {
               { key: 'rider', label: 'Rider booking fee', render: (p) => riderFeeWords(p) },
               { key: 'rules', label: 'Floor · cap · waiver', render: (p) => `${rupees(p.earnings_floor_minor, p.currency)} · ${p.daily_cap_minor == null ? 'no cap' : rupees(p.daily_cap_minor, p.currency)} · ${p.waiver_first_days ? `first ${plural(p.waiver_first_days, 'day')} free` : p.waiver_until ? `free until ${marketDate(p.waiver_until, p.country)}` : 'none'}` },
               { key: 'from', label: 'From', render: (p) => (p.effective_from ? `${marketDate(p.effective_from, p.country)}${p.effective_to ? ` to ${marketDate(p.effective_to, p.country)}` : ''}` : '—') },
-              { key: 'note', label: 'Note', hideBelow: 1500, render: (p) => p.note || '—' },
-              { key: 'act', label: '', render: (p) => (may && p.status === 'draft'
-                ? <button type="button" className="ops-linkbtn" onClick={() => void submit(p)}>Send</button> : null) },
+              { key: 'act', label: 'Actions', render: (p) => (
+                <span className="ops-row-actions">
+                  {may && (p.status === 'active' || p.status === 'draft')
+                    ? <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setEditing(p)}
+                      aria-label={`Edit the plan for ${p.scope_name ?? p.scope_code ?? p.country}`}>Edit</button> : null}
+                  {may && p.status === 'pending_approval'
+                    ? <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => void withdraw(p)}>Withdraw</button> : null}
+                  <button type="button" className="ops-linkbtn" onClick={() => setOpened(p)}
+                    aria-label={`History of the plan for ${p.scope_name ?? p.scope_code ?? p.country}`}>History</button>
+                </span>) },
             ]} />
         )}
       <div className="mt-4"><ResolvedPlans /></div>
       <div className="mt-4"><Simulator /></div>
       {/* 24 Nov (owner): the legal caps live with the plans they limit (commission is a plan type). */}
       <div className="mt-4"><RegulationPanel may={may} /></div>
+      {opened ? <FeePlanPanel plan={opened} versions={versionsOf(opened)} may={may} onClose={() => setOpened(null)}
+        onEdit={() => { setEditing(opened); setOpened(null); }} onWithdraw={() => void withdraw(opened)} /> : null}
+      {editing ? <FeePlanEditDrawer plan={editing} onClose={() => setEditing(null)}
+        onDone={(t) => { setEditing(null); setNotice(t); void load(); }} /> : null}
       {drafting ? <DraftDrawer onClose={() => setDrafting(false)} onDone={(t) => { setDrafting(false); setNotice(t); void load(); }} /> : null}
     </>
   );

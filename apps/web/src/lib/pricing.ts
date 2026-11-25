@@ -233,11 +233,14 @@ export type CardRow = FareValues & {
 };
 export type FareClass = {
   vehicle_type: number; vehicle_type_name: string; live: CardRow | null; scheduled: CardRow | null;
+  /** 25 Nov: sold in this zone's market (market rules); another market's class is never "missing". */
+  offered?: boolean;
   history: CardRow[];
 };
 export type FareZone = {
   zone: number; code: string; name: string; country: string; currency: string; distance_unit: string;
   classes: FareClass[];
+  offered_classes?: string[]; launch_state?: string; local_today?: string;
 };
 
 export type FarePreviewRow = {
@@ -299,4 +302,20 @@ export function cardBody(d: FareValues, reason: string, effectiveFrom: string): 
   for (const f of FARE_FIELDS) body[f.key] = d[f.key].trim();
   if (effectiveFrom) body.effective_from = new Date(effectiveFrom).toISOString();
   return body;
+}
+
+/** A class a zone sells (older payloads without `offered` count every class). */
+export const isOffered = (c: FareClass) => c.offered !== false;
+
+/** "Missing a card" (25 Nov): an offered class with no card in a live or coming-soon place. */
+export function missingCards(z: FareZone): FareClass[] {
+  if (z.launch_state && !['live', 'coming_soon'].includes(z.launch_state)) return [];
+  return z.classes.filter((c) => isOffered(c) && !c.live && !c.scheduled);
+}
+
+/** The next local day after `today` (YYYY-MM-DD), the default start of a change. */
+export function nextDay(today: string | undefined): string {
+  const d = today ? new Date(`${today}T12:00:00Z`) : new Date();
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
 }
