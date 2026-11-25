@@ -2,7 +2,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AdminAccess } from '@/lib/adminScope';
 import type { BudgetView } from '@/lib/promotions';
-import { BudgetBar, PromotionsNav } from '@/components/console/promotions';
+import { BudgetBar, PromotionsNav, WhoQualifies } from '@/components/console/promotions';
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/ops/promotions' }));
 vi.mock('next/link', () => ({
@@ -17,7 +17,7 @@ vi.mock('@/lib/adminScope', async (importOriginal) => {
   return { ...original, useAdminAccess: () => current };
 });
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 const access = (permissions: string[]) => ({ permissions } as unknown as AdminAccess);
 
@@ -77,5 +77,28 @@ describe('the budget bar', () => {
     const { container } = render(<BudgetBar budget={budget({ budget_minor: null, remaining_minor: null })} />);
     expect(container.querySelector('.pm-bar')).toBeNull();
     expect(container.textContent).toContain('No budget');
+  });
+});
+
+describe('who qualifies', () => {
+  const stub = (data: unknown) => {
+    const fetchMock = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ status: 'success', data }) }));
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  };
+
+  it('counts the riders a saved campaign reaches, with its rules', async () => {
+    const fetchMock = stub({ who: 'riders', count: 1240, place: 'Hyderabad', rules: ['new riders only (no trip yet)'] });
+    render(<WhoQualifies campaignId={12} />);
+    expect(await screen.findByText('1,240 riders')).toBeTruthy();
+    expect(screen.getByLabelText('Who qualifies').textContent).toContain('in Hyderabad qualify (new riders only (no trip yet)).');
+    expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain('/promotions/admin/campaigns/12/audience/');
+  });
+
+  it('agrees with one driver', async () => {
+    stub({ who: 'drivers', count: 1, place: 'Austin', rules: [] });
+    render(<WhoQualifies campaignId={3} />);
+    expect(await screen.findByText('1 driver')).toBeTruthy();
+    expect(screen.getByLabelText('Who qualifies').textContent).toContain('in Austin qualifies.');
   });
 });

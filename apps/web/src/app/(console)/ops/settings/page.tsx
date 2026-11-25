@@ -197,6 +197,7 @@ export default function MarketsPage() {
 }
 
 function CityRecord({ code, onClose, onDone }: { code: string; onClose: () => void; onDone: (n: Notice) => void }) {
+  const access = useAdminAccess();
   const [city, setCity] = useState<Detail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reason, setReason] = useState('');
@@ -213,7 +214,7 @@ function CityRecord({ code, onClose, onDone }: { code: string; onClose: () => vo
   }, [code]);
   useEffect(() => { void load(); }, [load]);
 
-  async function ask(status: 'live' | 'paused') {
+  async function ask(status: 'live' | 'paused' | 'archived') {
     if (reason.trim().length < 5) { setProblem('Say why, in a few words.'); return; }
     setBusy(true); setProblem(null);
     try {
@@ -240,7 +241,9 @@ function CityRecord({ code, onClose, onDone }: { code: string; onClose: () => vo
   }
 
   const blocked = launchBlockedBy(city.readiness);
-  const canAsk = !city.pending_request && (city.may_launch || city.may_pause);
+  // Archiving is for a place that is not live and not a planned market (platform.settings).
+  const mayArchive = canWritePlatform(access) && city.status !== 'live' && !city.pending_request;
+  const canAsk = !city.pending_request && (city.may_launch || city.may_pause || mayArchive);
   return (
     <RecordPanel
       label="City"
@@ -287,6 +290,11 @@ function CityRecord({ code, onClose, onDone }: { code: string; onClose: () => vo
             {problem ? <p className="nf-problems" role="alert">{problem}</p> : null}
             {canAsk ? (
               <div className="nf-inline">
+                {mayArchive ? (
+                  <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={busy} onClick={() => void ask('archived')}>
+                    Request archive
+                  </button>
+                ) : null}
                 {city.may_pause ? (
                   <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void ask('paused')}>
                     Request pause

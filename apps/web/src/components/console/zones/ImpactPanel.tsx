@@ -7,6 +7,7 @@ import {
 } from '@/lib/zones';
 import { Skeleton, FitBox } from '@/components/console/ui';
 import { classWord } from '@/lib/pricingWords';
+import { plural } from '@/lib/plural';
 
 /**
  * "What this change does": the impact preview of a draft over the last 30 days.
@@ -57,7 +58,7 @@ export function ImpactPanel({ result, state, currency }: {
       {result.transitions.length > 0 ? (
         <FitBox>
           <table className="ops-table ops-table--compact ops-table--auto">
-            <caption className="sr-only">Pickups that would change zone, last {result.window_days} days</caption>
+            <caption className="sr-only">Pickups that would change zone, last {plural(result.window_days, 'day')}</caption>
             <thead><tr><th scope="col">Zone now → zone after</th><th scope="col" className="num">Pickups</th></tr></thead>
             <tbody>
               {result.transitions.map((t) => (

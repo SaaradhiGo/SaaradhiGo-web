@@ -778,3 +778,6 @@ button.er-bar { cursor: pointer; }
 /* 18 Nov round 3: a notice is a white card with a hairline; the warning colour is its icon only. */
 .anote { background: var(--c-surface); border-color: var(--c-border); }
 .anote__icon { color: var(--c-warn-ink); }
+/* 25 Nov: with a mouse, stars and the "Open →" / "Edit →" links are at least 24px (WCAG 2.5.8). */
+.astar { min-width: 24px; min-height: 24px; }
+.pf-go { display: inline-flex; align-items: center; min-height: 24px; }

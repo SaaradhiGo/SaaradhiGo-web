@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { Alert, Check, Copy, Download } from '@/components/console/icons';
+import { plural } from '@/lib/plural';
 
 /**
  * The recovery codes, shown ONCE.
@@ -112,7 +113,7 @@ export function RecoveryCodesScreen({
       {/* Announced, not just shown: a copy button with no feedback is a
           button the operator presses three times. */}
       <p className="rc__feedback" role="status" aria-live="polite">
-        {copied === 'done' ? <><Check /> Copied {codes.length} codes to the clipboard.</> : null}
+        {copied === 'done' ? <><Check /> Copied {plural(codes.length, 'code')} to the clipboard.</> : null}
         {copied === 'failed' ? 'Copying is blocked here. Select the list or download the file instead.' : null}
       </p>
 

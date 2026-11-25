@@ -270,6 +270,9 @@ function TicketView({
 
           <TicketPanel ticket={ticket} tz={tz} has={has} assignees={assignees} onDone={done} onError={setActionError} />
 
+          {/* Only a safety concern becomes a safety incident (the server refuses others); change the category first. */}
+          {has('reply') && ticket.issue_type === 'safety' ? <EscalatePanel ticketId={ticket.id} onError={setActionError} /> : null}
+
           {canCreditWallet(access) && ticket.requester.page?.type === 'rider' ? (
             <Panel title="Wallet credit">
               <p className="help m-0">
@@ -283,7 +286,7 @@ function TicketView({
 </div>
     ) },
     { key: 'trip', label: 'Trip & money', content: (
-<>
+<div className="grid gap-4">
           {ticket.trip ? (
             <TripPanel
               trip={ticket.trip} refund={ticket.refund} tz={tz}
@@ -292,7 +295,10 @@ function TicketView({
           ) : (
             <Panel title="Trip"><p className="help m-0">No trip attached to this ticket.</p></Panel>
           )}
-</>
+          {has('reply') ? (
+            <LinkTripPanel ticketId={ticket.id} linked={Boolean(ticket.trip)} onDone={done} onError={setActionError} />
+          ) : null}
+</div>
     ) },
     { key: 'history', label: 'History', content: (
 <Panel title="Audit trail">
@@ -696,6 +702,100 @@ function TicketPanel({
           </div>
         ) : null}
       </div>
+    </Panel>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+function LinkTripPanel({ ticketId, linked, onDone, onError }: {
+  ticketId: number; linked: boolean; onDone: (text: string) => void; onError: (e: string | null) => void;
+}) {
+  const [trip, setTrip] = useState('');
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  async function link() {
+    setBusy(true); onError(null);
+    try {
+      await api.post(`/support/admin/tickets/${ticketId}/trip/`, { trip: trip.trim(), ...(reason.trim() ? { reason: reason.trim() } : {}) });
+      setTrip(''); setReason('');
+      onDone('Trip linked to this ticket.');
+    } catch (err) {
+      onError(failure(err, 'The trip could not be linked.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Panel title={linked ? 'Link a different trip' : 'Link a trip'}>
+      <form className="ops-form" onSubmit={(e) => { e.preventDefault(); if (trip.trim() && !busy) void link(); }}>
+        <p className="help m-0">Only a trip this person rode or drove can be linked.</p>
+        <div className="ops-form__row">
+          <label className="ops-form__label" htmlFor="link-trip">Trip reference</label>
+          <input id="link-trip" className="ops-select" placeholder="HYD-261116-K7Q4" value={trip} size={18}
+            onChange={(e) => setTrip(e.target.value)} />
+        </div>
+        <label className="ops-form__label" htmlFor="link-trip-reason">Reason (optional)</label>
+        <input id="link-trip-reason" className="input" value={reason} onChange={(e) => setReason(e.target.value)} />
+        <div className="ops-form__row">
+          <button type="submit" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy || !trip.trim()}>
+            {busy ? 'Linking…' : 'Link trip'}
+          </button>
+        </div>
+      </form>
+    </Panel>
+  );
+}
+
+function EscalatePanel({ ticketId, onError }: { ticketId: number; onError: (e: string | null) => void }) {
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ id: number; ref: string | null; created: boolean; canOpen: boolean } | null>(null);
+  async function escalate() {
+    setBusy(true); onError(null);
+    try {
+      const r = await api.post<{ incident_id: number; created: boolean; can_open: boolean }>(
+        `/safety/admin/tickets/${ticketId}/escalate/`, { note: note.trim() });
+      // The answer carries the incident's id only; its reference comes from the incident itself.
+      const ref = r.can_open
+        ? await api.get<{ ref?: string; public_ref?: string }>(`/safety/admin/incidents/${r.incident_id}/`).then(refOf).catch(() => null)
+        : null;
+      setResult({ id: r.incident_id, ref: ref && ref !== '—' ? ref : null, created: r.created, canOpen: r.can_open });
+      setOpen(false); setNote('');
+    } catch (err) {
+      onError(failure(err, 'The ticket could not be escalated.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Panel title="Safety">
+      {result ? (
+        <div className="alert-success" role="status">
+          {result.created ? 'Escalated to safety incident ' : 'Already escalated: safety incident '}
+          {result.canOpen
+            ? <PageLink page="safety" href={`/ops/safety-ops/incidents/${result.id}`}>{result.ref ?? 'Open the incident'}</PageLink>
+            : <b>{result.ref ?? 'opened'}</b>}
+          . The safety team works it from there.
+        </div>
+      ) : open ? (
+        <div className="ops-form">
+          <label className="ops-form__label" htmlFor="escalate-note">Why this needs the safety team</label>
+          <textarea id="escalate-note" className="input" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
+          <div className="ops-form__row">
+            <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setOpen(false)} disabled={busy}>Back</button>
+            <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => void escalate()} disabled={busy || note.trim().length < 5}>
+              {busy ? 'Escalating…' : 'Escalate'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <p className="help m-0">Opens a safety incident linked to this ticket, for the safety team.</p>
+          <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm mt-3" onClick={() => setOpen(true)}>Escalate to safety…</button>
+        </>
+      )}
     </Panel>
   );
 }

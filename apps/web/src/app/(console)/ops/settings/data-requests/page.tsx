@@ -11,6 +11,8 @@ import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { History, RecordPanel, type HistoryEntry } from '@/components/console/kit/RecordPanel';
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
 import { ActionNotice, RecordFacts, RecordFailed, RecordLoading, RecordSection } from '@/components/console/kit/ListBits';
+import { plural } from '@/lib/plural';
+import { DATA_REQUEST_CHANNELS as CHANNELS } from '@/lib/riders';
 
 /** Data requests: a person's export or erasure request, logged and answered within the due window. */
 type Row = {
@@ -25,7 +27,6 @@ type List = { count: number; results: Row[]; open: number; overdue: number; due_
 
 const PAGE_SIZE = 25;
 const VIEWS = [{ key: 'open', label: 'Open' }, { key: 'closed', label: 'Closed' }, { key: 'all', label: 'All' }];
-const CHANNELS = [{ value: 'email', label: 'Email' }, { value: 'ticket', label: 'Support ticket' }, { value: 'other', label: 'Other' }];
 const TONES: Record<Row['status'], ChipTone> = { open: 'info', waiting_approval: 'caution', completed: 'good', refused: 'neutral' };
 
 function statusOf(r: Row) {
@@ -249,7 +250,7 @@ export default function DataRequestsPage() {
       <div className={openId !== null ? 'ops-split' : undefined}>
         <ListPage<Row>
           pageKey="data-requests" title="Data requests"
-          summary={counts ? `${counts.open} open · ${counts.overdue} overdue · due within ${counts.due} days` : undefined}
+          summary={counts ? `${counts.open} open · ${counts.overdue} overdue · due within ${plural(counts.due, 'day')}` : undefined}
           views={VIEWS} view={view} onView={(v) => { setView(v); setPage(1); }}
           actionsSlot={<button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setLogging((v) => !v)}>Log a request…</button>}
           filterSlot={(

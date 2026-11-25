@@ -8,6 +8,7 @@ import { marketDate } from '@/lib/consoleTime';
 import { newIdempotencyKey } from '@/lib/trips';
 import { DataTable, Pill } from '@/components/console/ui';
 import { FieldsDrawer, toText, type FieldSpec } from '@/components/console/kit/FieldsDrawer';
+import { plural } from '@/lib/plural';
 
 /**
  * Payouts by state and city (owner ruling, 9 Nov): each place's settings with what it sets
@@ -34,7 +35,7 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 export function cycleWords(c: CycleFields, country = 'IN'): string {
   const at = c.payout_time_local ? ` at ${c.payout_time_local}` : '';
   if (c.payout_schedule === 'weekly') return `Weekly on ${DAYS[c.payout_weekday ?? 0]}${at}`;
-  if (c.payout_schedule === 'every_n_days') return `Every ${c.payout_interval_days} days from ${marketDate(c.payout_anchor_date, country)}${at}`;
+  if (c.payout_schedule === 'every_n_days') return `${c.payout_interval_days === 1 ? 'Every day' : `Every ${c.payout_interval_days} days`} from ${marketDate(c.payout_anchor_date, country)}${at}`;
   return 'On request';
 }
 

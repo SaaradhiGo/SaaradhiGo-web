@@ -13,7 +13,7 @@ import {
 } from '@/lib/promotions';
 import { formatMinor, interpretWrite } from '@/lib/trips';
 import { Drawer, ErrorState, Fact, Facts, Pill, Skeleton } from '@/components/console/ui';
-import { BudgetBar, StateTag } from '@/components/console/promotions';
+import { BudgetBar, StateTag, WhoQualifies } from '@/components/console/promotions';
 import { messageOf, type Notice } from '@/components/console/notifications';
 
 /**
@@ -223,6 +223,8 @@ export function CampaignEditor({ kind, campaignId, onClose, onDone, onOpen }: {
             ) : detail ? (
               <ReadOnly c={detail} />
             ) : null}
+
+            {detail ? <WhoQualifies campaignId={detail.id} /> : null}
 
             {detail && detail.state !== 'draft' ? (
               <ActivityPanel c={detail} activity={activity} error={activityError} />

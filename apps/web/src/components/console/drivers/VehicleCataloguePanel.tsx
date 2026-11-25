@@ -5,6 +5,7 @@ import { ApiError, api } from '@/lib/api';
 import { StatusChip } from '@/components/console/kit/StatusChip';
 import { DataTable, ErrorState, Skeleton } from '@/components/console/ui';
 import { classWord } from '@/lib/pricingWords';
+import { plural } from '@/lib/plural';
 
 /**
  * The vehicle catalogue drivers pick make and model from (10 Nov). USA from NHTSA vPIC; India a
@@ -77,7 +78,7 @@ export function VehicleCataloguePanel({ may }: { may: boolean }) {
         <ErrorState title="The catalogue could not be loaded" detail={error} onRetry={() => void load()} />
       ) : (
         <>
-          <p className="muted mb-2">{data!.count} entries{data!.count > data!.results.length ? `, first ${data!.results.length} shown` : ''}.</p>
+          <p className="muted mb-2">{plural(data!.count, 'entry', 'entries')}{data!.count > data!.results.length ? `, first ${data!.results.length} shown` : ''}.</p>
           <DataTable caption="Vehicle catalogue" rows={data!.results} rowKey={(e) => String(e.id)} density="compact"
             columns={[
               { key: 'type', label: 'Type', render: (e) => classWord(e.vehicle_type) },

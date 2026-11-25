@@ -450,7 +450,7 @@ function TripSummary({ id, fare, cash, card = null, driver, onDone }: {
       <div className="arow" style={{ gap: 4 }} role="group" aria-label={tr('Rate your trip')}>
         {[1, 2, 3, 4, 5].map((n) => (
           <button key={n} type="button" className={`achip${n <= stars ? ' achip--on' : ''}`} aria-pressed={n <= stars}
-            aria-label={tr('{n} stars').replace('{n}', String(n))} onClick={() => rate(n)}>★</button>
+            aria-label={tr(n === 1 ? '{n} star' : '{n} stars').replace('{n}', String(n))} onClick={() => rate(n)}>★</button>
         ))}
       </div>
       {note && <p className="a14 amut" role="status">{note}</p>}

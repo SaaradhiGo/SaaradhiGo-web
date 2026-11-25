@@ -6,17 +6,19 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { useAdminAccess } from '@/lib/adminScope';
-import { type RiderActionKey, type RiderActions, riderName, visibleRiderActions } from '@/lib/riders';
+import { can, useAdminAccess } from '@/lib/adminScope';
+import { DATA_REQUEST_CHANNELS, type RiderActionKey, type RiderActions, riderName, visibleRiderActions } from '@/lib/riders';
 import { cityTime, formatMinor, words } from '@/lib/trips';
+import { ISSUE_LABEL } from '@/lib/supportDesk';
 import { RiderActionDrawer } from '@/components/console/RiderActionDrawer';
 import { CreditWalletDrawer } from '@/components/console/FinanceActionDrawers';
 import { ClearRestrictionDrawer } from '@/components/console/ClearRestrictionDrawer';
 import { RecordPanel, type RecordTab } from '@/components/console/kit/RecordPanel';
 import { Revealable } from '@/components/console/Revealable';
 import {
-  Column, DataTable, Empty, ErrorState, Fact, Facts, PageHeader, Panel, Pill, Skeleton,
+  Column, DataTable, Drawer, Empty, ErrorState, Fact, Facts, PageHeader, Panel, Pill, Skeleton,
 } from '@/components/console/ui';
+import { plural } from '@/lib/plural';
 
 /**
  * One rider: who they are, what they have done, and what operators did.
@@ -91,6 +93,8 @@ export default function RiderDetailPage() {
   const [action, setAction] = useState<RiderActionKey | null>(null);
   const [crediting, setCrediting] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [dataRequest, setDataRequest] = useState(false);
+  const [logged, setLogged] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -153,7 +157,7 @@ export default function RiderDetailPage() {
   const ticketColumns: Column<TicketRow>[] = [
     { key: 'id', label: 'Ticket', width: '6rem', render: (t) => <PageLink page="support" href={`/ops/support/${t.id}`}>{refOf(t) !== '—' ? refOf(t) : 'Open'}</PageLink> },
     { key: 'status', label: 'Status', width: '8rem', render: (t) => <Pill tone={TONE[t.status] ?? 'neutral'}>{words(t.status.toLowerCase())}</Pill> },
-    { key: 'issue', label: 'Issue', render: (t) => words(t.issue_type) },
+    { key: 'issue', label: 'Issue', render: (t) => ISSUE_LABEL[t.issue_type] ?? words(t.issue_type) },
     { key: 'when', label: 'Opened', num: true, width: '10rem', render: (t) => cityTime(t.created_at, tz) },
   ];
   const sosColumns: Column<SosRow>[] = [
@@ -258,7 +262,7 @@ export default function RiderDetailPage() {
                 />
               )
             ))}
-            <p className="help">The latest {data.wallet.rows_per_currency} entries per currency. Refunds are made on the trip.</p>
+            <p className="help">The latest {plural(data.wallet.rows_per_currency, 'entry', 'entries')} per currency. Refunds are made on the trip.</p>
           </>
         )}
       </Panel>
@@ -322,6 +326,11 @@ export default function RiderDetailPage() {
           <b>{notice.text}</b>
         </div>
       )}
+      {logged && (
+        <div className="alert-success mb-5" role="status">
+          <b>Logged {logged}.</b> It is answered from <PageLink page="dataRequests" href="/ops/settings/data-requests">Data requests</PageLink>.
+        </div>
+      )}
       <div className="ops-record-page ops-record-page--wide">
         <RecordPanel
           label="Rider"
@@ -346,6 +355,9 @@ export default function RiderDetailPage() {
                 onClick={() => setAction(key)}
               >{RAIL_LABEL[key]}</button>
             ))}
+            {can(access, 'privacy.manage') && refOf(data) !== '—' ? (
+              <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => { setLogged(null); setDataRequest(true); }}>Data request…</button>
+            ) : null}
             {data.actions?.wallet_credit && data.wallet.balances.length > 0 ? (
               <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setCrediting(true)}>Credit wallet…</button>
             ) : null}
@@ -362,6 +374,10 @@ export default function RiderDetailPage() {
           onDone={(text, kind) => done(text, kind)}
         />
       )}
+      {dataRequest ? (
+        <DataRequestDrawer subject={refOf(data)} riderName={name}
+          onClose={() => setDataRequest(false)} onDone={(ref) => { setDataRequest(false); setLogged(ref); }} />
+      ) : null}
       {clearing ? (
         <ClearRestrictionDrawer riderId={data.id} riderName={name}
           onClose={() => setClearing(false)} onDone={(text, kind) => done(text, kind)} />
@@ -374,5 +390,57 @@ export default function RiderDetailPage() {
         />
       ) : null}
     </>
+  );
+}
+
+function DataRequestDrawer({ subject, riderName: who, onClose, onDone }: {
+  subject: string; riderName: string; onClose: () => void; onDone: (ref: string) => void;
+}) {
+  const [kind, setKind] = useState<'export' | 'erasure'>('export');
+  const [channel, setChannel] = useState('email');
+  const [reference, setReference] = useState('');
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    setBusy(true); setError(null);
+    try {
+      const r = await api.post<{ ref: string }>('/auth/admin/data-requests/', {
+        subject, kind, channel, reference: reference.trim(), ...(note.trim() ? { note: note.trim() } : {}),
+      });
+      onDone(r.ref);
+    } catch (err) {
+      setError(err instanceof ApiError && err.fromServer ? err.message : 'The request could not be logged.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Drawer open title={`Data request · ${who}`} onClose={onClose}
+      footer={<>
+        <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={onClose} disabled={busy}>Back</button>
+        <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => void submit()} disabled={busy || !reference.trim()}>
+          {busy ? 'Logging…' : 'Log request'}
+        </button>
+      </>}>
+      <div className="ops-form">
+        <p className="help m-0">For {subject}. It is logged and answered within the due window.</p>
+        <div className="ops-filterset" role="radiogroup" aria-label="Kind">
+          <label><input type="radio" name="dr-kind" checked={kind === 'export'} onChange={() => setKind('export')} />Export their data</label>
+          <label><input type="radio" name="dr-kind" checked={kind === 'erasure'} onChange={() => setKind('erasure')} />Delete their data</label>
+        </div>
+        <label className="ops-form__label" htmlFor="rdr-channel">How it arrived</label>
+        <select id="rdr-channel" className="ops-select" value={channel} onChange={(e) => setChannel(e.target.value)}>
+          {DATA_REQUEST_CHANNELS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+        </select>
+        <label className="ops-form__label" htmlFor="rdr-reference">Reference (the email subject or ticket)</label>
+        <input id="rdr-reference" className="input" value={reference} onChange={(e) => setReference(e.target.value)} />
+        <label className="ops-form__label" htmlFor="rdr-note">Note (optional)</label>
+        <textarea id="rdr-note" className="input" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
+        {error && <div className="alert-error" role="alert">{error}</div>}
+      </div>
+    </Drawer>
   );
 }

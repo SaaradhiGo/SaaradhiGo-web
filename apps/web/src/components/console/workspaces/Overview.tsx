@@ -23,6 +23,7 @@ import { NeedsActionInbox } from '@/components/console/kit/NeedsActionInbox';
 import { SuperAdminBanner } from '@/components/console/command-centre/SuperAdminBanner';
 import { SelfApprovalNotice } from '@/components/console/SelfApprovalNotice';
 import { Empty, ErrorState, Skeleton } from '@/components/console/ui';
+import { plural } from '@/lib/plural';
 
 /**
  * The Overview (owner, 2026-11-03; design boards C and D). One page, three
@@ -262,7 +263,7 @@ function CityWorkspace({ access, places }: { access: AdminAccess | null; places:
               <b>{short.length} area{short.length === 1 ? ' is' : 's are'} short of drivers</b>
               <p>
                 Fulfilment {fulfil}% in the last hour, against {usual!.fulfilment_rate!.low}–{usual!.fulfilment_rate!.high}% at this
-                hour on the last {usual!.fulfilment_rate!.weeks} weeks&apos; same weekday. The shortest area: {cellSentence(short[0], 15)}
+                hour on the last {plural(usual!.fulfilment_rate!.weeks, 'week')}&apos; same weekday. The shortest area: {cellSentence(short[0], 15)}
               </p>
               <div className="ops-why__acts">
                 {canOpen(access, 'liveops') ? <Link href="/ops/live-ops" className="sg-btn sg-btn--secondary sg-btn--sm">Open the live map</Link> : null}

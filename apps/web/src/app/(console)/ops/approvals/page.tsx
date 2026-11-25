@@ -16,6 +16,7 @@ import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
 import { ActionNotice, RecordFacts, RecordFailed, RecordLoading, RecordSection } from '@/components/console/kit/ListBits';
 import { Skeleton } from '@/components/console/ui';
 import { SELF_APPROVAL_LINE, SELF_APPROVAL_MIN_REASON } from '@/components/console/SelfApprovalNotice';
+import { WhoCanApprove } from '@/components/console/WhoCanApprove';
 
 /**
  * Approvals: everything waiting for a second person (owner, 2026-11-03), as a
@@ -74,28 +75,31 @@ type ApprovalRow = {
   self_approval?: boolean;
   /** Decided by its own maker under that exception. */
   self_approved?: boolean;
+  /** 25 Nov: waiting over 3 days, escalated to Super Admin. */
+  escalated?: boolean;
 };
 type Page = { count: number; total_pages?: number; results: ApprovalRow[]; self_approval_on?: boolean };
 
-type View = 'waiting' | 'mine' | 'open' | 'executed' | 'rejected' | 'self';
+type View = 'waiting' | 'mine' | 'open' | 'executed' | 'rejected' | 'returned' | 'self';
 const VIEWS: ReadonlyArray<{ key: View; label: string; query: string }> = [
   { key: 'waiting', label: 'Waiting for me', query: 'pending_for_me=1' },
   { key: 'mine', label: 'Raised by me', query: 'mine=1' },
   { key: 'open', label: 'All open', query: 'status=requested' },
   { key: 'executed', label: 'Done', query: 'status=executed' },
   { key: 'rejected', label: 'Rejected', query: 'status=rejected' },
+  { key: 'returned', label: 'Sent back', query: 'status=returned' },
   { key: 'self', label: 'Self-approved', query: 'self_approved=1' },
 ];
 const PAGE_SIZE = 50;
 
 const STATUS_WORDS: Record<string, string> = {
   requested: 'Waiting', approved: 'Running', executed: 'Done', rejected: 'Rejected',
-  failed: 'Approved, failed', cancelled: 'Withdrawn', expired: 'Expired',
+  failed: 'Approved, failed', cancelled: 'Withdrawn', expired: 'Expired', returned: 'Sent back',
 };
 
 function statusTone(status: string): ChipTone {
   if (status === 'executed') return 'good';
-  if (status === 'rejected' || status === 'failed') return 'caution';
+  if (status === 'rejected' || status === 'failed' || status === 'returned') return 'caution';
   if (status === 'requested' || status === 'approved') return 'info';
   return 'neutral';
 }
@@ -179,6 +183,7 @@ function ApprovalsPage() {
       key: 'status', label: 'Status', sortKey: 'status', render: (r) => (
         <span className="ops-chips">
           <StatusChip tone={statusTone(r.status)}>{STATUS_WORDS[r.status] ?? r.status}</StatusChip>
+          {r.escalated ? <StatusChip tone="caution">Escalated</StatusChip> : null}
           {r.self_approved ? <StatusChip tone="caution">Self-approved</StatusChip> : null}
         </span>
       ),
@@ -236,6 +241,7 @@ function ApprovalsPage() {
           currentQuery={view === 'waiting' ? '' : `view=${view}`}
           onSavedView={(q) => router.push(q ? `/ops/approvals?${q}` : '/ops/approvals')}
         />
+        <WhoCanApprove />
         {openId ? (
           <RequestRecord
             key={openId}
@@ -256,7 +262,7 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
   const [row, setRow] = useState<ApprovalRow | null>(initial);
   const [error, setError] = useState<string | null>(null);
   const [reason, setReason] = useState('');
-  const [busy, setBusy] = useState<'approve' | 'reject' | 'cancel' | null>(null);
+  const [busy, setBusy] = useState<'approve' | 'reject' | 'send-back' | 'cancel' | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
   // Always the server's own answer for this one request (can_decide is per request).
@@ -276,7 +282,7 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
   const tz = timeZoneFor(row.scope);
   const open = row.status === 'requested';
 
-  async function act(kind: 'approve' | 'reject' | 'cancel') {
+  async function act(kind: 'approve' | 'reject' | 'send-back' | 'cancel') {
     if (!row) return;
     if (kind !== 'cancel' && row.self_approval && reason.trim().length < SELF_APPROVAL_MIN_REASON) {
       setProblem(`Give a reason of at least ${SELF_APPROVAL_MIN_REASON} characters. No one else checks this, so the reason is the record.`);
@@ -286,13 +292,18 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
       setProblem('Say why you are rejecting it. The person who raised it will see this.');
       return;
     }
+    // 25 Nov (owner): send back with comments; the person who raised it changes it and raises it again.
+    if (kind === 'send-back' && reason.trim().length < 5) {
+      setProblem('Say what to change before it can be approved. The person who raised it will see this.');
+      return;
+    }
     setBusy(kind);
     setProblem(null);
     try {
       const next = await api.post<ApprovalRow>(`/approvals/admin/requests/${row.id}/${kind}/`, { reason: reason.trim() });
       setRow(next);
       setReason('');
-      onDecided(`${row.ref} ${kind === 'approve' ? 'approved' : kind === 'reject' ? 'rejected' : 'withdrawn'}${row.self_approval && kind !== 'cancel' ? ', recorded as self-approved' : ''}.`);
+      onDecided(`${row.ref} ${kind === 'approve' ? 'approved' : kind === 'reject' ? 'rejected' : kind === 'send-back' ? 'sent back' : 'withdrawn'}${row.self_approval && kind !== 'cancel' ? ', recorded as self-approved' : ''}.`);
     } catch (e) {
       setProblem(e instanceof ApiError ? e.message : 'That did not go through. Try again.');
     } finally {
@@ -324,6 +335,7 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
         <>
           <StatusChip tone={statusTone(row.status)}>{STATUS_WORDS[row.status] ?? row.status}</StatusChip>
           {row.blockers.length ? <StatusChip tone="caution">Cannot be approved</StatusChip> : null}
+          {row.escalated ? <StatusChip tone="caution">Escalated to Super Admin, waiting over 3 days</StatusChip> : null}
           {row.self_approved ? <StatusChip tone="caution">Self-approved</StatusChip> : null}
         </>
       )}
@@ -334,6 +346,8 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
               {row.self_approval ? <p className="ops-note ops-record__note">{SELF_APPROVAL_LINE}</p> : null}
               <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" disabled={!!busy || row.blockers.length > 0}
                 onClick={() => void act('approve')}>{busy === 'approve' ? 'Approving…' : 'Approve'}</button>
+              <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={!!busy}
+                onClick={() => void act('send-back')}>{busy === 'send-back' ? 'Sending back…' : 'Send back'}</button>
               <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={!!busy}
                 onClick={() => void act('reject')}>{busy === 'reject' ? 'Rejecting…' : 'Reject'}</button>
             </>
@@ -361,7 +375,7 @@ function RequestRecord({ id, initial, onClose, onDecided }: {
                     <>
                       <label htmlFor={`reason-${row.id}`}><b>Reason</b>{row.can_decide && row.self_approval
                         ? ` (required, at least ${SELF_APPROVAL_MIN_REASON} characters; kept with the self-approval)`
-                        : row.can_decide ? ' (needed to reject; the person who raised it sees it)' : ''}</label>
+                        : row.can_decide ? ' (needed to send back or reject; the person who raised it sees it)' : ''}</label>
                       <textarea id={`reason-${row.id}`} className="input" rows={3} value={reason}
                         onChange={(e) => setReason(e.target.value)} maxLength={2000} />
                     </>

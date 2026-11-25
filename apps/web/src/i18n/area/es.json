@@ -864,5 +864,13 @@
   "30 days": "30 días",
   "90 days": "90 días",
   "12 months": "12 meses",
-  "Custom": "Personalizado"
+  "Custom": "Personalizado",
+  "Your {doc} expires in {n} day": "Tu {doc} vence en {n} día",
+  "No fee in your first {n} day.": "Sin tarifa en tu primer día.",
+  "Next: {step}. About {n} minute left.": "Siguiente: {step}. Queda {n} minuto aproximadamente.",
+  "From {n} rider": "De {n} pasajero",
+  "{r} rating from {n} trip": "Valoración {r} de {n} viaje",
+  "Step {n} of {total} · about {m} minute left": "Paso {n} de {total} · queda {m} minuto aproximadamente",
+  "{a} of {n} trip": "{a} de {n} viaje",
+  "Held for {n} minute.": "Se mantiene {n} minuto."
 }

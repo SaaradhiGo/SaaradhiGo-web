@@ -18,7 +18,7 @@ vi.mock('@/lib/adminScope', async (importActual) => {
   const actual = await importActual<typeof import('@/lib/adminScope')>();
   const access = {
     id: 1, email: 'ops@example.test', full_name: 'Ops', is_superuser: false, is_break_glass: false,
-    permissions: ['rider.read', 'trip.read', 'support.read'], roles: [], scopes: [], access_model: 'scoped',
+    permissions: ['rider.read', 'trip.read', 'support.read', 'privacy.manage'], roles: [], scopes: [], access_model: 'scoped',
   };
   return { ...actual, useAdminAccess: () => access, getCachedAccess: () => access };
 });
@@ -46,6 +46,24 @@ describe('rider record page', () => {
     expect(screen.getByText(/Balance \(INR\)/)).toBeTruthy();
     fireEvent.click(screen.getByRole('tab', { name: 'History' }));
     expect(screen.getAllByText('Chargebacks').length).toBeGreaterThan(0);
+  });
+
+  it('logs a data request for this rider by their reference', async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => (init?.method === 'POST'
+      ? { ok: true, status: 201, json: async () => ({ status: 'success', data: { id: 4, ref: 'DR-4' } }) }
+      : { ok: true, status: 200, json: async () => ({ status: 'success', data: respond(String(url)) }) }));
+    vi.stubGlobal('fetch', fetchMock);
+    render(<Page />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Data request…' }));
+    fireEvent.click(screen.getByLabelText('Delete their data'));
+    fireEvent.change(screen.getByLabelText('How it arrived'), { target: { value: 'ticket' } });
+    fireEvent.change(screen.getByLabelText(/^Reference/), { target: { value: 'SUP-HYD-4KQ7' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Log request' }));
+    expect(await screen.findByText('Logged DR-4.')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Data requests' }).getAttribute('href')).toBe('/ops/settings/data-requests');
+    const post = fetchMock.mock.calls.find(([, i]) => i?.method === 'POST');
+    expect(String(post?.[0])).toContain('/auth/admin/data-requests/');
+    expect(JSON.parse(String(post?.[1]?.body))).toEqual({ subject: 'R-HYD-9MX2', kind: 'erasure', channel: 'ticket', reference: 'SUP-HYD-4KQ7' });
   });
 });
 

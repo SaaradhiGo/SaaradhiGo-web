@@ -69,7 +69,7 @@ export function DriverSetup({ slug }: { slug: string }) {
   const held = !!c?.approved && !ready;
   const sub = !c ? null : ready ? tr("You're approved to drive")
     : held ? tr('Approved, but offline until: {items}').replace('{items}', blockingLabels(data).map((l) => tr(l)).join(', '))
-      : step ? tr('Step {n} of {total} · about {m} minutes left').replace('{n}', String(step.number))
+      : step ? tr(Math.max(minutes, 1) === 1 ? 'Step {n} of {total} · about {m} minute left' : 'Step {n} of {total} · about {m} minutes left').replace('{n}', String(step.number))
         .replace('{total}', String(steps.length)).replace('{m}', String(Math.max(minutes, 1))) : null;
   const done = c?.steps_done ?? 0;
 

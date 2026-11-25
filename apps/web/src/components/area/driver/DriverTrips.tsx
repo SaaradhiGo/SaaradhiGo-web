@@ -54,8 +54,8 @@ export function DriverTrips() {
           {h && (
             <span className="a14 amut" data-testid="trips-summary">
               {periodLabel(h, locale)}{' · '}
-              {q && rows.data ? tr('{a} of {n} trips').replace('{a}', `${count}`).replace('{n}', `${h.summary.trips}`)
-                : tr('{n} trips').replace('{n}', `${h.summary.trips}`)}
+              {q && rows.data ? tr(Number(h.summary.trips) === 1 ? '{a} of {n} trip' : '{a} of {n} trips').replace('{a}', `${count}`).replace('{n}', `${h.summary.trips}`)
+                : tr(Number(h.summary.trips) === 1 ? '{n} trip' : '{n} trips').replace('{n}', `${h.summary.trips}`)}
               {!q && <>{' · '}{tr('you earned {amount}').replace('{amount}', money(h.summary.earned, cur, locale) ?? '—')}</>}
             </span>
           )}
@@ -174,7 +174,7 @@ export function DriverTrips() {
               })}
             </ul>
           ) : null}
-          <Pager page={page} count={count} size={PAGE_SIZE} noun={tr('{n} trips').replace('{n}', String(count))} onPage={setPage} />
+          <Pager page={page} count={count} size={PAGE_SIZE} noun={tr(count === 1 ? '{n} trip' : '{n} trips').replace('{n}', String(count))} onPage={setPage} />
         </div>
         {open !== null && <TripDetail id={open} onClose={() => setOpen(null)} />}
       </main>

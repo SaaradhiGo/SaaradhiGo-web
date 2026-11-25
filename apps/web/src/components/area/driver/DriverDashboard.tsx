@@ -62,7 +62,7 @@ function SetupCard({ data }: { data: Requirements | null }) {
       </div>
       <div className="agrow">
         <h2 className="a20">{tr('Finish setting up to start driving')}</h2>
-        <div className="amut">{tr('Next: {step}. About {n} minutes left.').replace('{step}', tr(STEP_INFO[next].title))
+        <div className="amut">{tr(Math.max(c.minutes_left ?? 0, 1) === 1 ? 'Next: {step}. About {n} minute left.' : 'Next: {step}. About {n} minutes left.').replace('{step}', tr(STEP_INFO[next].title))
           .replace('{n}', String(Math.max(c.minutes_left ?? 0, 1)))}</div>
       </div>
       <Link href={setupHref(next)} className="abtn abtn--pri dr-setup__go" data-testid="continue-setup">{tr('Continue setup →')}</Link>
@@ -151,7 +151,7 @@ export function DriverDashboard() {
               <div className="ab">
                 {soon.days < 0
                   ? tr('Your {doc} has expired').replace('{doc}', tr(soon.label).toLowerCase())
-                  : tr('Your {doc} expires in {n} days').replace('{doc}', tr(soon.label).toLowerCase()).replace('{n}', `${soon.days}`)}
+                  : tr(soon.days === 1 ? 'Your {doc} expires in {n} day' : 'Your {doc} expires in {n} days').replace('{doc}', tr(soon.label).toLowerCase()).replace('{n}', `${soon.days}`)}
               </div>
               <div className="a14 amut">{tr('Upload the renewed document so you can keep driving without a break.')}</div>
             </div>
