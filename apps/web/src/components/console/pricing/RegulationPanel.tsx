@@ -143,6 +143,11 @@ export function RegulationPanel({ may }: { may: boolean }) {
             return api.put(`/pricing/admin/regulation/${editing.country}/`,
               { state_code: editing.state_code, ...set, clear, reason });
           }}
+          preview={(changes) => {
+            const clear = Object.entries(changes).filter(([, v]) => v === null).map(([k]) => k);
+            const set = Object.fromEntries(Object.entries(changes).filter(([, v]) => v !== null));
+            return { path: `/pricing/admin/regulation/${editing.country}/preview/`, body: { state_code: editing.state_code, ...set, clear } };
+          }}
           onClose={() => setEditing(null)}
           onDone={(text) => { setEditing(null); setNotice(text); void load(); }} />
       ) : null}

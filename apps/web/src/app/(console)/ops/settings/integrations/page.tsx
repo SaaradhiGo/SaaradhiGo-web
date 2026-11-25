@@ -1,5 +1,6 @@
 'use client';
 
+import { ProviderModeDrawer } from '@/components/console/platform/ProviderModeDrawer';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { selectedMarket, useAdminAccess } from '@/lib/adminScope';
@@ -31,6 +32,8 @@ export default function IntegrationsPage() {
   const [q, setQ] = useState('');
   const [data, setData] = useState<IntegrationsPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [switching, setSwitching] = useState<IntegrationRow | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -54,6 +57,13 @@ export default function IntegrationsPage() {
       : <StatusChip tone={chipToneOf(modeTone(r.mode))}>{r.configured ? MODE_WORDS[r.mode] : 'Not set up'}</StatusChip>) },
     { key: 'ok', label: 'Last success', render: (r) => (r.last_success_at ? stamp(r.last_success_at, timeZoneFor(r.country)) : <span className="muted">None recorded</span>) },
     { key: 'missing', label: 'What is missing', render: (r) => <span className="ops-wrap">{r.waits_on || r.note || (r.configured && r.mode === 'live' ? 'Nothing' : 'Not set up yet.')}</span> },
+    // 25 Nov (owner ruling): live, test or off, through a second person.
+    { key: 'switch', label: 'Mode', render: (r) => (r.switchable ? (
+      <span className="ops-row-actions">
+        <span>{r.console_mode ? ({ live: 'Live', test: 'Test', off: 'Off' } as Record<string, string>)[r.console_mode] : 'Environment'}</span>
+        {canWritePlatform(access) ? <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setSwitching(r)}
+          aria-label={`Switch the mode of ${r.label} in ${r.country}`}>Edit</button> : null}
+      </span>) : <span className="muted">Set by its keys</span>) },
   ];
 
   if (!canReadIntegrations(access)) {
@@ -111,6 +121,9 @@ export default function IntegrationsPage() {
         error={error}
         empty="No provider matches."
       />
+      {notice ? <div className="ops-confirm" role="status"><b>{notice}</b></div> : null}
+      {switching ? <ProviderModeDrawer row={switching} onClose={() => setSwitching(null)}
+        onDone={(t) => { setSwitching(null); setNotice(t); void load(); }} /> : null}
       <MapsCallsPanel calls={data?.maps_calls} />
       <MapsCostPanel mayEdit={canWritePlatform(access)} />
     </>

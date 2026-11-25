@@ -1,5 +1,7 @@
 'use client';
 
+import { ChangePreview } from '@/components/console/edit/ChangePreview';
+import { usePreview } from '@/components/console/edit/usePreview';
 import { refFrom, refOf } from '@/lib/refs';
 import { formatAge } from '@/lib/commandCentre';
 import { useCallback, useEffect, useState } from 'react';
@@ -209,6 +211,7 @@ function SettingsInner() {
           note="The country's own cycle and instant fee rule. States and cities can override each value below."
           send={(changes, reason) => api.post(`/payments/admin/payout-config/${cycleOf.country}/`,
             { ...changes, reason, idempotency_key: `${cycleKey}-${cycleOf.country}` })}
+          preview={(changes) => ({ path: `/payments/admin/payout-config/${cycleOf.country}/preview/`, body: changes })}
           onClose={() => setCycleOf(null)}
           onDone={(text, kind) => { setCycleOf(null); setNotice({ text, kind }); void load(); }} />
       ) : null}
@@ -253,6 +256,10 @@ function EditDrawer({ country, warning, onClose, onDone }: {
   const [key] = useState(newIdempotencyKey);
 
   const changes = configChanges(current, draft, country.currency);
+  // 25 Nov (owner): the next payout date and amounts, today against the change.
+  const shown = usePreview(changes.length && !configProblem(draft, country.currency)
+    ? `/payments/admin/payout-config/${country.country}/preview/` : null,
+  (({ reason: _r, idempotency_key: _k, ...rest }) => rest)(configBody(draft, country.currency, '', '')));
   const problem = configProblem(draft, country.currency)
     ?? (changes.length === 0 ? 'Nothing differs from the current settings.' : null)
     ?? (reason.trim().length < 5 ? 'Say why, in a few words.' : null);
@@ -340,12 +347,13 @@ function EditDrawer({ country, warning, onClose, onDone }: {
               onChange={(e) => set('holdMaxDays', e.target.value)} />
             <label className="ops-form__label" htmlFor="cfg-reason">Why (kept in the audit log)</label>
             <textarea id="cfg-reason" className="input" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
-            {changes.length > 0 ? (
-              <div className="ops-confirm">
-                <b>This request will change</b>
-                <span>{changes.map((c) => `${c.label}: ${c.from} to ${c.to}`).join(' · ')}</span>
-              </div>
-            ) : null}
+            {changes.length > 0 && shown.display ? <ChangePreview display={shown.display} heading="This request will change" />
+              : changes.length > 0 ? (
+                <div className="ops-confirm">
+                  <b>This request will change</b>
+                  <span>{changes.map((c) => `${c.label}: ${c.from} to ${c.to}`).join(' · ')}</span>
+                </div>
+              ) : null}
             {problem && (reason || changes.length > 0) ? <p className="help m-0" role="note">{problem}</p> : null}
           </>
         )}

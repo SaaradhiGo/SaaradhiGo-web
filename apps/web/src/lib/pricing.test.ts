@@ -220,3 +220,22 @@ describe('the rider-fare preview', () => {
     expect(fareChangeText({ ...rows[0], old_minor: null, change_minor: null }, 'INR')).toBe('₹220');
   });
 });
+
+describe('fare cards per market (25 Nov)', () => {
+  const cls = (name: string, offered: boolean, live: boolean) => ({ vehicle_type: 1, vehicle_type_name: name, offered,
+    live: live ? ({ id: 1 } as never) : null, scheduled: null, history: [] });
+  const zone = (state: string, classes: ReturnType<typeof cls>[]) => ({ zone: 1, code: 'X', name: 'X', country: 'IN',
+    currency: 'INR', distance_unit: 'km', classes, launch_state: state, local_today: '2026-11-25' });
+  it('counts only an offered class with no card in a live or coming-soon place', async () => {
+    const { missingCards } = await import('./pricing');
+    expect(missingCards(zone('live', [cls('sedan', true, false), cls('standard', false, false)])).map((c) => c.vehicle_type_name)).toEqual(['sedan']);
+    expect(missingCards(zone('coming_soon', [cls('xl', true, false)]))).toHaveLength(1);
+    expect(missingCards(zone('not_launched', [cls('sedan', true, false)]))).toHaveLength(0);
+    expect(missingCards(zone('live', [cls('sedan', true, true)]))).toHaveLength(0);
+  });
+  it('a change starts on the next local day', async () => {
+    const { nextDay } = await import('./pricing');
+    expect(nextDay('2026-11-25')).toBe('2026-11-26');
+    expect(nextDay('2026-12-31')).toBe('2027-01-01');
+  });
+});

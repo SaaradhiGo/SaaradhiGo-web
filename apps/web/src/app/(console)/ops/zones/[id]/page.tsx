@@ -19,6 +19,7 @@ import { RecordPanel, type RecordTab } from '@/components/console/kit/RecordPane
 import { ZoneMap, type MapZone, type PointMark } from '@/components/console/zones/ZoneMap';
 import { ZoneEditor } from '@/components/console/zones/ZoneEditor';
 import { PointTester } from '@/components/console/zones/PointTester';
+import { ZoneAreas } from '@/components/console/zones/ZoneAreas';
 import {
   DataTable, Empty, ErrorState, Fact, Facts, Panel, Pill, Skeleton, type Column, FitBox } from '@/components/console/ui';
 import { PageHead } from '@/components/console/kit/ListBits';
@@ -219,6 +220,9 @@ export default function ZoneDetailPage() {
         </>
       ),
     },
+    // 25 Nov (owner ruling): pickup points, restricted areas and a service area per class.
+    { key: 'areas', label: 'Areas', content: <ZoneAreas zoneId={zone.id} may={may}
+      classes={zone.country === 'US' ? ['standard', 'xl'] : ['auto', 'hatchback', 'sedan', 'suv']} /> },
     {
       key: 'point', label: 'Test a point',
       content: (
