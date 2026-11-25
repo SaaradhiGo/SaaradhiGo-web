@@ -16,6 +16,8 @@ export function useFitOrCards<T extends HTMLElement>(deps: DependencyList) {
   const [cards, setCards] = useState(false);
   const cardsNow = useRef(false);
   const needed = useRef(0);
+  const observer = useRef<ResizeObserver | null>(null);
+  const watched = useRef<Element | null>(null);
 
   const set = useCallback((value: boolean) => {
     if (cardsNow.current === value) return;
@@ -29,14 +31,23 @@ export function useFitOrCards<T extends HTMLElement>(deps: DependencyList) {
     const box = ref.current;
     const table = box?.querySelector('table');
     if (!box || !table || box.clientWidth === 0) return;
+    // The table can arrive (or be replaced) after the box mounts, once its data loads: watch the
+    // one that is there now, so a later change in its width is seen.
+    if (observer.current && watched.current !== table) {
+      if (watched.current) observer.current.unobserve(watched.current);
+      observer.current.observe(table);
+      watched.current = table;
+    }
     labelCells(table);
     if (cardsNow.current) {
       if (box.clientWidth < needed.current + 8) return;
       box.classList.remove('is-cards'); // room again: try it as a table
     }
-    const over = table.scrollWidth > box.clientWidth + 1;
+    // The box's own scroll width also counts: a cell's content can spill past the table's edge.
+    const wide = Math.max(table.scrollWidth, box.scrollWidth);
+    const over = wide > box.clientWidth + 1;
     if (over) {
-      needed.current = table.scrollWidth;
+      needed.current = wide;
       box.classList.add('is-cards');
     }
     set(over);
@@ -55,11 +66,12 @@ export function useFitOrCards<T extends HTMLElement>(deps: DependencyList) {
     if (!box || typeof ResizeObserver === 'undefined') return undefined;
     // Again one frame later: a resize can change the CSS (media queries) after the first look.
     const ro = new ResizeObserver(() => { measure(); requestAnimationFrame(() => measure()); });
+    observer.current = ro;
+    watched.current = null;
     ro.observe(box);
-    const table = box.querySelector('table');
-    if (table) ro.observe(table);
+    measure();
     void document.fonts?.ready.then(() => measure());
-    return () => ro.disconnect();
+    return () => { ro.disconnect(); observer.current = null; watched.current = null; };
   }, [measure]);
 
   return [ref, cards] as const;
