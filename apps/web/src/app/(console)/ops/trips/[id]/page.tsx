@@ -693,7 +693,10 @@ export default function TripDetailPage() {
           </>}
           status={<Pill tone={TONE[state] ?? 'neutral'}>{words(state)}</Pill>}
           actions={<>
-            <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void resendReceipt()}>Resend receipt</button>
+            {/* 25 Nov: support resends a completed trip's receipt; other roles would be refused. */}
+            {state === 'completed' && can(access, 'support.reply') ? (
+              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void resendReceipt()}>Resend receipt</button>
+            ) : null}
             {data.actions?.resend_pickup_code ? (
               <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => void resendPickupCode()}>Re-send pickup code</button>
             ) : null}
