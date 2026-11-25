@@ -51,8 +51,16 @@ const refused = (status: number, code: string, message: string): Reply => ({
   body: { status: 'error', error: { code, message, field: 'general' } },
 });
 
+const isSessions = (url: unknown, init?: RequestInit) => `${String(url)} ${JSON.stringify(init?.headers ?? {})}`.includes('/auth/sessions/');
+const appCalls = (fetchMock: ReturnType<typeof vi.fn>) =>
+  (fetchMock.mock.calls as unknown as Array<[string, RequestInit]>).filter(([u, i]) => !isSessions(u, i)).length;
+
 function serverAnswers(...queue: Reply[]) {
-  const fetchMock = vi.fn(async () => {
+  const fetchMock = vi.fn(async (url?: unknown, init?: RequestInit) => {
+    // 25 Nov: the Security page also lists the caller's sessions; answered here, not from the queue.
+    if (isSessions(url, init)) {
+      return { ok: true, status: 200, json: async () => ({ status: 'success', data: { sessions: [], count: 0, this_session_known: false } }) };
+    }
     const r = queue.shift();
     if (!r) throw new Error('unexpected request: the queue of replies is empty');
     return { ok: r.status >= 200 && r.status < 300, status: r.status, json: async () => r.body };
@@ -62,7 +70,8 @@ function serverAnswers(...queue: Reply[]) {
 }
 
 function request(fetchMock: ReturnType<typeof vi.fn>, n: number) {
-  const call = fetchMock.mock.calls[n] as unknown as [string, RequestInit] | undefined;
+  const calls = (fetchMock.mock.calls as unknown as Array<[string, RequestInit]>).filter(([u, i]) => !isSessions(u, i));
+  const call = calls[n] as [string, RequestInit] | undefined;
   if (!call) throw new Error(`no request #${n} was made`);
   const [url, init] = call;
   const headers = (init.headers ?? {}) as Record<string, string>;
@@ -185,7 +194,7 @@ describe('confirming', () => {
     await openPopover();
     fireEvent.submit(screen.getByLabelText('Reason (optional)'));
     await screen.findByText(REAL);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(appCalls(fetchMock)).toBe(1);
   });
 
   it('cancel closes without a request and puts focus back on the trigger', async () => {
@@ -196,7 +205,7 @@ describe('confirming', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     const trigger = screen.getByRole('button', { name: 'Reveal rider phone' });
     await waitFor(() => expect(document.activeElement).toBe(trigger));
-    expect(fetchMock).toHaveBeenCalledTimes(0);
+    expect(appCalls(fetchMock)).toBe(0);
   });
 
   it('Escape closes and returns focus to the trigger', async () => {
@@ -371,7 +380,7 @@ describe('SOS', () => {
     expect(btn.getAttribute('aria-describedby')).toBe(why.id);
     fireEvent.click(btn);
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(fetchMock).toHaveBeenCalledTimes(0);
+    expect(appCalls(fetchMock)).toBe(0);
   });
 });
 

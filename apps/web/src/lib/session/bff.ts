@@ -35,6 +35,17 @@ const REFRESH_MAX_AGE = 14 * 24 * 60 * 60;
 const RENEW_BEFORE_S = 60;
 const TOKEN_FIELDS = ['token', 'refresh_token', 'access', 'refresh'];
 
+/** The `jti` claim of a JWT, read without verifying (the backend checks it belongs to the caller). */
+export function tokenId(token: string): string | null {
+  try {
+    const part = token.split('.')[1];
+    const json = JSON.parse(Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'));
+    return typeof json.jti === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(json.jti) ? json.jti : null;
+  } catch {
+    return null;
+  }
+}
+
 export function expiry(token: string): number | null {
   try {
     const json = JSON.parse(Buffer.from(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'));
@@ -171,6 +182,9 @@ export async function proxy(req: NextRequest, who: Principal): Promise<NextRespo
       headers['X-SG-Client-IP-Key'] = key;
     }
     if (access) headers.Authorization = `Bearer ${access}`;
+    // 25 Nov: which session this browser is (My security). The refresh token's id only, never the token.
+    const jti = refresh ? tokenId(refresh) : null;
+    if (jti) headers['X-SG-Session'] = jti;
     return fetch(API() + path, { method: req.method, headers, body, cache: 'no-store', redirect: 'manual' });
   };
 

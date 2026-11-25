@@ -58,8 +58,18 @@ const disabled: Reply = {
   body: { error: { code: 'MFA_DISABLED', message: 'Multi-factor authentication is switched off in this environment, so recovery codes are not in use.' } },
 };
 
+// 25 Nov: the sessions and password sections ask for the caller's sessions on their own; those calls
+// are answered here and left out of the numbered requests below.
+const isSessions = (url: unknown, init?: RequestInit) => `${String(url)} ${JSON.stringify(init?.headers ?? {})}`.includes('/auth/sessions/');
+
+const appCalls = (fetchMock: ReturnType<typeof vi.fn>) =>
+  (fetchMock.mock.calls as unknown as Array<[string, RequestInit]>).filter(([u, i]) => !isSessions(u, i)).length;
+
 function serverAnswers(...queue: Reply[]) {
-  const fetchMock = vi.fn(async () => {
+  const fetchMock = vi.fn(async (url?: unknown, init?: RequestInit) => {
+    if (isSessions(url, init)) {
+      return { ok: true, status: 200, json: async () => ({ status: 'success', data: { sessions: [], count: 0, this_session_known: false } }) };
+    }
     const r = queue.shift();
     if (!r) throw new Error('unexpected request: the queue of replies is empty');
     return { ok: r.status >= 200 && r.status < 300, status: r.status, json: async () => r.body };
@@ -69,7 +79,8 @@ function serverAnswers(...queue: Reply[]) {
 }
 
 function request(fetchMock: ReturnType<typeof vi.fn>, n: number) {
-  const call = fetchMock.mock.calls[n] as unknown as [string, RequestInit] | undefined;
+  const calls = (fetchMock.mock.calls as unknown as Array<[string, RequestInit]>).filter(([u, i]) => !isSessions(u, i));
+  const call = calls[n] as [string, RequestInit] | undefined;
   if (!call) throw new Error(`no request #${n} was made`);
   const [url, init] = call;
   const headers = (init.headers ?? {}) as Record<string, string>;
@@ -141,7 +152,7 @@ describe('status', () => {
     expect(screen.queryByTestId('recovery-remaining')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('Enrolled')).toBeTruthy();
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(appCalls(fetchMock)).toBe(2);
   });
 });
 
@@ -179,7 +190,7 @@ describe('regenerating', () => {
 
     await waitFor(() => expect(screen.queryByTestId('recovery-codes-screen')).toBeNull());
     for (const code of CODES) expect(screen.queryByText(code)).toBeNull();
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(appCalls(fetchMock)).toBe(3));
     expect(request(fetchMock, 2).url.endsWith('/auth/admin/mfa/status/')).toBe(true);
     expect(await screen.findByRole('button', { name: 'Regenerate recovery codes' })).toBeTruthy();
   });
@@ -193,7 +204,7 @@ describe('regenerating', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Issue new codes' }));
 
     expect((await screen.findByRole('alert')).textContent).toContain('all six digits');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(appCalls(fetchMock)).toBe(1);
   });
 
   it('a wrong code keeps the prompt open with a message, clears the field, and does not sign the operator out', async () => {
@@ -233,6 +244,6 @@ describe('regenerating', () => {
     expect(screen.queryByLabelText('Authenticator code')).toBeNull();
     const regen = await screen.findByRole('button', { name: 'Regenerate recovery codes' });
     await waitFor(() => expect(document.activeElement).toBe(regen));
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(appCalls(fetchMock)).toBe(1);
   });
 });
