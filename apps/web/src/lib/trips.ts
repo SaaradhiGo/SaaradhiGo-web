@@ -25,6 +25,8 @@ export type TripFilters = {
   scope: string;
   paymentMethod: string;
   vehicleType: string;
+  /** The driver's plate, in any spacing ("TS 09 AB 1234"); the server normalises it. */
+  plate: string;
   stale: boolean;
   flagged: boolean;
   hasSos: boolean;
@@ -39,7 +41,7 @@ export type TripFilters = {
 };
 
 export const DEFAULT_FILTERS: TripFilters = {
-  status: [], dateFrom: '', dateTo: '', scope: '', paymentMethod: '', vehicleType: '',
+  status: [], dateFrom: '', dateTo: '', scope: '', paymentMethod: '', vehicleType: '', plate: '',
   stale: false, flagged: false, hasSos: false, stuck: false, unaccepted: false, id: '', ordering: '-requested_at',
   page: 1, pageSize: 50,
 };
@@ -87,6 +89,7 @@ export function filtersFromSearch(params: URLSearchParams): TripFilters {
     scope: params.get('scope') ?? '',
     paymentMethod: params.get('payment_method') ?? '',
     vehicleType: params.get('vehicle_type') ?? '',
+    plate: (params.get('plate') ?? '').slice(0, 20),
     stale: params.get('stale') === 'true',
     flagged: params.get('flagged') === 'true',
     hasSos: params.get('has_sos') === 'true',
@@ -111,6 +114,7 @@ export function filtersToQuery(f: TripFilters): string {
   if (f.scope) q.set('scope', f.scope);
   if (f.paymentMethod) q.set('payment_method', f.paymentMethod);
   if (f.vehicleType) q.set('vehicle_type', f.vehicleType);
+  if (f.plate.trim()) q.set('plate', f.plate.trim());
   if (f.stale) q.set('stale', 'true');
   if (f.flagged) q.set('flagged', 'true');
   if (f.hasSos) q.set('has_sos', 'true');
@@ -134,7 +138,7 @@ export function tripsApiPath(f: TripFilters): string {
 export function activeFilterCount(f: TripFilters): number {
   return [
     f.status.length > 0, Boolean(f.dateFrom || f.dateTo), Boolean(f.scope),
-    Boolean(f.paymentMethod), Boolean(f.vehicleType), f.stale, f.flagged, f.hasSos, f.stuck, f.unaccepted,
+    Boolean(f.paymentMethod), Boolean(f.vehicleType), Boolean(f.plate.trim()), f.stale, f.flagged, f.hasSos, f.stuck, f.unaccepted,
     Boolean(f.id.trim()),
   ].filter(Boolean).length;
 }

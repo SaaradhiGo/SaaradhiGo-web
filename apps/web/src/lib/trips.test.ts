@@ -61,15 +61,15 @@ describe('filters and the query string', () => {
   it('round-trips every filter', () => {
     const f = {
       ...DEFAULT_FILTERS, status: ['requested', 'accepted'], dateFrom: '2026-10-01',
-      dateTo: '2026-10-02', scope: 'IN-TG-HYD', paymentMethod: 'cash', vehicleType: 'sedan',
+      dateTo: '2026-10-02', scope: 'IN-TG-HYD', paymentMethod: 'cash', vehicleType: 'sedan', plate: 'TS 09 AB 1234',
       stale: true, flagged: true, hasSos: true, id: '42', ordering: 'fare', page: 3, pageSize: 100,
     };
     const q = filtersToQuery(f);
     expect(q).toBe('status=requested%2Caccepted&date_from=2026-10-01&date_to=2026-10-02&scope=IN-TG-HYD'
-      + '&payment_method=cash&vehicle_type=sedan&stale=true&flagged=true&has_sos=true&id=42'
+      + '&payment_method=cash&vehicle_type=sedan&plate=TS+09+AB+1234&stale=true&flagged=true&has_sos=true&id=42'
       + '&ordering=fare&page=3&page_size=100');
     expect(filtersFromSearch(new URLSearchParams(q))).toEqual(f);
-    expect(activeFilterCount(f)).toBe(9);
+    expect(activeFilterCount(f)).toBe(10);
   });
 
   it('leaves defaults out and always sends a page size to the API', () => {
