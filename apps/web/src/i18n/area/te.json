@@ -864,5 +864,13 @@
   "30 days": "30 రోజులు",
   "90 days": "90 రోజులు",
   "12 months": "12 నెలలు",
-  "Custom": "మీ తేదీలు"
+  "Custom": "మీ తేదీలు",
+  "Your {doc} expires in {n} day": "మీ {doc} గడువు {n} రోజులో ముగుస్తుంది",
+  "No fee in your first {n} day.": "మీ మొదటి {n} రోజులో ఫీజు లేదు.",
+  "Next: {step}. About {n} minute left.": "తదుపరి: {step}. సుమారు {n} నిమిషం మిగిలింది.",
+  "From {n} rider": "{n} రైడర్ నుండి",
+  "{r} rating from {n} trip": "{n} ట్రిప్ నుండి {r} రేటింగ్",
+  "Step {n} of {total} · about {m} minute left": "{total}లో దశ {n} · సుమారు {m} నిమిషం మిగిలింది",
+  "{a} of {n} trip": "{n}లో {a} ట్రిప్",
+  "Held for {n} minute.": "{n} నిమిషం నిలిపి ఉంచుతాం."
 }

@@ -12,6 +12,7 @@ import {
 import { exponentOf, formatMinor, interpretWrite, newIdempotencyKey } from '@/lib/trips';
 import { PageButtonLink } from '@/components/console/PageLink';
 import { Column, DataTable, Drawer, Empty, Panel, Pill } from '@/components/console/ui';
+import { plural } from '@/lib/plural';
 
 type Mode = 'recover' | 'hold' | 'renew' | 'cash' | 'release' | null;
 
@@ -143,11 +144,11 @@ export function FlagMoney({ flag, onDone }: { flag: FlagDetail; onDone: (message
             {!money.payout_hold.eligible ? (
               <span className="muted">
                 A payout hold is for serious fraud on a suspended driver, with a second approver and a maximum of{' '}
-                {money.payout_hold.max_days} days. Not available yet: {holdBlockers(money.payout_hold.blockers).join(' ')}
+                {plural(money.payout_hold.max_days, 'day')}. Not available yet: {holdBlockers(money.payout_hold.blockers).join(' ')}
               </span>
             ) : (
               <span className="muted">
-                Nothing is held automatically. Holding needs a second approver and ends after at most {money.payout_hold.max_days} days
+                Nothing is held automatically. Holding needs a second approver and ends after at most {plural(money.payout_hold.max_days, 'day')}
                 unless renewed.
               </span>
             )}

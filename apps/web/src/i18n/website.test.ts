@@ -78,7 +78,7 @@ const MISSING = [
   'Type DELETE to confirm', 'Keep my account',
   // 13 Nov apps follow-up: trip summary and owing on closure.
   'Closing: waiting for what you owe to be settled.', 'Paid {fare} in cash', 'Paid {fare} online',
-  'Your driver', '{n} stars',
+  'Your driver', '{n} stars', '{n} star',
   // 13 Nov, public-site UX: role gate, account switch, globe panel, example request
   'Driver home', 'Example ride request', 'That did not work. Try again.', 'Back to driver home', 'Back to booking',
   'Sign in to drive', 'Sign in to ride', 'This page needs you to be signed in.', 'Sign in',

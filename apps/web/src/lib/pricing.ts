@@ -13,6 +13,7 @@
  */
 import { can, type AdminAccess } from './adminScope';
 import { formatMinor } from './trips';
+import { plural } from '@/lib/plural';
 
 // ---------------------------------------------------------------------------
 // Capabilities
@@ -150,7 +151,7 @@ export function ruleProblem(
     const now = opts.now ?? new Date();
     const earliest = now.getTime() + config.notice_days * 86_400_000;
     if (new Date(d.effectiveFrom).getTime() < earliest - 60_000) {
-      return `An increase needs ${config.notice_days} days notice for drivers; pick a later date or leave it blank.`;
+      return `An increase needs ${plural(config.notice_days, 'day')} notice for drivers; pick a later date or leave it blank.`;
     }
   }
   return null;
@@ -204,7 +205,7 @@ export function previewSentence(line: PreviewLine, windowDays: number): string {
   const what = line.direction === 'same' ? 'no change in driver earnings'
     : line.direction === 'more' ? `drivers would have kept ${line.total} more in total (${line.average} a trip)`
       : `drivers would have kept ${line.total.replace('-', '')} less in total (${line.average.replace('-', '')} a trip)`;
-  return `Last ${windowDays} days, ${line.currency}: ${who} would be affected: ${what}.`;
+  return `Last ${plural(windowDays, 'day')}, ${line.currency}: ${who} would be affected: ${what}.`;
 }
 
 // ---------------------------------------------------------------------------

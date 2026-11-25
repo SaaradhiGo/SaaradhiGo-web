@@ -414,7 +414,7 @@ export function RideChoose({ guest = false }: { guest?: boolean }) {
         </fieldset>}
         {!outsideArea && <div className="arow a14 agrn" style={{ gap: 8, padding: '10px 12px', borderRadius: 12, background: 'var(--c-green-bg)' }}>
           <ILock size={16} />{tr('The fare you book is the fare you pay.')}
-          {holdMin !== null && <> {tr('Held for {n} minutes.').replace('{n}', `${holdMin}`)}</>}
+          {holdMin !== null && <> {tr(holdMin === 1 ? 'Held for {n} minute.' : 'Held for {n} minutes.').replace('{n}', `${holdMin}`)}</>}
         </div>}
         {chosen?.quote ? <FareWorkings quote={chosen.quote} /> : null}
         {error && <p className="a14 ared" role="alert">{error}</p>}

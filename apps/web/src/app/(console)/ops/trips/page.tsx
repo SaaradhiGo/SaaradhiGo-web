@@ -27,6 +27,7 @@ import {
   ActionNotice, MoreFilters, RecordFacts, RecordFailed, RecordLoading, RecordSection,
 } from '@/components/console/kit/ListBits';
 import { Drawer, Fact, Facts, Skeleton } from '@/components/console/ui';
+import { plural } from '@/lib/plural';
 
 /**
  * Trips: find one, or a set of them, and act, with the trip beside the list
@@ -339,7 +340,7 @@ function TripsInner() {
       downloadCsv(`trips-${view}.csv`, toCsv(header, body));
       setNotice({ kind: 'done', text: truncated
         ? `Exported the first ${all.length.toLocaleString('en-IN')} trips. Narrow the view to export the rest.`
-        : `Exported all ${all.length.toLocaleString('en-IN')} trips in this view to trips-${view}.csv.` });
+        : `Exported ${all.length === 1 ? 'the only trip' : `all ${plural(all.length, 'trip')}`} in this view to trips-${view}.csv.` });
     } catch (err) {
       setNotice({ kind: 'done', text: err instanceof ApiError && err.fromServer ? err.message : 'The export did not complete.' });
     } finally {

@@ -23,6 +23,7 @@ import {
   Column, DataTable, Empty, ErrorState, MetricTile, Panel, Skeleton, TableToolbar,
   TileGrid,
 } from '@/components/console/ui';
+import { plural } from '@/lib/plural';
 
 /**
  * One driver's statement: opening balance, what moved, closing balance.
@@ -226,7 +227,7 @@ function LedgerInner() {
             <div className="ops-note ops-note--warn mb-3" role="status">
               <b>Payouts are on hold until {stamp(data.payout_hold.expires_at, tz)}.</b>{' '}
               A suspended driver, approved by a second admin ({refFrom(data.payout_hold, 'approval_ref', 'approval request')}); it ends by
-              itself after at most {data.payout_hold.max_days} days unless it is renewed. The weekly run skips this driver
+              itself after at most {plural(data.payout_hold.max_days, 'day')} unless it is renewed. The weekly run skips this driver
               and lists them as held.{' '}
               {can(access, 'finance.payout') ? (
                 <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setReleasing(true)}>

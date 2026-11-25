@@ -17,6 +17,7 @@ import { LiveLists, type ListTab } from '@/components/console/liveops/LiveLists'
 import { LiveMap, type Follow, type Layers, type MapPick } from '@/components/console/liveops/LiveMap';
 import { StatusBar, type ChipKey } from '@/components/console/liveops/StatusBar';
 import { Empty, ErrorState, PageHeader, Skeleton } from '@/components/console/ui';
+import { plural } from '@/lib/plural';
 
 /**
  * Live map: where the drivers and trips are, and where demand is outrunning supply.
@@ -257,7 +258,7 @@ export default function LiveOpsPage() {
             {snapshot?.truncated?.message ? <p className="lo-note lo-note--warn" role="status">{snapshot.truncated.message}</p> : null}
             {heat.data && heat.data.k_anonymity ? (
               <p className="lo-note" role="status">
-                Areas with fewer than {heat.data.k_anonymity} events are not shown
+                Areas with fewer than {plural(heat.data.k_anonymity, 'event')} are not shown
                 {heat.data.suppressed_cells ? ` (${heat.data.suppressed_cells} hidden)` : ''}.
               </p>
             ) : null}

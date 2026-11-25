@@ -2878,3 +2878,18 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
    each gets 15rem, and stack (two, then one) when they do not. */
 .ops-board__lanes { grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); overflow-x: visible; }
 .ops-board__lanes > * { min-width: 0; }
+
+/* 25 Nov (owner, PROD at 1900px): the top bar spans the window at any width. Search stays left;
+   status and profile sit at the right edge, never next to the search box. */
+.ops__top { width: 100%; }
+.ops__top > .ops__top-right { margin-left: auto; }
+/* With a mouse every control is at least 24px (WCAG 2.5.8); touch sizes stay 44px above. */
+@media (min-width: 1025px) and (pointer: fine) {
+  .ops .ops-th-sort, .ops .ops-sort, .ops .ops-inbox__title, .ops .ops-banner a { min-height: 24px; display: inline-flex; align-items: center; }
+  .ops summary { min-height: 24px; }
+}
+/* 25 Nov: the map's controls sit above the map at every width, like its notes and key; floating,
+   they wrapped onto the first note at narrow desktop widths (1070px). */
+.lo-canvas > .lo-float { position: static; max-width: none; margin: 8px; flex: none; }
+/* On a short window the map keeps its 260px and the column scrolls, rather than clipping the notes and key. */
+.lo-canvas { overflow-x: hidden; overflow-y: auto; }
