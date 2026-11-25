@@ -71,6 +71,13 @@ describe('support ticket record page', () => {
     expect(JSON.parse(String(posts[1][1]?.body))).toEqual({ trip: 'HYD-261116-K7Q5' });
   });
 
+  it('offers escalation only on a safety ticket (25 Nov)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ status: 'success', data: REPLY }) })));
+    render(<Page />);
+    await screen.findByText('SUP-HYD-4KQ7');
+    expect(screen.queryByRole('button', { name: 'Escalate to safety…' })).toBeNull();
+  });
+
   it('escalates to safety and links the incident by its reference', async () => {
     const fetchMock = vi.fn(async (url: string) => {
       if (String(url).includes('/escalate/')) {
@@ -79,7 +86,7 @@ describe('support ticket record page', () => {
       if (String(url).includes('/safety/admin/incidents/7/')) {
         return { ok: true, status: 200, json: async () => ({ status: 'success', data: { id: 7, ref: 'INC-HYD-3KQ9' } }) };
       }
-      return { ok: true, status: 200, json: async () => ({ status: 'success', data: REPLY }) };
+      return { ok: true, status: 200, json: async () => ({ status: 'success', data: { ...REPLY, issue_type: 'safety' } }) };
     });
     vi.stubGlobal('fetch', fetchMock);
     render(<Page />);

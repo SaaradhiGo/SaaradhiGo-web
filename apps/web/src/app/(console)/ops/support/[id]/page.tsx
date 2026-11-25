@@ -270,7 +270,8 @@ function TicketView({
 
           <TicketPanel ticket={ticket} tz={tz} has={has} assignees={assignees} onDone={done} onError={setActionError} />
 
-          {has('reply') ? <EscalatePanel ticketId={ticket.id} onError={setActionError} /> : null}
+          {/* Only a safety concern becomes a safety incident (the server refuses others); change the category first. */}
+          {has('reply') && ticket.issue_type === 'safety' ? <EscalatePanel ticketId={ticket.id} onError={setActionError} /> : null}
 
           {canCreditWallet(access) && ticket.requester.page?.type === 'rider' ? (
             <Panel title="Wallet credit">
@@ -791,7 +792,7 @@ function EscalatePanel({ ticketId, onError }: { ticketId: number; onError: (e: s
         </div>
       ) : (
         <>
-          <p className="help m-0">Only a safety concern can be escalated. It opens a safety incident linked to this ticket.</p>
+          <p className="help m-0">Opens a safety incident linked to this ticket, for the safety team.</p>
           <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm mt-3" onClick={() => setOpen(true)}>Escalate to safety…</button>
         </>
       )}
