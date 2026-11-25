@@ -264,6 +264,8 @@ export type IntegrationRow = {
   waits_on?: string;
   type: string; label: string; provider: string; country: string; configured: boolean; mode: IntegrationMode;
   env_vars: string[]; blocker: number | null; note: string; last_success_at: string | null; last_error_at: string | null;
+  /** 25 Nov (owner ruling): the console may switch this row's mode; the approved mode, if any. */
+  switchable?: boolean; console_mode?: string | null;
 };
 export type IntegrationsPayload = {
   rows: IntegrationRow[]; live_send: boolean; production: boolean; live_providers_required: boolean; note: string;

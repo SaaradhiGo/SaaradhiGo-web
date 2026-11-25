@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
+import { HourlyRota } from './HourlyRota';
 import { ApiError, api } from '@/lib/api';
 import { marketDate } from '@/lib/consoleTime';
 import { RecordSection } from '@/components/console/kit/ListBits';
@@ -68,8 +69,10 @@ export function OnCallRota() {
   return (
     <>
       {rows.map((row) => (
+        <Fragment key={row.city.code}>
+        {/* 25 Nov (owner ruling): the hourly rota first; this fixed list covers any hour it leaves empty. */}
+        <HourlyRota cityCode={row.city.code} canEdit={row.can_edit} />
         <RecordSection
-          key={row.city.code}
           title={`On call for SOS · ${row.city.name}`}
           action={row.can_edit && editing !== row.city.code ? (
             <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => start(row)}>
@@ -120,6 +123,7 @@ export function OnCallRota() {
             </table></FitBox>
           )}
         </RecordSection>
+        </Fragment>
       ))}
     </>
   );
