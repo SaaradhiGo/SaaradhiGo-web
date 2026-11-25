@@ -25,7 +25,7 @@ export type TripFilters = {
   scope: string;
   paymentMethod: string;
   vehicleType: string;
-  /** The driver's plate, in any spacing ("TS 09 AB 1234"); the server normalises it. */
+  /** The driver's plate, in any spacing; the server normalises it. */
   plate: string;
   stale: boolean;
   flagged: boolean;

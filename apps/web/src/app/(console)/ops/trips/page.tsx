@@ -409,7 +409,7 @@ function TripsInner() {
                   <label className="ops-form__label" htmlFor="f-vehicle">Vehicle</label>
                   <input id="f-vehicle" className="ops-select" placeholder="e.g. sedan" value={draft.vehicleType} onChange={(e) => setDraft({ ...draft, vehicleType: e.target.value.trim() })} size={10} />
                   <label className="ops-form__label" htmlFor="f-plate">Plate</label>
-                  <input id="f-plate" className="ops-select" placeholder="TS 09 AB 1234" value={draft.plate} maxLength={20} onChange={(e) => setDraft({ ...draft, plate: e.target.value })} size={14} />
+                  <input id="f-plate" className="ops-select" placeholder="Part of the plate" value={draft.plate} maxLength={20} onChange={(e) => setDraft({ ...draft, plate: e.target.value })} size={14} />
                   <label className="ops-form__label" htmlFor="f-id">Trip reference</label>
                   <input id="f-id" className="ops-select" placeholder="HYD-261116-K7Q4" value={draft.id} onChange={(e) => setDraft({ ...draft, id: e.target.value.replace(/[^A-Za-z0-9-]/g, '').toUpperCase() })} size={16} />
                 </div>
