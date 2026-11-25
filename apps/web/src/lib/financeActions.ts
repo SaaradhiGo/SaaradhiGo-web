@@ -12,6 +12,7 @@ import { formatAge } from '@/lib/commandCentre';
 import { can, type AdminAccess } from './adminScope';
 import { canActOnPayouts, formatMinor } from './finance';
 import { exponentOf, parseMajorToMinor } from './trips';
+import { plural } from '@/lib/plural';
 
 // ---------------------------------------------------------------------------
 // Capabilities
@@ -271,13 +272,13 @@ export function configChanges(current: PayoutConfig, draft: ConfigDraft, currenc
     hold: current.payout_hold_max_days ?? FRAUD_MONEY_DEFAULTS.payout_hold_max_days,
   };
   if (Number(draft.rewardHoldDays) !== was.reward) {
-    out.push({ label: 'Reward held for review', from: `${was.reward} days`, to: `${Number(draft.rewardHoldDays)} days` });
+    out.push({ label: 'Reward held for review', from: plural(was.reward, 'day'), to: plural(Number(draft.rewardHoldDays), 'day') });
   }
   if (Number(draft.recoveryPercent) !== was.recovery) {
     out.push({ label: 'Most of one payout a recovery may take', from: `${was.recovery}%`, to: `${Number(draft.recoveryPercent)}%` });
   }
   if (Number(draft.holdMaxDays) !== was.hold) {
-    out.push({ label: 'Longest payout hold', from: `${was.hold} days`, to: `${Number(draft.holdMaxDays)} days` });
+    out.push({ label: 'Longest payout hold', from: plural(was.hold, 'day'), to: plural(Number(draft.holdMaxDays), 'day') });
   }
   return out;
 }

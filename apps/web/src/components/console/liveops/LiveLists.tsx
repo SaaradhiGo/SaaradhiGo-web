@@ -10,6 +10,7 @@ import {
 } from '@/lib/liveOps';
 import { Column, DataTable, Empty, Pill } from '@/components/console/ui';
 import type { Density } from '@/lib/consolePrefs';
+import { plural } from '@/lib/plural';
 
 /**
  * The list view: everything on the map, as tables.
@@ -179,7 +180,7 @@ function AlertTable({ alerts, density, now }: { alerts: LiveAlert[]; density: De
 
 function CellTable({ cells, windowMinutes, density }: { cells: HeatCell[]; windowMinutes: number; density: Density }) {
   if (cells.length === 0) {
-    return <Empty title="No demand or supply in this window" detail={`Nothing was requested and no idle driver was seen in the last ${windowMinutes} minutes.`} />;
+    return <Empty title="No demand or supply in this window" detail={`Nothing was requested and no idle driver was seen in the last ${plural(windowMinutes, 'minute')}.`} />;
   }
   const rows = cells.slice(0, LIST_ROW_CAP);
   const columns: Column<HeatCell>[] = [
@@ -194,7 +195,7 @@ function CellTable({ cells, windowMinutes, density }: { cells: HeatCell[]; windo
   return (
     <>
       <DataTable
-        caption={`Demand and supply by cell, last ${windowMinutes} minutes`} density={density} maxHeight rows={rows}
+        caption={`Demand and supply by cell, last ${plural(windowMinutes, 'minute')}`} density={density} maxHeight rows={rows}
         rowKey={(c) => `${c.row}:${c.col}`} columns={columns} defaultSort={{ key: 'shade', dir: 'desc' }}
       />
       <Capped shown={rows.length} total={cells.length} />

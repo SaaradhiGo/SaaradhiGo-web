@@ -9,6 +9,7 @@ import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { RecordFacts, RecordSection } from '@/components/console/kit/ListBits';
 import { RecordPanel } from '@/components/console/kit/RecordPanel';
 import { StatusChip } from '@/components/console/kit/StatusChip';
+import { plural } from '@/lib/plural';
 
 /** Vehicle classes: what a driver can register, and where a fare card prices it. */
 type ClassRow = {
@@ -103,7 +104,7 @@ export default function VehicleClassesPage() {
     {
       key: 'priced', label: 'Priced in',
       render: (r) => (
-        <>{`${r.zones_priced} of ${r.zones_in_scope} zones`}{' '}
+        <>{`${r.zones_priced} of ${plural(r.zones_in_scope, 'zone')}`}{' '}
           {r.zones_priced === 0 ? <StatusChip tone="caution">Not priced anywhere</StatusChip> : null}</>
       ),
     },

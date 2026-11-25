@@ -32,6 +32,7 @@ import { Drawer, Fact, Facts, Skeleton } from '@/components/console/ui';
 import { marketDate } from '@/lib/consoleTime';
 import { DocExpiry } from '@/components/console/DocExpiry';
 import { classWord } from '@/lib/pricingWords';
+import { plural } from '@/lib/plural';
 
 /**
  * Drivers: the fleet and the KYC queue, as a list with the driver beside it
@@ -218,7 +219,7 @@ function DriversInner() {
     if (filters.online) chips.push({ key: 'online', label: 'Online now', onRemove: drop({ online: false }) });
     if (filters.suspended) chips.push({ key: 'suspended', label: 'Suspended', onRemove: drop({ suspended: false }) });
     if (filters.flagged) chips.push({ key: 'flagged', label: 'Has a flagged trip', onRemove: drop({ flagged: false }) });
-    if (filters.expiringWithin) chips.push({ key: 'exp', label: `Documents expiring within ${filters.expiringWithin} days`, onRemove: drop({ expiringWithin: '' }) });
+    if (filters.expiringWithin) chips.push({ key: 'exp', label: `Documents expiring within ${plural(filters.expiringWithin, 'day')}`, onRemove: drop({ expiringWithin: '' }) });
     if (filters.ratingMin || filters.ratingMax) {
       const band = RATING_BANDS.find(([min, max]) => min === filters.ratingMin && max === filters.ratingMax);
       chips.push({ key: 'rating', label: band ? `Rating ${band[2].toLowerCase()}` : `Rating ${filters.ratingMin || '0'} to ${filters.ratingMax || '5'}`, onRemove: drop({ ratingMin: '', ratingMax: '' }) });

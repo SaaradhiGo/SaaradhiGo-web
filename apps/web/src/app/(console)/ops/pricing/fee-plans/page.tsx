@@ -12,6 +12,7 @@ import { interpretWrite } from '@/lib/trips';
 import { PricingNav } from '@/components/console/pricing';
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
 import { DataTable, Drawer, ErrorState, Skeleton } from '@/components/console/ui';
+import { plural } from '@/lib/plural';
 
 /**
  * Pricing > Driver fee plans (9 Nov). One active plan per market, resolved city -> state ->
@@ -132,7 +133,7 @@ export default function FeePlansPage() {
               { key: 'status', label: 'Status', render: (p) => <StatusChip tone={TONE[p.status] ?? 'neutral'}>{STATUS_WORDS[p.status] ?? p.status.replace('_', ' ')}</StatusChip> },
               { key: 'amounts', label: 'Driver fee per class', render: (p) => <ul className="ops-list-plain">{amountsWords(p).map((w) => <li key={w}>{w}</li>)}</ul> },
               { key: 'rider', label: 'Rider booking fee', render: (p) => riderFeeWords(p) },
-              { key: 'rules', label: 'Floor · cap · waiver', render: (p) => `${rupees(p.earnings_floor_minor, p.currency)} · ${p.daily_cap_minor == null ? 'no cap' : rupees(p.daily_cap_minor, p.currency)} · ${p.waiver_first_days ? `first ${p.waiver_first_days} days free` : p.waiver_until ? `free until ${marketDate(p.waiver_until, p.country)}` : 'none'}` },
+              { key: 'rules', label: 'Floor · cap · waiver', render: (p) => `${rupees(p.earnings_floor_minor, p.currency)} · ${p.daily_cap_minor == null ? 'no cap' : rupees(p.daily_cap_minor, p.currency)} · ${p.waiver_first_days ? `first ${plural(p.waiver_first_days, 'day')} free` : p.waiver_until ? `free until ${marketDate(p.waiver_until, p.country)}` : 'none'}` },
               { key: 'from', label: 'From', render: (p) => (p.effective_from ? `${marketDate(p.effective_from, p.country)}${p.effective_to ? ` to ${marketDate(p.effective_to, p.country)}` : ''}` : '—') },
               { key: 'note', label: 'Note', hideBelow: 1500, render: (p) => p.note || '—' },
               { key: 'act', label: '', render: (p) => (may && p.status === 'draft'

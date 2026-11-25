@@ -7,6 +7,7 @@ import { useAdminAccess, withScope } from '@/lib/adminScope';
 import { canReadPlatform, canWritePlatform } from '@/lib/platform';
 import { PlatformNav, PlatformNoAccess } from '@/components/console/platform';
 import { DataTable, Drawer, ErrorState, PageHeader, Skeleton } from '@/components/console/ui';
+import { plural } from '@/lib/plural';
 
 /**
  * Configure > Market rules (14 Nov, USA from day 1). The per-state operating rules on
@@ -80,7 +81,7 @@ export default function MarketRulesPage() {
             { key: 'insurance', label: 'Platform insurance', render: (r) => (r.platform_insurance?.policy_number
               ? `${r.platform_insurance.insurer ?? ''} ${r.platform_insurance.policy_number}` : (r.platform_insurance_required ? 'Needed, not set' : '—')) },
             { key: 'agent', label: 'Agent for service', render: (r) => r.service_agent?.name ?? '—' },
-            { key: 'records', label: 'Trip records kept', render: (r) => (r.trip_record_retention_days ? `${r.trip_record_retention_days} days` : '—') },
+            { key: 'records', label: 'Trip records kept', render: (r) => (r.trip_record_retention_days ? plural(r.trip_record_retention_days, 'day') : '—') },
             { key: 'edit', label: '', render: (r) => (may ? <button type="button" className="btn btn-sm" onClick={() => setEditing(r)}>Edit</button> : null) },
           ]}
         />

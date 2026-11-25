@@ -17,6 +17,7 @@ import { Revealable } from '@/components/console/Revealable';
 import {
   Column, DataTable, Empty, ErrorState, Fact, Facts, PageHeader, Panel, Pill, Skeleton,
 } from '@/components/console/ui';
+import { plural } from '@/lib/plural';
 
 /**
  * One rider: who they are, what they have done, and what operators did.
@@ -258,7 +259,7 @@ export default function RiderDetailPage() {
                 />
               )
             ))}
-            <p className="help">The latest {data.wallet.rows_per_currency} entries per currency. Refunds are made on the trip.</p>
+            <p className="help">The latest {plural(data.wallet.rows_per_currency, 'entry', 'entries')} per currency. Refunds are made on the trip.</p>
           </>
         )}
       </Panel>

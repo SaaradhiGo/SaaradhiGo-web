@@ -3,6 +3,7 @@
 import { type CSSProperties, type ReactNode, useEffect, useState } from 'react';
 import { textOf } from '@/lib/cellText';
 import { useFitOrCards } from '@/lib/useFitOrCards';
+import { plural } from '@/lib/plural';
 
 /**
  * The everyday pattern, list half (design board B): saved views with counts,
@@ -40,10 +41,8 @@ export type ListColumn<T> = {
   cardOrder?: number;
 };
 
-/** "1 match", "12 matches": every count in the console reads as English. */
-export function plural(n: number, one: string, many = `${one}s`): string {
-  return `${n.toLocaleString('en-IN')} ${n === 1 ? one : many}`;
-}
+/** "1 match", "12 matches": every count in the console reads as English (src/lib/plural). */
+export { plural };
 
 function cardRole<T>(c: ListColumn<T>): string {
   if (c.card) return c.card;
