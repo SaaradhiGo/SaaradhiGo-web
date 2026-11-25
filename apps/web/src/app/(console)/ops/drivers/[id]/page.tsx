@@ -1,5 +1,6 @@
 'use client';
 
+import { PayoutHoldDrawer } from '@/components/console/drivers/PayoutHoldDrawer';
 import { refOf } from '@/lib/refs';
 import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import Link from 'next/link';
@@ -118,6 +119,9 @@ export default function DriverDetailPage() {
   const [vehicleChange, setVehicleChange] = useState<Vehicle | null>(null);
   const [adding, setAdding] = useState(false);
   const [payoutChange, setPayoutChange] = useState(false);
+  // 25 Nov (owner ruling): a payout hold for a named reason, through a second person.
+  const [holding, setHolding] = useState(false);
+  const mayHold = can(access, 'finance.payout');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -343,8 +347,11 @@ export default function DriverDetailPage() {
     ) },
     { key: 'money', label: 'Money', content: (
 <div className="grid gap-4">
-          <Panel title="Money" action={mayWrite && country === 'IN' ? (
-            <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setPayoutChange(true)}>Change payout details…</button>
+          <Panel title="Money" action={(mayWrite && country === 'IN') || mayHold ? (
+            <span className="ops-row-actions">
+              {mayWrite && country === 'IN' ? <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setPayoutChange(true)}>Change payout details…</button> : null}
+              {mayHold ? <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setHolding(true)}>Hold payouts…</button> : null}
+            </span>
           ) : undefined}>
             <Facts>
               <Fact label="Wallet">{data.earnings.wallet_balance}</Fact>
@@ -485,6 +492,7 @@ export default function DriverDetailPage() {
       {adding && (
         <AddVehicleDrawer driverId={data.id} country={country} onClose={() => setAdding(false)} onDone={(text) => done(text)} />
       )}
+      {holding ? <PayoutHoldDrawer driverId={data.id} driverName={name} onClose={() => setHolding(false)} onDone={(text) => { setHolding(false); done(text, 'pending'); }} /> : null}
       {payoutChange && (
         <PayoutDetailsDrawer driverId={data.id} driverName={name} onClose={() => setPayoutChange(false)} onDone={(text) => done(text, 'pending')} />
       )}

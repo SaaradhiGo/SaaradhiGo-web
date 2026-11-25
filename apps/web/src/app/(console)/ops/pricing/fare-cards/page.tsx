@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { useAdminAccess, withScope } from '@/lib/adminScope';
-import { stamp } from '@/lib/consoleTime';
+import { stamp, timeZoneFor } from '@/lib/consoleTime';
 import { currencySymbol, plainAmount } from '@/lib/money';
 import {
   FARE_FIELDS, canDraftPricing, cardBody, fareChangeText, fareChanges, fareProblem, isOffered, missingCards, nextDay,
@@ -262,8 +262,8 @@ function CardDrawer({ zone, cls, may, startEditing, onClose, onDone }: {
                 { key: 'mf', label: 'Min', num: true, render: (h) => money(zone, h.min_fare) },
                 { key: 'n', label: 'Night', num: true, hideBelow: 1100, render: (h) => `×${Number(h.night_surge_multiplier)}` },
                 { key: 'c', label: 'Cap', num: true, hideBelow: 1100, render: (h) => `×${Number(h.surge_cap_multiplier)}` },
-                { key: 'f', label: 'From', render: (h) => stamp(h.effective_from) },
-                { key: 't', label: 'Until', render: (h) => (h.effective_to ? stamp(h.effective_to) : '—') },
+                { key: 'f', label: 'From', render: (h) => stamp(h.effective_from, timeZoneFor(zone.code)) },
+                { key: 't', label: 'Until', render: (h) => (h.effective_to ? stamp(h.effective_to, timeZoneFor(zone.code)) : '—') },
               ]} />
           )}
         </section>
