@@ -303,6 +303,9 @@ async function open(browser, target, market, w, h, dpr = 1) {
   }
   const page = await ctx.newPage();
   await page.goto(SITE + url, { waitUntil: 'networkidle', timeout: 60000 }).catch(() => {});
+  // 25 Nov: the sweep judges the settled layout. The sidebar animates its width over 180ms at the
+  // 1060px breakpoint, and a check two frames after a resize caught it halfway (the "1070px" flakes).
+  await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; animation-duration: 0s !important; animation-delay: 0s !important; }' }).catch(() => {});
   await page.evaluate(() => document.fonts?.ready);
   await page.waitForTimeout(url.includes('choose') ? 3000 : 800);
   return { ctx, page, touch };
