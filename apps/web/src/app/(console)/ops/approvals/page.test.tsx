@@ -85,6 +85,18 @@ describe('approvals', () => {
     expect(await screen.findByText('APR-7 approved.')).toBeTruthy();
   });
 
+  it('sends a request back with comments (25 Nov), and marks one waiting over 3 days', async () => {
+    const fetchMock = routeFetch({ escalated: true });
+    render(<ApprovalsPage />);
+    expect((await screen.findAllByText(/Escalated/)).length).toBeGreaterThan(0);
+    fireEvent.click(await screen.findByRole('button', { name: 'Send back' }));
+    expect(await screen.findByText(/Say what to change/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: 'Attach the bank letter' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send back' }));
+    await waitFor(() => expect(fetchMock.mock.calls.some((c) => String(c[0]).endsWith('/approvals/admin/requests/7/send-back/'))).toBe(true));
+    expect(await screen.findByText('APR-7 sent back.')).toBeTruthy();
+  });
+
   it('draws no decision for someone the server says may not decide, and says why', async () => {
     routeFetch({ can_decide: false, cannot_decide_reason: 'You raised this request.' });
     render(<ApprovalsPage />);

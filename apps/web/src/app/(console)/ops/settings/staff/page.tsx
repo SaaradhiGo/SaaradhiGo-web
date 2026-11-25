@@ -235,6 +235,12 @@ function StaffRecord({ id, options, onChanged, onClose }: {
               {locked ? <p className="ops-record__empty">{why}</p> : data.is_active
                 ? <Reasoned label="Deactivate…" confirm="Deactivate" tone="danger" onRun={act(`/admin-access/staff/${data.id}/deactivate/`)} />
                 : <Reasoned label="Reactivate…" confirm="Reactivate" onRun={act(`/admin-access/staff/${data.id}/reactivate/`)} />}
+              {/* 25 Nov (owner): a lost phone. Their authenticator and codes go, every session ends, and
+                  the sign-in screen shows a new QR code after their password. */}
+              {!locked && data.mfa_enrolled
+                ? <Reasoned label="Reset two-step sign-in…" confirm="Reset two-step sign-in" tone="danger"
+                    onRun={act(`/admin-access/staff/${data.id}/reset-mfa/`)} />
+                : null}
             </>
           ),
         },

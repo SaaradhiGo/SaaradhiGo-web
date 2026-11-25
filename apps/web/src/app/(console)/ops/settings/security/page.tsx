@@ -9,6 +9,7 @@ import {
 } from '@/components/console/ui';
 import { PageHead, RecordSection } from '@/components/console/kit/ListBits';
 import { RecoveryCodesScreen } from '@/components/console/RecoveryCodes';
+import { ChangePassword, MySessions } from '@/components/console/MySessions';
 import { Alert, Eye, KeyRound } from '@/components/console/icons';
 import { REVEAL_LIMIT_PER_MINUTE, useRevealStats } from '@/lib/reveal';
 
@@ -245,6 +246,9 @@ export default function SecurityPage() {
             )}
           </RecordSection>
         ) : null}
+
+        <MySessions />
+        <ChangePassword />
 
         <RecordSection title="Personal data reveals">
           <dl className="ops-facts">
