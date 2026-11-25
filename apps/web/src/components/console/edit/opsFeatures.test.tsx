@@ -47,7 +47,7 @@ describe('25 Nov owner rulings in the console', () => {
     answer = (u, m) => (u.includes('/preview/') ? { changes: [{ label: 'Monday', from: 'nobody', to: '09–17 Asha' }] }
       : m === 'POST' ? { approval_request: { id: 5, status: 'requested' }, state: 'pending_approval' }
         : { city: { code: 'IN-TG-HYD', name: 'Hyderabad' }, plan: null, grid: Array.from({ length: 7 }, () => Array(24).fill(null)),
-          staff: [{ id: 11, name: 'Asha', has_phone: true }, { id: 12, name: 'Ravi', has_phone: true }], history: [] });
+          staff: [{ id: 11, name: 'Asha', reachable: true }, { id: 12, name: 'Ravi', reachable: true }], history: [] });
     render(<HourlyRota cityCode="IN-TG-HYD" canEdit />);
     fireEvent.click(await screen.findByRole('button', { name: 'Edit' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add a shift' }));

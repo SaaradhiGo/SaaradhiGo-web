@@ -13,7 +13,7 @@ import { usePreview } from '@/components/console/edit/usePreview';
  * shows the before/after and the hours covered, and a second person approves it.
  */
 type Shift = { weekday: number; start: number; end: number; primary: number; backup: number | null };
-type Staff = { id: number; name: string; has_phone: boolean };
+type Staff = { id: number; name: string; reachable: boolean };
 type Rota = {
   city: { code: string; name: string };
   plan: { version: number; shifts: Shift[]; created_by: string; reason: string; created_at: string } | null;
@@ -115,7 +115,7 @@ function RotaDrawer({ rota, onClose, onDone }: { rota: Rota; onClose: () => void
             </select>
             <label className="sr-only" htmlFor={`rs-p-${i}`}>On call</label>
             <select id={`rs-p-${i}`} className="input" value={s.primary} onChange={(e) => set(i, { primary: Number(e.target.value) })}>
-              {rota.staff.map((p) => <option key={p.id} value={p.id}>{p.name}{p.has_phone ? '' : ' (no phone on the account)'}</option>)}
+              {rota.staff.map((p) => <option key={p.id} value={p.id}>{p.name}{p.reachable ? '' : ' (no phone on the account)'}</option>)}
             </select>
             <label className="sr-only" htmlFor={`rs-b-${i}`}>Backup</label>
             <select id={`rs-b-${i}`} className="input" value={s.backup ?? ''} onChange={(e) => set(i, { backup: e.target.value ? Number(e.target.value) : null })}>
