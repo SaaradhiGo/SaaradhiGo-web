@@ -16,7 +16,7 @@ export function isDisplay(v: unknown): v is ChangeDisplay {
 export function ChangePreview({ display, heading = 'What changes' }: { display: ChangeDisplay; heading?: string }) {
   const { changes, impact, effective } = display;
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-3 ops-change">
       <section aria-label={heading}>
         <h3 className="ops-subhead">{heading}</h3>
         {changes.length === 0 ? <p className="help m-0">Nothing is changed yet.</p> : (
