@@ -741,7 +741,7 @@ export default function TripDetailPage() {
           onDone={(message, kind) => { if (kind === 'done') setNotice(message); void load(true); }}
         />
       )}
-      {calling ? <CallDrawer tripId={data.id} to={calling} onClose={() => setCalling(null)} onDone={() => void load()} /> : null}
+      {calling ? <CallDrawer tripId={data.id} to={calling} onClose={() => setCalling(null)} onDone={() => void load(true)} /> : null}
       {ticketing && (
         <OpenTicketDrawer
           tripId={data.id} hasDriver={Boolean(data.driver)}
