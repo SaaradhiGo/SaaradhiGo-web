@@ -53,7 +53,8 @@ export function useFitOrCards<T extends HTMLElement>(deps: DependencyList) {
   useEffect(() => {
     const box = ref.current;
     if (!box || typeof ResizeObserver === 'undefined') return undefined;
-    const ro = new ResizeObserver(() => measure());
+    // Again one frame later: a resize can change the CSS (media queries) after the first look.
+    const ro = new ResizeObserver(() => { measure(); requestAnimationFrame(() => measure()); });
     ro.observe(box);
     const table = box.querySelector('table');
     if (table) ro.observe(table);
