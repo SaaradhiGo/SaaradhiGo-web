@@ -66,7 +66,7 @@ function FareCardsInner() {
   const rows = zones.filter((z) => (view === 'gaps' ? gaps(z) > 0 : view === 'scheduled' ? scheduled(z) > 0 : true)
     && (!needle || [z.name, z.code, z.country].some((t) => t.toLowerCase().includes(needle))));
   const columns: ListColumn<FareZone>[] = [
-    { key: 'zone', label: 'Zone', primary: true, render: (z) => <>{z.name} <small className="muted ops-code">{z.code}</small></> },
+    { key: 'zone', label: 'Zone', primary: true, render: (z) => z.name },
     { key: 'cur', label: 'Currency', render: (z) => z.currency },
     ...classes.map((k): ListColumn<FareZone> => ({
       key: `c${k.id}`, label: k.name, num: true,
@@ -76,7 +76,7 @@ function FareCardsInner() {
         return (
           <button type="button" className="ops-linkbtn" onClick={() => setOpen({ zone: z, cls: c })}
             aria-label={`${z.name}, ${classWord(c.vehicle_type_name)}: ${c.live ? `version ${c.live.version}` : 'no card'}`}>
-            {c.live ? <>{money(z, c.live.base_fare)} + {money(z, c.live.per_km_fare)}/km <span className="muted">v{c.live.version}</span></>
+            {c.live ? <>{money(z, c.live.base_fare)} + {money(z, c.live.per_km_fare)}/{z.distance_unit === 'mi' ? 'mi' : 'km'} <span className="muted">v{c.live.version}</span></>
               : <StatusChip tone="caution">No card</StatusChip>}
             {c.scheduled ? <> <StatusChip tone="info">v{c.scheduled.version} scheduled</StatusChip></> : null}
           </button>
