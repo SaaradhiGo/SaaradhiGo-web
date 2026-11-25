@@ -1,5 +1,6 @@
 'use client';
 
+import { CallDrawer } from '@/components/console/CallDrawer';
 import { refFrom, refOf } from '@/lib/refs';
 import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import Link from 'next/link';
@@ -100,7 +101,7 @@ type TripDetail = {
   driver_cancellations: Array<{ id: number; reason: string; note: string; created_at: string | null }>;
   sos_events: Array<{ id: number; status: string | null; created_at: string | null; acknowledged_at: string | null; resolved_at: string | null }>;
   /** Masked calls between rider and driver: who, when and how long; never a number. */
-  calls?: Array<{ id: number; from_role: 'rider' | 'driver'; started_at: string; ended_at: string | null; duration_seconds: number | null }>;
+  calls?: Array<{ id: number; from_role: 'rider' | 'driver' | 'staff'; to_role?: string; started_at: string; ended_at: string | null; duration_seconds: number | null }>;
   promo: { code: string; discount_type: string; discount_amount: string; created_at: string | null } | null;
   zone: { code: string; name: string; city: string; state_code: string } | null;
   // Trips module (console module 2)
@@ -166,6 +167,7 @@ export default function TripDetailPage() {
   const [busy, setBusy] = useState(false);
   const [acting, setActing] = useState<ActionKey | null>(null);
   const [ticketing, setTicketing] = useState(false);
+  const [calling, setCalling] = useState<'rider' | 'driver' | null>(null);
   const [ticketDone, setTicketDone] = useState<{ id: number; ref: string } | null>(null);
   const access = useAdminAccess();
 
@@ -519,7 +521,7 @@ export default function TripDetailPage() {
               <Facts>
                 {(data.calls ?? []).map((c) => (
                   <Fact key={c.id} label={cityTime(c.started_at, cityTz)}>
-                    {c.from_role === 'driver' ? 'Driver called the rider' : 'Rider called the driver'}
+                    {c.from_role === 'staff' ? `Staff called the ${c.to_role || 'rider'}` : c.from_role === 'driver' ? 'Driver called the rider' : 'Rider called the driver'}
                     {' · '}{callLength(c.duration_seconds)}
                   </Fact>
                 ))}
@@ -709,6 +711,13 @@ export default function TripDetailPage() {
               <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy}
                 onClick={() => { setNotice(null); setActionError(null); setTicketDone(null); setTicketing(true); }}>Open support ticket…</button>
             ) : null}
+            {/* 25 Nov (owner ruling): masked calls from the console, on the apps' call bridge. */}
+            {can(access, 'support.reply') ? (
+              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => setCalling('rider')}>Call rider…</button>
+            ) : null}
+            {can(access, 'support.reply') && data.driver ? (
+              <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" disabled={busy} onClick={() => setCalling('driver')}>Call driver…</button>
+            ) : null}
             {(data.flags ?? []).some((f) => f.active) && data.actions?.flag ? (
               <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" disabled={busy} onClick={() => void clearFlags()}>Clear flags</button>
             ) : null}
@@ -732,6 +741,7 @@ export default function TripDetailPage() {
           onDone={(message, kind) => { if (kind === 'done') setNotice(message); void load(true); }}
         />
       )}
+      {calling ? <CallDrawer tripId={data.id} to={calling} onClose={() => setCalling(null)} onDone={() => void load()} /> : null}
       {ticketing && (
         <OpenTicketDrawer
           tripId={data.id} hasDriver={Boolean(data.driver)}
