@@ -42,7 +42,7 @@ export function PlatformFeeCard({ days, currency }: { days: FeeDay[] | null; cur
     a.fee_free_after_trips ? tr('Trips after the first {n} in a day are free.').replace('{n}', `${a.fee_free_after_trips}`) : null,
     p.daily_cap_minor != null ? tr('Never more than {cap} in a day.').replace('{cap}', m(p.daily_cap_minor) ?? '') : null,
     p.earnings_floor_minor ? tr('No fee on a day when your fares are under {floor}.').replace('{floor}', m(p.earnings_floor_minor) ?? '') : null,
-    p.waiver_first_days ? tr('No fee in your first {n} days.').replace('{n}', `${p.waiver_first_days}`) : null,
+    p.waiver_first_days ? tr(p.waiver_first_days === 1 ? 'No fee in your first {n} day.' : 'No fee in your first {n} days.').replace('{n}', `${p.waiver_first_days}`) : null,
     tr('You always keep at least 80% of every fare.'),
     tr('The fee is taken once a day, after the day ends.'),
   ].filter(Boolean) as string[];

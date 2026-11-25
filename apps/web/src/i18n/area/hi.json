@@ -864,5 +864,13 @@
   "30 days": "30 दिन",
   "90 days": "90 दिन",
   "12 months": "12 महीने",
-  "Custom": "अपनी तारीखें"
+  "Custom": "अपनी तारीखें",
+  "Your {doc} expires in {n} day": "आपका {doc} {n} दिन में समाप्त होगा",
+  "No fee in your first {n} day.": "आपके पहले {n} दिन में कोई शुल्क नहीं।",
+  "Next: {step}. About {n} minute left.": "अगला: {step}. लगभग {n} मिनट बाकी।",
+  "From {n} rider": "{n} राइडर से",
+  "{r} rating from {n} trip": "{n} ट्रिप से {r} रेटिंग",
+  "Step {n} of {total} · about {m} minute left": "{total} में से चरण {n} · लगभग {m} मिनट बाकी",
+  "{a} of {n} trip": "{n} में से {a} ट्रिप",
+  "Held for {n} minute.": "{n} मिनट के लिए तय।"
 }

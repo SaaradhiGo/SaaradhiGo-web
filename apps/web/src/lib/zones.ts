@@ -16,6 +16,7 @@ import { plainAmount } from '@/lib/money';
  *     talks in latitude, longitude, so the swap lives here and nowhere else.
  */
 import { can, type AdminAccess } from './adminScope';
+import { plural } from '@/lib/plural';
 
 /** Drafting needs `zone.write`; looking needs `zone.read`. */
 export const canDraftZones = (access: AdminAccess | null) => can(access, 'zone.write');
@@ -481,9 +482,9 @@ export const pickups = (n: number) => `${n.toLocaleString('en')} pickup${n === 1
 
 /** The one-line verdict above the preview: how much the change moves, in the last N days. */
 export function impactHeadline(i: Impact): string {
-  if (i.trips_moved === 0) return `No pickup in the last ${i.window_days} days would change zone.`;
+  if (i.trips_moved === 0) return `No pickup in the last ${plural(i.window_days, 'day')} would change zone.`;
   const share = i.trips_scanned > 0 ? Math.round((i.trips_moved / i.trips_scanned) * 100) : 0;
-  return `${pickups(i.trips_moved)} in the last ${i.window_days} days would change zone (${share}% of the ${i.trips_scanned.toLocaleString('en')} in the area).`;
+  return `${pickups(i.trips_moved)} in the last ${plural(i.window_days, 'day')} would change zone (${share}% of the ${i.trips_scanned.toLocaleString('en')} in the area).`;
 }
 
 /** Lines that need a person to stop and read (the preview's warnings). */

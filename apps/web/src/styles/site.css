@@ -924,3 +924,8 @@
 .s-footer__col ul { gap: 2px; }
 .s-footer__col a, .s-footer__card { overflow-wrap: anywhere; }
 .site .s-footer__quick a, .site .s-footer__col a, .site .ct-urgent__link { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; }
+
+/* 25 Nov (owner): the header bar spans the window at any width; the logo sits left and sign-in,
+   sign-up and the account menu at the right edge. Page content keeps its 1240px reading width. */
+.s-header__bar.s-wrap { max-width: none; }
+@media (min-width: 1280px) { .s-header__bar.s-wrap { padding-inline: clamp(32px, 3vw, 64px); } }

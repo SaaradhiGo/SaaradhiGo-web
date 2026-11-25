@@ -140,7 +140,7 @@ export function DriverProfile() {
             <div className="arow a14 amut pf-meta">
               <span>{maskPhone(acct?.phone_number) ?? ''}</span><span aria-hidden="true">·</span>
               {trips === null ? (me === null ? <Skel h={16} w={150} /> : null) : (
-                <span data-testid="profile-trips">{rating ? tr('{r} rating from {n} trips').replace('{r}', rating).replace('{n}', String(trips)) : tr('{n} trips').replace('{n}', String(trips))}</span>
+                <span data-testid="profile-trips">{rating ? tr(Number(trips) === 1 ? '{r} rating from {n} trip' : '{r} rating from {n} trips').replace('{r}', rating).replace('{n}', String(trips)) : tr(Number(trips) === 1 ? '{n} trip' : '{n} trips').replace('{n}', String(trips))}</span>
               )}
               {p?.home_city && <><span aria-hidden="true">·</span><span>{p.home_city}</span></>}
             </div>

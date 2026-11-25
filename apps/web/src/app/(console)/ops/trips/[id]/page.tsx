@@ -33,6 +33,7 @@ import {
   Skeleton,
   TileGrid,
 } from '@/components/console/ui';
+import { plural } from '@/lib/plural';
 
 /**
  * One trip, as the answer to a question.
@@ -360,7 +361,7 @@ export default function TripDetailPage() {
                   <Pill tone={data.driver.status === 'online' ? 'good' : 'neutral'}>{data.driver.status ?? '—'}</Pill>{' '}
                   {data.driver.approved ? <Pill tone="good">Approved</Pill> : <Pill tone="wait">Unapproved</Pill>}
                 </Fact>
-                <Fact label="Rating">{data.driver.ratings} · {data.driver.total_trips} trips</Fact>
+                <Fact label="Rating">{data.driver.ratings} · {plural(data.driver.total_trips, 'trip')}</Fact>
                 {data.driver.fatigue_lockout_until ? <Fact label="Rest until">{cityTime(data.driver.fatigue_lockout_until, cityTz)}</Fact> : null}
               </Facts>
             ) : <Empty title="No driver assigned" />}

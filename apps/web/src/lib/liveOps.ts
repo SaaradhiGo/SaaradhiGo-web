@@ -15,6 +15,7 @@
 
 import { formatAge } from '@/lib/commandCentre';
 import { AdminAccess, can } from '@/lib/adminScope';
+import { plural } from '@/lib/plural';
 
 // ---------------------------------------------------------------------------
 // Capabilities
@@ -384,7 +385,7 @@ export const SHADE_WORDS = ['Balanced', 'Short', 'Short', 'Very short'] as const
 export function cellSentence(cell: HeatCell, windowMinutes: number): string {
   const level = shadeLevel(cell);
   const where = `${cell.cell_south.toFixed(2)}, ${cell.cell_west.toFixed(2)}`;
-  return `Cell near ${where}: ${cell.demand} request${cell.demand === 1 ? '' : 's'} in ${windowMinutes} minutes, `
+  return `Cell near ${where}: ${cell.demand} request${cell.demand === 1 ? '' : 's'} in ${plural(windowMinutes, 'minute')}, `
     + `${cell.supply} idle driver${cell.supply === 1 ? '' : 's'} on average. ${SHADE_WORDS[level]}.`;
 }
 

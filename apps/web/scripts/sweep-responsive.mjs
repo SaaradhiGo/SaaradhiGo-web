@@ -46,8 +46,12 @@ fs.mkdirSync(OUT, { recursive: true });
 
 const sizes = [];
 for (let w = 320; w <= 1920; w += STEP) for (const h of [568, 844, 1200]) sizes.push({ w, h, kind: 'size' });
+// 25 Nov (owner): wide screens up to 2560 (QHD), where fixed-width shells leave an empty band.
+for (let w = 2000; w <= 2560; w += Math.max(STEP, 80)) sizes.push({ w, h: 1440, kind: 'wide' });
 for (let w = 480; w <= 960; w += STEP * 2) for (const h of [320, 390]) sizes.push({ w, h, kind: 'phone landscape' });
 for (const [w, h] of [[1280, 800], [1366, 768], [1440, 900], [1920, 1080]]) sizes.push({ w: Math.round(w / 2), h: Math.round(h / 2), kind: '200% zoom', dpr: 2 });
+// KINDS=wide,size: a local run of some kinds only (CI runs them all).
+if (process.env.KINDS) { const k = process.env.KINDS.split(','); sizes.splice(0, sizes.length, ...sizes.filter((x) => k.includes(x.kind))); }
 
 /** Runs in the page: every rule of the brief, returned as plain strings. */
 function check({ touch }) {
@@ -92,6 +96,41 @@ function check({ touch }) {
   for (const box of document.querySelectorAll('.ops-list__table, .ops-table-wrap, .ops-board__lanes')) {
     if (box.closest('[aria-hidden="true"], details:not([open])') || !box.getClientRects().length) continue;
     if (box.scrollWidth > box.clientWidth + 1) out.push(`sideways scroll in a table: ${name(box)} needs ${box.scrollWidth}px of ${box.clientWidth}px`);
+  }
+
+  // 25 Nov (owner): layout at wide widths, not only overflow. A header's last item sits at its right
+  // edge (search left, status and profile right), and no bar or panel stops short of the window
+  // while hugging the left: reading width may be capped, backgrounds and bars may not.
+  if (vw >= 1024) {
+    for (const bar of document.querySelectorAll('header, [role="banner"], .ops__top')) {
+      // The window's bars only: a heading block inside the page may keep its actions beside the title.
+      if (!shown(bar) || bar.closest('dialog, [role="dialog"], [data-overlay-host], main, article, section, .ops__page, .ops__content')) continue;
+      const br = bar.getBoundingClientRect();
+      if (br.width < vw * 0.6) continue;
+      const items = [...bar.querySelectorAll('a, button, input, [role="button"], [tabindex="0"]')].filter(shown);
+      if (!items.length) continue;
+      const right = Math.max(...items.map((e) => e.getBoundingClientRect().right));
+      const pad = parseFloat(getComputedStyle(bar).paddingRight) || 0;
+      const gap = br.right - pad - right;
+      if (gap > Math.max(48, vw * 0.03)) out.push(`header items stop short: ${name(bar)} ends its items ${Math.round(gap)}px before its right edge`);
+    }
+  }
+  if (vw >= 1280) {
+    const painted = (s) => (s.backgroundColor !== 'rgba(0, 0, 0, 0)' && s.backgroundColor !== 'transparent') || s.backgroundImage !== 'none' || parseFloat(s.borderBottomWidth) > 0 || parseFloat(s.borderTopWidth) > 0;
+    for (const el of document.querySelectorAll('header, nav, main, footer, section, [role="banner"], [role="contentinfo"], .ops__top, .ops__content, .ops__page')) {
+      if (!shown(el) || el.closest('dialog, [role="dialog"], [data-overlay-host], .ops__side, aside')) continue;
+      const parent = el.parentElement;
+      if (!parent || parent === document.documentElement) continue;
+      const s = getComputedStyle(el);
+      if (!painted(s) && !el.matches('header, footer, [role="banner"], [role="contentinfo"], .ops__top')) continue;
+      const r = el.getBoundingClientRect(), pr = parent.getBoundingClientRect();
+      const ps = getComputedStyle(parent);
+      const pl = pr.left + (parseFloat(ps.paddingLeft) || 0), prr = pr.right - (parseFloat(ps.paddingRight) || 0);
+      if (prr - pl < 1000 || r.left - pl > 8 || prr - r.right < 96) continue;
+      // Something beside it (a grid or flex row) fills the rest.
+      const beside = [...parent.children].some((c) => c !== el && shown(c) && (() => { const cr = c.getBoundingClientRect(); return cr.left >= r.right - 1 && cr.top < r.bottom && cr.bottom > r.top; })());
+      if (!beside) out.push(`stops short: ${name(el)} ends ${Math.round(prr - r.right)}px before the right edge of ${name(parent)}`);
+    }
   }
 
   const texts = [];
@@ -292,6 +331,7 @@ async function sweepOne(url, market) {
     // One load per device pixel ratio; then resize through every size.
     for (const dpr of [1, 2]) {
       const list = sizes.filter((s) => (s.dpr || 1) === dpr);
+      if (!list.length) continue;
       const { ctx, page } = await open(browser, url, market, list[0].w, list[0].h, dpr);
       for (const s of list) {
         await page.setViewportSize({ width: s.w, height: s.h });

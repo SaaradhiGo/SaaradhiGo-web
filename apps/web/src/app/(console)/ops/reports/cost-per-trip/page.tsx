@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { Empty, ErrorState, Fact, Facts, Panel, Skeleton } from '@/components/console/ui';
 import { FieldsDrawer, type FieldSpec } from '@/components/console/kit/FieldsDrawer';
+import { plural } from '@/lib/plural';
 
 /**
  * Reports > Cost per trip (open books, 9 Nov): a market's month of completed trips, what the
@@ -65,7 +66,7 @@ export default function CostPerTripPage() {
                 <Fact label="Rider platform fee">{money(data.rider_platform_fee_minor, country)}</Fact>
                 <Fact label="Maps">{money(data.variable_costs.maps_minor, country)}</Fact>
                 <Fact label="SMS">{money(data.variable_costs.sms_minor, country)} ({data.variable_costs.sms_count} sent)</Fact>
-                <Fact label="Masked calls">{money(data.variable_costs.calls_minor, country)} ({data.variable_costs.calls} calls)</Fact>
+                <Fact label="Masked calls">{money(data.variable_costs.calls_minor, country)} ({plural(data.variable_costs.calls, 'call')})</Fact>
                 <Fact label="Payment fees">{money(data.variable_costs.payment_fees_minor, country)}</Fact>
                 <Fact label="Variable cost per trip">{money(data.variable_cost_per_trip_minor, country)}</Fact>
                 <Fact label="Fixed costs">{data.fixed_costs_entered ? money(data.fixed_costs_minor, country) : 'not entered'}{' '}

@@ -6,6 +6,7 @@ import { currencySymbol } from '@/lib/money';
 import { cardLine, num, type PointResolution, type PointTest } from '@/lib/zones';
 import { Pill, FitBox } from '@/components/console/ui';
 import { classWord } from '@/lib/pricingWords';
+import { plural } from '@/lib/plural';
 
 /**
  * The point tester: type a latitude and longitude, or click the map, and see which zone and
@@ -101,7 +102,7 @@ function Resolution({ title, r }: { title: string; r: PointResolution }) {
             <Pill tone="good">In service</Pill>
           </p>
           {r.matching_zones.length > 1 ? (
-            <p className="help m-0">Inside {r.matching_zones.length} zones ({r.matching_zones.join(', ')}); the highest priority wins.</p>
+            <p className="help m-0">Inside {plural(r.matching_zones.length, 'zone')} ({r.matching_zones.join(', ')}); the highest priority wins.</p>
           ) : null}
           <FitBox>
             <table className="ops-table ops-table--compact ops-table--auto">

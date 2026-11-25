@@ -17,6 +17,7 @@
  */
 import type { AdminAccess } from './adminScope';
 import { can } from './adminScope';
+import { plural } from '@/lib/plural';
 
 // ---------------------------------------------------------------------------
 // Words
@@ -517,7 +518,7 @@ export type CountryConfig = {
 /** What a pending request asks for, in words. */
 export function pendingSummary(p: PendingChange): string {
   if (p.kind === 'country_config') {
-    return `Reminder after ${p.waiting_reminder_days} days, auto-close after ${p.waiting_autoclose_days} days, refund review ${p.refund_review_hours} hours`;
+    return `Reminder after ${plural(p.waiting_reminder_days, 'day')}, auto-close after ${plural(p.waiting_autoclose_days, 'day')}, refund review ${plural(p.refund_review_hours, 'hour')}`;
   }
   const pri = PRIORITY_LABEL[p.priority ?? ''] ?? p.priority ?? '';
   return `${pri}: first reply within ${formatMinutes(p.first_response_minutes ?? 0)}, resolved within ${formatMinutes(p.resolution_minutes ?? 0)}`;
@@ -532,5 +533,5 @@ export function pendingFor(pending: PendingChange[], country: string, priority: 
 /** The sentence a configured / unconfigured country reads as. */
 export function configSentence(c: CountryConfig): string {
   if (!c.configured) return 'Not configured. No reminder, no auto-close, and refund messages carry no timeframe.';
-  return `Reminder after ${c.waiting_reminder_days} days, auto-close after ${c.waiting_autoclose_days} days, refund review ${c.refund_review_hours} hours.`;
+  return `Reminder after ${plural(c.waiting_reminder_days, 'day')}, auto-close after ${plural(c.waiting_autoclose_days, 'day')}, refund review ${plural(c.refund_review_hours, 'hour')}.`;
 }

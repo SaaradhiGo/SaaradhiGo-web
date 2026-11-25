@@ -16,6 +16,7 @@
  */
 import { formatAge } from '@/lib/commandCentre';
 import { can, type AdminAccess } from './adminScope';
+import { plural } from '@/lib/plural';
 
 // ---------------------------------------------------------------------------
 // Capabilities
@@ -238,7 +239,6 @@ export const noteCount = (note: string) => `${note.trim().length} of ${NOTE_MAX}
 // Evidence, in words
 // ---------------------------------------------------------------------------
 
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 function joinWords(parts: string[]): string {
   if (parts.length <= 1) return parts[0] ?? '';
@@ -278,7 +278,7 @@ export function evidenceLines(flag: Pick<Flag, 'kind' | 'rule_key' | 'evidence'>
     const short = num('short_trips');
     const counted = num('counted_trips');
     if (short != null && counted != null) {
-      lines.push(`${short} of ${counted} trips counted toward an incentive were very short`);
+      lines.push(`${short} of ${plural(counted, 'trip')} counted toward an incentive were very short`);
     }
   } else if (kind === 'gps_anomaly') {
     const trips = num('anomalous_trips');

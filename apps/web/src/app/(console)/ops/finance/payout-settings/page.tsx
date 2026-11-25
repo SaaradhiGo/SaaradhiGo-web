@@ -20,6 +20,7 @@ import {
   DataTable, Drawer, Empty, ErrorState, Pill, Skeleton,
 } from '@/components/console/ui';
 import { PageHead, RecordFacts, RecordSection } from '@/components/console/kit/ListBits';
+import { plural } from '@/lib/plural';
 
 /**
  * Payout settings: each country's fee, minimum, stuck-payout hours and
@@ -106,7 +107,7 @@ function SettingsInner() {
                   <RecordFacts rows={[
                     ['Transfer fee', <>{Number(c.config.fee_percent)}%</>],
                     ['Minimum withdrawal', formatMinor(c.config.minimum_withdrawal_minor, c.currency)],
-                    ['A payout is stuck after', c.config.stuck_payout_hours ? `${c.config.stuck_payout_hours} hours` : 'Not checked'],
+                    ['A payout is stuck after', c.config.stuck_payout_hours ? plural(c.config.stuck_payout_hours, 'hour') : 'Not checked'],
                     ['Payout schedule', cycleWords(c.config as CycleFields, c.country) || scheduleLabel(c.config)],
                     ['Withdraw now', instantWords(c.config as CycleFields, c.currency)],
                     ['Withdraw now daily limit', `${limitWords(c.config as CycleFields, c.currency)} (driver's local day)`],

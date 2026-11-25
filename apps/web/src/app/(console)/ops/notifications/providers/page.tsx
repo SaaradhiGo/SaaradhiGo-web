@@ -14,6 +14,7 @@ import {
   DataTable, ErrorState, Pill, Skeleton, TableToolbar,
 } from '@/components/console/ui';
 import { PageHead, RecordFacts, RecordSection } from '@/components/console/kit/ListBits';
+import { plural } from '@/lib/plural';
 
 /**
  * Notifications: providers.
@@ -93,7 +94,7 @@ export default function ProvidersPage() {
           </RecordSection>
 
           <RecordSection title="Providers by channel and country">
-            <TableToolbar summary={`${state.providers.length} routes`} density={density} onDensity={setDensity} />
+            <TableToolbar summary={plural(state.providers.length, 'route')} density={density} onDensity={setDensity} />
             <DataTable caption="Providers by channel and country" rows={state.providers} columns={columns}
               rowKey={(r) => `${r.channel}-${r.country}`} density={density}
               defaultSort={{ key: 'ch', dir: 'asc' }} maxHeight={false} />

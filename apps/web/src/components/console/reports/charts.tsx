@@ -5,6 +5,7 @@ import {
   type Cohort, type Granularity, type Pivot, type ReportColumn, formatCell, groupWord, niceScale,
   periodLabel, stackMax, STAGE_WORDS,
 } from '@/lib/reports';
+import { plural } from '@/lib/plural';
 
 /**
  * The report charts, as inline SVG (no chart package).
@@ -194,7 +195,7 @@ export function CohortTable({ cohorts }: { cohorts: Cohort[] }) {
                 return p === undefined ? <td key={k} /> : (
                   <td key={k} className="num rp-cohort__cell"
                     style={{ background: `color-mix(in srgb, var(--chart-3) ${Math.round((p ?? 0) * 0.7)}%, transparent)` }}
-                    title={`${c.retained[k]} of ${c.size} riders`}>
+                    title={`${c.retained[k]} of ${plural(c.size, 'rider')}`}>
                     {p === null ? '—' : `${p.toFixed(0)}%`}
                   </td>
                 );
