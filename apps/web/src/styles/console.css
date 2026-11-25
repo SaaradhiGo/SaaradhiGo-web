@@ -2884,5 +2884,7 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
 .ops__top { width: 100%; }
 .ops__top > .ops__top-right { margin-left: auto; }
 /* With a mouse every control is at least 24px (WCAG 2.5.8); touch sizes stay 44px above. */
-.ops .ops-th-sort, .ops .ops-sort, .ops .ops-inbox__title, .ops .ops-banner a { min-height: 24px; display: inline-flex; align-items: center; }
-.ops summary { min-height: 24px; }
+@media (min-width: 1025px) and (pointer: fine) {
+  .ops .ops-th-sort, .ops .ops-sort, .ops .ops-inbox__title, .ops .ops-banner a { min-height: 24px; display: inline-flex; align-items: center; }
+  .ops summary { min-height: 24px; }
+}
