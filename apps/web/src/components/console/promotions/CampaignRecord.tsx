@@ -11,7 +11,7 @@ import { formatMinor } from '@/lib/trips';
 import { PageLink } from '@/components/console/PageLink';
 import { History, RecordPanel, RecordStat, type HistoryEntry } from '@/components/console/kit/RecordPanel';
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
-import { BudgetBar } from '@/components/console/promotions';
+import { BudgetBar, WhoQualifies } from '@/components/console/promotions';
 import { messageOf } from '@/components/console/notifications';
 import { Fact, Facts } from '@/components/console/ui';
 import { classWord } from '@/lib/pricingWords';
@@ -138,6 +138,7 @@ export function CampaignRecord({ id, onClose, onManage, refreshKey = 0 }: {
         },
         {
           key: 'rules', label: 'Rules', content: (
+            <div className="grid gap-3">
             <Facts>
               <Fact label="Terms">{termsWords(c)}</Fact>
               <Fact label="Where">{c.scope_name ?? '—'}</Fact>
@@ -171,6 +172,8 @@ export function CampaignRecord({ id, onClose, onManage, refreshKey = 0 }: {
               {c.description ? <Fact label="About">{c.description}</Fact> : null}
               {c.reason ? <Fact label="Why">{c.reason}</Fact> : null}
             </Facts>
+            <WhoQualifies campaignId={c.id} />
+            </div>
           ),
         },
         { key: 'history', label: 'History', content: <History entries={historyOf(c, tz)} /> },

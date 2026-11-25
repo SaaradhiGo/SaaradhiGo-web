@@ -142,3 +142,52 @@ describe('TemplateEditor (new template)', () => {
     expect(screen.queryByRole('button', { name: 'Save draft' })).toBeNull();
   });
 });
+
+vi.mock('next/link', () => ({
+  default: function LinkStub({ href, children, ...rest }: React.ComponentProps<'a'> & { href: string }) {
+    return <a href={href} {...rest}>{children}</a>;
+  },
+}));
+
+const SAVED = {
+  id: 9, key: 'trip.receipt', channel: 'email', country: 'IN', locale: 'en', category: 'transactional',
+  subject: 'Your receipt', title: '', body: 'Hi {name}', variables: ['name'], personal_variables: [],
+  sample_values: { name: 'Asha' }, version: 2, status: 'active', reason: '', created_by: { id: 1, label: 'M' },
+  created_at: '2026-11-01T10:00:00Z', activated_at: null, archived_at: null, changed_via_request_id: null,
+  registrations: [], versions: [], activation_problems: [],
+};
+
+describe('TemplateEditor (send to me)', () => {
+  const open = (sent: Record<string, unknown>) => {
+    current = ACCESS;
+    const mock = stubFetch((url, init) => {
+      if (url.includes('/test-send/') && init?.method === 'POST') return { status: 201, data: sent };
+      if (url.includes('/preview/')) return { status: 200, data: PREVIEW };
+      return { status: 200, data: SAVED };
+    });
+    render(<TemplateEditor templateId={9} defaultCountry="IN" onClose={vi.fn()} onDone={vi.fn()} onOpen={vi.fn()} />);
+    return mock;
+  };
+
+  it('sends the template to the operator and says where it went', async () => {
+    const mock = open({ message_id: 3, status: 'queued', channel: 'email', error: '', to: 'm•••@x.test' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Send to me' }));
+    expect(await screen.findByText(/Queued for you \(m•••@x\.test\) by Email\./)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'See the delivery log' }).getAttribute('href')).toBe('/ops/notifications/delivery');
+    expect(mock.mock.calls.some(([u, i]) => String(u).includes('/notifications/admin/templates/9/test-send/') && i?.method === 'POST')).toBe(true);
+  });
+
+  it('says in words when the send was stopped', async () => {
+    open({ message_id: 4, status: 'suppressed', channel: 'sms', error: 'Quiet hours', to: '+91•••10' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Send to me' }));
+    expect(await screen.findByText(/It was not sent: Quiet hours/)).toBeTruthy();
+  });
+
+  it('is not offered without notify.template', async () => {
+    current = { ...ACCESS, permissions: ['notify.read'] } as AdminAccess;
+    stubFetch(() => ({ status: 200, data: SAVED }));
+    render(<TemplateEditor templateId={9} defaultCountry="IN" onClose={vi.fn()} onDone={vi.fn()} onOpen={vi.fn()} />);
+    await screen.findByText('v2');
+    expect(screen.queryByRole('button', { name: 'Send to me' })).toBeNull();
+  });
+});

@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
+import { plural } from '@/lib/plural';
 import { useAdminAccess } from '@/lib/adminScope';
 import { canOpen } from '@/lib/consoleLinks';
 import {
@@ -82,5 +85,36 @@ export function BudgetBar({ budget, compact = false }: { budget: BudgetView; com
         ) : null}
       </div>
     </div>
+  );
+}
+
+type Audience = { who: 'riders' | 'drivers'; count: number; place: string; rules: string[] };
+
+/** "1,240 riders in Hyderabad qualify (new riders only)": counts only, never people. Saved campaigns only. */
+export function WhoQualifies({ campaignId }: { campaignId: number }) {
+  const [audience, setAudience] = useState<Audience | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    let live = true;
+    setAudience(null); setFailed(false);
+    api.get<Audience>(`/promotions/admin/campaigns/${campaignId}/audience/`)
+      .then((a) => { if (live) setAudience(a); })
+      .catch(() => { if (live) setFailed(true); });
+    return () => { live = false; };
+  }, [campaignId]);
+  return (
+    <section className="ops-form" aria-label="Who qualifies">
+      <h3 className="ops-subhead">Who qualifies</h3>
+      {failed ? <p className="help m-0">The count could not be worked out just now.</p>
+        : !audience ? <p className="help m-0" aria-busy="true">Counting…</p>
+          : (
+            <p className="m-0">
+              <b>{plural(audience.count, audience.who === 'drivers' ? 'driver' : 'rider')}</b> in {audience.place}{' '}
+              {audience.count === 1 ? 'qualifies' : 'qualify'}
+              {audience.rules.length ? ` (${audience.rules.join('; ')})` : ''}.
+            </p>
+          )}
+      <p className="help m-0">Blocked, closed and switched-off accounts are not counted.</p>
+    </section>
   );
 }
