@@ -28,8 +28,7 @@ import { ListPage, type FilterChip, type ListColumn } from '@/components/console
 import { History, RecordPanel, RecordStat } from '@/components/console/kit/RecordPanel';
 import { StatusChip, type ChipTone } from '@/components/console/kit/StatusChip';
 import {
-  ActionNotice, MoreFilters, RecordFacts, RecordFailed, RecordLoading, RecordSection,
-} from '@/components/console/kit/ListBits';
+  ActionNotice, MoreFilters, RecordFacts, RecordFailed, RecordLoading, RecordSection, NameRef } from '@/components/console/kit/ListBits';
 import { Skeleton } from '@/components/console/ui';
 
 /**
@@ -176,7 +175,7 @@ function SupportInner() {
     },
     { key: 'sla', label: 'SLA', sortKey: 'resolution_due', render: (t) => <SlaChip sla={t.sla} /> },
     { key: 'issue', label: 'Issue', render: (t) => t.issue_label ?? ISSUE_LABEL[t.issue_type] ?? t.issue_type },
-    { key: 'who', label: 'Raised by', render: (t) => <span title={requesterName(t)}>{requesterName(t)} <span className="ops-ref sg-num">{requesterRef(t)}</span></span> },
+    { key: 'who', label: 'Raised by', render: (t) => <NameRef name={requesterName(t)} refText={requesterRef(t)} /> },
     { key: 'city', label: 'City', render: (t) => t.city?.name ?? <span className="muted">Unplaced</span> },
     { key: 'assignee', label: 'Assignee', render: (t) => (t.assignee ? t.assignee.label : <span className="muted">Unassigned</span>) },
     { key: 'status', label: 'Status', render: (t) => <StatusChip tone={STATUS_TONE[t.status] ?? 'neutral'}>{STATUS_LABEL[t.status] ?? t.status}</StatusChip> },

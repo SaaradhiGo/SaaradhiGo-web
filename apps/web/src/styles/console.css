@@ -158,11 +158,18 @@
 .ops[data-collapsed='true'] .ops__link,
 .ops[data-collapsed='true'] .ops__collapse { justify-content: center; padding: 10px 0; }
 .ops[data-collapsed='true'] .ops__link[aria-current='page']::before { left: -10px; }
+/* 25 Nov (owner): a collapsed count is a small dot at the icon's corner, never over the icon;
+   the number stays in the link's name and title. */
 .ops[data-collapsed='true'] .ops__count {
-  position: absolute; top: 3px; right: 6px; margin: 0;
-  min-width: 16px; padding: 0 4px;
-  font-size: 14px; line-height: 19px;
+  position: absolute; top: 8px; left: calc(50% + 5px); margin: 0;
+  width: 9px; height: 9px; min-width: 0; padding: 0;
+  font-size: 0; line-height: 0; overflow: hidden;
+  background: var(--on-noir-muted);
+  box-shadow: 0 0 0 2px var(--noir);
+  pointer-events: none;
 }
+.ops[data-collapsed='true'] .ops__link[aria-current='page'] .ops__count { background: var(--gold-500); }
+.ops[data-collapsed='true'] .ops__count--urgent { background: var(--danger); }
 
 /* --- the top bar ---------------------------------------------------------- */
 
@@ -966,7 +973,13 @@ a.ops-alert:hover { background: var(--ops-wash); }
   .ops .ops__link-label, .ops .ops__wordmark, .ops .ops__group-label, .ops .ops__collapse { display: none; }
   .ops .ops__brand { justify-content: center; padding: 6px 0 2px; }
   .ops .ops__link { justify-content: center; padding: 10px 0; min-height: 44px; }
-  .ops .ops__count { position: absolute; top: 3px; right: 6px; margin: 0; min-width: 16px; padding: 0 4px; font-size: 14px; line-height: 19px; }
+  .ops .ops__count {
+    position: absolute; top: 8px; left: calc(50% + 5px); margin: 0;
+    width: 9px; height: 9px; min-width: 0; padding: 0; font-size: 0; line-height: 0; overflow: hidden;
+    background: var(--on-noir-muted); box-shadow: 0 0 0 2px var(--noir); pointer-events: none;
+  }
+  .ops .ops__link[aria-current='page'] .ops__count { background: var(--gold-500); }
+  .ops .ops__count--urgent { background: var(--danger); }
   .ops__scope-select { max-width: 150px; }
 }
 @media (max-width: 900px) {
@@ -984,7 +997,12 @@ a.ops-alert:hover { background: var(--ops-wash); }
   .ops .ops__side .ops__link-label { display: inline; }
   .ops .ops__side .ops__link { justify-content: flex-start; padding: 10px 12px; min-height: 44px; }
   .ops .ops__side .ops__link[aria-current='page']::before { left: 0; }
-  .ops .ops__side .ops__count { position: static; margin-left: auto; }
+  .ops .ops__side .ops__count {
+    position: static; margin-left: auto; width: auto; height: auto; min-width: 19px; padding: 0 6px;
+    font: 600 14px/19px var(--font-sans); overflow: visible; box-shadow: none; background: rgba(241, 245, 249, 0.12);
+  }
+  .ops .ops__side .ops__count--urgent { background: var(--danger); }
+  .ops .ops__side .ops__link[aria-current='page'] .ops__count { background: var(--gold-500); }
   .ops .ops__side .ops__collapse { display: none; }
   .ops__top { grid-template-columns: minmax(0, 1fr) auto; }
   .ops__search { display: none; }
@@ -2762,3 +2780,101 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
   .ops-list__table td, .ops-list__table th { padding-left: 6px; padding-right: 6px; }
 }
 @media (min-width: 1100px) { .ops-cell:has(> .ops-wrap) { white-space: normal; max-width: 24rem; overflow: visible; } }
+
+/* ===========================================================================
+   25 Nov (owner): no sideways scrolling at any width. A list or table that does not fit its box
+   turns into cards (useFitOrCards measures the content, so this is not a breakpoint): the title
+   and the status on the first line, then each field with its label. Cards never truncate.
+   =========================================================================== */
+:is(.ops-list__table, .ops-table-wrap).is-cards { overflow: visible; max-height: none; }
+:is(.ops-list__table, .ops-table-wrap).is-cards > table {
+  display: block; width: 100%; min-width: 0; table-layout: auto; border: 0; background: none;
+}
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > thead {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); border: 0;
+}
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 10px;
+}
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr {
+  display: flex; flex-wrap: wrap; align-items: center; align-content: flex-start; column-gap: 10px; row-gap: 6px;
+  padding: 14px 16px; border: 1px solid var(--ui-line); border-radius: var(--ops-radius); background: var(--ui-bg);
+}
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr:is(.is-active, .is-selected) { border-color: var(--ui-ink); }
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr > td {
+  flex: 0 0 100%; order: var(--card-order, 10);
+  display: flow-root; padding: 0 0 0 7rem; min-height: 20px;
+  min-width: 0; max-width: 100%; border: 0; text-align: left; white-space: normal;
+  font: 400 14px/1.45 var(--font-sans); color: var(--ui-ink); overflow-wrap: anywhere;
+}
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr > td::before {
+  content: attr(data-label); float: left; margin-left: -7rem; width: 6.5rem;
+  font: 500 14px/1.45 var(--font-sans); color: var(--ops-ink-2); overflow-wrap: break-word;
+}
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr > td:not([data-label])::before { content: none; }
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr > td:not([data-label]) { padding-left: 0; }
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr > td.num { text-align: left; }
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr > td[data-card="select"] { flex: none; order: -3; padding: 0; }
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr > td[data-card="title"] {
+  flex: 1 1 9rem; order: -2; padding: 0; font: 600 16px/1.35 var(--font-sans);
+}
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr > td[data-card="badge"] {
+  flex: 0 0 auto; max-width: 100%; order: -1; padding: 0; margin-left: auto; overflow-wrap: normal;
+}
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr > td:is([data-card="title"], [data-card="badge"], [data-card="select"])::before { content: none; }
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr > td[data-card="hide"] { display: none; }
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr > td .ops-pill { display: inline-flex; width: auto; max-width: 100%; white-space: normal; text-align: left; }
+:is(.ops-list__table, .ops-table-wrap).is-cards .ops-cell {
+  display: inline; max-width: none; overflow: visible; white-space: normal; text-overflow: clip;
+}
+
+/* 25 Nov (owner), phone: the two-step banner is one line with "Set up"; filters sit behind one button. */
+.ops-banner--twostep { display: flex; align-items: center; gap: 12px; container-type: inline-size; }
+.ops-banner--twostep .ops-banner__line { flex: 1 1 auto; min-width: 0; margin: 0; }
+.ops-banner--twostep > .sg-btn { flex: none; }
+@container (max-width: 560px) {
+  .ops-banner--twostep .ops-banner__more { display: none; }
+}
+@media (max-width: 640px) {
+  .ops-banner--twostep { padding: 8px 12px; margin-bottom: 12px; }
+  .ops-banner--twostep .ops-banner__more { display: none; }
+  .ops-banner--twostep .ops-banner__line b { font-size: 14px; }
+}
+.ops-list__filtertoggle { display: none; }
+.ops-list__filterbody { display: contents; }
+@container opslist (max-width: 640px) {
+  .ops-list__filtertoggle { display: inline-flex; }
+  .ops-list__filterbody { display: none; }
+  .ops-list__filterbody[data-open] { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 1 0 100%; min-width: 0; }
+}
+/* 25 Nov (owner): a person in a list reads name, then the full reference under it; only the name may be cut. */
+.ops-who { display: inline-grid; grid-template-columns: minmax(0, auto); max-width: 100%; min-width: 0; vertical-align: top; line-height: 1.3; }
+.ops-who__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ops-who__ref { white-space: nowrap; font-size: 14px; color: var(--ops-ink-3); }
+.ops-cell:has(> .ops-who) { max-width: 14rem; overflow: visible; }
+:is(.ops-list__table, .ops-table-wrap).is-cards .ops-who { display: inline; }
+:is(.ops-list__table, .ops-table-wrap).is-cards .ops-who__name { white-space: normal; }
+/* In a card, a row of chips wraps inside the card. */
+:is(.ops-list__table, .ops-table-wrap).is-cards .ops-chips { display: inline-flex; flex-wrap: wrap; max-width: 100%; }
+@container opslist (max-width: 640px) { .ops-list__table .ops-chips { display: inline-flex; flex-wrap: wrap; max-width: 100%; } }
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr > th {
+  flex: 1 1 100%; order: -2; padding: 0; text-align: left; white-space: normal; font: 600 16px/1.35 var(--font-sans);
+}
+:is(.ops-list__table, .ops-table-wrap).is-cards > table > tfoot { display: block; }
+/* A narrow card puts each label above its value, so long values (and the largest text size) fit. */
+:is(.ops-list__table, .ops-table-wrap).is-cards > table { container: opscards / inline-size; }
+@container opscards (max-width: 26rem) {
+  :is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr > td { padding-left: 0; }
+  :is(.ops-list__table, .ops-table-wrap).is-cards > table > tbody > tr > td::before { float: none; display: block; margin-left: 0; width: auto; }
+}
+:is(.ops-list__table, .ops-table-wrap).is-cards :is(.ops-linkbtn, button, a) { white-space: normal; max-width: 100%; text-align: left; overflow-wrap: anywhere; }
+@container opslist (max-width: 26rem) {
+  .ops-list__table .ops-table td { padding-left: 0; }
+  .ops-list__table .ops-table td::before { float: none; display: block; margin-left: 0; width: auto; }
+  .ops-list__table .ops-table :is(.ops-linkbtn, button, a) { white-space: normal; max-width: 100%; text-align: left; overflow-wrap: anywhere; }
+}
+
+/* 25 Nov (owner): no sideways scrolling, the safety board included: lanes sit side by side while
+   each gets 15rem, and stack (two, then one) when they do not. */
+.ops-board__lanes { grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); overflow-x: visible; }
+.ops-board__lanes > * { min-width: 0; }

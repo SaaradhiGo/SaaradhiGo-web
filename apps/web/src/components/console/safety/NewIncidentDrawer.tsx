@@ -13,7 +13,7 @@ import { Drawer } from '@/components/console/ui';
 export function NewIncidentDrawer({
   onClose, onCreated,
 }: {
-  onClose: () => void; onCreated: (id: number, created: boolean) => void;
+  onClose: () => void; onCreated: (id: number, created: boolean, ref: string | null) => void;
 }) {
   const [category, setCategory] = useState('other');
   const [severity, setSeverity] = useState<Severity>('medium');
@@ -23,18 +23,18 @@ export function NewIncidentDrawer({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const tripOk = tripId.trim() === '' || /^\d+$/.test(tripId.trim());
+  const tripOk = tripId.trim() === '' || /^[A-Za-z0-9-]{4,24}$/.test(tripId.trim());
   const ready = !busy && title.trim() !== '' && tripOk;
 
   async function submit() {
     setBusy(true);
     setError(null);
     try {
-      const r = await api.post<{ id: number; created: boolean }>('/safety/admin/incidents/', {
+      const r = await api.post<{ id: number; ref?: string | null; created: boolean }>('/safety/admin/incidents/', {
         category, severity, title: title.trim(), note: note.trim(),
-        ...(tripId.trim() ? { trip_id: Number(tripId) } : {}),
+        ...(tripId.trim() ? { trip_id: /^\d+$/.test(tripId.trim()) ? Number(tripId) : tripId.trim().toUpperCase() } : {}),
       });
-      onCreated(r.id, r.created);
+      onCreated(r.id, r.created, r.ref ?? null);
     } catch (err) {
       setError(err instanceof ApiError && err.fromServer ? err.message : 'That did not go through.');
     } finally {
@@ -72,8 +72,8 @@ export function NewIncidentDrawer({
           <select id="ni-sev" className="ops-select" value={severity} onChange={(e) => setSeverity(e.target.value as Severity)}>
             {(Object.keys(SEVERITY_LABEL) as Severity[]).map((s) => <option key={s} value={s}>{SEVERITY_LABEL[s]}</option>)}
           </select>
-          <label className="ops-form__label" htmlFor="ni-trip">Trip number (optional)</label>
-          <input id="ni-trip" className="ops-select" inputMode="numeric" value={tripId} onChange={(e) => setTripId(e.target.value)} size={10} aria-invalid={!tripOk} />
+          <label className="ops-form__label" htmlFor="ni-trip">Trip reference (optional)</label>
+          <input id="ni-trip" className="ops-select" placeholder="HYD-261116-K7Q4" value={tripId} onChange={(e) => setTripId(e.target.value)} size={10} aria-invalid={!tripOk} />
         </div>
         <label className="ops-form__label" htmlFor="ni-note">What was reported</label>
         <textarea id="ni-note" className="input" rows={4} value={note} onChange={(e) => setNote(e.target.value)} />

@@ -300,7 +300,7 @@ function TripsInner() {
   if (filters.stale) chips.push({ key: 'stale', label: 'Stale', onRemove: drop({ stale: false }) });
   if (filters.flagged) chips.push({ key: 'flagged', label: 'Flagged', onRemove: drop({ flagged: false }) });
   if (filters.hasSos) chips.push({ key: 'sos', label: 'Had an SOS', onRemove: drop({ hasSos: false }) });
-  if (filters.id) chips.push({ key: 'id', label: 'One trip', onRemove: drop({ id: '' }) });
+  if (filters.id) chips.push({ key: 'id', label: `Trip ${filters.id}`, onRemove: drop({ id: '' }) });
 
   const columns: ListColumn<TripRow>[] = [
     { key: 'id', label: 'Trip', primary: true, sortKey: 'id', render: (t) => <span className="sg-num">{refOf(t)}</span> },
@@ -402,8 +402,8 @@ function TripsInner() {
                   </select>
                   <label className="ops-form__label" htmlFor="f-vehicle">Vehicle</label>
                   <input id="f-vehicle" className="ops-select" placeholder="e.g. sedan" value={draft.vehicleType} onChange={(e) => setDraft({ ...draft, vehicleType: e.target.value.trim() })} size={10} />
-                  <label className="ops-form__label" htmlFor="f-id">Trip (T-…)</label>
-                  <input id="f-id" className="ops-select" inputMode="numeric" value={draft.id} onChange={(e) => setDraft({ ...draft, id: e.target.value.replace(/\D/g, '') })} size={8} />
+                  <label className="ops-form__label" htmlFor="f-id">Trip reference</label>
+                  <input id="f-id" className="ops-select" placeholder="HYD-261116-K7Q4" value={draft.id} onChange={(e) => setDraft({ ...draft, id: e.target.value.replace(/[^A-Za-z0-9-]/g, '').toUpperCase() })} size={16} />
                 </div>
                 <div className="ops-form__row">
                   <label className="ops-form__row"><input type="checkbox" checked={draft.stuck} onChange={(e) => apply({ stuck: e.target.checked })} /> Stuck only</label>

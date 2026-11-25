@@ -5,7 +5,8 @@ import {
   cardLine, impactHeadline, impactWarnings, pickups, transitionWords,
   type ImpactResult,
 } from '@/lib/zones';
-import { Skeleton } from '@/components/console/ui';
+import { Skeleton, FitBox } from '@/components/console/ui';
+import { classWord } from '@/lib/pricingWords';
 
 /**
  * "What this change does": the impact preview of a draft over the last 30 days.
@@ -54,7 +55,7 @@ export function ImpactPanel({ result, state, currency }: {
       {warnings.map((w) => <div key={w} className="ops-note ops-note--warn" role="status"><b>Check this.</b> {w}</div>)}
 
       {result.transitions.length > 0 ? (
-        <div className="ops-table-wrap">
+        <FitBox>
           <table className="ops-table ops-table--compact ops-table--auto">
             <caption className="sr-only">Pickups that would change zone, last {result.window_days} days</caption>
             <thead><tr><th scope="col">Zone now → zone after</th><th scope="col" className="num">Pickups</th></tr></thead>
@@ -64,7 +65,7 @@ export function ImpactPanel({ result, state, currency }: {
               ))}
             </tbody>
           </table>
-        </div>
+        </FitBox>
       ) : null}
 
       <dl className="ops-facts zn-impact__facts">
@@ -81,7 +82,7 @@ export function ImpactPanel({ result, state, currency }: {
           <ul className="zn-impact__cards">
             {result.cards_newly_applying.map((c) => (
               <li key={c.id}>
-                <b>{c.vehicle_type_name}</b> in {c.zone}, v{c.version}: {cardLine(c, symbol)}
+                <b>{classWord(c.vehicle_type_name)}</b> in {c.zone}, v{c.version}: {cardLine(c, symbol)}
                 {' '}<span className="muted">({pickups(c.trips ?? 0)})</span>
               </li>
             ))}
@@ -95,7 +96,7 @@ export function ImpactPanel({ result, state, currency }: {
           <ul className="zn-impact__cards">
             {result.pickups_without_a_card.map((m) => (
               <li key={`${m.zone}-${m.vehicle_type}`}>
-                {pickups(m.trips)} in {m.zone ?? 'no zone'} ({m.vehicle_type_name ?? 'unknown class'})
+                {pickups(m.trips)} in {m.zone ?? 'no zone'} ({m.vehicle_type_name ? classWord(m.vehicle_type_name) : 'unknown class'})
               </li>
             ))}
           </ul>

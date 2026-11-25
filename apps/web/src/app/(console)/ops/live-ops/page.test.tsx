@@ -27,7 +27,7 @@ vi.mock('@/lib/useLiveOps', () => {
     zones: [{ code: 'Z', name: 'Zone', type: 'city', city: 'C', rings: [[[17, 78], [17, 78.1], [17.1, 78.1], [17.1, 78]]] }],
     trips: [], alerts: [{
       id: 1, kind: 'sos', severity: 'critical', title: 'Rider pressed SOS', city: 'C', created_at: '2026-11-05T09:00:00Z',
-      is_sos: true, lat: 17.05, lng: 78.05, sos_id: 11, sos_status: 'open', incident_id: 5,
+      is_sos: true, lat: 17.05, lng: 78.05, sos_id: 11, sos_status: 'open', incident_id: 5, incident_ref: 'INC-HYD-4MQ9',
       ack_due_at: new Date(Date.now() + 90_000).toISOString(),
     }],
   };
@@ -59,9 +59,9 @@ describe('Live map workspace', () => {
 
   it('opens the panel from the queue, shows Acknowledge, and closes on Escape', () => {
     render(<Page />);
-    fireEvent.click(screen.getByRole('button', { name: /SOS-11/ }));
+    fireEvent.click(screen.getByRole('button', { name: /SOS INC-HYD-4MQ9/ }));
     const panel = screen.getByRole('dialog');
-    expect(panel.textContent).toContain('SOS-11');
+    expect(panel.textContent).toContain('SOS INC-HYD-4MQ9');
     expect(screen.getByRole('button', { name: 'Acknowledge' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Open case' }).getAttribute('href')).toBe('/ops/safety-ops/incidents/5');
     fireEvent.keyDown(window, { key: 'Escape' });
@@ -71,7 +71,7 @@ describe('Live map workspace', () => {
   it('filters the queue from a chip and collapses to a rail that is remembered', () => {
     render(<Page />);
     fireEvent.click(screen.getByRole('button', { name: /Areas short/ }));
-    expect(screen.queryByRole('button', { name: /SOS-11/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /SOS INC-HYD-4MQ9/ })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Hide the needs attention queue' }));
     expect(screen.getByRole('button', { name: 'Show the needs attention queue' })).toBeTruthy();
     expect(window.localStorage.getItem('lo-queue-collapsed')).toBe('1');

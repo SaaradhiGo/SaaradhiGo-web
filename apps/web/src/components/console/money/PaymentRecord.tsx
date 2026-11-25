@@ -9,7 +9,7 @@ import { cityName, formatMinor } from '@/lib/finance';
 import { PageButtonLink, PageLink } from '@/components/console/PageLink';
 import { History, RecordPanel, RecordStat, type HistoryEntry } from '@/components/console/kit/RecordPanel';
 import { StatusChip } from '@/components/console/kit/StatusChip';
-import { Fact, Facts } from '@/components/console/ui';
+import { Fact, Facts, FitBox } from '@/components/console/ui';
 import { paymentChipTone, words } from './moneyKit';
 
 /**
@@ -115,7 +115,7 @@ export function PaymentRecord({ id, onClose }: { id: number | string; onClose?: 
                 <Fact label="Created">{stamp(data.created_at, tz)}</Fact>
               </Facts>
               {data.chain.length > 1 ? (
-                <div className="ops-table-wrap"><table className="ops-table ops-table--compact">
+                <FitBox><table className="ops-table ops-table--compact">
                   <caption className="ops-record__caption">Switch and retry chain</caption>
                   <thead><tr><th scope="col">Payment</th><th scope="col">Method</th><th scope="col">Status</th><th scope="col" className="num">Amount</th><th scope="col">Why it changed</th></tr></thead>
                   <tbody>
@@ -129,7 +129,7 @@ export function PaymentRecord({ id, onClose }: { id: number | string; onClose?: 
                       </tr>
                     ))}
                   </tbody>
-                </table></div>
+                </table></FitBox>
               ) : <p className="ops-record__empty">This charge was never replaced by another.</p>}
             </div>
           ),
@@ -138,7 +138,7 @@ export function PaymentRecord({ id, onClose }: { id: number | string; onClose?: 
           key: 'refunds', label: `Refunds${data.refunds.length ? ` (${data.refunds.length})` : ''}`, content: data.refunds.length === 0
             ? <p className="ops-record__empty">Nothing has been refunded on this trip.</p>
             : (
-              <div className="ops-table-wrap"><table className="ops-table ops-table--compact">
+              <FitBox><table className="ops-table ops-table--compact">
                 <caption className="sr-only">Refunds on this trip</caption>
                 <thead><tr><th scope="col">Refund</th><th scope="col" className="num">Amount</th><th scope="col">Paid back to</th><th scope="col">Status</th><th scope="col">When</th></tr></thead>
                 <tbody>
@@ -152,14 +152,14 @@ export function PaymentRecord({ id, onClose }: { id: number | string; onClose?: 
                     </tr>
                   ))}
                 </tbody>
-              </table></div>
+              </table></FitBox>
             ),
         },
         {
           key: 'gateway', label: 'Gateway', content: data.webhooks.length === 0
             ? <p className="ops-record__empty">The gateway has not told us about this order. Reconciliation raises this if the payment is captured.</p>
             : (
-              <div className="ops-table-wrap"><table className="ops-table ops-table--compact">
+              <FitBox><table className="ops-table ops-table--compact">
                 <caption className="sr-only">Gateway webhooks (summary)</caption>
                 <thead><tr><th scope="col">Event</th><th scope="col">Received</th><th scope="col">Result</th><th scope="col">Processed</th></tr></thead>
                 <tbody>
@@ -172,7 +172,7 @@ export function PaymentRecord({ id, onClose }: { id: number | string; onClose?: 
                     </tr>
                   ))}
                 </tbody>
-              </table></div>
+              </table></FitBox>
             ),
         },
         { key: 'history', label: 'History', content: <History entries={historyOf(data, tz)} /> },

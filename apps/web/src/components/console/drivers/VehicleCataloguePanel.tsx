@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
 import { StatusChip } from '@/components/console/kit/StatusChip';
 import { DataTable, ErrorState, Skeleton } from '@/components/console/ui';
+import { classWord } from '@/lib/pricingWords';
 
 /**
  * The vehicle catalogue drivers pick make and model from (10 Nov). USA from NHTSA vPIC; India a
@@ -79,7 +80,7 @@ export function VehicleCataloguePanel({ may }: { may: boolean }) {
           <p className="muted mb-2">{data!.count} entries{data!.count > data!.results.length ? `, first ${data!.results.length} shown` : ''}.</p>
           <DataTable caption="Vehicle catalogue" rows={data!.results} rowKey={(e) => String(e.id)} density="compact"
             columns={[
-              { key: 'type', label: 'Type', render: (e) => e.vehicle_type },
+              { key: 'type', label: 'Type', render: (e) => classWord(e.vehicle_type) },
               { key: 'make', label: 'Make', render: (e) => e.make },
               { key: 'model', label: 'Model', render: (e) => e.model },
               { key: 'src', label: 'Source', hideBelow: 1100, render: (e) => (e.curated ? 'Curated' : 'NHTSA vPIC') },

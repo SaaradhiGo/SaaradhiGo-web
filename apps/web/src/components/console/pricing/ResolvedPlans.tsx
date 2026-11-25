@@ -5,6 +5,7 @@ import { ApiError, api } from '@/lib/api';
 import { classWord } from '@/lib/pricingWords';
 import { selectedMarket, useAdminAccess } from '@/lib/adminScope';
 import { hiddenCityName, hiddenPlace } from '@/lib/notLaunched';
+import { FitBox } from '@/components/console/ui';
 
 /**
  * What every place and class pays (Srini's ruling, 22 Nov). One row per place -- the country, its
@@ -62,7 +63,7 @@ export function ResolvedPlans() {
       </header>
       {error ? <div className="alert-error" role="alert">{error}</div> : null}
       {data ? (
-        <div className="ops-list__table rp-resolved">
+        <FitBox className="ops-list__table rp-resolved">
           <table>
             <caption className="sr-only">Driver fee by place and class</caption>
             <thead>
@@ -86,7 +87,7 @@ export function ResolvedPlans() {
               ))}
             </tbody>
           </table>
-        </div>
+        </FitBox>
       ) : !error ? <p className="muted">Loading…</p> : null}
     </section>
   );

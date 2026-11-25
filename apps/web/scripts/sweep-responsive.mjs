@@ -87,6 +87,12 @@ function check({ touch }) {
   };
 
   if (document.scrollingElement.scrollWidth > vw + 1) out.push(`sideways scroll: page is ${document.scrollingElement.scrollWidth}px wide`);
+  // 25 Nov (owner): no sideways scrolling at any width, tables included: a console table that does
+  // not fit turns into cards (useFitOrCards), so a table box that scrolls sideways is a failure.
+  for (const box of document.querySelectorAll('.ops-list__table, .ops-table-wrap, .ops-board__lanes')) {
+    if (box.closest('[aria-hidden="true"], details:not([open])') || !box.getClientRects().length) continue;
+    if (box.scrollWidth > box.clientWidth + 1) out.push(`sideways scroll in a table: ${name(box)} needs ${box.scrollWidth}px of ${box.clientWidth}px`);
+  }
 
   const texts = [];
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);

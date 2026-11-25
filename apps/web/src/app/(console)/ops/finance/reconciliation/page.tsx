@@ -15,7 +15,7 @@ import { FinanceNav } from '@/components/console/finance';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { History, RecordPanel } from '@/components/console/kit/RecordPanel';
 import { StatusChip } from '@/components/console/kit/StatusChip';
-import { Fact, Facts, Skeleton } from '@/components/console/ui';
+import { Fact, Facts, Skeleton, FitBox } from '@/components/console/ui';
 import { marketDate } from '@/lib/consoleTime';
 
 /**
@@ -289,7 +289,7 @@ function ReconciliationInner() {
         ) : overview!.results.length === 0 ? (
           <p className="ops-list__empty">The daily reconciliation has not run for your countries.</p>
         ) : (
-          <div className="ops-list__table">
+          <FitBox className="ops-list__table">
             <table className="ops-table ops-table--compact">
               <caption className="sr-only">Reconciliation runs</caption>
               <thead>
@@ -315,7 +315,7 @@ function ReconciliationInner() {
                 })}
               </tbody>
             </table>
-          </div>
+          </FitBox>
         )}
       </section>
     </>

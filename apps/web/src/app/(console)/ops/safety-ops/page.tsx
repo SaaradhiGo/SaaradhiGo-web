@@ -339,9 +339,9 @@ function SafetyInner() {
       {creating && (
         <NewIncidentDrawer
           onClose={() => setCreating(false)}
-          onCreated={(id, created) => {
+          onCreated={(id, created, ref) => {
             setCreating(false);
-            setNotice(created ? `INC-${id} opened.` : `That trip already has an open case: ${id}.`);
+            setNotice(created ? `${ref ?? 'The incident'} opened.` : `That trip already has an open case${ref ? `: ${ref}` : ''}.`);
             router.push(`/ops/safety-ops/incidents/${id}`);
           }}
         />

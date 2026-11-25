@@ -13,7 +13,7 @@ import { FinanceNav, RangeBar } from '@/components/console/finance';
 import { ListPage, type ListColumn } from '@/components/console/kit/ListPage';
 import { MetricCard } from '@/components/console/kit/MetricCard';
 import { RecordPanel } from '@/components/console/kit/RecordPanel';
-import { Skeleton } from '@/components/console/ui';
+import { Skeleton, FitBox } from '@/components/console/ui';
 
 /**
  * Money overview: one row per place and currency for the range, whole units,
@@ -244,7 +244,7 @@ function OverviewInner() {
               },
               {
                 key: 'days', label: 'By day', content: (
-                  <div className="ops-table-wrap"><table className="ops-table ops-table--compact">
+                  <FitBox><table className="ops-table ops-table--compact">
                     <caption className="sr-only">{cityName(open.city)} by day</caption>
                     <thead><tr><th scope="col">Day</th><th scope="col" className="num">Gross</th><th scope="col" className="num">Driver fee</th><th scope="col" className="num">Payouts pending</th></tr></thead>
                     <tbody>
@@ -257,7 +257,7 @@ function OverviewInner() {
                         </tr>
                       ))}
                     </tbody>
-                  </table></div>
+                  </table></FitBox>
                 ),
               },
             ]}

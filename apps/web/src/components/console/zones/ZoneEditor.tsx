@@ -11,6 +11,7 @@ import {
 import { ZoneMap, type MapZone, type PointMark } from '@/components/console/zones/ZoneMap';
 import { ImpactPanel } from '@/components/console/zones/ImpactPanel';
 import { PointTester } from '@/components/console/zones/PointTester';
+import { FitBox } from '@/components/console/ui';
 
 /**
  * The draft editor: the corners of a polygon, the settings, the impact preview and
@@ -286,7 +287,7 @@ export function ZoneEditor({ zone, zones, cities, onSent, onCancel }: {
               />
               {shapeProblem && draft.rows.length > 0 ? <p className="help m-0" role="status">{shapeProblem}</p> : null}
               <div className="zn-corners">
-                <div className="ops-table-wrap"><table className="ops-table ops-table--compact ops-table--auto">
+                <FitBox><table className="ops-table ops-table--compact ops-table--auto">
                   <caption>Corners ({draft.rows.length})</caption>
                   <thead>
                     <tr><th scope="col">#</th><th scope="col">Latitude</th><th scope="col">Longitude</th><th scope="col"><span className="sr-only">Remove</span></th></tr>
@@ -304,7 +305,7 @@ export function ZoneEditor({ zone, zones, cities, onSent, onCancel }: {
                       </tr>
                     ))}
                   </tbody>
-                </table></div>
+                </table></FitBox>
                 <div className="zn-corners__actions">
                   <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={addRow}>Add a corner</button>
                   {zone ? <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={reset}>Reset to the current shape</button> : null}
