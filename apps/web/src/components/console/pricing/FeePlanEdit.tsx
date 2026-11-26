@@ -148,29 +148,27 @@ export function FeePlanEditDrawer({ plan, onClose, onDone }: {
                 .map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </div>
-          <div className="ops-table-wrap">
-            <table className="ops-table ops-table--compact ops-table--auto ops-edit-grid">
-              <caption className="sr-only">Amounts per class</caption>
-              <thead><tr><th scope="col">Class</th>{fields.map((k) => <th key={k} scope="col">{FIELD_WORDS[k](cur)}</th>)}</tr></thead>
-              <tbody>
-                {Object.keys(f.classes).map((c) => (
-                  <tr key={c}>
-                    <th scope="row">{c === '*' ? 'Every other class' : classWord(c)}</th>
-                    {fields.map((k) => {
-                      const was = start.classes[c]?.[k] ?? '';
-                      const id = `fe-${c}-${k}`;
-                      return (
-                        <td key={k} className={changed(f.classes[c][k] ?? '', was) ? 'is-changed' : undefined}>
-                          <label className="sr-only" htmlFor={id}>{`${c === '*' ? 'Every other class' : classWord(c)}: ${FIELD_WORDS[k](cur)}`}</label>
-                          <input id={id} className="input" inputMode="decimal" value={f.classes[c][k] ?? ''}
-                            placeholder="not set" onChange={(e) => setCls(c, k, e.target.value)} />
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* 26 Nov (owner): one block per class whose fields wrap to fit; never a sideways scroll. */}
+          <div className="ops-class-rows">
+            {Object.keys(f.classes).map((c) => {
+              const name = c === '*' ? 'Every other class' : classWord(c);
+              return (
+                <fieldset key={c} className="ops-class-row">
+                  <legend>{name}</legend>
+                  {fields.map((k) => {
+                    const id = `fe-${c}-${k}`;
+                    const was = start.classes[c]?.[k] ?? '';
+                    return (
+                      <div key={k} className={changed(f.classes[c][k] ?? '', was) ? 'ops-field is-changed' : 'ops-field'}>
+                        <label className="ops-form__label" htmlFor={id}>{FIELD_WORDS[k](cur)}</label>
+                        <input id={id} className="input" inputMode="decimal" aria-label={`${name}: ${FIELD_WORDS[k](cur)}`} value={f.classes[c][k] ?? ''}
+                          placeholder="not set" onChange={(e) => setCls(c, k, e.target.value)} />
+                      </div>
+                    );
+                  })}
+                </fieldset>
+              );
+            })}
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {([['floor', `Earnings floor a day (${sym(cur)}, 0 = off)`], ['cap', `Daily cap (${sym(cur)}, blank = none)`],
@@ -183,7 +181,7 @@ export function FeePlanEditDrawer({ plan, onClose, onDone }: {
           </div>
           <div className={changed(f.note, start.note) ? 'ops-field is-changed' : 'ops-field'}>
             <label className="ops-form__label" htmlFor="fe-note">Internal note (shown in the plan’s history, not to drivers)</label>
-            <input id="fe-note" className="input" value={f.note} onChange={(e) => set({ note: e.target.value })} />
+            <textarea id="fe-note" className="input" rows={2} value={f.note} onChange={(e) => set({ note: e.target.value })} />
           </div>
         </section>
 

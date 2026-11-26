@@ -289,11 +289,16 @@ export function previewGrid(rows: FarePreviewRow[]) {
 /** "₹120.00 → ₹132.00 (+₹12.00)", or just the new fare when there is no old card. */
 export function fareChangeText(row: FarePreviewRow | null, currency: string): string {
   if (!row) return '—';
-  const now = formatMinor(row.new_minor, currency);
+  // 26 Nov (owner): whole rupees in INR ("₹45 → ₹50"); paise only when there are any.
+  const m = (v: number, o?: { signed?: boolean }) => {
+    const t = formatMinor(v, currency, o);
+    return (currency || 'INR').toUpperCase() === 'INR' ? t.replace(/\.00$/, '') : t;
+  };
+  const now = m(row.new_minor);
   if (row.old_minor === null) return now;
-  const was = formatMinor(row.old_minor, currency);
+  const was = m(row.old_minor);
   if (row.change_minor === 0) return `${now} (no change)`;
-  return `${was} → ${now} (${formatMinor(row.change_minor, currency, { signed: true })})`;
+  return `${was} → ${now} (${m(row.change_minor ?? 0, { signed: true })})`;
 }
 
 /** Body for the fare-card write: the draft values plus the reason; the zone and class come from the card. */
