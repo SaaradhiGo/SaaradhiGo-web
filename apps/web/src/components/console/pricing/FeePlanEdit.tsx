@@ -181,7 +181,7 @@ export function FeePlanEditDrawer({ plan, onClose, onDone }: {
           </div>
           <div className={changed(f.note, start.note) ? 'ops-field is-changed' : 'ops-field'}>
             <label className="ops-form__label" htmlFor="fe-note">Internal note (shown in the plan’s history, not to drivers)</label>
-            <input id="fe-note" className="input" value={f.note} onChange={(e) => set({ note: e.target.value })} />
+            <textarea id="fe-note" className="input" rows={2} value={f.note} onChange={(e) => set({ note: e.target.value })} />
           </div>
         </section>
 

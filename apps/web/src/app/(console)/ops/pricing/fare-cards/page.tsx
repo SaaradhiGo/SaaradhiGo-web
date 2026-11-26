@@ -81,7 +81,7 @@ function FareCardsInner() {
           <span className="ops-row-actions">
             <button type="button" className="ops-linkbtn" onClick={() => setOpen({ zone: z, cls: c, edit: false })}
               aria-label={`${what}: ${c.live ? `version ${c.live.version}, open` : 'no card'}`}>
-              {c.live ? <>{money(z, c.live.base_fare)} + {money(z, c.live.per_km_fare)}/{z.distance_unit === 'mi' ? 'mi' : 'km'} <span className="muted">· v{c.live.version}</span></>
+              {c.live ? <>{money(z, c.live.base_fare)} + {money(z, c.live.per_km_fare)}/{z.distance_unit === 'mi' ? 'mi' : 'km'}{' '}<span className="muted">· v{c.live.version}</span></>
                 : <StatusChip tone="caution">No card</StatusChip>}
               {c.scheduled ? <> <StatusChip tone="info">v{c.scheduled.version} scheduled</StatusChip></> : null}
             </button>
