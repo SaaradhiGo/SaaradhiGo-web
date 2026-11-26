@@ -99,7 +99,8 @@ export function FeePlanEditDrawer({ plan, onClose, onDone }: {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const cur = plan.currency;
-  const fields = [...(FIELDS_BY_TYPE[f.plan_type] ?? []), 'rider_platform_fee_minor'];
+  // 26 Nov (owner): the rider booking fee is its own setting (Pricing > Booking fees), not part of a driver plan.
+  const fields = FIELDS_BY_TYPE[f.plan_type] ?? [];
   const changed = (a: string, b: string) => a.trim() !== b.trim();
   const body = useMemo(() => bodyOf(f), [f]);
 

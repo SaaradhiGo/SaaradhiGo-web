@@ -54,15 +54,6 @@ function amountsWords(p: Plan) {
   });
 }
 
-/** 24 Nov (owner): the rider booking fee once per place, not repeated in every class cell. */
-function riderFeeWords(p: Plan): string {
-  const fees = Object.entries(p.amounts).map(([cls, a]) => [cls, a.rider_platform_fee_minor] as const).filter(([, f]) => f != null);
-  if (!fees.length) return 'None';
-  const one = new Set(fees.map(([, f]) => f));
-  if (one.size === 1) return rupees(fees[0][1], p.currency);
-  return fees.map(([cls, f]) => `${classWord(cls)} ${rupees(f, p.currency)}`).join(', ');
-}
-
 /** Classes whose driver fee an ACTIVE plan leaves undecided: an open decision for the owner. */
 function undecided(plans: Plan[]): { where: string; classes: string[] }[] {
   return plans.filter((p) => p.status === 'active').map((p) => ({
@@ -136,7 +127,6 @@ export default function FeePlansPage() {
               { key: 'version', label: 'Version', render: (p) => `v${p.version}` },
               { key: 'status', label: 'Status', render: (p) => <StatusChip tone={TONE[p.status] ?? 'neutral'}>{STATUS_WORDS[p.status] ?? p.status.replace('_', ' ')}</StatusChip> },
               { key: 'amounts', label: 'Driver fee per class', render: (p) => <ul className="ops-list-plain">{amountsWords(p).map((w) => <li key={w}>{w}</li>)}</ul> },
-              { key: 'rider', label: 'Rider booking fee', render: (p) => riderFeeWords(p) },
               { key: 'rules', label: 'Floor · cap · waiver', render: (p) => `${rupees(p.earnings_floor_minor, p.currency)} · ${p.daily_cap_minor == null ? 'no cap' : rupees(p.daily_cap_minor, p.currency)} · ${p.waiver_first_days ? `first ${plural(p.waiver_first_days, 'day')} free` : p.waiver_until ? `free until ${marketDate(p.waiver_until, p.country)}` : 'none'}` },
               { key: 'from', label: 'From', render: (p) => (p.effective_from ? `${marketDate(p.effective_from, p.country)}${p.effective_to ? ` to ${marketDate(p.effective_to, p.country)}` : ''}` : '—') },
               { key: 'act', label: 'Actions', render: (p) => (
@@ -171,7 +161,7 @@ export default function FeePlansPage() {
 
 function DraftDrawer({ onClose, onDone }: { onClose: () => void; onDone: (text: string) => void }) {
   const [f, setF] = useState({ country: 'IN', scope_code: '', plan_type: 'fair_share', classes: 'hatchback, sedan, suv',
-    per_trip: '10', pass: '', free_after: '', commission: '', rider_fee: '', floor: '1000', cap: '149',
+    per_trip: '10', pass: '', free_after: '', commission: '', floor: '1000', cap: '149',
     waiver_days: '60', note: '', reason: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -185,7 +175,7 @@ function DraftDrawer({ onClose, onDone }: { onClose: () => void; onDone: (text: 
     setBusy(true); setError(null);
     const per = { per_trip_fee_minor: toMinor(f.per_trip), daily_pass_minor: toMinor(f.pass),
       fee_free_after_trips: f.free_after.trim() ? Number(f.free_after) : null,
-      commission_percent: f.commission.trim() ? Number(f.commission) : null, rider_platform_fee_minor: toMinor(f.rider_fee) };
+      commission_percent: f.commission.trim() ? Number(f.commission) : null };
     const amounts = Object.fromEntries(f.classes.split(',').map((c) => c.trim().toLowerCase()).filter(Boolean)
       .map((c) => [c, Object.fromEntries(Object.entries(per).filter(([, v]) => v != null))]));
     try {
@@ -220,7 +210,6 @@ function DraftDrawer({ onClose, onDone }: { onClose: () => void; onDone: (text: 
         {field('floor', `Earnings floor a day (${sym}, 0 = off)`)}
         {field('cap', `Daily cap (${sym}, blank = none)`)}
         {field('waiver_days', 'Launch waiver: first N days from a driver’s first trip')}
-        {field('rider_fee', `Rider platform fee (${sym}; only used while its flag is on)`)}
         {field('note', 'Note')}
         {field('reason', 'Why (kept in the audit log)')}
         {error ? <div className="alert-error" role="alert">{error}</div> : null}
