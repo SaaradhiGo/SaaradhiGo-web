@@ -2914,3 +2914,10 @@ iframe.ops-kyc__file { width: 100%; height: 100%; border: 0; background: var(--o
    approval record), and never push the column wider than the screen. */
 .ops-change, .ops-change > section { min-width: 0; max-width: 100%; }
 .ops-change .ops-table-wrap { overflow-x: auto; max-width: 100%; }
+
+/* 26 Nov (owner): the fee-plan editor's classes as rows of fields that wrap; no sideways scroll. */
+.ops-class-rows { display: grid; gap: 10px; min-width: 0; }
+.ops-class-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: 8px 12px;
+  margin: 0; padding: 10px 12px 12px; border: 1px solid var(--ui-line); border-radius: var(--ops-radius); min-width: 0; }
+.ops-class-row > legend { padding: 0 4px; font-weight: 600; color: var(--ui-text); }
+.ops-class-row .input { width: 100%; min-width: 0; }

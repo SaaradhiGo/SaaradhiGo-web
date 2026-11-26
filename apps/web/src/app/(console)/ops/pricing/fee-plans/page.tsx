@@ -80,6 +80,7 @@ export default function FeePlansPage() {
   const [drafting, setDrafting] = useState(false);
   const [opened, setOpened] = useState<Plan | null>(null);
   const [editing, setEditing] = useState<Plan | null>(null);
+  const [discarding, setDiscarding] = useState<Plan | null>(null);
   const versionsOf = (p: Plan) => (plans ?? []).filter((x) => x.country === p.country && x.scope_code === p.scope_code);
   // 25 Nov (owner): the table shows what is in force and what is moving; ended versions live in the history.
   const current = (plans ?? []).filter((p) => p.status !== 'archived');
@@ -143,6 +144,9 @@ export default function FeePlansPage() {
                   {may && (p.status === 'active' || p.status === 'draft')
                     ? <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setEditing(p)}
                       aria-label={`Edit the plan for ${p.scope_name ?? p.scope_code ?? p.country}`}>Edit</button> : null}
+                  {may && p.status === 'draft'
+                    ? <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setDiscarding(p)}
+                      aria-label={`Discard the draft for ${p.scope_name ?? p.scope_code ?? p.country}`}>Discard draft…</button> : null}
                   {may && p.status === 'pending_approval'
                     ? <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => void withdraw(p)}>Withdraw</button> : null}
                   <button type="button" className="ops-linkbtn" onClick={() => setOpened(p)}
@@ -156,6 +160,8 @@ export default function FeePlansPage() {
       <div className="mt-4"><RegulationPanel may={may} /></div>
       {opened ? <FeePlanPanel plan={opened} versions={versionsOf(opened)} may={may} onClose={() => setOpened(null)}
         onEdit={() => { setEditing(opened); setOpened(null); }} onWithdraw={() => void withdraw(opened)} /> : null}
+      {discarding ? <DiscardDrawer plan={discarding} onClose={() => setDiscarding(null)}
+        onDone={(t) => { setDiscarding(null); setNotice(t); void load(); }} /> : null}
       {editing ? <FeePlanEditDrawer plan={editing} onClose={() => setEditing(null)}
         onDone={(t) => { setEditing(null); setNotice(t); void load(); }} /> : null}
       {drafting ? <DraftDrawer onClose={() => setDrafting(false)} onDone={(t) => { setDrafting(false); setNotice(t); void load(); }} /> : null}
@@ -286,5 +292,36 @@ function Simulator() {
         </div>
       ) : null}
     </section>
+  );
+}
+
+/** 26 Nov (owner): a draft nobody will send is discarded, with a reason; the plan in force is untouched. */
+function DiscardDrawer({ plan, onClose, onDone }: { plan: Plan; onClose: () => void; onDone: (t: string) => void }) {
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function send() {
+    setBusy(true); setError(null);
+    try {
+      await api.post(`/pricing/admin/fee-plans/${plan.id}/discard/`, { reason: reason.trim() });
+      onDone(`Draft v${plan.version} discarded. The plan in force is unchanged.`);
+    } catch (err) {
+      setError(err instanceof ApiError && err.fromServer ? err.message : 'That did not go through.');
+    } finally { setBusy(false); }
+  }
+  return (
+    <Drawer open title={`Discard draft v${plan.version} · ${plan.scope_name ?? plan.scope_code ?? plan.country}`} onClose={onClose}
+      footer={<>
+        <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={onClose} disabled={busy}>Back</button>
+        <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => void send()} disabled={busy || reason.trim().length < 5}>
+          {busy ? 'Discarding…' : 'Discard draft'}</button>
+      </>}>
+      <div className="ops-form">
+        <p className="help m-0">This draft was never in force. It leaves the list and stays in the history as discarded.</p>
+        <label className="ops-form__label" htmlFor="fd-discard-why">Why (kept in the audit log)</label>
+        <textarea id="fd-discard-why" className="input" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />
+        {error ? <div className="alert-error" role="alert">{error}</div> : null}
+      </div>
+    </Drawer>
   );
 }
