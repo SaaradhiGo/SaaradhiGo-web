@@ -81,7 +81,7 @@ function FareCardsInner() {
           <span className="ops-row-actions">
             <button type="button" className="ops-linkbtn" onClick={() => setOpen({ zone: z, cls: c, edit: false })}
               aria-label={`${what}: ${c.live ? `version ${c.live.version}, open` : 'no card'}`}>
-              {c.live ? <>{money(z, c.live.base_fare)} + {money(z, c.live.per_km_fare)}/{z.distance_unit === 'mi' ? 'mi' : 'km'} <span className="muted">v{c.live.version}</span></>
+              {c.live ? <>{money(z, c.live.base_fare)} + {money(z, c.live.per_km_fare)}/{z.distance_unit === 'mi' ? 'mi' : 'km'} <span className="muted">· v{c.live.version}</span></>
                 : <StatusChip tone="caution">No card</StatusChip>}
               {c.scheduled ? <> <StatusChip tone="info">v{c.scheduled.version} scheduled</StatusChip></> : null}
             </button>
@@ -141,6 +141,12 @@ function FareCardsInner() {
   );
 }
 
+function wholeValues(v: FareValues, currency: string): FareValues {
+  const out = { ...v };
+  for (const f of FARE_FIELDS) if (f.money) out[f.key] = plainAmount(v[f.key], currency);
+  return out;
+}
+
 function money(z: FareZone, v: string | undefined | null): string {
   return v === undefined || v === null ? '—' : `${currencySymbol(z.currency)}${plainAmount(v, z.currency)}`;
 }
@@ -159,7 +165,8 @@ function CardDrawer({ zone, cls, may, startEditing, onClose, onDone }: {
     base_fare: '', per_km_fare: '', per_min_fare: '', min_fare: '', night_surge_multiplier: '1.00',
     night_surge_start_hour: '23', night_surge_end_hour: '5', surge_cap_multiplier: '1.50', gst_percent: '5.000',
   };
-  const current = base ? valuesOf(base) : null;
+  // 26 Nov (owner): INR in whole rupees ("45", not "45.00"); paise only when there are any.
+  const current = base ? wholeValues(valuesOf(base), zone.currency) : null;
   const [draft, setDraft] = useState<FareValues>(current ?? blank);
   const [reason, setReason] = useState('');
   const [editing, setEditing] = useState(startEditing);
@@ -260,8 +267,8 @@ function CardDrawer({ zone, cls, may, startEditing, onClose, onDone }: {
                 { key: 'k', label: 'Per km', num: true, render: (h) => money(zone, h.per_km_fare) },
                 { key: 'm', label: 'Per min', num: true, render: (h) => money(zone, h.per_min_fare) },
                 { key: 'mf', label: 'Min', num: true, render: (h) => money(zone, h.min_fare) },
-                { key: 'n', label: 'Night', num: true, hideBelow: 1100, render: (h) => `×${Number(h.night_surge_multiplier)}` },
-                { key: 'c', label: 'Cap', num: true, hideBelow: 1100, render: (h) => `×${Number(h.surge_cap_multiplier)}` },
+                { key: 'n', label: 'Night', num: true, render: (h) => `×${Number(h.night_surge_multiplier)}` },
+                { key: 'c', label: 'Cap', num: true, render: (h) => `×${Number(h.surge_cap_multiplier)}` },
                 { key: 'f', label: 'From', render: (h) => stamp(h.effective_from, timeZoneFor(zone.code)) },
                 { key: 't', label: 'Until', render: (h) => (h.effective_to ? stamp(h.effective_to, timeZoneFor(zone.code)) : '—') },
               ]} />
@@ -294,8 +301,11 @@ function CardDrawer({ zone, cls, may, startEditing, onClose, onDone }: {
             <label className="ops-form__label" htmlFor="fc-why">Why (the approver and the history see it)</label>
             <textarea id="fc-why" className="input" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />
             {changes.length > 0 && current ? (
-              <ChangePreview heading="This request will change" display={{ changes: changes.map((c) => ({
-                label: c.label, from: String(c.from ?? '—'), to: String(c.to) })) }} />
+              <ChangePreview heading="This request will change" display={{ changes: changes.map((c) => {
+                const isMoney = FARE_FIELDS.find((f) => f.key === c.key)?.money;
+                const words = (v: number | null) => (v === null ? '—' : isMoney ? money(zone, String(v)) : String(v));
+                return { label: c.label, from: words(c.from), to: words(c.to) };
+              }) }} />
             ) : null}
             {problem && (reason || changes.length > 0) ? <p className="help m-0" role="note">{problem}</p> : null}
           </section>

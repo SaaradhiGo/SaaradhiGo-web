@@ -67,8 +67,11 @@ describe('Driver fee plans: the Edit pattern (25 Nov)', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Edit the plan for Hyderabad' }));
     const input = (await screen.findByLabelText('Sedan: Fee a trip (₹)')) as HTMLInputElement;
     expect(input.value).toBe('10');
+    // 26 Nov (owner): classes as blocks of fields, never a sideways-scrolling table.
+    expect(input.closest('fieldset.ops-class-row')).toBeTruthy();
+    expect(input.closest('table')).toBeNull();
     fireEvent.change(input, { target: { value: '8' } });
-    expect(input.closest('td')?.className).toContain('is-changed');
+    expect(input.closest('.ops-field')?.className).toContain('is-changed');
     expect(await screen.findByText('₹8')).toBeTruthy();
     expect(screen.getByText(/next local day, 2026-11-26/)).toBeTruthy();
     const send = screen.getByRole('button', { name: 'Send for approval' }) as HTMLButtonElement;
