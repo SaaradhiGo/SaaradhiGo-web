@@ -83,7 +83,10 @@ export type FareLines = {
   /** null on a US receipt (14 Nov, Srini): no taxable value. */
   taxable: string | null;
   tax: { label: string; percent: string; amount: string; included: boolean };
-  extras: { code: string; label: string; amount: string }[];
+  /** 27 Nov: a trip extra collected for someone else carries `on_behalf` and a `note` saying whom. */
+  extras: { code: string; label: string; amount: string; note?: string; on_behalf?: boolean }[];
+  /** 27 Nov: the heading over the on-behalf lines, when there are any. */
+  on_behalf_title?: string;
   total: string;
   currency: string;
   /** 13 Nov: false while GST is off: no taxable value and no tax line. */

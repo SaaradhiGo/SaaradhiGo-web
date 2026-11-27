@@ -872,5 +872,11 @@
   "{r} rating from {n} trip": "{n} ట్రిప్ నుండి {r} రేటింగ్",
   "Step {n} of {total} · about {m} minute left": "{total}లో దశ {n} · సుమారు {m} నిమిషం మిగిలింది",
   "{a} of {n} trip": "{n}లో {a} ట్రిప్",
-  "Held for {n} minute.": "{n} నిమిషం నిలిపి ఉంచుతాం."
+  "Held for {n} minute.": "{n} నిమిషం నిలిపి ఉంచుతాం.",
+  "Collected on behalf of others": "ఇతరుల తరపున వసూలు చేసినవి",
+  "Collected on behalf of the toll operator. Your driver pays it at the plaza.": "టోల్ నిర్వాహకుడి తరపున వసూలు చేయబడింది. మీ డ్రైవర్ దీన్ని టోల్ ప్లాజా వద్ద చెల్లిస్తారు.",
+  "Collected on behalf of the airport. Your driver pays it at the gate.": "విమానాశ్రయం తరపున వసూలు చేయబడింది. మీ డ్రైవర్ దీన్ని గేటు వద్ద చెల్లిస్తారు.",
+  "Collected on behalf of the venue. Your driver pays it at the gate.": "వేదిక తరపున వసూలు చేయబడింది. మీ డ్రైవర్ దీన్ని గేటు వద్ద చెల్లిస్తారు.",
+  "Includes {amount} in tolls and fees collected on behalf of others. It does not change after you book.": "ఇందులో ఇతరుల తరపున వసూలు చేసే {amount} టోల్‌లు మరియు రుసుములు ఉన్నాయి. బుక్ చేసిన తర్వాత ఇది మారదు.",
+  "Waiting: the first {free} min are free, then {rate}/min. Waiting goes to your driver.": "వేచి ఉండటం: మొదటి {free} నిమి ఉచితం, తర్వాత {rate}/నిమి. ఈ మొత్తం మీ డ్రైవర్‌కు వెళ్తుంది."
 }

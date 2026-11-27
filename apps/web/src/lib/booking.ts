@@ -66,6 +66,8 @@ export type FareQuote = {
   drivers_nearby?: boolean;
   /** A cancellation fee from an earlier trip that this booking carries (MVAG 2025), shown before booking. */
   cancellation_due?: { amount: string; currency: string; trip_ids: number[] } | null;
+  /** 27 Nov (trip charges): the waiting terms locked with this fare, or null where there are none. */
+  waiting_terms?: { free_minutes: number; per_minute_minor: number; words: string; sample?: boolean } | null;
   /** 13 Nov: the city has not launched yet. Fares show; Book says this message instead. */
   launching?: { code: string; message: string } | null;
 };
