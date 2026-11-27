@@ -153,7 +153,7 @@ function CountryCharges({ here, may, titled, sampleAllowed, onNotice, onChanged 
       {shapes.length ? <ZoneMap zones={shapes} caption={`Where each charge applies · ${where}`} height={360}
         onZone={(code) => setViewing(rows.find((i) => i.code === code) ?? null)} /> : null}
       {!rows.length ? <p className="help m-0">No charges yet. Add the tolls, airports and waiting rule for this country.</p> : null}
-      {rows.length ? <DataTable caption={`Trip charges · ${where}`} rows={rows} rowKey={(i) => i.code} wrap maxHeight={false}
+      {rows.length ? <DataTable caption={`Trip charges · ${where}`} rows={rows} rowKey={(i) => `${i.code}:${i.version}`} wrap maxHeight={false}
         columns={[
           { key: 'item', label: 'Charge', render: (i) => <>
             <b>{i.name}</b><br /><span className="muted">{i.kind_words}</span>

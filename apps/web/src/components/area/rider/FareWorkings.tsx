@@ -23,6 +23,10 @@ export function FareWorkings({ quote }: { quote: FareQuote }) {
   const cur = quote.currency;
   const metered = ['base_fare', 'distance_fare', 'time_fare'].reduce((s, k) => s + Number(b[k as keyof Breakdown] ?? 0), 0);
   const due = quote.cancellation_due;
+  // 27 Nov (trip charges): tolls and gate fees are inside the locked fare; waiting is the one thing added.
+  const onBehalf = (quote.fare_lines?.extras ?? []).filter((x) => x.on_behalf);
+  const onBehalfSum = onBehalf.reduce((s, x) => s + Number(x.amount), 0);
+  const wait = quote.waiting_terms;
   return (
     <>
       <details className="a14">
@@ -45,6 +49,19 @@ export function FareWorkings({ quote }: { quote: FareQuote }) {
         </dl>
         )}
       </details>
+      {onBehalf.length ? (
+        <p className="a14 m-0" data-testid="fare-on-behalf">
+          {tr('Includes {amount} in tolls and fees collected on behalf of others. It does not change after you book.')
+            .replace('{amount}', money(onBehalfSum, cur, locale) ?? '')}
+        </p>
+      ) : null}
+      {wait && wait.per_minute_minor > 0 ? (
+        <p className="a14 amut m-0" data-testid="fare-waiting">
+          {tr('Waiting: the first {free} min are free, then {rate}/min. Waiting goes to your driver.')
+            .replace('{free}', String(wait.free_minutes))
+            .replace('{rate}', money(wait.per_minute_minor / 100, cur, locale) ?? '')}
+        </p>
+      ) : null}
       {due ? (
         <p className="a14" role="note" style={{ padding: '10px 12px', borderRadius: 12, background: 'var(--c-warn-bg)' }}>
           {tr('A cancellation fee of {amount} from an earlier trip is added to this ride.')

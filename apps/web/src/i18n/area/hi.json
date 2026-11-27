@@ -872,5 +872,11 @@
   "{r} rating from {n} trip": "{n} ट्रिप से {r} रेटिंग",
   "Step {n} of {total} · about {m} minute left": "{total} में से चरण {n} · लगभग {m} मिनट बाकी",
   "{a} of {n} trip": "{n} में से {a} ट्रिप",
-  "Held for {n} minute.": "{n} मिनट के लिए तय।"
+  "Held for {n} minute.": "{n} मिनट के लिए तय।",
+  "Collected on behalf of others": "दूसरों की ओर से लिया गया",
+  "Collected on behalf of the toll operator. Your driver pays it at the plaza.": "टोल ऑपरेटर की ओर से लिया गया। आपका ड्राइवर इसे टोल प्लाज़ा पर चुकाता है।",
+  "Collected on behalf of the airport. Your driver pays it at the gate.": "हवाई अड्डे की ओर से लिया गया। आपका ड्राइवर इसे गेट पर चुकाता है।",
+  "Collected on behalf of the venue. Your driver pays it at the gate.": "स्थल की ओर से लिया गया। आपका ड्राइवर इसे गेट पर चुकाता है।",
+  "Includes {amount} in tolls and fees collected on behalf of others. It does not change after you book.": "इसमें दूसरों की ओर से लिए गए {amount} के टोल और शुल्क शामिल हैं। बुक करने के बाद यह नहीं बदलता।",
+  "Waiting: the first {free} min are free, then {rate}/min. Waiting goes to your driver.": "प्रतीक्षा: पहले {free} मिनट मुफ़्त, फिर {rate}/मिनट। प्रतीक्षा का पैसा आपके ड्राइवर को जाता है।"
 }

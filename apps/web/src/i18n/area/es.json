@@ -872,5 +872,11 @@
   "{r} rating from {n} trip": "Valoración {r} de {n} viaje",
   "Step {n} of {total} · about {m} minute left": "Paso {n} de {total} · queda {m} minuto aproximadamente",
   "{a} of {n} trip": "{a} de {n} viaje",
-  "Held for {n} minute.": "Se mantiene {n} minuto."
+  "Held for {n} minute.": "Se mantiene {n} minuto.",
+  "Collected on behalf of others": "Cobrado en nombre de terceros",
+  "Collected on behalf of the toll operator. Your driver pays it at the plaza.": "Cobrado en nombre del operador del peaje. Tu conductor lo paga en la caseta.",
+  "Collected on behalf of the airport. Your driver pays it at the gate.": "Cobrado en nombre del aeropuerto. Tu conductor lo paga en la entrada.",
+  "Collected on behalf of the venue. Your driver pays it at the gate.": "Cobrado en nombre del recinto. Tu conductor lo paga en la entrada.",
+  "Includes {amount} in tolls and fees collected on behalf of others. It does not change after you book.": "Incluye {amount} en peajes y tarifas cobrados en nombre de terceros. No cambia después de reservar.",
+  "Waiting: the first {free} min are free, then {rate}/min. Waiting goes to your driver.": "Espera: los primeros {free} min son gratis, luego {rate}/min. La espera es para tu conductor."
 }
