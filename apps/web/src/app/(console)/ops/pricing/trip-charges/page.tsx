@@ -29,7 +29,7 @@ type Req = { id: number; ref: string | null; status: string; maker: string; reas
   checker: string; requested_at: string; code: string; op: string; name: string | null; requested_from: string | null;
   changes: { label: string; from: string; to: string }[] | null };
 type Country = { country: string; currency: string; items: Item[]; scheduled: Item[]; places: { scope_code: string; name: string }[];
-  classes: { vehicle_type: string; name: string }[]; requests: Req[];
+  classes: { vehicle_type: string; name: string }[]; place_classes?: Record<string, string[]>; requests: Req[];
   toll_checks: { calls_this_month: number; list_cost_usd: string | null } };
 
 const KIND_WORDS: Record<Kind, string> = { toll_plaza: 'Toll plaza', tolled_road: 'Tolled road', airport: 'Airport',
@@ -59,6 +59,12 @@ function ringsOf(item: Pick<Item, 'kind' | 'geometry' | 'radius_m' | 'corridor_m
   return [];
 }
 
+/** The classes sold at a place (falls back to the country's list). */
+function classesAt(c: Country, scope: string) {
+  const sold = c.place_classes?.[scope];
+  return sold ? c.classes.filter((x) => sold.includes(x.vehicle_type)) : c.classes;
+}
+
 const waitingFor = (code: string, c: Country) => c.requests.find((r) => r.status === 'requested' && r.code === code) ?? null;
 
 export default function TripChargesPage() {
@@ -85,8 +91,11 @@ export default function TripChargesPage() {
   useEffect(() => { void load(); }, [load]);
 
   const here = data?.results.find((r) => r.country === country) ?? null;
-  const shapes: MapZone[] = useMemo(() => (here?.items ?? []).filter((i) => i.kind !== 'waiting')
-    .map((i) => ({ key: i.code, label: i.name, rings: ringsOf(i), tone: i.sample ? 'compare' : 'live' })), [here]);
+  // In force today, then those starting later (a new item starts the next local day).
+  const rows = useMemo(() => [...(here?.items ?? []), ...(here?.scheduled ?? [])
+    .filter((s) => !(here?.items ?? []).some((i) => i.code === s.code && i.version === s.version))], [here]);
+  const shapes: MapZone[] = useMemo(() => rows.filter((i) => i.kind !== 'waiting')
+    .map((i) => ({ key: i.code, label: i.name, rings: ringsOf(i), tone: i.sample ? 'compare' : 'live' })), [rows]);
 
   async function act(item: Item, op: 'retire' | 'withdraw') {
     if (!here) return;
@@ -137,9 +146,9 @@ export default function TripChargesPage() {
             {here.toll_checks.list_cost_usd ? ` (list price $${Number(here.toll_checks.list_cost_usd).toFixed(2)})` : ''}.
             Only for a route that crosses a toll below, once per route a day, plus a nightly sample of common routes.</p>
           {shapes.length ? <ZoneMap zones={shapes} caption="Where each charge applies" height={360}
-            onZone={(code) => setViewing(here.items.find((i) => i.code === code) ?? null)} /> : null}
-          {!here.items.length ? <p className="help m-0">No charges yet. Add the tolls, airports and waiting rule for this country.</p> : null}
-          {here.items.length ? <DataTable caption="Trip charges" rows={here.items} rowKey={(i) => i.code} wrap maxHeight={false}
+            onZone={(code) => setViewing(rows.find((i) => i.code === code) ?? null)} /> : null}
+          {!rows.length ? <p className="help m-0">No charges yet. Add the tolls, airports and waiting rule for this country.</p> : null}
+          {rows.length ? <DataTable caption="Trip charges" rows={rows} rowKey={(i) => i.code} wrap maxHeight={false}
             columns={[
               { key: 'item', label: 'Charge', render: (i) => <>
                 <b>{i.name}</b><br /><span className="muted">{i.kind_words}</span>
@@ -150,13 +159,15 @@ export default function TripChargesPage() {
                 : i.kind === 'permit' ? `Drop outside the area · paid to ${i.remit_to}` : i.applies_words },
               { key: 'amounts', label: 'Charge per class', render: (i) => (
                 <ul className="m-0 p-0 list-none grid gap-1">
-                  {here.classes.map((c) => <li key={c.vehicle_type}>{c.name}: <b>{i.amount_words[c.vehicle_type] ?? 'not charged'}</b></li>)}
+                  {classesAt(here, i.scope_code).map((c) => <li key={c.vehicle_type}>{c.name}: <b>{i.amount_words[c.vehicle_type] ?? 'not charged'}</b></li>)}
                 </ul>) },
               { key: 'who', label: 'Who pays', render: (i) => i.who_words },
               { key: 'state', label: 'Status', render: (i) => {
                 const r = waitingFor(i.code, here);
                 return r ? <StatusChip tone="info">Waiting for approval{r.ref ? ` · ${r.ref}` : ''}</StatusChip>
-                  : <StatusChip tone="good">{`In force · v${i.version}`}</StatusChip>;
+                  : here.items.some((x) => x.code === i.code && x.version === i.version)
+                    ? <StatusChip tone="good">{`In force · v${i.version}`}</StatusChip>
+                    : <StatusChip tone="info">{`Starts ${i.effective_from} · v${i.version}`}</StatusChip>;
               } },
               { key: 'act', label: 'Actions', render: (i) => (
                 <span className="ops-row-actions">
@@ -171,9 +182,6 @@ export default function TripChargesPage() {
                     onClick={() => void act(i, 'withdraw')} aria-label={`Withdraw the change to ${i.name}`}>Withdraw</button> : null}
                 </span>) },
             ]} /> : null}
-          {here.scheduled.length ? (
-            <p className="help m-0">Starting later: {here.scheduled.map((i) => `${i.name} v${i.version} from ${i.effective_from}`).join('; ')}.</p>
-          ) : null}
         </div>
       ) : null}
       {editing && here ? <EditDrawer country={here} item={editing === 'new' ? null : editing} sampleAllowed={!!data?.sample_allowed}
@@ -214,6 +222,7 @@ function EditDrawer({ country, item, sampleAllowed, onClose, onSent }: { country
   const [remitTo, setRemitTo] = useState(item?.remit_to ?? '');
   const [points, setPoints] = useState(item ? pointsText(item.geometry) : '');
   const [sample, setSample] = useState(item?.sample ?? false);
+  const sold = classesAt(country, scope);
   const start = useMemo(() => Object.fromEntries(country.classes.map((c) => [c.vehicle_type,
     item?.amounts[c.vehicle_type] != null ? String(item.amounts[c.vehicle_type] / 100) : ''])), [country, item]);
   const [values, setValues] = useState<Record<string, string>>(start);
@@ -223,7 +232,7 @@ function EditDrawer({ country, item, sampleAllowed, onClose, onSent }: { country
   const [error, setError] = useState<string | null>(null);
 
   const pts = parsePoints(points);
-  const amounts = Object.fromEntries(Object.entries(values).filter(([, v]) => v.trim() !== '')
+  const amounts = Object.fromEntries(Object.entries(values).filter(([k, v]) => v.trim() !== '' && sold.some((c) => c.vehicle_type === k))
     .map(([k, v]) => [k, Math.round(Number(v) * 100)]));
   const body = { country: country.country, ...(item ? { code: item.code } : {}), kind, name: name.trim(), scope_code: scope,
     who_pays: who, applies_on: appliesOn, radius_m: Number(radius), corridor_m: Number(corridor), free_minutes: Number(free),
@@ -279,7 +288,7 @@ function EditDrawer({ country, item, sampleAllowed, onClose, onSent }: { country
         {draw.length && draw[0].length >= 3 ? <ZoneMap zones={[{ key: 'draft', label: name || 'This charge', rings: draw, tone: 'selected' }]}
           caption="Where this charge applies" height={260} fit={draw} /> : null}
         <div className="ops-class-rows">
-          {country.classes.map((c) => {
+          {sold.map((c) => {
             const id = `tc-${c.vehicle_type}`;
             return (
               <fieldset key={c.vehicle_type} className="ops-class-row">
@@ -318,7 +327,7 @@ function HistoryDrawer({ country, item, onClose }: { country: Country; item: Ite
       .then((d) => setVersions(d.results)).catch(() => setVersions([]));
   }, [country.country, item.code]);
   const requests = country.requests.filter((r) => r.code === item.code);
-  const words = (v: Item) => country.classes.filter((c) => v.amount_words[c.vehicle_type]).map((c) => `${c.name}: ${v.amount_words[c.vehicle_type]}`).join(', ') || '—';
+  const words = (v: Item) => classesAt(country, v.scope_code).filter((c) => v.amount_words[c.vehicle_type]).map((c) => `${c.name}: ${v.amount_words[c.vehicle_type]}`).join(', ') || '—';
   return (
     <Drawer open wide title={`History · ${item.name}`} onClose={onClose}>
       <div className="grid gap-5">
