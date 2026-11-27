@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError, api } from '@/lib/api';
-import { useAdminAccess } from '@/lib/adminScope';
+import { selectedMarket, useAdminAccess } from '@/lib/adminScope';
 import { stamp } from '@/lib/consoleTime';
 import { canDraftPricing } from '@/lib/pricing';
 import type { Position } from '@/lib/zones';
@@ -15,15 +15,16 @@ import { DataTable, Drawer, ErrorState, Skeleton } from '@/components/console/ui
 
 /**
  * Pricing > Trip charges (owner brief, 26 Nov): tolls, tolled roads, airport and venue fees, waiting and
- * interstate permits, per place. A rider-paid charge is passed through on the fare inside the locked
- * total; every change shows before/after, needs a reason and a second person, and starts the next day.
+ * interstate permits, per place. A rider-paid toll, gate fee or permit is passed through on the fare inside
+ * the locked total; waiting goes to the driver. Every change shows before/after, needs a reason and a second
+ * person, and starts the next day. The place bar is the only place control (review 27 Nov).
  */
 type Kind = 'toll_plaza' | 'tolled_road' | 'airport' | 'venue' | 'waiting' | 'permit';
 type Geometry = { type?: string; coordinates?: unknown };
 type Item = { id: number; code: string; version: number; status: string; kind: Kind; kind_words: string; name: string;
   scope_code: string; geometry: Geometry; radius_m: number; corridor_m: number; applies_on: string; applies_words: string;
   who_pays: string; who_words: string; currency: string; amounts: Record<string, number>; amount_words: Record<string, string>;
-  free_minutes: number; remit_to: string; sample: boolean; effective_from: string; effective_to: string | null;
+  free_minutes: number; remit_to: string; collection: string; collection_words: string; sample: boolean; effective_from: string; effective_to: string | null;
   created_by: string; reason: string; created_at: string | null };
 type Req = { id: number; ref: string | null; status: string; maker: string; reason: string; decision_reason: string;
   checker: string; requested_at: string; code: string; op: string; name: string | null; requested_from: string | null;
@@ -71,18 +72,14 @@ export default function TripChargesPage() {
   const access = useAdminAccess();
   const may = canDraftPricing(access);
   const [data, setData] = useState<{ results: Country[]; sample_allowed: boolean } | null>(null);
-  const [country, setCountry] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [editing, setEditing] = useState<Item | 'new' | null>(null);
-  const [viewing, setViewing] = useState<Item | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
     try {
       const d = await api.get<{ results: Country[]; sample_allowed: boolean }>('/pricing/admin/trip-charges/');
       setData(d);
-      setCountry((c) => c || d.results.find((r) => r.items.length)?.country || d.results[0]?.country || '');
     } catch (err) {
       setData(null);
       setError(err instanceof ApiError && err.fromServer ? err.message : 'The trip charges could not be loaded.');
@@ -90,31 +87,8 @@ export default function TripChargesPage() {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const here = data?.results.find((r) => r.country === country) ?? null;
-  // In force today, then those starting later (a new item starts the next local day).
-  const rows = useMemo(() => [...(here?.items ?? []), ...(here?.scheduled ?? [])
-    .filter((s) => !(here?.items ?? []).some((i) => i.code === s.code && i.version === s.version))], [here]);
-  const shapes: MapZone[] = useMemo(() => rows.filter((i) => i.kind !== 'waiting')
-    .map((i) => ({ key: i.code, label: i.name, rings: ringsOf(i), tone: 'live' })), [rows]);
-
-  async function act(item: Item, op: 'retire' | 'withdraw') {
-    if (!here) return;
-    try {
-      if (op === 'withdraw') {
-        const r = waitingFor(item.code, here);
-        if (!r) return;
-        await api.post(`/approvals/admin/requests/${r.id}/cancel/`, { reason: 'Withdrawn by the editor' });
-        setNotice(`The change to ${item.name} was withdrawn. The catalogue is unchanged.`);
-      } else {
-        await api.post('/pricing/admin/trip-charges/edit/', { country: here.country, code: item.code, op: 'retire',
-          reason: `Remove ${item.name} from the catalogue` });
-        setNotice(`Removing ${item.name} was sent for approval. It stays in force until a second person approves.`);
-      }
-      await load();
-    } catch (err) {
-      setNotice(err instanceof ApiError && err.fromServer ? err.message : 'That did not go through.');
-    }
-  }
+  const market = selectedMarket(access);
+  const shown = (data?.results ?? []).filter((r) => !market || r.country === market);
 
   return (
     <>
@@ -122,72 +96,103 @@ export default function TripChargesPage() {
       <header className="ops-list__head mb-3">
         <div>
           <h1>Trip charges</h1>
-          <p>Tolls, airport and venue fees, waiting and interstate permits. A charge the rider pays is its own line inside
-          the locked fare, passed through: no commission or fee is taken on it. Values are entered here; Google&apos;s toll
-          price is only a cross-check.</p>
+          <p>Tolls, airport and venue fees, waiting and interstate permits. Each is its own line inside the locked fare.
+          Tolls, gate fees and permits are passed through: no commission or fee is taken on them. Waiting goes to the
+          driver, and their fee or commission applies. Values are entered here; Google&apos;s toll price is only a
+          cross-check.</p>
         </div>
-        {may && here ? <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setEditing('new')}>Add a charge</button> : null}
       </header>
       {notice ? <div className="ops-confirm mb-3" role="status"><b>{notice}</b></div> : null}
       {error ? <ErrorState title="The trip charges could not be loaded" detail={error} onRetry={() => void load()} /> : null}
       {!data && !error ? <Skeleton kind="row" count={4} /> : null}
-      {data && data.results.length > 1 ? (
-        <div className="ops-row-actions mb-3" role="group" aria-label="Country">
-          {data.results.map((r) => (
-            <button key={r.country} type="button" aria-pressed={r.country === country}
-              className={r.country === country ? 'sg-btn sg-btn--secondary sg-btn--sm' : 'sg-btn sg-btn--ghost sg-btn--sm'}
-              onClick={() => setCountry(r.country)}>{r.places[0]?.name ?? r.country}</button>
-          ))}
-        </div>
-      ) : null}
-      {here ? (
-        <div className="grid gap-4">
-          <p className="help m-0">Google toll checks this month: <b>{here.toll_checks.calls_this_month}</b>
-            {here.toll_checks.list_cost_usd ? ` (list price $${Number(here.toll_checks.list_cost_usd).toFixed(2)})` : ''}.
-            Only for a route that crosses a toll below, once per route a day, plus a nightly sample of common routes.</p>
-          {shapes.length ? <ZoneMap zones={shapes} caption="Where each charge applies" height={360}
-            onZone={(code) => setViewing(rows.find((i) => i.code === code) ?? null)} /> : null}
-          {!rows.length ? <p className="help m-0">No charges yet. Add the tolls, airports and waiting rule for this country.</p> : null}
-          {rows.length ? <DataTable caption="Trip charges" rows={rows} rowKey={(i) => i.code} wrap maxHeight={false}
-            columns={[
-              { key: 'item', label: 'Charge', render: (i) => <>
-                <b>{i.name}</b><br /><span className="muted">{i.kind_words}</span>
-                {i.sample ? <>{' '}<StatusChip tone="caution" title="Not a real figure: replace it before launch">QA sample value</StatusChip></> : null}</> },
-              { key: 'where', label: 'Where', render: (i) => i.kind === 'waiting' ? `First ${i.free_minutes} min free`
-                : i.kind === 'toll_plaza' ? `Route passes within ${i.radius_m} m`
-                : i.kind === 'tolled_road' ? `Driven inside a ${i.corridor_m} m corridor`
-                : i.kind === 'permit' ? `Drop outside the area · paid to ${i.remit_to}` : i.applies_words },
-              { key: 'amounts', label: 'Charge per class', render: (i) => (
-                <ul className="m-0 p-0 list-none grid gap-1">
-                  {classesAt(here, i.scope_code).map((c) => <li key={c.vehicle_type}>{c.name}: <b>{i.amount_words[c.vehicle_type] ?? 'not charged'}</b></li>)}
-                </ul>) },
-              { key: 'who', label: 'Who pays', render: (i) => i.who_words },
-              { key: 'state', label: 'Status', render: (i) => {
-                const r = waitingFor(i.code, here);
-                return r ? <StatusChip tone="info">Waiting for approval{r.ref ? ` · ${r.ref}` : ''}</StatusChip>
-                  : here.items.some((x) => x.code === i.code && x.version === i.version)
-                    ? <StatusChip tone="good">{`In force · v${i.version}`}</StatusChip>
-                    : <StatusChip tone="info">{`Starts ${i.effective_from} · v${i.version}`}</StatusChip>;
-              } },
-              { key: 'act', label: 'Actions', render: (i) => (
-                <span className="ops-row-actions">
-                  <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setViewing(i)}
-                    aria-label={`History of ${i.name}`}>History</button>
-                  {may && !waitingFor(i.code, here) ? <>
-                    <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setEditing(i)}
-                      aria-label={`Edit ${i.name}`}>Edit</button>
-                    <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => void act(i, 'retire')}
-                      aria-label={`Remove ${i.name}`}>Remove</button></> : null}
-                  {may && waitingFor(i.code, here) ? <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm"
-                    onClick={() => void act(i, 'withdraw')} aria-label={`Withdraw the change to ${i.name}`}>Withdraw</button> : null}
-                </span>) },
-            ]} /> : null}
-        </div>
-      ) : null}
-      {editing && here ? <EditDrawer country={here} item={editing === 'new' ? null : editing} sampleAllowed={!!data?.sample_allowed}
-        onClose={() => setEditing(null)} onSent={(t) => { setEditing(null); setNotice(t); void load(); }} /> : null}
-      {viewing && here ? <HistoryDrawer country={here} item={viewing} onClose={() => setViewing(null)} /> : null}
+      {shown.map((c) => <CountryCharges key={c.country} here={c} may={may} titled={shown.length > 1}
+        sampleAllowed={!!data?.sample_allowed} onNotice={setNotice} onChanged={load} />)}
     </>
+  );
+}
+
+function CountryCharges({ here, may, titled, sampleAllowed, onNotice, onChanged }: { here: Country; may: boolean;
+  titled: boolean; sampleAllowed: boolean; onNotice: (t: string) => void; onChanged: () => Promise<void> }) {
+  const [editing, setEditing] = useState<Item | 'new' | null>(null);
+  const [viewing, setViewing] = useState<Item | null>(null);
+  // In force today, then those starting later (a new item starts the next local day).
+  const rows = useMemo(() => [...here.items, ...here.scheduled
+    .filter((s) => !here.items.some((i) => i.code === s.code && i.version === s.version))], [here]);
+  const shapes: MapZone[] = useMemo(() => rows.filter((i) => i.kind !== 'waiting')
+    .map((i) => ({ key: i.code, label: i.name, rings: ringsOf(i), tone: 'live' })), [rows]);
+  const where = here.places[0]?.name ?? here.country;
+
+  async function act(item: Item, op: 'retire' | 'withdraw') {
+    try {
+      if (op === 'withdraw') {
+        const r = waitingFor(item.code, here);
+        if (!r) return;
+        await api.post(`/approvals/admin/requests/${r.id}/cancel/`, { reason: 'Withdrawn by the editor' });
+        onNotice(`The change to ${item.name} was withdrawn. The catalogue is unchanged.`);
+      } else {
+        await api.post('/pricing/admin/trip-charges/edit/', { country: here.country, code: item.code, op: 'retire',
+          reason: `Remove ${item.name} from the catalogue` });
+        onNotice(`Removing ${item.name} was sent for approval. It stays in force until a second person approves.`);
+      }
+      await onChanged();
+    } catch (err) {
+      onNotice(err instanceof ApiError && err.fromServer ? err.message : 'That did not go through.');
+    }
+  }
+
+  return (
+    <section className="grid gap-4 mb-6" aria-label={`Trip charges · ${where}`}>
+      <div className="ops-list__head">
+        {titled ? <h2 className="m-0">{where}</h2> : <span />}
+        {may ? <button type="button" className="sg-btn sg-btn--primary sg-btn--sm" onClick={() => setEditing('new')}
+          aria-label={titled ? `Add a charge in ${where}` : undefined}>Add a charge</button> : null}
+      </div>
+      <p className="help m-0">Google toll checks this month: <b>{here.toll_checks.calls_this_month}</b>
+        {here.toll_checks.list_cost_usd ? ` (list price $${Number(here.toll_checks.list_cost_usd).toFixed(2)})` : ''}.
+        Only for a route that crosses a toll below, once per route a day, plus a nightly sample of common routes.</p>
+      {shapes.length ? <ZoneMap zones={shapes} caption={`Where each charge applies · ${where}`} height={360}
+        onZone={(code) => setViewing(rows.find((i) => i.code === code) ?? null)} /> : null}
+      {!rows.length ? <p className="help m-0">No charges yet. Add the tolls, airports and waiting rule for this country.</p> : null}
+      {rows.length ? <DataTable caption={`Trip charges · ${where}`} rows={rows} rowKey={(i) => i.code} wrap maxHeight={false}
+        columns={[
+          { key: 'item', label: 'Charge', render: (i) => <>
+            <b>{i.name}</b><br /><span className="muted">{i.kind_words}</span>
+            {i.sample ? <>{' '}<StatusChip tone="caution" title="Not a real figure: replace it before launch">QA sample value</StatusChip></> : null}</> },
+          { key: 'where', label: 'Where', render: (i) => i.kind === 'waiting' ? `First ${i.free_minutes} min free`
+            : i.kind === 'toll_plaza' ? `Route passes within ${i.radius_m} m`
+            : i.kind === 'tolled_road' ? `Driven inside a ${i.corridor_m} m corridor`
+            : i.kind === 'permit' ? `Drop outside the area · paid to ${i.remit_to}` : i.applies_words },
+          { key: 'amounts', label: 'Charge per class', render: (i) => (
+            <ul className="m-0 p-0 list-none grid gap-1">
+              {classesAt(here, i.scope_code).map((c) => <li key={c.vehicle_type}>{c.name}: <b>{i.amount_words[c.vehicle_type] ?? 'not charged'}</b></li>)}
+            </ul>) },
+          { key: 'who', label: 'Who pays', render: (i) => <>{i.who_words}
+            {i.kind === 'airport' || i.kind === 'venue' ? <><br /><span className="muted">{i.collection_words}
+              {i.collection === 'platform_remits' && i.remit_to ? ` · ${i.remit_to}` : ''}</span></> : null}</> },
+          { key: 'state', label: 'Status', render: (i) => {
+            const r = waitingFor(i.code, here);
+            return r ? <StatusChip tone="info">Waiting for approval{r.ref ? ` · ${r.ref}` : ''}</StatusChip>
+              : here.items.some((x) => x.code === i.code && x.version === i.version)
+                ? <StatusChip tone="good">{`In force · v${i.version}`}</StatusChip>
+                : <StatusChip tone="info">{`Starts ${i.effective_from} · v${i.version}`}</StatusChip>;
+          } },
+          { key: 'act', label: 'Actions', render: (i) => (
+            <span className="ops-row-actions">
+              <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => setViewing(i)}
+                aria-label={`History of ${i.name}`}>History</button>
+              {may && !waitingFor(i.code, here) ? <>
+                <button type="button" className="sg-btn sg-btn--secondary sg-btn--sm" onClick={() => setEditing(i)}
+                  aria-label={`Edit ${i.name}`}>Edit</button>
+                <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm" onClick={() => void act(i, 'retire')}
+                  aria-label={`Remove ${i.name}`}>Remove</button></> : null}
+              {may && waitingFor(i.code, here) ? <button type="button" className="sg-btn sg-btn--ghost sg-btn--sm"
+                onClick={() => void act(i, 'withdraw')} aria-label={`Withdraw the change to ${i.name}`}>Withdraw</button> : null}
+            </span>) },
+        ]} /> : null}
+      {editing ? <EditDrawer country={here} item={editing === 'new' ? null : editing} sampleAllowed={sampleAllowed}
+        onClose={() => setEditing(null)} onSent={(t) => { setEditing(null); onNotice(t); void onChanged(); }} /> : null}
+      {viewing ? <HistoryDrawer country={here} item={viewing} onClose={() => setViewing(null)} /> : null}
+    </section>
   );
 }
 
@@ -215,11 +220,13 @@ function EditDrawer({ country, item, sampleAllowed, onClose, onSent }: { country
   const [name, setName] = useState(item?.name ?? '');
   const [scope, setScope] = useState(item?.scope_code ?? country.places.find((p) => p.scope_code)?.scope_code ?? '');
   const [who, setWho] = useState(item?.who_pays ?? 'rider');
+  useEffect(() => { if (kind === 'waiting') setWho('rider'); }, [kind]);
   const [appliesOn, setAppliesOn] = useState(item?.applies_on || 'pickup');
   const [radius, setRadius] = useState(String(item?.radius_m || 60));
   const [corridor, setCorridor] = useState(String(item?.corridor_m || 40));
   const [free, setFree] = useState(String(item?.free_minutes ?? 3));
   const [remitTo, setRemitTo] = useState(item?.remit_to ?? '');
+  const [collection, setCollection] = useState(item?.collection || 'driver_at_gate');
   const [points, setPoints] = useState(item ? pointsText(item.geometry) : '');
   const [sample, setSample] = useState(item?.sample ?? false);
   const sold = classesAt(country, scope);
@@ -236,8 +243,8 @@ function EditDrawer({ country, item, sampleAllowed, onClose, onSent }: { country
     .map(([k, v]) => [k, Math.round(Number(v) * 100)]));
   const body = { country: country.country, ...(item ? { code: item.code } : {}), kind, name: name.trim(), scope_code: scope,
     who_pays: who, applies_on: appliesOn, radius_m: Number(radius), corridor_m: Number(corridor), free_minutes: Number(free),
-    remit_to: remitTo, geometry: geometryOf(kind, pts), amounts, sample, ...(from ? { effective_from: from } : {}) };
-  const ready = name.trim().length >= 3 && Object.keys(amounts).length > 0 && (kind === 'waiting' || pts.length > 0);
+    remit_to: remitTo, collection, geometry: geometryOf(kind, pts), amounts, sample, ...(from ? { effective_from: from } : {}) };
+  const ready = name.trim().length >= 3 && (kind !== 'waiting' || who === 'rider') && Object.keys(amounts).length > 0 && (kind === 'waiting' || pts.length > 0);
   const { display, error: previewError } = usePreview(ready ? '/pricing/admin/trip-charges/preview/' : null, body);
   const shown = display as (ChangeDisplay & { start?: { effective_from: string } }) | null;
   const draw = kind === 'waiting' ? [] : ringsOf({ kind, geometry: geometryOf(kind, pts), radius_m: Number(radius), corridor_m: Number(corridor) });
@@ -273,10 +280,19 @@ function EditDrawer({ country, item, sampleAllowed, onClose, onSent }: { country
           kind === 'toll_plaza' || kind === 'tolled_road' ? 'Riders read "Toll (estimated): <name>".' : undefined)}
         {field('tc-place', 'Place (who may edit it)', <select id="tc-place" className="input" value={scope} onChange={(e) => setScope(e.target.value)}>
           {country.places.map((p) => <option key={p.scope_code || 'country'} value={p.scope_code}>{p.name}</option>)}</select>)}
-        {field('tc-who', 'Who pays', <select id="tc-who" className="input" value={who} onChange={(e) => setWho(e.target.value)}>
-          <option value="rider">Rider pays (passed through on the fare)</option>
-          <option value="driver">Driver pays (not on the fare)</option>
-          <option value="platform">SaaradhiGo pays (not on the fare)</option></select>)}
+        {kind === 'waiting' ? field('tc-who', 'Who pays', <input id="tc-who" className="input" readOnly value="Rider pays · goes to the driver" />,
+          'Waiting is the driver\'s earnings for the time: their fee or commission applies, as on the fare.')
+          : field('tc-who', 'Who pays', <select id="tc-who" className="input" value={who} onChange={(e) => setWho(e.target.value)}>
+            <option value="rider">Rider pays · passed through on the fare</option>
+            <option value="driver">Driver pays (not on the fare)</option>
+            <option value="platform">SaaradhiGo pays (not on the fare)</option></select>)}
+        {kind === 'airport' || kind === 'venue' ? field('tc-collection', 'Who pays the authority', <select id="tc-collection" className="input"
+          value={collection} onChange={(e) => setCollection(e.target.value)}>
+          <option value="driver_at_gate">Driver pays at the gate (reimbursed)</option>
+          <option value="platform_remits">SaaradhiGo pays the authority (permit)</option></select>) : null}
+        {(kind === 'airport' || kind === 'venue') && collection === 'platform_remits'
+          ? field('tc-remit', 'Authority SaaradhiGo pays', <input id="tc-remit" className="input" value={remitTo} onChange={(e) => setRemitTo(e.target.value)} />,
+            'For example the airport\'s ground transportation permit.') : null}
         {kind === 'airport' || kind === 'venue' ? field('tc-on', 'Charged on', <select id="tc-on" className="input" value={appliesOn} onChange={(e) => setAppliesOn(e.target.value)}>
           <option value="pickup">Pickups inside</option><option value="drop">Drops inside</option>
           <option value="pickup_or_drop">Pickups or drops inside</option></select>) : null}
