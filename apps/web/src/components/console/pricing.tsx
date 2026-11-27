@@ -11,6 +11,7 @@ const TABS = [
   { href: '/ops/pricing/fare-cards', label: 'Fare cards' },
   { href: '/ops/pricing/fee-plans', label: 'Driver fee plans' },
   { href: '/ops/pricing/booking-fees', label: 'Booking fees' },
+  { href: '/ops/pricing/trip-charges', label: 'Trip charges' },
   { href: '/ops/pricing/vehicle-classes', label: 'Vehicle classes' },
 ] as const;
 
