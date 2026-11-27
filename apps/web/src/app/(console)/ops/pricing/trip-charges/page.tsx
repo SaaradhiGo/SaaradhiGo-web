@@ -95,7 +95,7 @@ export default function TripChargesPage() {
   const rows = useMemo(() => [...(here?.items ?? []), ...(here?.scheduled ?? [])
     .filter((s) => !(here?.items ?? []).some((i) => i.code === s.code && i.version === s.version))], [here]);
   const shapes: MapZone[] = useMemo(() => rows.filter((i) => i.kind !== 'waiting')
-    .map((i) => ({ key: i.code, label: i.name, rings: ringsOf(i), tone: i.sample ? 'compare' : 'live' })), [rows]);
+    .map((i) => ({ key: i.code, label: i.name, rings: ringsOf(i), tone: 'live' })), [rows]);
 
   async function act(item: Item, op: 'retire' | 'withdraw') {
     if (!here) return;
